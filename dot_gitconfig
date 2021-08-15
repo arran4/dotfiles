@@ -1,0 +1,6 @@
+[user]
+	name = arran
+[core]
+	autocrlf = true
+[credential "github.com"]
+	useHttpPath = true
