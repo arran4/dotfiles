@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# All types
+#       Commands  are  then read from $ZDOTDIR/.zshenv.  If the shell is a login shell, commands are read from
+#       /etc/zprofile and then $ZDOTDIR/.zprofile.  Then, if the shell
+#       is interactive, commands are read from /etc/zshrc and then $ZDOTDIR/.zshrc.
+#       Finally, if the shell is a login shell, /etc/zlogin and $ZDOTDIR/.zlogin are read.
+
+source $HOME/arranrepo/config/sharedrc.sh
+[ -f $HOME/.zshenv.local ] && . $HOME/.zshenv.local pre
