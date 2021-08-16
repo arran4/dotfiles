@@ -1,0 +1,11 @@
+#!/bin/sh
+source $HOME/arranrepo/config/shared_profile.sh
+
+# Interactive login shell
+
+#       Commands  are  then read from $ZDOTDIR/.zshenv.  If the shell is a login shell, commands are read from
+#       /etc/zprofile and then $ZDOTDIR/.zprofile.  Then, if the shell
+#       is interactive, commands are read from /etc/zshrc and then $ZDOTDIR/.zshrc.
+#       Finally, if the shell is a login shell, /etc/zlogin and $ZDOTDIR/.zlogin are read.
+
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
