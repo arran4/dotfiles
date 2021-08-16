@@ -1,0 +1,50 @@
+#!/bin/sh
+source $HOME/arranrepo/config/sharedrc.sh
+source $HOME/arranrepo/config/shared_profile.sh
+
+#       When  bash is invoked as an interactive login shell, or as a non-inter-
+#       active shell with the --login option, it first reads and executes  com-
+#       mands  from  the file /etc/profile, if that file exists.  After reading
+#       that file, it looks for ~/.bash_profile, ~/.bash_login, and ~/.profile,
+#       in  that order, and reads and executes commands from the first one that
+#       exists and is readable.  The --noprofile option may be  used  when  the
+#       shell is started to inhibit this behavior.
+#
+#       When  a  login  shell  exits, bash reads and executes commands from the
+#       file ~/.bash_logout, if it exists.
+#
+#       When an interactive shell that is not a login shell  is  started,  bash
+#       reads  and executes commands from ~/.bashrc, if that file exists.  This
+#       may be inhibited by using the --norc option.  The --rcfile file  option
+#       will  force  bash  to  read  and  execute commands from file instead of
+#       ~/.bashrc.
+#             When bash is started non-interactively, to  run  a  shell  script,  for
+#             example, it looks for the variable BASH_ENV in the environment, expands
+#             its value if it appears there, and uses the expanded value as the  name
+#             of  a  file to read and execute.  Bash behaves as if the following com-
+#             mand were executed:
+#                    if [ -n "$BASH_ENV" ]; then . "$BASH_ENV"; fi
+#             but the value of the PATH variable is not used to search for  the  file
+#             name.
+
+set -o vi
+bind '"^R":"history-incremental-search-backward"'
+export HISTSIZE=99999
+export HISTFILE=$HOME/.bash_history
+export SAVEHIST=99999
+export HISTFILESIZE=99999
+
+# Shell stuff
+export PS1='${PWD}
+\u@\h \!\$ '
+
+##uncomment the following to activate bash-completion:
+#[ -f /etc/profile.d/bash-completion ] && source /etc/profile.d/bash-completion
+
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+
+# From https://github.com/jordansissel/dotfiles/blob/master/.bash_profile
+# Exec zsh if it exists.
+which zsh > /dev/null 2>&1 && tty > /dev/null 2>&1 && echo zsh found on system ||# exec zsh -l # commented out just incase inf loop
+echo "No zsh found, sorry I couldn't save you..."
+
