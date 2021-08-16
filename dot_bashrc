@@ -1,0 +1,4 @@
+#!/bin/sh
+source $HOME/arranrepo/config/bash_profile
+
+PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
