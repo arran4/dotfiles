@@ -6,5 +6,5 @@
 #       is interactive, commands are read from /etc/zshrc and then $ZDOTDIR/.zshrc.
 #       Finally, if the shell is a login shell, /etc/zlogin and $ZDOTDIR/.zlogin are read.
 
-source $HOME/arranrepo/config/sharedrc.sh
+# TODO source $HOME/arranrepo/config/sharedrc.sh
 [ -f $HOME/.zshenv.local ] && . $HOME/.zshenv.local pre
