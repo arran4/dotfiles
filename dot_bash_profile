@@ -1,6 +1,13 @@
 #!/bin/sh
-source $HOME/arranrepo/config/sharedrc.sh
-source $HOME/arranrepo/config/shared_profile.sh
+
+
+
+
+# TODO source $HOME/arranrepo/config/sharedrc.sh
+# TODO source $HOME/arranrepo/config/shared_profile.sh
+
+
+
 
 #       When  bash is invoked as an interactive login shell, or as a non-inter-
 #       active shell with the --login option, it first reads and executes  com-
@@ -41,6 +48,7 @@ export PS1='${PWD}
 ##uncomment the following to activate bash-completion:
 #[ -f /etc/profile.d/bash-completion ] && source /etc/profile.d/bash-completion
 
+# TODO Machine specifix
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
 
 # From https://github.com/jordansissel/dotfiles/blob/master/.bash_profile
