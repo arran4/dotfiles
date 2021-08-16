@@ -1,0 +1,54 @@
+#!/bin/sh
+
+#       Commands  are  then read from $ZDOTDIR/.zshenv.  If the shell is a login shell, commands are read from
+#       /etc/zprofile and then $ZDOTDIR/.zprofile.  Then, if the shell
+#       is interactive, commands are read from /etc/zshrc and then $ZDOTDIR/.zshrc.
+#       Finally, if the shell is a login shell, /etc/zlogin and $ZDOTDIR/.zlogin are read.
+
+source $HOME/arranrepo/config/sharedrc.sh
+
+[ -f $HOME/.zshrc.local ] && . $HOME/.zshrc.local pre
+
+export HISTSIZE=99999
+export HISTFILE=$HOME/.zsh_history
+export SAVEHIST=99999
+export SPROMPT="Potential spelling error %R , could be %r"
+export WATCH=root
+export WATCHFMT="%D %T %n@%l.%M %a"
+#export PROMPT='%(!.%S%n%s.%n)@%m %d %h%# '
+
+## man zshoptions
+setopt append_history
+setopt inc_append_history
+setopt HIST_VERIFY
+#setopt SHARE_HISTORY # Yuck.
+bindkey -v
+bindkey "^R" history-incremental-search-backward
+echo ZSH version is $ZSH_VERSION.
+if test `echo "$ZSH_VERSION" | sed -n '/4\.3\../p' | wc -l | sed 's/ //g'` -gt 0;
+then
+    #autoload promptinit
+    #promptinit
+    #prompt_elite2_setup
+    autoload -U zfinit
+    zfinit
+    autoload -U tcp_open
+    zstyle ':completion:*' completer _expand _complete _correct _approximate
+    zstyle :compinstall filename '/home/arran/.zshrc'
+    autoload -Uz compinit
+    compinit
+    # End of lines added by compinstall
+    #export PROMPT="%{\010%}%n@%m:%~ %# "
+    # Shell stuff
+    # The following lines were added by compinstall
+else
+    echo "ZSH version is unknown, $ZSH_VERSION";
+fi
+export PROMPT='%d
+%(!.%S%n%s.%n)@%m %h%# '
+
+PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
+
+setopt interactivecomments       # Enable comments in interactive mode (useful)
+#setopt extended_glob             # More powerful glob features
+
