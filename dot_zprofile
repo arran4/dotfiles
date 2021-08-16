@@ -1,5 +1,5 @@
 #!/bin/sh
-source $HOME/arranrepo/config/shared_profile.sh
+# TODO source $HOME/arranrepo/config/shared_profile.sh
 
 # Interactive login shell
 
