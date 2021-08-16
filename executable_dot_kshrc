@@ -1,0 +1,14 @@
+export VISUAL=vi
+export PATH=$PATH:$HOME/bin
+alias d="ls --color"
+alias ls="ls --color=auto"
+alias ll="ls --color -l"
+
+case $TERM in
+	xterm*|rxvt|Eterm|eterm)
+		PROMPT_COMMAND='echo -ne "\033]0;${USER}@${HOSTNAME%%.*}:${PWD/$HOME/~}\007"'
+		;;
+	screen)
+		PROMPT_COMMAND='echo -ne "\033_${USER}@${HOSTNAME%%.*}:${PWD/$HOME/~}\033\\"'
+		;;
+esac
