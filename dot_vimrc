@@ -1,0 +1,37 @@
+syntax on			" Syntax highlighting
+set foldmethod		=syntax	" Fold method
+set background		=light	" Background colour scheme
+set ai				" Auto indent
+set showmatch			" Show matching braces and brackets
+set ls			=2	" status line bar
+"set cindent			" C indent
+set title			" Console title change
+"set spell			" Spell checking
+set number			" Line numbering
+"set expandtab			" Tabs are tabs not spaces
+set showtabline=2
+"set smarttab			" Treats spaces as tabs.. based on shiftwidth
+"set cursorline			" Runs a line across the screen where the cursor is.. Might be useful on large vims.
+"set nocp			" Turns on Vi incompatiable options
+set foldclose=             " Automatic foldclosing is irritating too
+"set list                   " Show me whitespace where I care
+
+
+
+
+
+if v:version >= 700
+        set spelllang=en_au
+        set dictionary+=spell
+endif
+
+if v:version >= 600
+        set encoding=utf-8
+        set termencoding=utf-8
+        "set fileencodings=ucs-bom,ascii,utf-8,latin1
+endif
+
+set backupdir=~/.vim/tmp
+set directory=~/.vim/tmp
+
+
