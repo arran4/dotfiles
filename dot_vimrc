@@ -31,7 +31,12 @@ if v:version >= 600
         "set fileencodings=ucs-bom,ascii,utf-8,latin1
 endif
 
-set backupdir=~/.vim/tmp
-set directory=~/.vim/tmp
+#set backupdir=~/.vim/tmp
+#set directory=~/.vim/tmp
 
+set backup
+set writebackup
+set backupcopy=yes
+set backupdir=$HOME/.vimbackup
+set directory=$HOME/.vimswap,./
 
