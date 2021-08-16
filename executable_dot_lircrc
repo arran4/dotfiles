@@ -1,0 +1,131 @@
+begin
+  prog = irexec
+  button = POWER
+  config = tvtime &
+  config = tvtime-command QUIT
+end
+begin
+   prog = irexec
+   button = MTS
+   config = tvtime-command TOGGLE_AUDIO_MODE
+end
+
+begin
+    prog = irexec
+    button = VIDEO
+    config = tvtime-command TOGGLE_INPUT
+end
+begin
+    prog = irexec
+    button = DISPLAY
+    config = DISPLAY_INFO
+    repeat = 1
+end
+begin
+    prog = irexec
+    button = FULLSCREEN
+    config = tvtime-command TOGGLE_FULLSCREEN
+end
+begin
+    prog = irexec
+    button = CC
+    config = tvtime-command TOGGLE_CC
+end
+
+begin
+    prog = irexec
+    button = VOL_UP
+    config = tvtime-command MIXER_UP
+    repeat = 0
+end
+begin
+    prog = irexec
+    button = VOL_DOWN
+    config = tvtime-command MIXER_DOWN
+    repeat = 0
+end
+begin
+    prog = irexec
+    button = MUTE
+    config = tvtime-command MIXER_TOGGLE_MUTE
+end
+
+begin
+    prog = irexec
+    button = CH_UP
+    config = tvtime-command CHANNEL_INC
+    repeat = 1
+end
+begin
+    prog = irexec
+    button = CH_DOWN
+    config = tvtime-command CHANNEL_DEC
+    repeat = 1
+end
+begin
+    prog = irexec
+    button = RECALL
+    config = tvtime-command CHANNEL_PREV
+    repeat = 1
+end
+
+begin
+    prog = irexec
+    button = 1
+    config = tvtime-command CHANNEL_1
+end
+begin
+    prog = irexec
+    button = 2
+    config = tvtime-command CHANNEL_2
+end
+begin
+    prog = irexec
+    button = 3
+    config = tvtime-command CHANNEL_3
+end
+begin
+    prog = irexec
+    button = 4
+    config = tvtime-command CHANNEL_4
+end
+begin
+    prog = irexec
+    button = 5
+    config = tvtime-command CHANNEL_5
+end
+begin
+    prog = irexec
+    button = 6
+    config = tvtime-command CHANNEL_6
+end
+begin
+    prog = irexec
+    button = 7
+    config = tvtime-command CHANNEL_7
+end
+begin
+    prog = irexec
+    button = 8
+    config = tvtime-command CHANNEL_8
+end
+begin
+    prog = irexec
+    button = 9
+    config = tvtime-command CHANNEL_9
+end
+begin
+    prog = irexec
+    button = 0
+    config = tvtime-command CHANNEL_0
+end
+begin
+    prog = irexec
+    button = ENTER
+    config = tvtime-command ENTER
+end
+begin
+  prog = irexec
+  button = snapshot
+  config = tvtime-command SCREENSHOT
+end
