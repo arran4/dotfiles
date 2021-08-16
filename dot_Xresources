@@ -1,0 +1,20 @@
+#URxvt*reverseVideo: True
+URxvt*background: black
+URxvt*foreground: grey
+URxvt*colorBD: grey
+URxvt*colorIT: grey
+URxvt*shading: 30
+URxvt*saveLines: 10000
+Rxvt*background: black
+Rxvt*foreground: grey
+Rxvt*colorBD: grey
+Rxvt*colorIT: grey
+Rxvt*shading: 30
+Rxvt*saveLines: 10000
+
+XTerm*background: black
+XTerm*foreground: grey
+XTerm*colorBD: grey
+XTerm*colorIT: grey
+XTerm*shading: 30
+XTerm*saveLines: 10000
