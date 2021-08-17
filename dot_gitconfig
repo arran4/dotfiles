@@ -2,7 +2,7 @@
 	name = arran
 [core]
 	autocrlf = true
-[credential "github.com"]
+[credential "https://github.com"]
 	useHttpPath = true
 [credential]
 	credentialStore = secretservice
