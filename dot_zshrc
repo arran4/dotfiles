@@ -69,3 +69,5 @@ alias egrep='egrep --color=auto'
 
 # Get week number
 alias week='date +%V'
+
+autoload -U colors && colors	# Load colors
