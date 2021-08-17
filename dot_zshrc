@@ -9,9 +9,9 @@
 
 [ -f $HOME/.zshrc.local ] && . $HOME/.zshrc.local pre
 
-export HISTSIZE=99999
+export HISTSIZE=99999999
 export HISTFILE=$HOME/.zsh_history
-export SAVEHIST=99999
+export SAVEHIST=99999999
 export SPROMPT="Potential spelling error %R , could be %r"
 export WATCH=root
 export WATCHFMT="%D %T %n@%l.%M %a"
@@ -52,3 +52,5 @@ PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 setopt interactivecomments       # Enable comments in interactive mode (useful)
 #setopt extended_glob             # More powerful glob features
 
+autoload -Uz compinit
+compinit
