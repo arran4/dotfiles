@@ -140,3 +140,7 @@ alias egrep='egrep --color=auto'
 
 # Get week number
 alias week='date +%V'
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
