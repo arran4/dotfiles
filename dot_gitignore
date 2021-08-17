@@ -5,3 +5,5 @@ Thumbs.db
 Desktop.ini
 /.idea
 /*.iml
+.directory
+.Trash-*
