@@ -3,3 +3,5 @@ server_response = on
 
 # Use the server-provided last modification date, if available
 timestamping = on
+
+hsts-file=~/.cache/wget-hsts
