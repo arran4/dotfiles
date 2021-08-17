@@ -2,3 +2,5 @@ defscrollback 32768
 logfile screen-%Y-%m-%d-%c-%H-%n.log
 startup_message off
 
+defutf8 on
+startup_message off
