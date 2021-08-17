@@ -4,3 +4,5 @@
 	autocrlf = true
 [credential "github.com"]
 	useHttpPath = true
+[credential]
+	credentialStore = secretservice
