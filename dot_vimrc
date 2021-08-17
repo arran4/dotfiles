@@ -20,7 +20,7 @@ set foldclose=             " Automatic foldclosing is irritating too
 if v:version >= 700 "
 	set spelllang=en_au	"
         set dictionary+=spell	"
-endif
+endif	"
 
 if v:version >= 600
         set encoding=utf-8
