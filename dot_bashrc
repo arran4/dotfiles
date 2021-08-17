@@ -15,8 +15,8 @@ HISTCONTROL=ignoreboth
 shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+export HISTSIZE='32768';
+export HISTFILESIZE="${HISTSIZE}";
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -114,6 +114,18 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
+
+# Don’t clear the screen after quitting a manual page.
+export MANPAGER='less -X';
+
+# Omit duplicates and commands that begin with a space from history.
+export HISTCONTROL='ignoreboth';
+
+# Make vim the default editor.
+export EDITOR='vim';
+
+# Hide the “default interactive shell is now zsh” warning on macOS.
+export BASH_SILENCE_DEPRECATION_WARNING=1;
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
