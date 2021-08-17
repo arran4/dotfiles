@@ -1,12 +1,12 @@
 [user]
-	name = arran
+	name = {{ .chezmoi.group }}
 [core]
 	autocrlf = true
 	editor = vim
 [credential "https://github.com"]
 	useHttpPath = true
 [credential]
-	credentialStore = secretservice
+	credentialStore = cache
 	helper = manager-core
 
 [color]
