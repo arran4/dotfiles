@@ -9,15 +9,15 @@ set title			" Console title change
 "set spell			" Spell checking
 set number			" Line numbering
 "set expandtab			" Tabs are tabs not spaces
-set showtabline         =2
+set showtabline         =2      "
 "set smarttab			" Treats spaces as tabs.. based on shiftwidth
 "set cursorline			" Runs a line across the screen where the cursor is.. Might be useful on large vims.
 "set nocp			" Turns on Vi incompatiable options
 set foldclose=             " Automatic foldclosing is irritating too
 "set list                   " Show me whitespace where I care
-
-
-if v:version >= 700
+" 
+"
+if v:version >= 700 "
 	set spelllang=en_au
         set dictionary+=spell
 endif
