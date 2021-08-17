@@ -7,3 +7,14 @@
 [credential]
 	credentialStore = secretservice
 	helper = manager-core
+
+[color]
+  branch = auto
+  diff = auto
+  interactive = auto
+  status = auto
+  ui = auto
+  
+[color "branch"]
+  current = green
+  remote = yellow
