@@ -1,5 +1,5 @@
 [user]
-	name = {{ .chezmoi.group }}
+	name = arran
 [core]
 	autocrlf = true
 	editor = vim
@@ -28,4 +28,6 @@
 	log = true
 
 [commit]
+{{ if index . "gpgconfigured" }}
 	gpgsign = true
+{{ end }}
