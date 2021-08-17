@@ -60,3 +60,12 @@ compinit
 
 # Don’t clear the screen after quitting a manual page.
 export MANPAGER='less -X';
+
+# Always enable colored `grep` output
+# Note: `GREP_OPTIONS="--color=auto"` is deprecated, hence the alias usage.
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# Get week number
+alias week='date +%V'
