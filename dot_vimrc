@@ -18,8 +18,8 @@ set foldclose=             " Automatic foldclosing is irritating too
 " 
 "
 if v:version >= 700 "
-	set spelllang=en_au "
-        set dictionary+=spell
+	set spelllang=en_au	"
+        set dictionary+=spell	"
 endif
 
 if v:version >= 600
