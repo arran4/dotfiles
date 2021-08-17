@@ -6,3 +6,4 @@
 	useHttpPath = true
 [credential]
 	credentialStore = secretservice
+	helper = manager-core
