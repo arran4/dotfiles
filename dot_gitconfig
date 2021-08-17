@@ -2,6 +2,7 @@
 	name = arran
 [core]
 	autocrlf = true
+	editor = vim
 [credential "https://github.com"]
 	useHttpPath = true
 [credential]
@@ -18,3 +19,11 @@
 [color "branch"]
   current = green
   remote = yellow
+
+[merge]
+
+	# Include summaries of merged commits in newly created merge commit messages
+	log = true
+
+[commit]
+	gpgsign = true
