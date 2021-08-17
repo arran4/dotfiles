@@ -6,7 +6,9 @@
 [credential "https://github.com"]
 	useHttpPath = true
 [credential]
+{{ if eq .headless true }}
 	credentialStore = cache
+{{ end }}
 	helper = manager-core
 
 [color]
