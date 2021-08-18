@@ -32,6 +32,5 @@
 {{ if index . "gpgconfigured" }}
 	gpgsign = true
 {{ end }}
-{{ if stat (joinPath .chezmoi.homeDir ".pyenv") }}
-# ~/.pyenv exists
-{{ end }}
+
+{{/* if stat (joinPath .chezmoi.homeDir ".pyenv") */}}
