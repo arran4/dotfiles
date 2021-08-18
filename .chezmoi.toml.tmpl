@@ -1,0 +1,5 @@
+{{ $headless := promptBool "headless" -}}
+{{ $gpgconfigured := promptBool "gpgconfigured" -}}
+[data]
+        headless={{ $headless }}
+        gpgconfigured={{ $gpgconfigured }}
