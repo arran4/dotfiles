@@ -71,11 +71,6 @@
 /Start Menu
 /Templates
 /Videos
-
-
-
-
-
 /.AndroidStudio*
 /.GoLand*
 /.Icecream Screen Recorder
@@ -106,3 +101,4 @@
 /ntuser.*
 /source
 /_viminfo
+/.vnc
