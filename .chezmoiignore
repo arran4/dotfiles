@@ -44,3 +44,30 @@
 /.motd*
 /.sudo*
 /*Projects
+
+## Windows defaults
+/NTUSER.DAT*
+/3D Objects
+/AppData
+/Apple
+/Application Data
+/Contacts
+/Cookies
+/Documents
+/Favorites
+/IntelGraphicsProfiles
+/Links
+/Local Settings
+/MicrosoftEdgeBackups
+/Music
+/My Documents
+/NetHood
+/OneDrive
+/PrintHood
+/Recent
+/Saved Games
+/Searches
+/SendTo
+/Start Menu
+/Templates
+/Videos
