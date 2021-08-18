@@ -1,5 +1,11 @@
 {{ $headless := promptBool "headless" -}}
 {{ $gpgconfigured := promptBool "gpgconfigured" -}}
+{{ $autoGit := promptBool "auto git?" -}}
+
+[git]
+    autoCommit = {{ $autoGit }}
+    autoPush = {{ $autoGit }}
+
 [data]
         headless={{ $headless }}
         gpgconfigured={{ $gpgconfigured }}
