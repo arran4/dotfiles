@@ -1,6 +1,7 @@
 {{ $headless := promptBool "headless" -}}
 {{ $gpgconfigured := promptBool "gpgconfigured" -}}
 {{ $autoGit := promptBool "auto git?" -}}
+{{/* if stat (joinPath .chezmoi.homeDir ".gnupg") */}}
 
 [git]
     autoCommit = {{ $autoGit }}
