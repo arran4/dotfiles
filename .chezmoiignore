@@ -103,3 +103,4 @@
 /_viminfo
 /.vnc
 /.vim/.netrwhist
+/.local/share/chezmoi
