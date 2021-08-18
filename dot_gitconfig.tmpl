@@ -11,6 +11,7 @@
 {{ end }}
 	helper = manager-core
 
+{{ if ne .chezmoi.os "windows" }}
 [color]
   branch = auto
   diff = auto
@@ -21,13 +22,16 @@
 [color "branch"]
   current = green
   remote = yellow
+{{ end }}
 
 [merge]
-
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
 
 [commit]
 {{ if index . "gpgconfigured" }}
 	gpgsign = true
+{{ end }}
+{{ if stat (joinPath .chezmoi.homeDir ".pyenv") }}
+# ~/.pyenv exists
 {{ end }}
