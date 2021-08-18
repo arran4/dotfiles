@@ -3,3 +3,16 @@
 /.github
 /.gitattributes
 /.pulse
+/.bash_history
+/.zsh_history
+/.mysql_history
+/.Xauthority
+/.cache
+/.dbus
+/.lesshist
+/.pki
+/.sync
+/.viminfo
+/.vinc
+/.wget-hsts
+/.zcompdump
