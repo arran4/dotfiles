@@ -71,3 +71,37 @@
 /Start Menu
 /Templates
 /Videos
+
+
+
+
+
+/.AndroidStudio*
+/.GoLand*
+/.Icecream Screen Recorder
+/.Origin
+/.QtWebEngineProcess
+/.WebStorm*
+/.android*
+/.clasprc.json
+/.degit
+/.dotnet
+/.elmer
+/.emulator_console_auth_token
+/.git-for-windows-updater
+/.gradle
+/.gsutil
+/.jdks
+/.kdiff3rc
+/.nuget
+/.serverless
+/.serverlessrc
+/.templateengine
+/.ts_node_repl_history
+/.vuerc
+/.yarnrc
+/*.log
+/log
+/out.*
+/ntuser.*
+/source
