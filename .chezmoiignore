@@ -38,3 +38,9 @@
 /.histfile
 /.karaf
 /.lesshst
+/.docker
+/.landscape
+/.lpass
+/.motd*
+/.sudo*
+/*Projects
