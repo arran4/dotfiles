@@ -102,3 +102,4 @@
 /source
 /_viminfo
 /.vnc
+/.vim/.netrwhist
