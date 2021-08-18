@@ -31,11 +31,20 @@ endif
 set backup
 set writebackup
 set backupcopy=yes
-set backupdir=~/.vim/backups
-set directory=~/.vim/swaps
+set backupdir=$HOME."/.vim/backups"
+set directory=$HOME."/.vim/swaps"
+set undodir=$HOME."/.vim/undo"
 
-if exists("&undodir")
-	set undodir=~/.vim/undo
+if !exists($HOME."/.vim/backups")
+    silent! execute "!mkdir -p ${HOME}/.vim/backups"
+endif
+
+if !exists($HOME."/.vim/swaps")
+    silent! execute "!mkdir -p ${HOME}/.vim/swaps"
+endif
+
+if !exists($HOME."/.vim/undo")
+    silent! execute "!mkdir -p ${HOME}/.vim/undo"
 endif
 
 if &compatible
