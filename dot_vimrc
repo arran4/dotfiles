@@ -35,15 +35,15 @@ let &directory=$HOME."/.vim/swaps"
 let &undodir=$HOME."/.vim/undo"
 
 if !isdirectory(&backupdir)
-    silent! execute "!mkdir -p ${backupdir}"
+    silent! execute "!mkdir -p '".&backupdir."'"
 endif
 
 if !isdirectory(&directory)
-    silent! execute "!mkdir -p ${directory}"
+    silent! execute "!mkdir -p '".&directory."'"
 endif
 
 if !isdirectory(&undodir)
-    silent! execute "!mkdir -p ${undodir}"
+     silent! execute "!mkdir -p '".&undodir."'"
 endif
 
 if &compatible

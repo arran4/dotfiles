@@ -8,8 +8,16 @@
 [credential]
 {{ if index . "headless" }}
 	credentialStore = cache
-{{ end }}
+{{ else if eq .chezmoi.osRelease.id "ubuntu" }}
+       credentialStore = secretservice
+       helper = /usr/bin/git-credential-manager-core
+{{ else }}
 	helper = manager-core
+{{ end }}
+       
+[credential "https://dev.azure.com"]
+       useHttpPath = true
+
 
 {{ if ne .chezmoi.os "windows" }}
 [color]
@@ -22,6 +30,7 @@
 [color "branch"]
   current = green
   remote = yellow
+
 {{ end }}
 
 [merge]
