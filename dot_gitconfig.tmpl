@@ -1,13 +1,18 @@
 [user]
-	name = arran
+	name = Arran Ubels
+	useConfigOnly = true
+[init]
+	defaultBranch=main
 [core]
 	autocrlf = true
 	editor = vim
 [credential "https://github.com"]
 	useHttpPath = true
+
 [credential]
 {{ if index . "headless" }}
 	credentialStore = cache
+       helper = /usr/bin/git-credential-manager-core
 {{ else if eq .chezmoi.osRelease.id "ubuntu" }}
        credentialStore = secretservice
        helper = /usr/bin/git-credential-manager-core
