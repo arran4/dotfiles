@@ -20,9 +20,7 @@ set foldclose=             " Automatic foldclosing is irritating too
 if v:version >= 700
 	set spelllang=en_au
         set dictionary+=spell
-endif
-
-if v:version >= 600
+elseif v:version >= 600
         set encoding=utf-8
         set termencoding=utf-8
         "set fileencodings=ucs-bom,ascii,utf-8,latin1
@@ -31,20 +29,21 @@ endif
 set backup
 set writebackup
 set backupcopy=yes
-set backupdir=$HOME."/.vim/backups"
-set directory=$HOME."/.vim/swaps"
-set undodir=$HOME."/.vim/undo"
 
-if !exists($HOME."/.vim/backups")
-    silent! execute "!mkdir -p ${HOME}/.vim/backups"
+let &backupdir=$HOME."/.vim/backups"
+let &directory=$HOME."/.vim/swaps"
+let &undodir=$HOME."/.vim/undo"
+
+if !isdirectory(&backupdir)
+    silent! execute "!mkdir -p ${backupdir}"
 endif
 
-if !exists($HOME."/.vim/swaps")
-    silent! execute "!mkdir -p ${HOME}/.vim/swaps"
+if !isdirectory(&directory)
+    silent! execute "!mkdir -p ${directory}"
 endif
 
-if !exists($HOME."/.vim/undo")
-    silent! execute "!mkdir -p ${HOME}/.vim/undo"
+if !isdirectory(&undodir)
+    silent! execute "!mkdir -p ${undodir}"
 endif
 
 if &compatible
