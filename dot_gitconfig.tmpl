@@ -4,7 +4,7 @@
 [init]
 	defaultBranch=main
 [core]
-	autocrlf = true
+	autocrlf = false
 	editor = vim
 [credential "https://github.com"]
 	useHttpPath = true
@@ -49,9 +49,15 @@
 [merge]
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
-
+	# Somehow switch?
+	#tool = vimdiff
+	#tool = kdiff3 
 [commit]
 {{ if index . "gpgconfigured" }}
 	gpgsign = true
 {{ end }}
 
+[alias]
+
+  #via http://stackoverflow.com/questions/5188320/how-can-i-get-a-list-of-git-branches-ordered-by-most-recent-commit
+  recent-branches = !git for-each-ref --count=15 --sort=-committerdate refs/heads/ --format='%(refname:short)'
