@@ -1,7 +1,7 @@
 syntax on			" Syntax highlighting
 set foldmethod		=syntax	" Fold method
 set background		=dark	" Background colour scheme
-set ai				" Auto indent
+set autoindent			" Auto indent
 set showmatch			" Show matching braces and brackets
 set ls			=2	" status line bar
 "set cindent			" C indent
@@ -15,6 +15,8 @@ set showtabline         =2
 "set nocp			" Turns on Vi incompatiable options
 set foldclose=             " Automatic foldclosing is irritating too
 "set list                   " Show me whitespace where I care
+set nocompatible
+set history=1000
 
 
 if v:version >= 700
