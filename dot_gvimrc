@@ -1,0 +1,11 @@
+set nocompatible              " be iMproved, required
+filetype off                  " required
+set ruler		" show the cursor position all the time
+set showcmd		" display incomplete commands
+set incsearch		" do incremental searching
+set background=light
+
+set showmode
+set expandtab
+set tabstop=4 
+
