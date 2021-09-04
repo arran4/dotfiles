@@ -71,3 +71,5 @@ if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
 fi
 
 # TODO oneday Manpage path discovery
+
+exit 0 # This prevents scripts which append their own installers from "working"

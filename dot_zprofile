@@ -1,2 +1,3 @@
 #!/bin/zsh
 
+exit 0 # This prevents scripts which append their own installers from "working"
