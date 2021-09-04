@@ -33,14 +33,15 @@ if ! shopt -oq posix; then
 fi
 
 # Prompts
-export PS1='${PWD}
-\u@\h \!\$ '
-
+ctx=""
 if test "$SHLVL" -gt 1; then 
-	export PROMPT="%d\n %(!.%S%n%s.%n)@%m %h%#${SHLVL} "
-	export PS1='${PWD}
-\u@\h \!\$ '
+	ctx="${ctx}:${SHLVL}"
 fi
+if test -n "${ctx}"; then 
+	ctx="(${ctx})"
+fi
+export PS1='\u@\h:\${PWD} '"${ctx}"$'\n''!\$ '
+unset ctx
 
 # TODO Machine specifix
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
