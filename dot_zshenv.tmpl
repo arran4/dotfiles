@@ -14,7 +14,8 @@ export WATCH=root
 
 {{if stat "/usr/bin/less" -}}
 	# Don’t clear the screen after quitting a manual page.
-	export MANPAGER='less -X';
+	export MANPAGER='/usr/bin/less -X'
+	export PAGER=/usr/bin/less
 {{- else -}}
 	# No less found!
 {{- end }}
