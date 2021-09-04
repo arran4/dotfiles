@@ -6,4 +6,13 @@ case $- in
       *) return;;
 esac
 
+# Prompts
+ctx=""
+if test "$SHLVL" -gt 1; then 
+	ctx="${ctx}:${SHLVL}"
+fi
+if test -n "${ctx}"; then 
+	ctx="(${ctx})"
+fi
 export PS1='\u@\h:'"\${PWD} ${ctx}"$'\n''\$ '
+unset ctx
