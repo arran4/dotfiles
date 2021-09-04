@@ -57,4 +57,4 @@ PATH="${PATH}:{{ joinPath "/usr/local/" $p "/bin" }}"
 #	{{- end }}
 #{{- end }} Done path discovery
 
-exit 0 # This prevents scripts which append their own installers from "working"
+return # This prevents scripts which append their own installers from "working"
