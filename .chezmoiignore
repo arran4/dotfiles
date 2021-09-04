@@ -126,3 +126,8 @@
 /.subversion
 /.thumbnails
 /.weechat
+
+
+{{ if ne .chezmoi.os "linux" }}
+/bin/disable-touchpad.sh
+{{ end }}
