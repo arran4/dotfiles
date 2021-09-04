@@ -63,11 +63,10 @@ el
 fi
 
 
-# TERM discovery
-
+# TERM fallback discovery
 if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
 	{{range $i, $p := ( index $ "termfallback" ) -}} 
-		if [ -e "${TERMINFO}}/{{printf "%c" ( index $p 1 ) }}/{{$p}}" ]; then
+		if [ -e "${TERMINFO}}/{{printf "%c" ( index $p 0 ) }}/{{$p}}" ]; then
 		export TERM="{{$p}}"
 	el	
 	{{- end }}se
