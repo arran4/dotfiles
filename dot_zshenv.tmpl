@@ -1,18 +1,26 @@
 #!/bin/zsh
 
-# Make vim the default editor.
-export EDITOR='vim';
 
 export WATCHFMT="%D %T %n@%l.%M %a"
 export WATCH=root
 
-export VISUAL=/usr/bin/vim
+{{if stat "/usr/bin/vim" -}}
+	# Make vim the default editor.
+	export EDITOR='/usr/bin/vim'
+	export VISUAL=/usr/bin/vim
+{{- else -}}
+	# No vim found!
+{{- end }}
+
+{{if stat "/usr/bin/less" -}}
+	# Don’t clear the screen after quitting a manual page.
+	export MANPAGER='less -X';
+{{- else -}}
+	# No less found!
+{{- end }}
 
 # Once upon a time I had issues with the default memory allocation. -- These are way too small for my usage now left here for mod later
 # export MAVEN_OPTS="-Xmx768m -XX:MaxPermSize=512M"
-
-# Don’t clear the screen after quitting a manual page.
-export MANPAGER='less -X';
 
 
 # OS Specific
