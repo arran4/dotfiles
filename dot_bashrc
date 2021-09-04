@@ -5,3 +5,5 @@ case $- in
     *i*) ;;
       *) return;;
 esac
+
+export PS1='\u@\h:'"\${PWD} ${ctx}"$'\n''\$ '
