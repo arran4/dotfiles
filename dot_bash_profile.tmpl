@@ -97,6 +97,7 @@ alias pushd_m2='pushd ~/.m2/'
 el
 	{{- end -}} 
 {{- end }}se
+	true
 fi
 
 
@@ -107,6 +108,7 @@ if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
 		export TERM="{{$p}}"
 	el	
 	{{- end }}se
+		true
 	fi
 fi
 
