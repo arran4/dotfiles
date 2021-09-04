@@ -53,3 +53,24 @@ alias pushd_m2='pushd ~/.m2/'
 #{{ end }} End OS Specific code
 
 
+# Terminfo Path discovery
+if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
+	{{range $i, $p := ( index $ "terminfosearch" ) -}} 
+		{{- if stat $p -}}if [ -e "{{$p}}" ]; then
+	TERMINFO={{$p}}
+		el{{- end -}} 
+	{{- end }}se
+	fi
+fi
+
+
+# TERM discovery
+if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
+	# Path searching
+	#{{- range $i, $p := ( index $ "usrlocalbins" ) }} User bins
+	#	{{- if stat (joinPath "/usr/local/" $p "/bin") }} Adding {{ joinPath "/usr/local/" $p "/bin" }}
+	PATH="${PATH}:{{ joinPath "/usr/local/" $p "/bin" }}"
+	#	{{- end }}
+	#{{- end }} Done path discovery
+fi
+
