@@ -127,7 +127,10 @@
 /.thumbnails
 /.weechat
 
-
 {{ if ne .chezmoi.os "linux" }}
-/bin/disable-touchpad.sh
+/bin/executable_disable-touchpad.sh
+{{ end }}
+
+{{ if ne .chezmoi.os "darwin" }}
+/bin/executable_screenshot-location_mac.sh
 {{ end }}
