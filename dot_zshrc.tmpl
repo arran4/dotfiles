@@ -54,23 +54,24 @@ alias pushd_m2='pushd ~/.m2/'
 
 
 # Terminfo Path discovery
-if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
-	{{range $i, $p := ( index $ "terminfosearch" ) -}} 
-		{{- if stat $p -}}if [ -e "{{$p}}" ]; then
-	TERMINFO={{$p}}
-		el{{- end -}} 
-	{{- end }}se
-	fi
+{{range $i, $p := ( index $ "terminfosearch" ) -}} 
+	{{- if stat $p -}}if [ -e "{{$p}}" ]; then
+export TERMINFO="{{$p}}"
+el
+	{{- end -}} 
+{{- end }}se
 fi
 
 
 # TERM discovery
+
 if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
-	# Path searching
-	#{{- range $i, $p := ( index $ "usrlocalbins" ) }} User bins
-	#	{{- if stat (joinPath "/usr/local/" $p "/bin") }} Adding {{ joinPath "/usr/local/" $p "/bin" }}
-	PATH="${PATH}:{{ joinPath "/usr/local/" $p "/bin" }}"
-	#	{{- end }}
-	#{{- end }} Done path discovery
+	{{range $i, $p := ( index $ "termfallback" ) -}} 
+		{{- if stat $p -}}if [ -e "${TERMINFO}}/{{index $p 1}}/{{$p}}" ]; then
+	export TERM="{{$p}}"
+	el	
+		{{- end -}} 
+	{{- end }}se
+	fi
 fi
 
