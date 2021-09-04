@@ -11,8 +11,8 @@
 
 [credential]
 {{ if index . "headless" }}
-	credentialStore = cache --timeout=14400
-	helper = /usr/bin/git-credential-manager-core
+	credentialStore = cache
+	helper = /usr/bin/git-credential-manager-core --timeout=14400
 {{ else if eq .chezmoi.os "linux" }}
 	{{ if eq .chezmoi.osRelease.id "ubuntu" }}
 	       credentialStore = secretservice
