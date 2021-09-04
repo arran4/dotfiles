@@ -1,5 +1,4 @@
 #!/bin/sh
-# TODO source $HOME/arranrepo/config/bash_profile
 
 # If not running interactively, don't do anything
 case $- in
