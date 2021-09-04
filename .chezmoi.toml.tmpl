@@ -10,3 +10,25 @@
 [data]
         headless={{ $headless }}
         gpgconfigured={{ $gpgconfigured }}
+
+#{{ if eq .chezmoi.os "darwin" }} Darwin
+        optbins = []
+        usrbins = []
+        usrlocalbins = []
+#{{ else if eq .chezmoi.os "linux" }} Linux
+        optbins = []
+        usrbins = ["games"]
+        usrlocalbins = []
+#{{ else if eq .chezmoi.os "windows" }} Windows
+        optbins = []
+        usrbins = []
+        usrlocalbins = []
+#{{ else if eq .chezmoi.os "solaris" }} Solaris
+        optbins = [ "httrack", "SUNWsneep", "test", "VRTSvxvm", "SUNWvts", "SUNWexplo", "VRTS", "VRTSob" ]
+        usrbins = [ "local", "sfw", "ccs" ]
+        usrlocalbins = [ "mysql", "apache", "apache2", "php" ]
+#{{ else }} Unknown OS {{ .chezmoi.os }}
+        optbins = []
+        usrbins = []
+        usrlocalbins = []
+#{{ end }} End OS Specific code
