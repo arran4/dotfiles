@@ -7,7 +7,13 @@ export WATCHFMT="%D %T %n@%l.%M %a"
 export WATCH=root
 
 export VISUAL=/usr/bin/vim
+
+# Once upon a time I had issues with the default memory allocation. -- These are way too small for my usage now left here for mod later
 # export MAVEN_OPTS="-Xmx768m -XX:MaxPermSize=512M"
+
+# Don’t clear the screen after quitting a manual page.
+export MANPAGER='less -X';
+
 
 # OS Specific
 #{{ if eq .chezmoi.os "darwin" }} Darwin
