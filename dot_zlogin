@@ -1,7 +1,9 @@
 #!/bin/zsh
 
-if ! cmp -s ${HOME}/.old_motd /etc/motd ; then
-	tee ${HOME}/.old_motd < /etc/motd;
+if test -e /etc/motd; then
+	if ! cmp -s ${HOME}/.old_motd /etc/motd ; then
+		tee ${HOME}/.old_motd < /etc/motd;
+	fi
 fi
 
 echo "ZSH version is $ZSH_VERSION."
