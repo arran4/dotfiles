@@ -23,7 +23,10 @@ ctx=""
 if test "$SHLVL" -gt 1; then 
 	ctx="${ctx}:${SHLVL}"
 fi
-export PROMPT="%("'!'".%S%n%s.%n)@%m:%d${ctx} %h"$'\n'"%# "
+if test -n "${ctx}"; then 
+	ctx="(${ctx})"
+fi
+export PROMPT="%("'!'".%S%n%s.%n)@%m:%d %h ${ctx}"$'\n'"%# "
 unset ctx
 
 # Helper stuff
