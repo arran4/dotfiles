@@ -1,10 +1,11 @@
-#!/bin/sh
+#!/bin/zsh
 
-# All types
-#       Commands  are  then read from $ZDOTDIR/.zshenv.  If the shell is a login shell, commands are read from
-#       /etc/zprofile and then $ZDOTDIR/.zprofile.  Then, if the shell
-#       is interactive, commands are read from /etc/zshrc and then $ZDOTDIR/.zshrc.
-#       Finally, if the shell is a login shell, /etc/zlogin and $ZDOTDIR/.zlogin are read.
+# Make vim the default editor.
+export EDITOR='vim';
 
-# TODO source $HOME/arranrepo/config/sharedrc.sh
-[ -f $HOME/.zshenv.local ] && . $HOME/.zshenv.local pre
+export WATCHFMT="%D %T %n@%l.%M %a"
+export WATCH=root
+
+export VISUAL=/usr/bin/vim
+# export MAVEN_OPTS="-Xmx768m -XX:MaxPermSize=512M"
+

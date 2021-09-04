@@ -1,56 +1,27 @@
-#!/bin/sh
+#!/bin/zsh
 
-#       Commands  are  then read from $ZDOTDIR/.zshenv.  If the shell is a login shell, commands are read from
-#       /etc/zprofile and then $ZDOTDIR/.zprofile.  Then, if the shell
-#       is interactive, commands are read from /etc/zshrc and then $ZDOTDIR/.zshrc.
-#       Finally, if the shell is a login shell, /etc/zlogin and $ZDOTDIR/.zlogin are read.
-
-# TODO source $HOME/arranrepo/config/sharedrc.sh
-
-[ -f $HOME/.zshrc.local ] && . $HOME/.zshrc.local pre
-
+# History options
 export HISTSIZE=99999999
 export HISTFILE=$HOME/.zsh_history
 export SAVEHIST=99999999
-export SPROMPT="Potential spelling error %R , could be %r"
-export WATCH=root
-export WATCHFMT="%D %T %n@%l.%M %a"
-#export PROMPT='%(!.%S%n%s.%n)@%m %d %h%# '
-
-## man zshoptions
 setopt append_history
 setopt inc_append_history
 setopt HIST_VERIFY
-#setopt SHARE_HISTORY # Yuck.
+
+# Key bindings
 bindkey -v
 bindkey "^R" history-incremental-search-backward
-echo ZSH version is $ZSH_VERSION.
-if test `echo "$ZSH_VERSION" | sed -n '/4\.3\../p' | wc -l | sed 's/ //g'` -gt 0;
-then
-    #autoload promptinit
-    #promptinit
-    #prompt_elite2_setup
-    autoload -U zfinit
-    zfinit
-    autoload -U tcp_open
-    zstyle ':completion:*' completer _expand _complete _correct _approximate
-    zstyle :compinstall filename '/home/arran/.zshrc'
-    autoload -Uz compinit
-    compinit
-    # End of lines added by compinstall
-    #export PROMPT="%{\010%}%n@%m:%~ %# "
-    # Shell stuff
-    # The following lines were added by compinstall
-else
-    echo "ZSH version is unknown, $ZSH_VERSION";
+
+# Tab completion changes
+zstyle ':completion:*' completer _expand _complete _correct _approximate
+zstyle :compinstall filename "${HOME}/.zshrc"
+
+# Prompts
+export SPROMPT="Potential spelling error %R , could be %r"
+export PROMPT="%d\n %(!.%S%n%s.%n)@%m %h%# "
+if test "$SHLVL" -gt 1; then 
+	export PROMPT="%d\n %(!.%S%n%s.%n)@%m %h%#${SHLVL} "
 fi
-export PROMPT='%d
-%(!.%S%n%s.%n)@%m %h%# '
-
-# Make vim the default editor.
-export EDITOR='vim';
-
-PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 
 setopt interactivecomments       # Enable comments in interactive mode (useful)
 #setopt extended_glob             # More powerful glob features
@@ -61,13 +32,27 @@ compinit
 # Don’t clear the screen after quitting a manual page.
 export MANPAGER='less -X';
 
-# Always enable colored `grep` output
-# Note: `GREP_OPTIONS="--color=auto"` is deprecated, hence the alias usage.
+# Colours and aliases
+autoload -U colors && colors
 alias grep='grep --color=auto'
 alias fgrep='fgrep --color=auto'
 alias egrep='egrep --color=auto'
+export CLICOLOR=1
+export LSCOLORS=ExFxCxDxBxegedabagacad
+
 
 # Get week number
 alias week='date +%V'
 
-autoload -U colors && colors	# Load colors
+# M2 nav
+alias pushd_m2='pushd ~/.m2/'
+
+#{{ if eq .chezmoi.os "darwin" }}
+#{{ if stat (joinPath .chezmoi.homeDir ".pyenv") }}
+## ~/.pyenv exists
+#{{ end }}
+
+#{{ else if eq .chezmoi.os "linux" }}
+#{{ else if eq .chezmoi.os "windows" }}
+#{{ end -}}
+
