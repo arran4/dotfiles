@@ -47,12 +47,12 @@ alias week='date +%V'
 # M2 nav
 alias pushd_m2='pushd ~/.m2/'
 
-#{{ if eq .chezmoi.os "darwin" }}
+#{{ if eq .chezmoi.os "darwin" }} Darwin
 #{{ if stat (joinPath .chezmoi.homeDir ".pyenv") }}
 ## ~/.pyenv exists
 #{{ end }}
 
-#{{ else if eq .chezmoi.os "linux" }}
-#{{ else if eq .chezmoi.os "windows" }}
-#{{ end -}}
+#{{ else if eq .chezmoi.os "linux" }} Linux
+#{{ else if eq .chezmoi.os "windows" }} Windows
+#{{ end -}} End
 
