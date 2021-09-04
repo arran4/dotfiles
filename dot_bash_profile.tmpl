@@ -14,10 +14,6 @@ HISTCONTROL=ignoreboth
 # append to the history file, don't overwrite it
 shopt -s histappend
 
-
-
-
-
 # Key bindings
 set -o vi
 bind '"^R":"history-incremental-search-backward"'
@@ -119,5 +115,64 @@ fi
 # Other program envs
 # colored GCC warnings and errors
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+export WATCHFMT="%D %T %n@%l.%M %a"
+export WATCH=root
+
+{{if stat "/usr/bin/vim" -}}
+	# Make vim the default editor.
+	export EDITOR='/usr/bin/vim'
+	export VISUAL=/usr/bin/vim
+{{- else -}}
+	# No vim found!
+{{- end }}
+
+{{if stat "/usr/bin/less" -}}
+	# Don’t clear the screen after quitting a manual page.
+	export MANPAGER='/usr/bin/less -X'
+	# Pager IS less
+	export PAGER=/usr/bin/less
+{{- else -}}
+	# No less found!
+{{- end }}
+
+# Once upon a time I had issues with the default memory allocation. -- These are way too small for my usage now left here for mod later
+# export MAVEN_OPTS="-Xmx768m -XX:MaxPermSize=512M"
+
+# colored GCC warnings and errors
+#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# OS Specific
+#{{ if eq .chezmoi.os "darwin" }} Darwin
+#	{{- if stat "/usr/local/etc/bash_completion.d/git-completion.bash" }} Git bash completion usr local - home brew
+GIT_COMPLETION_PATH="/usr/local/etc/bash_completion.d/git-completion.bash"
+#	{{- end }}
+#{{ else if eq .chezmoi.os "linux" }} Linux
+#{{ else if eq .chezmoi.os "windows" }} Windows
+#{{ else if eq .chezmoi.os "solaris" }} Solaris -- Been a while
+#{{ end }} End OS Specific code
+
+# Path discovery
+# Home path
+#{{- if stat (joinPath .chezmoi.homeDir "bin") }} Adding {{ joinPath .chezmoi.homeDir "/bin" }}
+PATH="${PATH}:{{ joinPath .chezmoi.homeDir "/bin" }}"
+#{{- end }}
+# Path searching
+#{{- range $i, $p := ( index $ "optbins" ) }} Opt bins
+#	{{- if stat (joinPath "/opt/" $p "/bin") }} Adding {{ joinPath "/opt/" $p "/bin" }}
+PATH="${PATH}:{{ joinPath "/opt/" $p "/bin" }}"
+#	{{- end }}
+#{{- end }}
+#{{- range $i, $p := ( index $ "usrbins" ) }} User bins
+#	{{- if stat (joinPath "/usr/" $p "/bin") }} Adding {{ joinPath "/usr/" $p "/bin" }}
+PATH="${PATH}:{{ joinPath "/usr/" $p "/bin" }}"
+#	{{- end }}
+#{{- end }}
+#{{- range $i, $p := ( index $ "usrlocalbins" ) }} User bins
+#	{{- if stat (joinPath "/usr/local/" $p "/bin") }} Adding {{ joinPath "/usr/local/" $p "/bin" }}
+PATH="${PATH}:{{ joinPath "/usr/local/" $p "/bin" }}"
+#	{{- end }}
+#{{- end }} Done path discovery
+
 
 return # This prevents scripts which append their own installers from "working"
