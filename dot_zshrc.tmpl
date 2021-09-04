@@ -56,7 +56,7 @@ alias pushd_m2='pushd ~/.m2/'
 # Terminfo Path discovery
 {{range $i, $p := ( index $ "terminfosearch" ) -}} 
 	{{- if stat $p -}}if [ -e "{{$p}}" ]; then
-export TERMINFO="{{$p}}"
+	export TERMINFO="{{$p}}"
 el
 	{{- end -}} 
 {{- end }}se
