@@ -9,3 +9,35 @@ export WATCH=root
 export VISUAL=/usr/bin/vim
 # export MAVEN_OPTS="-Xmx768m -XX:MaxPermSize=512M"
 
+# OS Specific
+#{{ if eq .chezmoi.os "darwin" }} Darwin
+#	{{- if stat "/usr/local/etc/bash_completion.d/git-completion.bash" }} Git bash completion usr local - home brew
+GIT_COMPLETION_PATH="/usr/local/etc/bash_completion.d/git-completion.bash"
+#	{{- end }}
+#{{ else if eq .chezmoi.os "linux" }} Linux
+#{{ else if eq .chezmoi.os "windows" }} Windows
+#{{ else if eq .chezmoi.os "solaris" }} Solaris -- Been a while
+#{{ end }} End OS Specific code
+
+# Path discovery
+# Home path
+#{{- if stat (joinPath .chezmoi.homeDir "bin") }} Adding {{ joinPath .chezmoi.homeDir "/bin" }}
+PATH="${PATH}:{{ joinPath .chezmoi.homeDir "/bin" }}"
+#{{- end }}
+# Path searching
+#{{- range $i, $p := ( index $ "optbins" ) }} Opt bins
+#	{{- if stat (joinPath "/opt/" $p "/bin") }} Adding {{ joinPath "/opt/" $p "/bin" }}
+PATH="${PATH}:{{ joinPath "/opt/" $p "/bin" }}"
+#	{{- end }}
+#{{- end }}
+#{{- range $i, $p := ( index $ "usrbins" ) }} User bins
+#	{{- if stat (joinPath "/usr/" $p "/bin") }} Adding {{ joinPath "/usr/" $p "/bin" }}
+PATH="${PATH}:{{ joinPath "/usr/" $p "/bin" }}"
+#	{{- end }}
+#{{- end }}
+#{{- range $i, $p := ( index $ "usrlocalbins" ) }} User bins
+#	{{- if stat (joinPath "/usr/local/" $p "/bin") }} Adding {{ joinPath "/usr/local/" $p "/bin" }}
+PATH="${PATH}:{{ joinPath "/usr/local/" $p "/bin" }}"
+#	{{- end }}
+#{{- end }} Done path discovery
+

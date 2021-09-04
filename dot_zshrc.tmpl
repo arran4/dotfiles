@@ -48,10 +48,6 @@ alias week='date +%V'
 alias pushd_m2='pushd ~/.m2/'
 
 #{{ if eq .chezmoi.os "darwin" }} Darwin
-#	{{- if stat "/usr/local/etc/bash_completion.d/git-completion.bash" }} Git bash completion usr local - home brew
-GIT_COMPLETION_PATH="/usr/local/etc/bash_completion.d/git-completion.bash"
-#	{{- end }}
-
 #{{ else if eq .chezmoi.os "linux" }} Linux
 #{{ else if eq .chezmoi.os "windows" }} Windows
 #{{ end }} End OS Specific code
