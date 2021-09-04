@@ -15,20 +15,25 @@
         optbins = []
         usrbins = []
         usrlocalbins = []
+        terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
 #{{ else if eq .chezmoi.os "linux" }} Linux
         optbins = []
         usrbins = ["games"]
         usrlocalbins = []
+        terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
 #{{ else if eq .chezmoi.os "windows" }} Windows
         optbins = []
         usrbins = []
         usrlocalbins = []
+        terminfosearch = [ ]
 #{{ else if eq .chezmoi.os "solaris" }} Solaris
         optbins = [ "httrack", "SUNWsneep", "test", "VRTSvxvm", "SUNWvts", "SUNWexplo", "VRTS", "VRTSob" ]
         usrbins = [ "local", "sfw", "ccs" ]
         usrlocalbins = [ "mysql", "apache", "apache2", "php" ]
+        terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
 #{{ else }} Unknown OS {{ .chezmoi.os }}
         optbins = []
         usrbins = []
         usrlocalbins = []
+        terminfosearch = [ ]
 #{{ end }} End OS Specific code
