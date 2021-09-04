@@ -1,6 +1,8 @@
 #!/bin/zsh
 
 if [ "$SHLVL" = 1 && -z "$SSH_CLIENT" ]; then
-   [ -x /usr/bin/clear_console ] && /usr/bin/clear_console -q
+   if [ -x /usr/bin/clear_console ]; then
+   	/usr/bin/clear_console -q
+   fi
 fi
 

@@ -1,11 +1,18 @@
 #!/bin/bash
 
 # History options
-export HISTSIZE=99999
 export HISTFILE=$HOME/.bash_history
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+export HISTSIZE='32768';
+export HISTFILESIZE="${HISTSIZE}";
 export SAVEHIST=99999
 export HISTFILESIZE=99999
 
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
+# append to the history file, don't overwrite it
+shopt -s histappend
 
 
 
@@ -15,15 +22,102 @@ export HISTFILESIZE=99999
 set -o vi
 bind '"^R":"history-incremental-search-backward"'
 
+# Tab completion changes
+##uncomment the following to activate bash-completion:
+#[ -f /etc/profile.d/bash-completion ] && source /etc/profile.d/bash-completion
+# enable programmable completion features (you don't need to enable
+# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+# sources /etc/bash.bashrc).
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
 
-# Shell stuff
+# Prompts
 export PS1='${PWD}
 \u@\h \!\$ '
 
-##uncomment the following to activate bash-completion:
-#[ -f /etc/profile.d/bash-completion ] && source /etc/profile.d/bash-completion
+if test "$SHLVL" -gt 1; then 
+	export PROMPT="%d\n %(!.%S%n%s.%n)@%m %h%#${SHLVL} "
+	export PS1='${PWD}
+\u@\h \!\$ '
+fi
 
 # TODO Machine specifix
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
 
+# Helper stuff
 
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# If set, the pattern "**" used in a pathname expansion context will
+# match all files and zero or more directories and subdirectories.
+#shopt -s globstar
+
+# Colours and aliases
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    #alias dir='dir --color=auto'
+    #alias vdir='vdir --color=auto'
+    alias ll='ls -alF'
+    alias la='ls -A'
+    alias l='ls -CF'
+
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+
+    export CLICOLOR=1
+    export LSCOLORS=ExFxCxDxBxegedabagacad
+fi
+
+
+# Get week number
+alias week='date +%V'
+
+# M2 nav
+alias pushd_m2='pushd ~/.m2/'
+
+#{{ if eq .chezmoi.os "darwin" }} Darwin
+#{{ else if eq .chezmoi.os "linux" }} Linux
+#{{ else if eq .chezmoi.os "windows" }} Windows
+#{{ end }} End OS Specific code
+
+
+# Terminfo Path discovery
+{{range $i, $p := ( index $ "terminfosearch" ) -}} 
+	{{- if stat $p -}}if [ -e "{{$p}}" ]; then
+	export TERMINFO="{{$p}}"
+el
+	{{- end -}} 
+{{- end }}se
+fi
+
+
+# TERM fallback discovery
+if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
+	{{range $i, $p := ( index $ "termfallback" ) -}} 
+		if [ -e "${TERMINFO}}/{{printf "%c" ( index $p 0 ) }}/{{$p}}" ]; then
+		export TERM="{{$p}}"
+	el	
+	{{- end }}se
+	fi
+fi
+
+# TODO oneday Manpage path discovery
+
+# Other program envs
+# colored GCC warnings and errors
+#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+return # This prevents scripts which append their own installers from "working"

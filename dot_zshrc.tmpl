@@ -18,24 +18,42 @@ zstyle :compinstall filename "${HOME}/.zshrc"
 
 # Prompts
 export SPROMPT="Potential spelling error %R , could be %r"
-export PROMPT="%d\n %(!.%S%n%s.%n)@%m %h%# "
+export PROMPT="%(!.%S%n%s.%n)@%m%d"$'\n'"%h%# "
 if test "$SHLVL" -gt 1; then 
-	export PROMPT="%d\n %(!.%S%n%s.%n)@%m %h%#${SHLVL} "
+	export PROMPT="%(!.%S%n%s.%n)@%m%d"$'\n'"%h%#${SHLVL} "
 fi
+
+# Helper stuff
 
 setopt interactivecomments       # Enable comments in interactive mode (useful)
 #setopt extended_glob             # More powerful glob features
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 autoload -Uz compinit
 compinit
 
 # Colours and aliases
 autoload -U colors && colors
-alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
-export CLICOLOR=1
-export LSCOLORS=ExFxCxDxBxegedabagacad
+if [ -x /usr/bin/dircolors ]; then
+	color_prompt=yes
+
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    #alias dir='dir --color=auto'
+    #alias vdir='vdir --color=auto'
+    alias ll='ls -alF'
+    alias la='ls -A'
+    alias l='ls -CF'
+
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+
+    export CLICOLOR=1
+    export LSCOLORS=ExFxCxDxBxegedabagacad
+fi
 
 
 # Get week number
