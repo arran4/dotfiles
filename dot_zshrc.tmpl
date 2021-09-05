@@ -20,8 +20,15 @@ zstyle :compinstall filename "${HOME}/.zshrc"
 export SPROMPT="Potential spelling error %R , could be %r"
 
 ctx=""
-if test "$SHLVL" -gt 1; then 
-	ctx="${ctx}:${SHLVL}"
+if test -n "${TMUX}"; then
+        ctx="${ctx}:tmux"
+        if test "$SHLVL" -gt 2; then
+                ctx="${ctx}:${SHLVL}"
+        fi
+else
+        if test "$SHLVL" -gt 1; then
+                ctx="${ctx}:${SHLVL}"
+        fi
 fi
 if test -n "${ctx}"; then 
 	ctx="(${ctx})"
