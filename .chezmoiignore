@@ -126,6 +126,7 @@
 /.subversion
 /.thumbnails
 /.weechat
+/.editorconfig
 
 {{ if ne .chezmoi.os "linux" }}
 /bin/executable_disable-touchpad.sh
