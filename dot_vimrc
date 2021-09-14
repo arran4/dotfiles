@@ -18,6 +18,38 @@ set foldclose=             " Automatic foldclosing is irritating too
 set nocompatible
 set history=1000
 
+" Enable filetype plugins
+filetype plugin on
+filetype indent on
+
+"" Set to auto read when a file is changed from the outside
+" set autoread
+
+"Always show current position
+set ruler
+
+" Ignore case when searching
+set ignorecase
+
+" When searching try to be smart about cases 
+set smartcase
+
+" For regular expressions turn magic on
+set magic
+
+" Properly disable sound on errors on MacVim
+if has("gui_macvim")
+    autocmd GUIEnter * set vb t_vb=
+endif
+
+" Enable 256 colors palette in Gnome Terminal
+if $COLORTERM == 'gnome-terminal'
+    set t_Co=256
+endif
+
+" Be smart when using tabs ;)
+set smarttab
+
 
 if v:version >= 700
 	set spelllang=en_au
