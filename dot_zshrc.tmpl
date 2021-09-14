@@ -58,6 +58,10 @@ if [ -x /usr/bin/dircolors ]; then
     #alias vdir='vdir --color=auto'
     alias ll='ls -alF'
     alias la='ls -A'
+    {{- if eq .chezmoi.os "darwin" }}
+      # Use GNU ls to support https://github.com/seebi/dircolors-solarized
+      alias la="gls -lAFh --color=auto"
+    {{- end }}
     alias l='ls -CF'
 
     alias grep='grep --color=auto'
