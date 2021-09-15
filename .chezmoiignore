@@ -136,3 +136,7 @@
 {{ if ne .chezmoi.os "darwin" }}
 /bin/executable_screenshot-location_mac.sh
 {{ end }}
+
+{{ if ne .chezmoi.os "darwin" }}
+/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
+{{ end }}
