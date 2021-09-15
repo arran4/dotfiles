@@ -2,3 +2,10 @@
 #set keymap vi
 #set convert-meta on
 #set keymap vi-insert
+# Use the text that has already been typed as the prefix for searching through
+# commands (i.e. more intelligent Up/Down behavior)
+#"\e[B": history-search-forward
+#"\e[A": history-search-backward
+## enable Alt-arrows
+#"\e[1;5D": backward-word ### Alt left
+#"\e[1;5C": forward-word ### Alt right
