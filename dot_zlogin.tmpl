@@ -1,5 +1,5 @@
 #!/bin/zsh
 
-{{ template "shell-login-common.tmpl" merge $ (dict "shell" "zsh") }}
+{{ template "shell-login-common.tmpl" deepCopy $ | merge (dict "shell" "zsh") }}
 
 # SSH Agent if required
