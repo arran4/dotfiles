@@ -123,34 +123,7 @@ fi
 # TODO oneday Manpage path discovery
 
 # Other program envs
-# colored GCC warnings and errors
-#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
-
-export WATCHFMT="%D %T %n@%l.%M %a"
-export WATCH=root
-
-{{if stat "/usr/bin/vim" -}}
-	# Make vim the default editor.
-	export EDITOR='/usr/bin/vim'
-	export VISUAL=/usr/bin/vim
-{{- else -}}
-	# No vim found!
-{{- end }}
-
-{{if stat "/usr/bin/less" -}}
-	# Don’t clear the screen after quitting a manual page.
-	export MANPAGER='/usr/bin/less -X'
-	# Pager IS less
-	export PAGER=/usr/bin/less
-{{- else -}}
-	# No less found!
-{{- end }}
-
-# Once upon a time I had issues with the default memory allocation. -- These are way too small for my usage now left here for mod later
-# export MAVEN_OPTS="-Xmx768m -XX:MaxPermSize=512M"
-
-# colored GCC warnings and errors
-#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+{{ template "common-misc-env.tmpl" $ }}
 
 # OS Specific
 #{{ if eq .chezmoi.os "darwin" }} Darwin
