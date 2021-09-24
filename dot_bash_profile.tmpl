@@ -162,37 +162,7 @@ GIT_COMPLETION_PATH="/usr/local/etc/bash_completion.d/git-completion.bash"
 #{{ else if eq .chezmoi.os "solaris" }} Solaris -- Been a while
 #{{ end }} End OS Specific code
 
-# Path discovery
-# Path searching
-#{{- range $i, $p := ( index $ "binroots" ) }} Root bins
-#	{{- if stat (joinPath $p "/bin") }} Adding {{ joinPath $p "/bin" }}
-PATH="${PATH}:{{ joinPath $p "/bin" }}"
-#	{{- end }}
-#{{- end }}
-#{{- range $i, $p := ( index $ "optbins" ) }} Opt bins
-#	{{- if stat (joinPath "/opt/" $p "/bin") }} Adding {{ joinPath "/opt/" $p "/bin" }}
-PATH="${PATH}:{{ joinPath "/opt/" $p "/bin" }}"
-#	{{- end }}
-#	{{- if stat (joinPath "/opt/" $p "/sbin") }} Adding {{ joinPath "/opt/" $p "/sbin" }}
-PATH="${PATH}:{{ joinPath "/opt/" $p "/sbin" }}"
-#	{{- end }}
-#{{- end }}
-#{{- range $i, $p := ( index $ "usrbins" ) }} User bins
-#	{{- if stat (joinPath "/usr/" $p "/bin") }} Adding {{ joinPath "/usr/" $p "/bin" }}
-PATH="${PATH}:{{ joinPath "/usr/" $p "/bin" }}"
-#	{{- end }}
-#	{{- if stat (joinPath "/usr/" $p "/sbin") }} Adding {{ joinPath "/usr/" $p "/sbin" }}
-PATH="${PATH}:{{ joinPath "/usr/" $p "/sbin" }}"
-#	{{- end }}
-#{{- end }}
-#{{- range $i, $p := ( index $ "usrlocalbins" ) }} User bins
-#	{{- if stat (joinPath "/usr/local/" $p "/bin") }} Adding {{ joinPath "/usr/local/" $p "/bin" }}
-PATH="${PATH}:{{ joinPath "/usr/local/" $p "/bin" }}"
-#	{{- end }}
-#	{{- if stat (joinPath "/usr/local/" $p "/sbin") }} Adding {{ joinPath "/usr/local/" $p "/sbin" }}
-PATH="${PATH}:{{ joinPath "/usr/local/" $p "/sbin" }}"
-#	{{- end }}
-#{{- end }} Done path discovery
+{{ template "path-discovery.tmpl" $ }}
 
 
 return # This prevents scripts which append their own installers from "working"
