@@ -1,3 +1,17 @@
+if test -e /etc/motd; then
+	if ! cmp -s ${HOME}/.old_motd /etc/motd ; then
+		tee ${HOME}/.old_motd < /etc/motd;
+	fi
+fi
+
+{{ if eq $shell "zsh" }}
+echo "ZSH version is $ZSH_VERSION."
+{{else if eq $shell "bash" }}
+echo "BASH version is $BASH_VERSION."
+{{else}}
+echo "Unknown shell"
+{{end}}
+
 echo "System is `uname -a`"
 echo "Term is $TERM"
 echo "Shell is $SHELL"
