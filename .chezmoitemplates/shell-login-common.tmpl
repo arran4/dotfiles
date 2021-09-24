@@ -4,9 +4,9 @@ if test -e /etc/motd; then
 	fi
 fi
 
-{{ if eq (index $ "shell") "zsh" }}
+{{ if eq (index . "shell") "zsh" }}
 echo "ZSH version is $ZSH_VERSION."
-{{else if eq (index $ "shell") "bash" }}
+{{else if eq (index . "shell") "bash" }}
 echo "BASH version is $BASH_VERSION."
 {{else}}
 echo "Unknown shell"
