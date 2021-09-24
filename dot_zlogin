@@ -2,6 +2,6 @@
 
 {{ $shell = "zsh" }}
 
-{{ template "shell-login-common.tmpl" $ }}
+{{ template "shell-login-common.tmpl" merge $ (dict "shell" $shell) }}
 
 # SSH Agent if required
