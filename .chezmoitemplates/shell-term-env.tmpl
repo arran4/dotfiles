@@ -1,0 +1,19 @@
+# Terminfo Path discovery
+{{range $i, $p := ( index $ "terminfosearch" ) -}} 
+	{{- if stat $p -}}if [ -e "{{$p}}" ]; then
+	export TERMINFO="{{$p}}"
+el
+	{{- end -}} 
+{{- end }}se
+fi
+
+
+# TERM fallback discovery
+if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
+	{{range $i, $p := ( index $ "termfallback" ) -}} 
+		if [ -e "${TERMINFO}}/{{printf "%c" ( index $p 0 ) }}/{{$p}}" ]; then
+		export TERM="{{$p}}"
+	el	
+	{{- end }}se
+	fi
+fi
