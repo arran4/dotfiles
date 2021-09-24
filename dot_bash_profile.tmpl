@@ -136,6 +136,7 @@ GIT_COMPLETION_PATH="/usr/local/etc/bash_completion.d/git-completion.bash"
 
 {{ template "path-discovery.tmpl" $ }}
 
+{{ template "dev-utils-env.tmpl" $ }}
 
 return # This prevents scripts which append their own installers from "working"
 {{/* vim: set filetype=bash: */}}
