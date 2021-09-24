@@ -66,29 +66,9 @@ shopt -s checkwinsize
 #{{ end }} End OS Specific code
 
 
-# Terminfo Path discovery
-{{range $i, $p := ( index $ "terminfosearch" ) -}} 
-	{{- if stat $p -}}if [ -e "{{$p}}" ]; then
-	export TERMINFO="{{$p}}"
-el
-	{{- end -}} 
-{{- end }}se
-	true
-fi
+{{ template "shell-term-env.tmpl" $ }}
 
-
-# TERM fallback discovery
-if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
-	{{range $i, $p := ( index $ "termfallback" ) -}} 
-		if [ -e "${TERMINFO}}/{{printf "%c" ( index $p 0 ) }}/{{$p}}" ]; then
-		export TERM="{{$p}}"
-	el	
-	{{- end }}se
-		true
-	fi
-fi
-
-# TODO oneday Manpage path discovery
+{{ template "shell-man-env.tmpl" $ }}
 
 # Other program envs
 {{ template "common-misc-env.tmpl" $ }}
