@@ -1,6 +1,6 @@
 #!/bin/bash
 
-{{ template "shell-login-common.tmpl" merge $ (dict "shell" "bash") }}
+{{ template "shell-login-common.tmpl" deepCopy $ | merge (dict "shell" "bash") }}
 
 # From https://github.com/jordansissel/dotfiles/blob/master/.bash_profile
 # Exec zsh if it exists.
