@@ -1,21 +1,7 @@
 #!/bin/zsh
 
-if test -e /etc/motd; then
-	if ! cmp -s ${HOME}/.old_motd /etc/motd ; then
-		tee ${HOME}/.old_motd < /etc/motd;
-	fi
-fi
+{{ $shell = "zsh" }}
 
-echo "ZSH version is $ZSH_VERSION."
-echo "System is `uname -a`"
-echo "Term is $TERM"
-echo "Shell is $SHELL"
-echo "WHOAMI $USER@$HOST";
-if [ -n "$SSH_CLIENT" ]; then 
-	echo "Connecting from $SSH_CLIENT"
-fi
-if [ -n "$DISPLAY" ]; then 
-	echo "Dispaly is set ${DISPLAY}"
-fi
+{{ template "shell-login-common.tmpl" $ }}
 
 # SSH Agent if required
