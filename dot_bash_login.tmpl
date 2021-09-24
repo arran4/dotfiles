@@ -1,6 +1,6 @@
 #!/bin/bash
 
-{{ $shell = "bash" }}
+{{ $shell := "bash" }}
 
 {{ template "shell-login-common.tmpl" merge $ (dict "shell" $shell) }}
 
