@@ -3,7 +3,6 @@ if test -e /etc/motd; then
 		tee ${HOME}/.old_motd < /etc/motd;
 	fi
 fi
-echo "{{(index . "shell")}} {{.shell}}"
 {{ if eq (index . "shell") "zsh" }}
 echo "Shell is ZSH version is $ZSH_VERSION."
 {{else if eq (index . "shell") "bash" }}
