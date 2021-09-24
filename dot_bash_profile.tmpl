@@ -43,8 +43,7 @@ fi
 export PS1='\u@\h:'"\${PWD} ${ctx}"$'\n''\$ '
 unset ctx
 
-# TODO Machine specifix
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+{{ template "dev-utils-env.tmpl" $ }}
 
 # Helper stuff
 
