@@ -5,17 +5,15 @@ if test -e /etc/motd; then
 fi
 echo "{{(index . "shell")}} {{.shell}}"
 {{ if eq (index . "shell") "zsh" }}
-echo "ZSH version is $ZSH_VERSION."
+echo "Shell is ZSH version is $ZSH_VERSION."
 {{else if eq (index . "shell") "bash" }}
-echo "BASH version is $BASH_VERSION."
+echo "Shell is BASH version is $BASH_VERSION."
 {{else}}
 echo "Unknown shell"
 {{end}}
 
 echo "System is `uname -a`"
-echo "Term is $TERM"
-echo "Shell is $SHELL"
-echo "WHOAMI $USER@$HOST";
+echo "$USER@$HOST Using term $TERM";
 if [ -n "$SSH_CLIENT" ]; then 
 	echo "Connecting from $SSH_CLIENT"
 fi
