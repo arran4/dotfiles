@@ -163,22 +163,12 @@ GIT_COMPLETION_PATH="/usr/local/etc/bash_completion.d/git-completion.bash"
 #{{ end }} End OS Specific code
 
 # Path discovery
-# Root Paths
-#	{{- if stat "/bin" }} Adding "/bin"
-PATH=/bin
-#	{{- end }}
-#	{{- if stat "/sbin" }} Adding "s/bin"
-PATH="${PATH}:"/sbin
-#{{- end }}
-# Home path
-#{{- if stat (joinPath .chezmoi.homeDir "bin") }} Adding {{ joinPath .chezmoi.homeDir "/bin" }}
-PATH="${PATH}:{{ joinPath .chezmoi.homeDir "/bin" }}"
-#{{- end }}
-# Home local path
-#{{- if stat (joinPath .chezmoi.homeDir ".local/bin") }} Adding {{ joinPath .chezmoi.homeDir "/.local/bin" }}
-PATH="${PATH}:{{ joinPath .chezmoi.homeDir "/.local/bin" }}"
-#{{- end }}
 # Path searching
+#{{- range $i, $p := ( index $ "binroots" ) }} Root bins
+#	{{- if stat (joinPath $p "/bin") }} Adding {{ joinPath $p "/bin" }}
+PATH="${PATH}:{{ joinPath $p "/bin" }}"
+#	{{- end }}
+#{{- end }}
 #{{- range $i, $p := ( index $ "optbins" ) }} Opt bins
 #	{{- if stat (joinPath "/opt/" $p "/bin") }} Adding {{ joinPath "/opt/" $p "/bin" }}
 PATH="${PATH}:{{ joinPath "/opt/" $p "/bin" }}"
