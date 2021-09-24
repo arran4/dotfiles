@@ -58,38 +58,7 @@ shopt -s checkwinsize
 # match all files and zero or more directories and subdirectories.
 #shopt -s globstar
 
-# Colours and aliases
-# enable color support of ls and also add handy aliases
-if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
-    alias ll='ls -alF'
-    alias la='ls -A'
-    {{- if eq .chezmoi.os "darwin" }}
-      # Use GNU ls to support https://github.com/seebi/dircolors-solarized
-      alias la="gls -lAFh --color=auto"
-    {{- end }}
-
-    alias l='ls -CF'
-
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-
-    export CLICOLOR=1
-    export LSCOLORS=ExFxCxDxBxegedabagacad
-fi
-
-alias ..="cd .. && ls"
-alias ...="cd ../.. && ls"
-
-# Get week number
-alias week='date +%V'
-
-# M2 nav
-alias pushd_m2='pushd ~/.m2/'
+{{ template "shell-aliases.tmpl" $ }}
 
 #{{ if eq .chezmoi.os "darwin" }} Darwin
 #{{ else if eq .chezmoi.os "linux" }} Linux
