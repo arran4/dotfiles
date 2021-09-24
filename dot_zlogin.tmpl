@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-{{ $shell = "zsh" }}
+{{ $shell := "zsh" }}
 
 {{ template "shell-login-common.tmpl" merge $ (dict "shell" $shell) }}
 
