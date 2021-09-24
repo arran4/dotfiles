@@ -127,6 +127,8 @@
 /.thumbnails
 /.weechat
 /.editorconfig
+/.config/pulse
+/.config/gcloud
 
 {{ if ne .chezmoi.os "linux" }}
 /bin/executable_disable-touchpad.sh
