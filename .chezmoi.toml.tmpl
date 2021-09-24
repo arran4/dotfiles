@@ -15,14 +15,14 @@
         optbins = []
         usrbins = []
         usrlocalbins = []
-        binroots = [ "/", "/usr/" ]
+        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local/bin" }}" ]
         terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
         termfallback = [ "xterm", "linux", "vt100" ]
 #{{ else if eq .chezmoi.os "linux" }} Linux
         optbins = []
         usrbins = ["games"]
         usrlocalbins = []
-        binroots = [ "/", "/usr/" ]
+        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local/bin" }}" ]
         terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
         termfallback = [ "rxvt", "xterm", "linux", "vt100" ]
 #{{ else if eq .chezmoi.os "windows" }} Windows
@@ -36,7 +36,7 @@
         optbins = [ "httrack", "SUNWsneep", "test", "VRTSvxvm", "SUNWvts", "SUNWexplo", "VRTS", "VRTSob" ]
         usrbins = [ "local", "sfw", "ccs" ]
         usrlocalbins = [ "mysql", "apache", "apache2", "php" ]
-        binroots = [ "/", "/usr/" ]
+        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local/bin" }}" ]
         terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
         termfallback = [ "xterm", "linux", "vt100" ]
 #{{ else }} Unknown OS {{ .chezmoi.os }}
