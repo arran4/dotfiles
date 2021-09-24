@@ -4,6 +4,14 @@
 #	{{- if stat (joinPath $p "/bin") }} Adding {{ joinPath $p "/bin" }}
 PATH="${PATH}:{{ joinPath $p "/bin" }}"
 #	{{- end }}
+#	{{- if stat (joinPath $p "/sbin") }} Adding {{ joinPath $p "/sbin" }}
+PATH="${PATH}:{{ joinPath $p "/sbin" }}"
+#	{{- end }}
+#{{- end }}
+#{{- range $i, $p := ( index $ "binroots" ) }} Root bins
+#	{{- if stat (joinPath $p "/bin") }} Adding {{ joinPath $p "/bin" }}
+PATH="${PATH}:{{ joinPath $p "/bin" }}"
+#	{{- end }}
 #{{- end }}
 #{{- range $i, $p := ( index $ "optbins" ) }} Opt bins
 #	{{- if stat (joinPath "/opt/" $p "/bin") }} Adding {{ joinPath "/opt/" $p "/bin" }}
