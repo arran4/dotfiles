@@ -9,3 +9,7 @@ I have a lot of things here that was specific to a particular place and time whi
 I recommend you copy and paste the good stuff out into your own chezmoi config rather than just mine there is a lot of config here which is specific to me or specific to a particular situation I had been in in the past.
 
 Using chezmoi https://www.chezmoi.io/docs/quick-start/
+
+# Notes
+
+I don't think it's a good idea just to apply my dot files on to your system as there are a lot of configuration options and scripts I have put in intentionally, these could go unnoticed or taken for granted (which will make switching to other systems harder.) Saying that please pick out what you like / want. I am also happy to take suggestions in the form of PR or issues.
