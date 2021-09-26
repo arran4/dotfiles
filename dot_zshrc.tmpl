@@ -16,6 +16,17 @@ setopt HIST_VERIFY
 # Key bindings
 bindkey -v
 bindkey "^R" history-incremental-search-backward
+# press M-CR to accept and keep the completion going
+#bindkey '\e^M' accept-and-menu-complete
+
+# Ctrl-E to launch line editor
+autoload -U edit-command-line
+zle -N edit-command-line
+bindkey '^E' edit-command-line
+
+# Automatically quote meta-characters in URLs!
+autoload -U url-quote-magic
+zle -N self-insert url-quote-magic
 
 # Tab completion changes
 zstyle ':completion:*' completer _expand _complete _correct _approximate
