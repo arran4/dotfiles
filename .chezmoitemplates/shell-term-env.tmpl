@@ -1,12 +1,14 @@
 # Terminfo Path discovery
-{{range $i, $p := ( index $ "terminfosearch" ) -}} 
-	{{- if stat $p -}}if [ -e "{{$p}}" ]; then
-	export TERMINFO="{{$p}}"
-el
-	{{- end -}} 
-{{- end }}se
+if [ ! -e "$TERMINFO" ]; then
+	{{range $i, $p := ( index $ "terminfosearch" ) -}} 
+		{{- if stat $p -}}if [ -e "{{$p}}" ]; then
+		export TERMINFO="{{$p}}"
+	el
+		{{- end -}} 
+	{{- end }}se
+		echo "No term path discovered"
+	fi
 fi
-
 
 # TERM fallback discovery
 if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
@@ -15,5 +17,6 @@ if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
 		export TERM="{{$p}}"
 	el	
 	{{- end }}se
+		echo "No term discovered"
 	fi
 fi
