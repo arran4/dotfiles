@@ -2,6 +2,9 @@
 {{ $gpgconfigured := promptBool "gpgconfigured" -}}
 {{ $autoGit := promptBool "auto git?" -}}
 {{/* if stat (joinPath .chezmoi.homeDir ".gnupg") */}}
+{{- $isWsl := or (env "WSL_DISTRO_NAME") (env "IS_WSL") | not | not -}}
+{{- $isDevcontainer := or (env "REMOTE_CONTAINERS") (env "CODESPACES") (env "VSCODE_REMOTE_CONTAINERS_SESSION") | not | not -}}
+{{- $isGnome := lookPath "gnome-shell" | not | not -}}
 
 [git]
     autoCommit = {{ $autoGit }}
@@ -10,6 +13,9 @@
 [data]
         headless={{ $headless }}
         gpgconfigured={{ $gpgconfigured }}
+        isWsl={{ $isWsl }}
+        isDevcontainer={{ $isDevcontainer }}
+        isGnome={{ $isGnome }}
 
 #{{ if eq .chezmoi.os "darwin" }} Darwin
         optbins = []
