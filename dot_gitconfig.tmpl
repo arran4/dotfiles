@@ -63,6 +63,16 @@
 	gpgsign = true
 {{ end }}
 
+[tag]
+{{ if index . "gpgconfigured" }}
+	gpgsign = true
+{{ end }}
+
+[push]
+{{ if index . "gpgconfigured" }}
+	gpgsign = true
+{{ end }}
+
 [alias]
 
   #via http://stackoverflow.com/questions/5188320/how-can-i-get-a-list-of-git-branches-ordered-by-most-recent-commit
