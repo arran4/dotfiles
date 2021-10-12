@@ -70,7 +70,7 @@
 
 [push]
 {{ if index . "gpgconfigured" }}
-	gpgsign = true
+	gpgsign = if-asked
 {{ end }}
 
 [alias]
