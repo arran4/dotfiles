@@ -18,6 +18,13 @@ export HISTFILESIZE=99999
 HISTCONTROL=ignoreboth
 # append to the history file, don't overwrite it
 shopt -s histappend
+# Save multi-line commands as one command
+shopt -s cmdhist
+# Don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+export HISTCONTROL=erasedups:ignoreboth
+# Useful timestamp format
+export HISTTIMEFORMAT='%F %T '
 
 # Key bindings
 set -o vi

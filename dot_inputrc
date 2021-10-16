@@ -9,3 +9,5 @@
 ## enable Alt-arrows
 #"\e[1;5D": backward-word ### Alt left
 #"\e[1;5C": forward-word ### Alt right
+set bell-style visible
+set show-all-if-ambiguous on
