@@ -31,3 +31,7 @@ alias week='date +%V'
 
 # M2 nav
 alias pushd_m2='pushd ~/.m2/'
+
+{{- if eq "wsl" .ostype }}
+alias open='explorer.exe'
+{{- end }}
