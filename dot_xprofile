@@ -1,1 +1,6 @@
 #setxkbmap gb -variant colemak
+
+#if ! test -f "$ENV"; then
+#	test -f "$HOME/.profile" && . "$HOME/.profile"
+#fi
+

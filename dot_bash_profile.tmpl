@@ -45,6 +45,7 @@ fi
 if test -n "${ctx}"; then 
 	ctx="(${ctx})"
 fi
+# TODO Set title: PS1="\[\e]0;\u@\h: \w\a\]$PS1" ish
 export PS1='\u@\h:'"\${PWD} ${ctx}"$'\n''\$ '
 unset ctx
 
@@ -91,6 +92,15 @@ GIT_COMPLETION_PATH="/usr/local/etc/bash_completion.d/git-completion.bash"
 {{ template "path-discovery.tmpl" $ }}
 
 {{ template "dev-utils-env.tmpl" $ }}
+
+# TODO chezmoi'd a bit more
+if test -f /usr/share/bash-completion/bash_completion; then
+	. /usr/share/bash-completion/bash_completion
+elif test -f /etc/bash_completion; then
+	. /etc/bash_completion
+elif test -f /run/current-system/profile/etc/profile.d/bash_completion.sh; then
+	. /run/current-system/profile/etc/profile.d/bash_completion.sh
+fi
 
 return # This prevents scripts which append their own installers from "working"
 {{/* vim: set filetype=bash: */}}
