@@ -2,7 +2,7 @@
 {{- $isDevcontainer := or (env "REMOTE_CONTAINERS") (env "CODESPACES") (env "VSCODE_REMOTE_CONTAINERS_SESSION") | not | not -}}
 {{- $isGnome := lookPath "gnome-shell" | not | not -}}
 {{- $hasHomeGPG := gt ( len (stat (joinPath .chezmoi.homeDir ".gnupg/private-keys-v1.d" ) ) ) 0 -}}
-{{- $headlessGuess := ( or $isWsl (not (or ( len ( env "DISPLAY" ) ) (eq .chezmoi.os "windows" ) ) ) ) -}}
+{{- $headlessGuess := ( or $isWsl (not (or ( env "DISPLAY" ) (eq .chezmoi.os "windows" ) ) ) ) -}}
 {{- $gpgconfiguredGuess := $hasHomeGPG -}}
 {{- $headless := promptBool "headless" $headlessGuess -}}
 {{- $gpgconfigured := promptBool "gpgconfigured" $gpgconfiguredGuess -}}
