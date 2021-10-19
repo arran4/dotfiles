@@ -1,10 +1,12 @@
-{{ $headless := promptBool "headless" -}}
-{{ $gpgconfigured := promptBool "gpgconfigured" -}}
-{{ $autoGit := promptBool "auto git?" -}}
-{{/* if stat (joinPath .chezmoi.homeDir ".gnupg") */}}
 {{- $isWsl := or (env "WSL_DISTRO_NAME") (env "IS_WSL") | not | not -}}
 {{- $isDevcontainer := or (env "REMOTE_CONTAINERS") (env "CODESPACES") (env "VSCODE_REMOTE_CONTAINERS_SESSION") | not | not -}}
 {{- $isGnome := lookPath "gnome-shell" | not | not -}}
+{{- $hasHomeGPG := stat (joinPath .chezmoi.homeDir ".gnupg/private-keys-v1.d" ) -}}
+{{- $headlessGuess := ( or $isWsl (not ( length ( env "DISPLAY" ) ) ) ) -}}
+{{- $gpgconfiguredGuess := $hasHomeGPG -}}
+{{- $headless := promptBool "headless" $headlessGuess -}}
+{{- $gpgconfigured := promptBool "gpgconfigured" $gpgconfiguredGuess -}}
+{{- $autoGit := promptBool "auto git?" true -}}
 
 [git]
     autoCommit = {{ $autoGit }}
