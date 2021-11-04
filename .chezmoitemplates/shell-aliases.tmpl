@@ -3,24 +3,24 @@
 if [ -x /usr/bin/dircolors ]; then
 	color_prompt=yes
 
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
-    alias ll='ls -alF'
-    alias la='ls -A'
-    {{- if eq .chezmoi.os "darwin" }}
-      # Use GNU ls to support https://github.com/seebi/dircolors-solarized
-      alias la="gls -lAFh --color=auto"
-    {{- end }}
-    alias l='ls -CF'
+  test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+  alias ls='ls --color=auto'
+  #alias dir='dir --color=auto'
+  #alias vdir='vdir --color=auto'
+  alias ll='ls -alF'
+  alias la='ls -A'
+  {{- if eq .chezmoi.os "darwin" }}
+    # Use GNU ls to support https://github.com/seebi/dircolors-solarized
+    alias la="gls -lAFh --color=auto"
+  {{- end }}
+  alias l='ls -CF'
 
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
+  alias grep='grep --color=auto'
+  alias fgrep='fgrep --color=auto'
+  alias egrep='egrep --color=auto'
 
-    export CLICOLOR=1
-    export LSCOLORS=ExFxCxDxBxegedabagacad
+  export CLICOLOR=1
+  export LSCOLORS=ExFxCxDxBxegedabagacad
 fi
 
 alias ..="cd .. && ls"
