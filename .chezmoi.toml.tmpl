@@ -1,7 +1,7 @@
 {{- $isWsl := or (env "WSL_DISTRO_NAME") (env "IS_WSL") | not | not -}}
 {{- $isDevcontainer := or (env "REMOTE_CONTAINERS") (env "CODESPACES") (env "VSCODE_REMOTE_CONTAINERS_SESSION") | not | not -}}
 {{- $isGnome := lookPath "gnome-shell" | not | not -}}
-{{- $hasHomeGPG := ne (stat (joinPath .chezmoi.homeDir ".gnupg/private-keys-v1.d" ) ) false -}}
+{{- $hasHomeGPG := not ( kindIs "boolean" ( stat (joinPath .chezmoi.homeDir ".gnupg/private-keys-v1.d" ) ) ) -}}
 {{- $headlessGuess := ( or $isWsl (not (or ( env "DISPLAY" ) (eq .chezmoi.os "windows" ) ) ) ) -}}
 {{- $gpgconfiguredGuess := $hasHomeGPG -}}
 {{- $headless := promptBool "headless" $headlessGuess -}}
