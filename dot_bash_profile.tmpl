@@ -26,6 +26,10 @@ export HISTCONTROL=erasedups:ignoreboth
 # Useful timestamp format
 export HISTTIMEFORMAT='%F %T '
 
+# If set, the pattern "**" used in a pathname expansion context will
+# match all files and zero or more directories and subdirectories.
+#shopt -s globstar
+
 # Key bindings
 set -o vi
 bind '"^R":"history-incremental-search-backward"'
