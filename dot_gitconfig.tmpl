@@ -59,9 +59,17 @@
 	# Somehow switch?
 	#tool = vimdiff
 	#tool = kdiff3 
+
+[mergetool "kdiff3"]
+    trustExitCode = false
+
 [diff]
 	#tool = vimdiff
 	#tool = kdiff3 
+
+[difftool "kdiff3"]
+    trustExitCode = false
+
 [commit]
 {{ if index . "gpgconfigured" }}
 	gpgsign = true
