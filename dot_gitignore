@@ -27,3 +27,6 @@ Temporary Items
 .pc
 .svn
 .vscode
+
+*.iml
+.idea
