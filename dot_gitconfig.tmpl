@@ -4,10 +4,11 @@
 [init]
 	defaultBranch=main
 [core]
-	autocrlf = false
+	autocrlf = input
 	editor = vim
 	excludesfile = ~/.gitignore
 	longpaths = true
+	# quotepath = false # Unicode characters
 
 [rerere]
   enabled = 1
@@ -89,3 +90,6 @@
 
   #via http://stackoverflow.com/questions/5188320/how-can-i-get-a-list-of-git-branches-ordered-by-most-recent-commit
   recent-branches = !git for-each-ref --count=15 --sort=-committerdate refs/heads/ --format='%(refname:short)'
+
+#[include]
+#  path = ~/.gitconfig.local # Allow for local overrides

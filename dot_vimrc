@@ -8,6 +8,11 @@ set ls			=2	" status line bar
 set title			" Console title change
 "set spell			" Spell checking
 set number			" Line numbering
+
+set cursorline
+
+set encoding=utf-8
+
 "set expandtab			" Tabs are tabs not spaces
 set showtabline         =2 
 "set smarttab			" Treats spaces as tabs.. based on shiftwidth
