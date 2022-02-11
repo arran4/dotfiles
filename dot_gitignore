@@ -28,5 +28,53 @@ Temporary Items
 .svn
 .vscode
 
+# OSX
+.AppleDouble
+.DS_Store
+.LSOverride
+.Spotlight-V100
+.Trashes
+._*
+
+# Vim
+*.un~
+.*.s[a-w][a-z]
+.netrwhist
+Session.vim
+
+# ctags / etags
+!TAGS/
+!tags/
+TAGS
+tags
+
+# Xcode
+!default.mode1v3
+!default.mode2v3
+!default.pbxuser
+!default.perspectivev3
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+*.xccheckout
+*.xcuserstate
+DerivedData
+xcuserdata
+
+# Node.js
+npm-debug.log
+
+# JetBrains IDEs
 *.iml
-.idea
+*.ipr
+*.iws
+.idea/
+.idea_modules/
+/out/
+atlassian-ide-plugin.xml
+com_crashlytics_export_strings.xml
+crashlytics-build.properties
+crashlytics.properties
+

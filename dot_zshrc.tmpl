@@ -12,6 +12,31 @@ export SAVEHIST=99999999
 setopt append_history
 setopt inc_append_history
 setopt HIST_VERIFY
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_REDUCE_BLANKS
+
+# The AUTO_PUSHD option lets you use cd to get back to any directory you've ever cd'ed to. Without this option you are only able to get back to the previous directory you've cd'ed to but with this option you can use something like cd -5 to get back to the 5th directory you've visited.
+setopt AUTO_PUSHD
+
+# Pushd
+setopt PUSHD_IGNORE_DUPS
+setopt PUSHD_TO_HOME
+
+# Auto completion
+setopt AUTO_LIST
+setopt AUTO_MENU
+setopt LIST_AMBIGUOUS
+setopt LIST_PACKED
+setopt LIST_TYPES
+
+# Regexp
+setopt BAD_PATTERN
+
+# Internal
+setopt HIST_FCNTL_LOCK
+
+# Misc
+setopt INTERACTIVE_COMMENTS
 
 # Key bindings
 bindkey -v
