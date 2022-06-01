@@ -1,3 +1,5 @@
+gtk-enable-animations=1
+gtk-cursor-theme-size=24
 # Configs for GTK2 programs -- todo smarter path finding for gtkrc file
 include "/usr/share/themes/Breeze/gtk-2.0/gtkrc"
 style "user-font" 
