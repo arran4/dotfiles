@@ -5,7 +5,7 @@ if [ ! -e "$TERMINFO" ]; then
 		export TERMINFO="{{$p}}"
 	el
 		{{- end -}} 
-	{{- end }}se
+	{{else}}if []; then echo -n; el{{- end }}se
 		echo "No term path discovered"
 	fi
 fi
@@ -16,7 +16,7 @@ if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
 		if [ -e "${TERMINFO}}/{{printf "%c" ( index $p 0 ) }}/{{$p}}" ]; then
 		export TERM="{{$p}}"
 	el	
-	{{- end }}se
+	{{else}}if []; then echo -n; el{{- end }}se
 		echo "No term discovered"
 	fi
 fi
