@@ -40,6 +40,9 @@
 	program = "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe"
 {{ end }}
 
+[credential "https://source.developers.google.com"]
+    provider = generic
+
 {{ if ne .chezmoi.os "windows" }}
 [color]
   branch = auto
