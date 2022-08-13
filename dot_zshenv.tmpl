@@ -12,7 +12,13 @@
 {{ template "path-discovery.tmpl" $ }}
 
 # TODO make this detect the dir
-XDG_DATA_DIRS=/var/lib/snapd/desktop:"$XDG_DATA_DIRS"
+if [[ "$XDG_DATA_DIRS" != *"/var/lib/snapd/desktop"* ]]; then
+        if [[ -n "$XDG_DATA_DIRS" ]]; then
+                XDG_DATA_DIRS=/var/lib/snapd/desktop:"$XDG_DATA_DIRS"
+        else
+                XDG_DATA_DIRS=/var/lib/snapd/desktop
+        fi
+fi
 
 return # This prevents scripts which append their own installers from "working"
 {{/* vim: set filetype=zsh: */}}
