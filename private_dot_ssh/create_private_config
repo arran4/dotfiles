@@ -1,3 +1,8 @@
 TCPKeepAlive yes
 ServerAliveInterval 5
 VisualHostKey=yes
+Compression yes
+ControlMaster auto
+ControlPath ~/.ssh/cm_socket/%r@%h:%p
+
+# vim: set ft=sshconfig:
