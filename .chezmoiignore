@@ -147,3 +147,26 @@
 /Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
 /bin/*.cmd
 {{ end }}
+
+/bin/chezmoi
+/bin/rssguard
+/*.gpg
+/snap
+/test*
+/Pictures
+/Public
+/Vaults
+/.vim/backups
+/.vim/swaps
+/.vim/undo
+/.xsession-errors
+/.*.bak
+/.steam*
+/.ssr
+/.nvidia*
+/.nv
+/.mozilla
+/.gnome/apps
+/.fonts/**/uuid
+/.factorio
+/.asc
