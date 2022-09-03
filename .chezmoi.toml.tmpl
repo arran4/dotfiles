@@ -55,3 +55,12 @@
         terminfosearch = [ ]
         termfallback = [ "linux", "vt100" ]
 #{{ end }} End OS Specific code
+
+[diff]
+{{ if and (index . "headless") (lookPath "vimdiff") }}
+	command = "vimdiff"
+{{ else if and (eq .chezmoi.os "linux") (lookPath "kdiff3") }}
+	command = "kdiff3"
+{{ else if lookPath "vimdiff" }}
+	command = "vimdiff"
+{{ end }}
