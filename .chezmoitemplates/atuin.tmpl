@@ -1,0 +1,11 @@
+{{ if lookPath "atuin" }}
+{{ if eq (index . "shell") "zsh" }}
+{{ output "atuin" "init" "zsh" }}
+{{else if eq (index . "shell") "bash" }}
+{{ output "atuin" "init" "bash" }}
+{{else}}
+echo "Atuin doesn't support shell: {{index . "shell"}}"
+{{end}}
+{{else}}
+echo "Atuin not installed"
+{{end}}
