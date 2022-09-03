@@ -90,6 +90,8 @@ shopt -s checkwinsize
 # Other program envs
 {{ template "common-misc-env.tmpl" $ }}
 
+{{ template "atuin.tmpl" $ }}
+
 # OS Specific
 #{{ if eq .chezmoi.os "darwin" }} Darwin
 #	{{- if stat "/usr/local/etc/bash_completion.d/git-completion.bash" }} Git bash completion usr local - home brew

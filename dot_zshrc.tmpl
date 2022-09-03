@@ -106,5 +106,7 @@ autoload -U colors && colors
 
 {{ template "dev-utils-env.tmpl" $ }}
 
+{{ template "atuin.tmpl" $ }}
+
 return # This prevents scripts which append their own installers from "working"
 {{/* vim: set filetype=zsh: */}}
