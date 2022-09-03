@@ -90,7 +90,7 @@ shopt -s checkwinsize
 # Other program envs
 {{ template "common-misc-env.tmpl" $ }}
 
-{{ template "atuin.tmpl" $ }}
+{{ template "atuin.tmpl" deepCopy $ | merge (dict "shell" "bash") }}
 
 # OS Specific
 #{{ if eq .chezmoi.os "darwin" }} Darwin
