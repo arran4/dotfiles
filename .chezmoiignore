@@ -167,7 +167,7 @@
 /.nv
 /.mozilla
 /.gnome/apps
-/.fonts/**/uuid
+/.fonts/**/.uuid
 /.factorio
 /.asc
 /.zoom
