@@ -1,0 +1,14 @@
+[Application]
+AutoCopyToClipboardNewCaptures=true
+AutoSaveNewCaptures=true
+PromptSaveBeforeExit=false
+SaveDirectory=/home/arran/Pictures
+StartMinimizedToTray=true
+
+[HotKeys]
+ActiveWindowHotKey=
+CurrentScreenHotKey=
+FullScreenHotKey=
+LastRectAreaHotKey=
+RectAreaHotKey=Meta+Shift+S
+
