@@ -61,15 +61,25 @@
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
 	# Somehow switch?
-	#tool = vimdiff
-	#tool = kdiff3 
+{{ if and (index . "headless") (lookPath "vimdiff") }}
+	tool = vimdiff
+{{ else if and (eq .chezmoi.os "linux") (lookPath "kdiff3") }}
+	tool = kdiff3 
+{{ else if lookPath "vimdiff" }}
+	tool = vimdiff
+{{ end }}
 
 [mergetool "kdiff3"]
     trustExitCode = false
 
 [diff]
-	#tool = vimdiff
-	#tool = kdiff3 
+{{ if and (index . "headless") (lookPath "vimdiff") }}
+	tool = vimdiff
+{{ else if and (eq .chezmoi.os "linux") (lookPath "kdiff3") }}
+	tool = kdiff3 
+{{ else if lookPath "vimdiff" }}
+	tool = vimdiff
+{{ end }}
 
 [difftool "kdiff3"]
     trustExitCode = false
