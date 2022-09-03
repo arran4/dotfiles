@@ -13,3 +13,13 @@ Using chezmoi https://www.chezmoi.io/docs/quick-start/
 # Notes
 
 I don't think it's a good idea just to apply my dot files on to your system as there are a lot of configuration options and scripts I have put in intentionally, these could go unnoticed or taken for granted (which will make switching to other systems harder.) Saying that please pick out what you like / want. I am also happy to take suggestions in the form of PR or issues.
+
+# Tools:
+
+| Tool | What |
+| --- | --- |
+| (Atuin)[https://atuin.sh/] | Command line history syncing and searching tool for zsh/bash. |
+| (Chezmoi)[https://www.chezmoi.io/#considering-using-chezmoi] | Dot files syncing tool |
+| Zsh | Default shell |
+| Kdiff3 | Default gui diff compare |
+| vimdiff | Default tui diff compare 
