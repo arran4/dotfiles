@@ -170,3 +170,6 @@
 /.fonts/**/uuid
 /.factorio
 /.asc
+/.zoom
+/.local/
+/.config/akonadi*
