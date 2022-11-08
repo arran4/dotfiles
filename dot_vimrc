@@ -118,3 +118,10 @@ set mouse=a
 " Show the filename in the window titlebar
 set title
 
+" when folding is enabled the default settings will fold all blocks by default.
+" To start with unfolded content we can set
+set foldlevelstart=8
+
+set smartcase		" Enable smart-case search
+set ignorecase		" Always case-insensitive
+set cursorline		" Activate cursorline
