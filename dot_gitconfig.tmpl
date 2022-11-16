@@ -23,14 +23,14 @@
 {{ if index . "headless" }}
 	credentialStore = cache
 	cacheOptions = "--timeout 14400"
-	helper = /usr/local/bin/git-credential-manager-core
+	helper = /usr/local/bin/git-credential-manager
 {{ else if eq .chezmoi.os "linux" }}
 	{{ if eq .chezmoi.osRelease.id "ubuntu" }}
 	       credentialStore = secretservice
-	       helper = /usr/local/bin/git-credential-manager-core
+	       helper = /usr/local/bin/git-credential-manager
 	{{ end}}
 {{ else }}
-	helper = manager-core
+	helper = manager
 {{ end }}
        
 [credential "https://dev.azure.com"]
