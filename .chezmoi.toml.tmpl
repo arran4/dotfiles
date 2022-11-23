@@ -12,7 +12,7 @@
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "linux") (stat "/usr/bin/atuin" -)}}
+{{- if and (eq .chezmoi.os "linux") (stat "/usr/bin/atuin" ) -}}
         {{- writeToStdout "Can't find atuin: https://github.com/ellie/atuin/releases \n" -}}
 {{- end -}}
 
