@@ -20,7 +20,7 @@
         {{- writeToStdout "Can't find vim \n" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "linux") ((not lookPath "vimdiff")) -}}
+{{- if and (eq .chezmoi.os "linux") (not (lookPath "vimdiff")) -}}
         {{- writeToStdout "Can't find vimdiff \n" -}}
 {{- end -}}
 
