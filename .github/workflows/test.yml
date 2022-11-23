@@ -9,4 +9,4 @@ jobs:
 
     steps:
       - run: |
-          yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --debug --force --apply arran4
+          yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --apply arran4
