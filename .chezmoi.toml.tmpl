@@ -8,7 +8,7 @@
 {{- $gpgconfigured := promptBool "gpgconfigured" $gpgconfiguredGuess -}}
 {{- $autoGit := promptBool "auto git?" true -}}
 
-{{- if and (eq .chezmoi.os "linux") (stat "/usr/local/bin/git-credential-manager" -)}}
+{{- if and (eq .chezmoi.os "linux") (stat "/usr/local/bin/git-credential-manager" ) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
 {{- end -}}
 
