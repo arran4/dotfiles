@@ -28,7 +28,7 @@
         {{- writeToStdout "Can't find kdiff3 \n" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "windows") (stat "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe" -)}}
+{{- if and (eq .chezmoi.os "windows") (stat "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe" ) -}}
         {{- writeToStdout "Missing GPG install Kleopatra https://gpg4win.org/download.html \n" -}}
 {{- end -}}
 
