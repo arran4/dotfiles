@@ -63,15 +63,14 @@
 [merge]
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
-{{ if lookPath "vimdiff" }}
-	conflictstyle = diff3
-{{end}}
-	# Somehow switch?
 {{ if and (index . "headless") (lookPath "vimdiff") }}
 	tool = vimdiff
+    conflictstyle = diff3 # show original content before conflicts
 {{ else if and (eq .chezmoi.os "linux") (lookPath "kdiff3") }}
 	tool = kdiff3 
+    conflictstyle = diff3 # show original content before conflicts
 {{ else if lookPath "vimdiff" }}
+    conflictstyle = diff3 # show original content before conflicts
 	tool = vimdiff
 {{ end }}
 
@@ -88,8 +87,24 @@
 {{ end }}
     colorMoved = default
 
+[difftool]
+	prompt = true
+
 [difftool "kdiff3"]
     trustExitCode = false
+
+[difftool "sourcetree"]
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path =
+[mergetool "sourcetree"]
+	cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+	trustExitCode = true
+[difftool "vscode"]
+	cmd = code --wait --diff $LOCAL $REMOTE
+[difftool "nvimdiff"]
+  cmd = "nvim -d \"$LOCAL\" \"$REMOTE\""
+[difftool "difftastic"]
+  cmd = difft "$LOCAL" "$REMOTE"
 
 [commit]
 {{ if index . "gpgconfigured" }}
@@ -133,3 +148,6 @@
 
 [http]
 	cookiefile = ~/.cache/git/cookies
+
+[status]
+  submodulesummary = true
