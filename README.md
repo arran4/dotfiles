@@ -18,8 +18,8 @@ I don't think it's a good idea just to apply my dot files on to your system as t
 
 | Tool | What |
 | --- | --- |
-| (Atuin)[https://atuin.sh/] | Command line history syncing and searching tool for zsh/bash. |
-| (Chezmoi)[https://www.chezmoi.io/#considering-using-chezmoi] | Dot files syncing tool |
+| [Atuin](https://atuin.sh/) | Command line history syncing and searching tool for zsh/bash. |
+| [Chezmoi](https://www.chezmoi.io/#considering-using-chezmoi) | Dot files syncing tool |
 | Zsh | Default shell |
 | Kdiff3 | Default gui diff compare |
 | vimdiff | Default tui diff compare 
