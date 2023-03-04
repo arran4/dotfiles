@@ -9,4 +9,4 @@ ControlPath ~/.ssh/cm_socket/%r@%h:%p
 
 Host tty.sdf.org
     controlmaster no
-    ControlPath ""
+    ControlPath 
