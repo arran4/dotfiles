@@ -6,7 +6,3 @@ ControlMaster auto
 ControlPath ~/.ssh/cm_socket/%r@%h:%p
 
 # vim: set ft=sshconfig:
-
-Host tty.sdf.org
-    controlmaster no
-    ControlPath ~/.ssh/cm_socket/%h
