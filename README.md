@@ -23,3 +23,6 @@ I don't think it's a good idea just to apply my dot files on to your system as t
 | Zsh | Default shell |
 | Kdiff3 | Default gui diff compare |
 | vimdiff | Default tui diff compare 
+
+# Interesting tools:
+* https://github.com/tep/terminal-decor
