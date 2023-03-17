@@ -110,6 +110,8 @@
 {{ if index . "gpgconfigured" }}
 	gpgsign = true
 {{ end }}
+	template = ~/.config/git/message
+  status = true
 
 [tag]
 {{ if index . "gpgconfigured" }}
@@ -123,7 +125,6 @@
 {{ end }}
 
 [alias]
-
   #via http://stackoverflow.com/questions/5188320/how-can-i-get-a-list-of-git-branches-ordered-by-most-recent-commit
   recent-branches = !git for-each-ref --count=15 --sort=-committerdate refs/heads/ --format='%(refname:short)'
 
@@ -142,9 +143,6 @@
 
 [interactive]
     diffFilter = delta --color-only
-
-[commit]
-	template = ~/.config/git/message
 
 [http]
 	cookiefile = ~/.cache/git/cookies
