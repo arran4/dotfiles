@@ -77,6 +77,10 @@
 [mergetool "kdiff3"]
     trustExitCode = false
 
+[mergetool "sourcetree"]
+	cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+	trustExitCode = true
+
 [diff]
 {{ if and (index . "headless") (lookPath "vimdiff") }}
 	tool = vimdiff
@@ -96,9 +100,6 @@
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path =
-[mergetool "sourcetree"]
-	cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
-	trustExitCode = true
 [difftool "vscode"]
 	cmd = code --wait --diff $LOCAL $REMOTE
 [difftool "nvimdiff"]
@@ -123,6 +124,7 @@
 {{ if index . "gpgconfigured" }}
 	gpgsign = if-asked
 {{ end }}
+    followTags = true
 
 [alias]
   #via http://stackoverflow.com/questions/5188320/how-can-i-get-a-list-of-git-branches-ordered-by-most-recent-commit
