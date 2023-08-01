@@ -13,6 +13,7 @@ PATH="${PATH}:{{ joinPath $p "/sbin" }}"
 #	{{- if $p }} Adding {{ $p }}
 PATH="${PATH}:{{ $p }}"
 #	{{- end }}
+#{{- end }}
 
 #{{- range $i, $p := ( index $ "optbins" ) }} Opt bins
 #	{{- if stat (joinPath "/opt/" $p "/bin") }} Adding {{ joinPath "/opt/" $p "/bin" }}
