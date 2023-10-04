@@ -133,7 +133,6 @@
 /.local/bin
 /.local/include
 /.local/lib
-/.local/share
 
 {{ if ne .chezmoi.os "linux" }}
 /bin/executable_disable-touchpad.sh
