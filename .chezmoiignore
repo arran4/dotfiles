@@ -506,10 +506,18 @@
 /.config/Qt
 /.config/QtProject
 /.config/VirtualBox
-
-
-
-
-
+/.cargo/.crates.toml
+/.cargo/.crates2.json
+/.cargo/.package-cache
+/.cert/nm-openvpn
+/.config/Android Open Source Project
+/.config/DB Browser for SQLiterc
+/.config/Google
+/.config/JetBrains Space
+/.config/Joplin
+/.config/Signal Beta
+/.config/Synology Chat
+/.config/stardict
+/.gcm
 
 
