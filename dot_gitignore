@@ -71,6 +71,7 @@ npm-debug.log
 *.ipr
 *.iws
 .idea/
+!.idea/runConfigurations
 .idea_modules/
 /out/
 atlassian-ide-plugin.xml
