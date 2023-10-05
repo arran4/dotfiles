@@ -48,7 +48,7 @@
         usrbins = []
         usrlocalbins = []
 	binpaths = [ "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ]
-        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}", "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}" ]
+        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}", "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}", "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" ]
         terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
         termfallback = [ "xterm", "linux", "vt100" ]
 #{{ else if eq .chezmoi.os "linux" }} Linux
@@ -56,7 +56,7 @@
         usrbins = ["games"]
         usrlocalbins = []
 	binpaths = [ "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ]
-        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}", "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}" ]
+        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}", "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}", "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" ]
         terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
         termfallback = [ "rxvt", "xterm", "linux", "vt100" ]
 #{{ else if eq .chezmoi.os "windows" }} Windows
@@ -72,7 +72,7 @@
         usrbins = [ "local", "sfw", "ccs" ]
         usrlocalbins = [ "mysql", "apache", "apache2", "php" ]
 	binpaths = [ "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ]
-        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}" }}", "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}" ]
+        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}" }}" ]
         terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
         termfallback = [ "xterm", "linux", "vt100" ]
 #{{ else }} Unknown OS {{ .chezmoi.os }}
