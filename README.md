@@ -8,7 +8,7 @@ I have a lot of things here that was specific to a particular place and time whi
 
 I recommend you copy and paste the good stuff out into your own chezmoi config rather than just mine there is a lot of config here which is specific to me or specific to a particular situation I had been in in the past.
 
-Using chezmoi https://www.chezmoi.io/docs/quick-start/
+Using chezmoi https://www.chezmoi.io/
 
 # Notes
 
@@ -18,8 +18,7 @@ I don't think it's a good idea just to apply my dot files on to your system as t
 
 | Tool | What |
 | --- | --- |
-| [Atuin](https://atuin.sh/) | Command line history syncing and searching tool for zsh/bash. |
-| [Chezmoi](https://www.chezmoi.io/#considering-using-chezmoi) | Dot files syncing tool |
+| [Chezmoi](https://www.chezmoi.io/) | Dot files syncing tool |
 | Zsh | Default shell |
 | Kdiff3 | Default gui diff compare |
 | vimdiff | Default tui diff compare 
