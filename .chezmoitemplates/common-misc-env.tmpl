@@ -10,9 +10,13 @@ export WATCH=root
 	# No vim found!
 {{- end }}
 
-{{if stat "/usr/bin/less" -}}
+{{ if stat "/usr/bin/manpager" - }}
+	export MANPAGER='/usr/bin/manpager'
+	# Pager IS less
+	export PAGER='/usr/bin/less -is -R -X'
+{{else if stat "/usr/bin/less" -}}
 	# Don’t clear the screen after quitting a manual page.
-	export MANPAGER='/usr/bin/less -X'
+	export MANPAGER='/usr/bin/less -is -R -X'
 	# Pager IS less
 	export PAGER=/usr/bin/less
 {{- else -}}
