@@ -48,7 +48,7 @@
         usrbins = []
         usrlocalbins = []
 	binpaths = [ "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ]
-        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}", "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}", "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" ]
+        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}", "{{ joinPath .chezmoi.homeDir "/Library/flutter" }}", "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" ]
         terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
         termfallback = [ "xterm", "linux", "vt100" ]
 #{{ else if eq .chezmoi.os "linux" }} Linux
