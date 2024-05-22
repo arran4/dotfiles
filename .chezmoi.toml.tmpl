@@ -66,6 +66,9 @@
 {{- $vimLocation := findExecutable "bin/vim" $binroots -}}
 {{- $vimpagerLocation := findExecutable "bin/vimpager" $binroots -}}
 {{- $zshLocation := findExecutable "bin/zsh" $binroots -}}
+{{- $lessLocation := findExecutable "bin/less" $binroots -}}
+{{- $manpagerLocation := findExecutable "bin/manpager" $binroots -}}
+{{- $mvnLocation := findExecutable "bin/mvn" $binroots -}}
 
 {{- if and (eq .chezmoi.os "linux") (not (stat $gitCredentialManagerLocation )) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
@@ -95,6 +98,18 @@
         {{- writeToStdout "Can't find zsh \n" -}}
 {{- end -}}
 
+{{- if and (not (eq .chezmoi.os "windows")) (not (stat $manpagerLocation )) -}}
+        {{- writeToStdout "Can't find man pager \n" -}}
+{{- end -}}
+
+{{- if and (not (eq .chezmoi.os "windows")) (not (stat $lessLocation )) -}}
+        {{- writeToStdout "Can't find less \n" -}}
+{{- end -}}
+
+{{- if not (stat $mvnLocation ) -}}
+        {{- writeToStdout "Can't find maven (mvn) \n" -}}
+{{- end -}}
+
 [git]
     autoCommit = {{ $autoGit }}
     autoPush = {{ $autoGit }}
@@ -112,6 +127,8 @@
         vimpagerLocation="{{ $vimpagerLocation }}"
         gpgLocation="{{$gpgLocation}}"
         zshLocation="{{$zshLocation}}"
+        manpagerLocation="{{$manpagerLocation}}"
+        lessLocation="{{$lessLocation}}"
         optbins = [{{range $each := $optbins}}"{{$each}}", {{end}}]
         usrbins = [{{range $each := $usrbins}}"{{$each}}", {{end}}]
         usrlocalbins = [{{range $each := $usrlocalbins}}"{{$each}}", {{end}}]

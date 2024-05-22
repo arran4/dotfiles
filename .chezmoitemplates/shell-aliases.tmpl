@@ -29,8 +29,10 @@ alias ...="cd ../.. && ls"
 # Get week number
 alias week='date +%V'
 
+{{ if stat (index . "mvnLocation")}}
 # M2 nav
 alias pushd_m2='pushd ~/.m2/'
+{{end}}
 
 {{- if index $ "isWsl" }}
 alias open='explorer.exe'
