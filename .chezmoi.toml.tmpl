@@ -78,6 +78,10 @@
         {{- writeToStdout "Can't find vimdiff \n" -}}
 {{- end -}}
 
+{{- if and (eq .chezmoi.os "linux") (not (stat $vimpagerLocation)) -}}
+        {{- writeToStdout "Can't find vimpager \n" -}}
+{{- end -}}
+
 {{- if and (eq .chezmoi.os "linux") (not $headless) (not (stat $kdiff3Location)) -}}
         {{- writeToStdout "Can't find kdiff3 \n" -}}
 {{- end -}}
