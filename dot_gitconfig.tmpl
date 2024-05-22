@@ -43,7 +43,7 @@
 	useHttpPath = true
 {{ if eq .chezmoi.os "windows" }}
 [gpg]
-	program = "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe"
+	program = "{{ index . "gpgLocation" }}"
 {{ end }}
 
 [credential "https://source.developers.google.com"]
@@ -66,31 +66,34 @@
 [merge]
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
-{{ if and (index . "headless") (lookPath "vimdiff") }}
-	tool = vimdiff
+	# Should probably use a script to select here.
+{{ if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
+	tool = {{index . "vimdiffLocation"}}
     conflictstyle = diff3 # show original content before conflicts
-{{ else if and (eq .chezmoi.os "linux") (lookPath "kdiff3") }}
-	tool = kdiff3 
+{{ else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" ) ) }}
+	tool = {{index . "kdiff3Location" }} 
     conflictstyle = diff3 # show original content before conflicts
-{{ else if lookPath "vimdiff" }}
+{{ else if stat (index . "vimdiffLocation") }}
     conflictstyle = diff3 # show original content before conflicts
-	tool = vimdiff
+	tool = {{ index . "vimdiffLocation" }}
 {{ end }}
 
 [mergetool "kdiff3"]
     trustExitCode = false
 
+{{ if eq .chezmoi.os "darwin" }}
 [mergetool "sourcetree"]
 	cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
+{{end}}
 
 [diff]
-{{ if and (index . "headless") (lookPath "vimdiff") }}
-	tool = vimdiff
-{{ else if and (eq .chezmoi.os "linux") (lookPath "kdiff3") }}
-	tool = kdiff3 
-{{ else if lookPath "vimdiff" }}
-	tool = vimdiff
+{{ if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
+	tool = {{ index . "vimdiffLocation" }}
+{{ else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" )) }}
+	tool = {{ index . "kdiff3Location" }}
+{{ else if stat (index . "vimdiffLocation" ) }}
+	tool = {{ index . "vimdiffLocation" }}
 {{ end }}
     colorMoved = default
 

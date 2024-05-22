@@ -15,6 +15,7 @@
 {{- $binroots := (list) -}}
 {{- $terminfosearch := (list) -}}
 {{- $termfallback := (list "linux" "vt100" ) -}}
+{{- $gpgLocation := "/usr/bin/gpg" -}}
 
 #{{ if eq .chezmoi.os "darwin" }} Darwin
         {{- $optbins = (list) -}}
@@ -40,6 +41,7 @@
         {{- $binroots = (list) -}}
         {{- $terminfosearch = (list) -}}
         {{- $termfallback = (list "linux" "vt100" ) -}}
+        {{- gpgLocation = "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe" -}}
 #{{ else if eq .chezmoi.os "solaris" }} Solaris
         {{- $optbins = (list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" ) -}}
         {{- $usrbins = (list "local" "sfw" "ccs" ) -}}
@@ -58,30 +60,29 @@
         {{- $termfallback = (list "linux" "vt100" ) -}}
 #{{ end }} End OS Specific code
 
-
 {{- $gitCredentialManagerLocation := findExecutable "bin/git-credential-manager" $binroots -}}
+{{- $vimdiffLocation := findExecutable "bin/vimdiff" $binroots -}}
+{{- $kdiff3Location := findExecutable "bin/kdiff3" $binroots -}}
+{{- $vimLocation := findExecutable "bin/vim" $binroots -}}
+{{- $vimpagerLocation := findExecutable "bin/vimpager" $binroots -}}
 
 {{- if and (eq .chezmoi.os "linux") (not (stat $gitCredentialManagerLocation )) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
 {{- end -}}
 
-#{{- if and (eq .chezmoi.os "linux") (not (stat "/usr/bin/atuin" )) -}}
-#        {{- writeToStdout "Can't find atuin: https://github.com/ellie/atuin/releases \n" -}}
-#{{- end -}}
-
-{{- if and (eq .chezmoi.os "linux") (not (lookPath "vim")) -}}
+{{- if and (eq .chezmoi.os "linux") (not (stat $vimLocation)) -}}
         {{- writeToStdout "Can't find vim \n" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "linux") (not (lookPath "vimdiff")) -}}
+{{- if and (eq .chezmoi.os "linux") (not (stat $vimdiffLocation)) -}}
         {{- writeToStdout "Can't find vimdiff \n" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "linux") (not $headless) (not (lookPath "kdiff3")) -}}
+{{- if and (eq .chezmoi.os "linux") (not $headless) (not (stat $kdiff3Location)) -}}
         {{- writeToStdout "Can't find kdiff3 \n" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "windows") (not (stat "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe" )) -}}
+{{- if and (eq .chezmoi.os "windows") (not (stat $gpgLocation )) -}}
         {{- writeToStdout "Missing GPG install Kleopatra https://gpg4win.org/download.html \n" -}}
 {{- end -}}
 
@@ -96,6 +97,11 @@
         isDevcontainer={{ $isDevcontainer }}
         isGnome={{ $isGnome }}
         gitCredentialManagerLocation="{{ $gitCredentialManagerLocation }}"
+        vimdiffLocation="{{ $vimdiffLocation }}"
+        kdiff3Location="{{ $kdiff3Location }}"
+        vimLocation="{{ $vimLocation }}"
+        vimpagerLocation="{{ $vimpagerLocation }}"
+        gpgLocation="{{$gpgLocation}}"
         optbins = [{{range $each := $optbins}}"{{$each}}", {{end}}]
         usrbins = [{{range $each := $usrbins}}"{{$each}}", {{end}}]
         usrlocalbins = [{{range $each := $usrlocalbins}}"{{$each}}", {{end}}]
