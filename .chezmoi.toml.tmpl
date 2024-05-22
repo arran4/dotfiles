@@ -31,7 +31,7 @@
 	{{- $binpaths := (list) -}}
         {{- $binroots := (list) -}}
         {{- $terminfosearch := (list) -}}
-        {{- $termfallback := (list "linux", "vt100" ) -}}
+        {{- $termfallback := (list "linux" "vt100" ) -}}
 #{{ else if eq .chezmoi.os "solaris" }} Solaris
         {{- $optbins := (list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" ) -}}
         {{- $usrbins := (list "local" "sfw" "ccs" ) -}}
