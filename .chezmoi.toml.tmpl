@@ -96,7 +96,7 @@
         isWsl={{ $isWsl }}
         isDevcontainer={{ $isDevcontainer }}
         isGnome={{ $isGnome }}
-        gitCredentialManagerLocation={{ $gitCredentialManagerLocation }}
+        gitCredentialManagerLocation="{{ $gitCredentialManagerLocation }}"
         optbins = [{{range $each := $optbins}}"{{$each}}", {{end}}]
         usrbins = [{{range $each := $usrbins}}"{{$each}}", {{end}}]
         usrlocalbins = [{{range $each := $usrlocalbins}}"{{$each}}", {{end}}]
