@@ -8,6 +8,14 @@
 {{- $gpgconfigured := promptBool "gpgconfigured" $gpgconfiguredGuess -}}
 {{- $autoGit := promptBool "auto git?" true -}}
 
+{{- $optbins := (list) -}}
+{{- $usrbins := (list) -}}
+{{- $usrlocalbins := (list) -}}
+{{- $binpaths := (list) -}}
+{{- $binroots := (list) -}}
+{{- $terminfosearch := (list) -}}
+{{- $termfallback := (list "linux" "vt100" ) -}}
+
 #{{ if eq .chezmoi.os "darwin" }} Darwin
         {{- $optbins := (list) -}}
         {{- $usrbins := (list) -}}
