@@ -9,45 +9,45 @@
 {{- $autoGit := promptBool "auto git?" true -}}
 
 #{{ if eq .chezmoi.os "darwin" }} Darwin
-        {{- optbins := (list) -}}
-        {{- usrbins := (list) -}}
-        {{- usrlocalbins = (list) -}}
-	{{- binpaths := (list "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ) -}}
-        {{- binroots := (list "/" "/usr/" "{{ .chezmoi.homeDir }}" "{{ joinPath .chezmoi.homeDir "/.local" }}" "{{ joinPath .chezmoi.homeDir "/go" }}" "{{ joinPath .chezmoi.homeDir "/Library/flutter" }}" "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" "{{ joinPath .chezmoi.homeDir "/.cache/npm" }}" ) -}}
-        {{- terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
-        {{- termfallback := (list "xterm" "linux" "vt100" ) -}}
+        {{- $optbins := (list) -}}
+        {{- $usrbins := (list) -}}
+        {{- $usrlocalbins = (list) -}}
+	{{- $binpaths := (list "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ) -}}
+        {{- $binroots := (list "/" "/usr/" "{{ .chezmoi.homeDir }}" "{{ joinPath .chezmoi.homeDir "/.local" }}" "{{ joinPath .chezmoi.homeDir "/go" }}" "{{ joinPath .chezmoi.homeDir "/Library/flutter" }}" "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" "{{ joinPath .chezmoi.homeDir "/.cache/npm" }}" ) -}}
+        {{- $terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
+        {{- $termfallback := (list "xterm" "linux" "vt100" ) -}}
 #{{ else if eq .chezmoi.os "linux" }} Linux
-        {{- optbins := (list) -}}
-        {{- usrbins := (list "games" ) -}}
-        {{- usrlocalbins := (list) -}}
-	{{- binpaths := (list "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ) -}}
-        {{- binroots := (list "/" "/usr/" "/usr/local/" "{{ .chezmoi.homeDir }}" "{{ joinPath .chezmoi.homeDir "/.local" }}" "{{ joinPath .chezmoi.homeDir "/go" }}" "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}" "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" "{{ joinPath .chezmoi.homeDir "/.cache/npm" }}" ) -}}
-        {{- terminfosearch := (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
-        {{- termfallback := (list "rxvt" "xterm" "linux" "vt100" ) -}}
+        {{- $optbins := (list) -}}
+        {{- $usrbins := (list "games" ) -}}
+        {{- $usrlocalbins := (list) -}}
+	{{- $binpaths := (list "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ) -}}
+        {{- $binroots := (list "/" "/usr/" "/usr/local/" "{{ .chezmoi.homeDir }}" "{{ joinPath .chezmoi.homeDir "/.local" }}" "{{ joinPath .chezmoi.homeDir "/go" }}" "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}" "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" "{{ joinPath .chezmoi.homeDir "/.cache/npm" }}" ) -}}
+        {{- $terminfosearch := (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
+        {{- $termfallback := (list "rxvt" "xterm" "linux" "vt100" ) -}}
 #{{ else if eq .chezmoi.os "windows" }} Windows
-        {{- optbins := (list) -}}
-        {{- usrbins := (list) -}}
-        {{- usrlocalbins := (list) -}}
-	{{- binpaths := (list) -}}
-        {{- binroots := (list) -}}
-        {{- terminfosearch := (list) -}}
-        {{- termfallback := (list "linux", "vt100" ) -}}
+        {{- $optbins := (list) -}}
+        {{- $usrbins := (list) -}}
+        {{- $usrlocalbins := (list) -}}
+	{{- $binpaths := (list) -}}
+        {{- $binroots := (list) -}}
+        {{- $terminfosearch := (list) -}}
+        {{- $termfallback := (list "linux", "vt100" ) -}}
 #{{ else if eq .chezmoi.os "solaris" }} Solaris
-        {{- optbins := (list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" ) -}}
-        {{- usrbins := (list "local" "sfw" "ccs" ) -}}
-        {{- usrlocalbins := (list "mysql" "apache" "apache2" "php" ) -}}
-	{{- binpaths := (list "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ) -}}
-        {{- binroots := (list "/" "/usr/" "{{ .chezmoi.homeDir }}" "{{ joinPath .chezmoi.homeDir "/.local" }}" "{{ joinPath .chezmoi.homeDir "/go" }}" }}" )
-        {{- terminfosearch := (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
-        {{- termfallback := (list "xterm" "linux" "vt100" ) -}}
+        {{- $optbins := (list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" ) -}}
+        {{- $usrbins := (list "local" "sfw" "ccs" ) -}}
+        {{- $usrlocalbins := (list "mysql" "apache" "apache2" "php" ) -}}
+	{{- $binpaths := (list "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ) -}}
+        {{- $binroots := (list "/" "/usr/" "{{ .chezmoi.homeDir }}" "{{ joinPath .chezmoi.homeDir "/.local" }}" "{{ joinPath .chezmoi.homeDir "/go" }}" }}" )
+        {{- $terminfosearch := (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
+        {{- $termfallback := (list "xterm" "linux" "vt100" ) -}}
 #{{ else }} Unknown OS {{ .chezmoi.os }}
-        {{- optbins := (list) -}}
-        {{- usrbins := (list) -}}
-        {{- usrlocalbins := (list) -}}
-	{{- binpaths := (list) -}}
-        {{- binroots := (list) -}}
-        {{- terminfosearch := (list) -}}
-        {{- termfallback := (list "linux" "vt100" )
+        {{- $optbins := (list) -}}
+        {{- $usrbins := (list) -}}
+        {{- $usrlocalbins := (list) -}}
+	{{- $binpaths := (list) -}}
+        {{- $binroots := (list) -}}
+        {{- $terminfosearch := (list) -}}
+        {{- $termfallback := (list "linux" "vt100" )
 #{{ end }} End OS Specific code
 
 
