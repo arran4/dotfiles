@@ -8,13 +8,58 @@
 {{- $gpgconfigured := promptBool "gpgconfigured" $gpgconfiguredGuess -}}
 {{- $autoGit := promptBool "auto git?" true -}}
 
+#{{ if eq .chezmoi.os "darwin" }} Darwin
+        {{- optbins := (list) -}}
+        {{- usrbins := (list) -}}
+        {{- usrlocalbins = (list) -}}
+	{{- binpaths := (list "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ) -}}
+        {{- binroots := (list "/" "/usr/" "{{ .chezmoi.homeDir }}" "{{ joinPath .chezmoi.homeDir "/.local" }}" "{{ joinPath .chezmoi.homeDir "/go" }}" "{{ joinPath .chezmoi.homeDir "/Library/flutter" }}" "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" "{{ joinPath .chezmoi.homeDir "/.cache/npm" }}" ) -}}
+        {{- terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
+        {{- termfallback := (list "xterm" "linux" "vt100" ) -}}
+#{{ else if eq .chezmoi.os "linux" }} Linux
+        {{- optbins := (list) -}}
+        {{- usrbins := (list "games" ) -}}
+        {{- usrlocalbins := (list) -}}
+	{{- binpaths := (list "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ) -}}
+        {{- binroots := (list "/" "/usr/" "/usr/local/" "{{ .chezmoi.homeDir }}" "{{ joinPath .chezmoi.homeDir "/.local" }}" "{{ joinPath .chezmoi.homeDir "/go" }}" "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}" "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}" "{{ joinPath .chezmoi.homeDir "/.cache/npm" }}" ) -}}
+        {{- terminfosearch := (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
+        {{- termfallback := (list "rxvt" "xterm" "linux" "vt100" ) -}}
+#{{ else if eq .chezmoi.os "windows" }} Windows
+        {{- optbins := (list) -}}
+        {{- usrbins := (list) -}}
+        {{- usrlocalbins := (list) -}}
+	{{- binpaths := (list) -}}
+        {{- binroots := (list) -}}
+        {{- terminfosearch := (list) -}}
+        {{- termfallback := (list "linux", "vt100" ) -}}
+#{{ else if eq .chezmoi.os "solaris" }} Solaris
+        {{- optbins := (list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" ) -}}
+        {{- usrbins := (list "local" "sfw" "ccs" ) -}}
+        {{- usrlocalbins := (list "mysql" "apache" "apache2" "php" ) -}}
+	{{- binpaths := (list "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ) -}}
+        {{- binroots := (list "/" "/usr/" "{{ .chezmoi.homeDir }}" "{{ joinPath .chezmoi.homeDir "/.local" }}" "{{ joinPath .chezmoi.homeDir "/go" }}" }}" )
+        {{- terminfosearch := (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
+        {{- termfallback := (list "xterm" "linux" "vt100" ) -}}
+#{{ else }} Unknown OS {{ .chezmoi.os }}
+        {{- optbins := (list) -}}
+        {{- usrbins := (list) -}}
+        {{- usrlocalbins := (list) -}}
+	{{- binpaths := (list) -}}
+        {{- binroots := (list) -}}
+        {{- terminfosearch := (list) -}}
+        {{- termfallback := (list "linux" "vt100" )
+#{{ end }} End OS Specific code
+
+
+{{- $gitCredentialManagerLocation := findExecutable "bin/git-credential-manager" binroots -}}
+
 {{- if and (eq .chezmoi.os "linux") (not (stat "/usr/local/bin/git-credential-manager" )) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "linux") (not (stat "/usr/bin/atuin" )) -}}
-        {{- writeToStdout "Can't find atuin: https://github.com/ellie/atuin/releases \n" -}}
-{{- end -}}
+#{{- if and (eq .chezmoi.os "linux") (not (stat "/usr/bin/atuin" )) -}}
+#        {{- writeToStdout "Can't find atuin: https://github.com/ellie/atuin/releases \n" -}}
+#{{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (not (lookPath "vim")) -}}
         {{- writeToStdout "Can't find vim \n" -}}
@@ -42,48 +87,14 @@
         isWsl={{ $isWsl }}
         isDevcontainer={{ $isDevcontainer }}
         isGnome={{ $isGnome }}
-
-#{{ if eq .chezmoi.os "darwin" }} Darwin
-        optbins = []
-        usrbins = []
-        usrlocalbins = []
-	binpaths = [ "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ]
-        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}", "{{ joinPath .chezmoi.homeDir "/Library/flutter" }}", "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}", "{{ joinPath .chezmoi.homeDir "/.cache/npm" }}" ]
-        terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
-        termfallback = [ "xterm", "linux", "vt100" ]
-#{{ else if eq .chezmoi.os "linux" }} Linux
-        optbins = []
-        usrbins = ["games"]
-        usrlocalbins = []
-	binpaths = [ "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ]
-        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}", "{{ joinPath .chezmoi.homeDir "/libs/flutter" }}", "{{ joinPath .chezmoi.homeDir "/.pub-cache" }}", "{{ joinPath .chezmoi.homeDir "/.cache/npm" }}" ]
-        terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
-        termfallback = [ "rxvt", "xterm", "linux", "vt100" ]
-#{{ else if eq .chezmoi.os "windows" }} Windows
-        optbins = []
-        usrbins = []
-        usrlocalbins = []
-	binpaths = [ ]
-        binroots = [ ]
-        terminfosearch = [ ]
-        termfallback = [ "linux", "vt100" ]
-#{{ else if eq .chezmoi.os "solaris" }} Solaris
-        optbins = [ "httrack", "SUNWsneep", "test", "VRTSvxvm", "SUNWvts", "SUNWexplo", "VRTS", "VRTSob" ]
-        usrbins = [ "local", "sfw", "ccs" ]
-        usrlocalbins = [ "mysql", "apache", "apache2", "php" ]
-	binpaths = [ "{{ joinPath .chezmoi.homeDir "/.dotnet/tools" }}" ]
-        binroots = [ "/", "/usr/", "{{ .chezmoi.homeDir }}", "{{ joinPath .chezmoi.homeDir "/.local" }}", "{{ joinPath .chezmoi.homeDir "/go" }}" }}" ]
-        terminfosearch = [ "/usr/share/terminfo", "/usr/lib/share/terminfo", "/usr/share/lib/terminfo" ]
-        termfallback = [ "xterm", "linux", "vt100" ]
-#{{ else }} Unknown OS {{ .chezmoi.os }}
-        optbins = []
-        usrbins = []
-        usrlocalbins = []
-	binpaths = []
-        binroots = [  ]
-        terminfosearch = [ ]
-        termfallback = [ "linux", "vt100" ]
-#{{ end }} End OS Specific code
+        gitCredentialManagerLocation={{ $gitCredentialManagerLocation }}
+        optbins = [{{range $each := $optbins}}"{{$each}}", {{end}}]
+        usrbins = [{{range $each := $usrbins}}"{{$each}}", {{end}}]
+        usrlocalbins = [{{range $each := $usrlocalbins}}"{{$each}}", {{end}}]
+        binpaths = [{{range $each := $binpaths}}"{{$each}}", {{end}}]
+        binroots = [{{range $each := $binroots}}"{{$each}}", {{end}}]
+        terminfosearch = [{{range $each := $terminfosearch}}"{{$each}}", {{end}}]
+        termfallback = [{{range $each := $termfallback}}"{{$each}}", {{end}}]
 
 #[diff]
 #{{ if and (index . "headless") (lookPath "vimdiff") }}
