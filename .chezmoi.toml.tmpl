@@ -41,7 +41,7 @@
         {{- $binroots = (list) -}}
         {{- $terminfosearch = (list) -}}
         {{- $termfallback = (list "linux" "vt100" ) -}}
-        {{- gpgLocation = "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe" -}}
+        {{- $gpgLocation = "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe" -}}
 #{{ else if eq .chezmoi.os "solaris" }} Solaris
         {{- $optbins = (list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" ) -}}
         {{- $usrbins = (list "local" "sfw" "ccs" ) -}}
