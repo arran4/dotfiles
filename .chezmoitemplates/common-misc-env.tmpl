@@ -10,13 +10,10 @@ export WATCH=root
 	# No vim found!
 {{- end }}
 
-{{ if stat (index . "manpagerLocation") -}}
-	export MANPAGER='{{(index . "manpagerLocation")}}'
+{{ if stat (index . "vimpagerLocation") -}}
 	# Pager IS less
-	export PAGER={{(index . "lessLocation")}}
+	export PAGER={{(index . "vimpagerLocation")}}
 {{ else if stat (index . "lessLocation") -}}
-	# Don’t clear the screen after quitting a manual page.
-	export MANPAGER='{{(index . "lessLocation")}} -is -R -X'
 	# Pager IS less
 	export PAGER={{(index . "lessLocation")}}
 {{- else -}}
