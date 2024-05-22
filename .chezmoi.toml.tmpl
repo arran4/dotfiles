@@ -61,7 +61,7 @@
 
 {{- $gitCredentialManagerLocation := findExecutable "bin/git-credential-manager" $binroots -}}
 
-{{- if and (eq .chezmoi.os "linux") (not (stat "/usr/local/bin/git-credential-manager" )) -}}
+{{- if and (eq .chezmoi.os "linux") (not (stat $gitCredentialManagerLocation )) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
 {{- end -}}
 
