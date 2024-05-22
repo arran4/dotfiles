@@ -64,7 +64,7 @@
 {{- if and (eq .chezmoi.os "linux") (not (stat $gitCredentialManagerLocation )) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
         {{- writeToStdout "Dirs: [" -}}
-        {{- writeToStdout (join ", " $binroots) -}}
+        {{- writeToStdout (join ", " $termfallback) -}}
         {{- writeToStdout "]\n" -}}
 {{- end -}}
 
