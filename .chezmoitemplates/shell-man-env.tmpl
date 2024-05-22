@@ -1,7 +1,7 @@
 # TODO oneday Manpage path discovery
 
-{{ if stat (index . "vimpagerLocation") -}}
-	export MANPAGER="{{(index . "vimpagerLocation")}}  -c 'set ft=man ts=8 nomod nolist nonu noma'"
+{{ if and (stat (index . "vimpagerLocation")) false -}}
+	export MANPAGER="{{(index . "vimpagerLocation")}}"
 {{ else if stat (index . "lessLocation") -}}
 	# Don’t clear the screen after quitting a manual page.
 	export MANPAGER='{{(index . "lessLocation")}} -is -R -X'
