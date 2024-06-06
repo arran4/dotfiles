@@ -68,6 +68,8 @@
 {{- $zshLocation := findExecutable "bin/zsh" $binroots -}}
 {{- $lessLocation := findExecutable "bin/less" $binroots -}}
 {{- $mvnLocation := findExecutable "bin/mvn" $binroots -}}
+{{- $xellijLocation := findExecutable "bin/xellij" $binroots -}}
+{{- $tmuxLocation := findExecutable "bin/tmux" $binroots -}}
 
 {{- if and (eq .chezmoi.os "linux") (not (stat $gitCredentialManagerLocation )) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
@@ -83,6 +85,14 @@
 
 {{- if and (eq .chezmoi.os "linux") (not (stat $vimpagerLocation)) -}}
         {{- writeToStdout "Can't find vimpager \n" -}}
+{{- end -}}
+
+{{- if and (not (eq .chezmoi.os "windows")) (not (stat $xellijLocation)) -}}
+        {{- writeToStdout "Can't find xellij \n" -}}
+{{- end -}}
+
+{{- if and (not (eq .chezmoi.os "windows")) (not (stat $tmuxLocation)) -}}
+        {{- writeToStdout "Can't find tmux \n" -}}
 {{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (not $headless) (not (stat $kdiff3Location)) -}}
