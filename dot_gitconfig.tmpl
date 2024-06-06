@@ -124,7 +124,7 @@
 {{ if index . "gpgconfigured" }}
 	gpgsign = true
 {{ end }}
-	template = ~/.config/git/tagmessage
+#	template = ~/.config/git/tagmessage
 
 [push]
 {{ if index . "gpgconfigured" }}
