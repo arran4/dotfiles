@@ -62,10 +62,12 @@
 
 {{- $gitCredentialManagerLocation := findExecutable "bin/git-credential-manager" $binroots -}}
 {{- $vimdiffLocation := findExecutable "bin/vimdiff" $binroots -}}
+{{- $nvimdiffLocation := findExecutable "bin/nvimdiff" $binroots -}}
 {{- $kdiff3Location := findExecutable "bin/kdiff3" $binroots -}}
 {{- $vimLocation := findExecutable "bin/vim" $binroots -}}
 {{- $neovimLocation := findExecutable "bin/nvim" $binroots -}}
 {{- $vimpagerLocation := findExecutable "bin/vimpager" $binroots -}}
+{{- $nvimpagerLocation := findExecutable "bin/nvimpager" $binroots -}}
 {{- $zshLocation := findExecutable "bin/zsh" $binroots -}}
 {{- $lessLocation := findExecutable "bin/less" $binroots -}}
 {{- $mvnLocation := findExecutable "bin/mvn" $binroots -}}
@@ -132,10 +134,12 @@
         isGnome={{ $isGnome }}
         gitCredentialManagerLocation="{{ $gitCredentialManagerLocation }}"
         vimdiffLocation="{{ $vimdiffLocation }}"
+        nvimdiffLocation="{{ $nvimdiffLocation }}"
         kdiff3Location="{{ $kdiff3Location }}"
         vimLocation="{{ $vimLocation }}"
         neovimLocation="{{ $neovimLocation }}"
         vimpagerLocation="{{ $vimpagerLocation }}"
+        nvimpagerLocation="{{ $nvimpagerLocation }}"
         gpgLocation="{{$gpgLocation}}"
         zshLocation="{{$zshLocation}}"
         lessLocation="{{$lessLocation}}"
@@ -148,14 +152,10 @@
         terminfosearch = [{{range $each := $terminfosearch}}"{{$each}}", {{end}}]
         termfallback = [{{range $each := $termfallback}}"{{$each}}", {{end}}]
 
-#[diff]
-#{{ if and (index . "headless") (lookPath "vimdiff") }}
-#	command = "vimdiff"
-#{{ else if and (eq .chezmoi.os "linux") (lookPath "kdiff3") }}
-#	command = "kdiff3"
-#{{ else if lookPath "vimdiff" }}
-#	command = "vimdiff"
-#{{ end }}
+{{if stat $nvimdiffLocation -}}
+[diff]
+	command = "$nvimdiffLocation -dm"
 
-#[merge]
-#	command = "vimdiff"
+[merge]
+	command = "$nvimdiffLocation -d"
+{{end -}}

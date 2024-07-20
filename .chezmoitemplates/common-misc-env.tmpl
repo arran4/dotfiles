@@ -15,7 +15,10 @@ export WATCH=root
 	# No vim found!
 {{- end }}
 
-{{ if stat (index . "vimpagerLocation") -}}
+{{ if stat (index . "nvimpagerLocation") -}}
+	# Pager IS less
+	export PAGER={{(index . "nvimpagerLocation")}}
+{{ else if stat (index . "vimpagerLocation") -}}
 	# Pager IS less
 	export PAGER={{(index . "vimpagerLocation")}}
 {{ else if stat (index . "lessLocation") -}}
