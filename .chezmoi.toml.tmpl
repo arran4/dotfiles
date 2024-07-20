@@ -152,10 +152,7 @@
         terminfosearch = [{{range $each := $terminfosearch}}"{{$each}}", {{end}}]
         termfallback = [{{range $each := $termfallback}}"{{$each}}", {{end}}]
 
-{{if stat $nvimdiffLocation -}}
 [diff]
-	command = "$nvimdiffLocation -dm"
-
+	command = "less"
 [merge]
-	command = "$nvimdiffLocation -d"
-{{end -}}
+	command = "less"
