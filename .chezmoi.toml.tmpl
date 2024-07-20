@@ -64,6 +64,7 @@
 {{- $vimdiffLocation := findExecutable "bin/vimdiff" $binroots -}}
 {{- $kdiff3Location := findExecutable "bin/kdiff3" $binroots -}}
 {{- $vimLocation := findExecutable "bin/vim" $binroots -}}
+{{- $neovimLocation := findExecutable "bin/nvim" $binroots -}}
 {{- $vimpagerLocation := findExecutable "bin/vimpager" $binroots -}}
 {{- $zshLocation := findExecutable "bin/zsh" $binroots -}}
 {{- $lessLocation := findExecutable "bin/less" $binroots -}}
@@ -73,6 +74,10 @@
 
 {{- if and (eq .chezmoi.os "linux") (not (stat $gitCredentialManagerLocation )) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
+{{- end -}}
+
+{{- if and (eq .chezmoi.os "linux") (not (stat $neovimLocation)) -}}
+        {{- writeToStdout "Can't find neovim \n" -}}
 {{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (not (stat $vimLocation)) -}}

@@ -1,7 +1,12 @@
 export WATCHFMT="%D %T %n@%l.%M %a"
 export WATCH=root
 
-{{if stat (index . "vimLocation") -}}
+{{if stat (index . "neovimLocation") -}}
+	# Make neovim the default editor.
+	export EDITOR='{{(index . "neovimLocation")}}'
+	export VISUAL={{(index . "neovimLocation")}}
+	export ALTERNATE_EDITOR=''
+{{- else if stat (index . "vimLocation") -}}
 	# Make vim the default editor.
 	export EDITOR='{{(index . "vimLocation")}}'
 	export VISUAL={{(index . "vimLocation")}}
