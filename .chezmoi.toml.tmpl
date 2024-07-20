@@ -154,5 +154,10 @@
 
 [diff]
 	command = "more"
+{{if stat $nvimdiffLocation -}}
 [merge]
-	command = "more"
+	command = "{{$nvimdiffLocation}}"
+{{else if stat $vimdiffLocation -}}
+[merge]
+	command = "{{$vimdiffLocation}}"
+{{end -}}
