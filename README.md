@@ -66,6 +66,7 @@ of PR or issues.
 | [Kleopatra](https://www.openpgp.org/software/kleopatra/)    | 📖🐧🪟🖱️️               | GPG certificate manager                                                                                                              |
 | [Strawberry](https://www.strawberrymusicplayer.org/)        | ✅🍎🤖🐧🪟🌐🖱️️              | Desktop Music Player                                                                                                                 |
 | [Audacious](https://audacious-media-player.org/)            | 🍎🤖🐧🪟🌐🖱️️               | Desktop Music Player - With winamp skin support                                                                                      |
+| [Uptimed](https://github.com/rpodgorny/uptimed)             | 📖✅🍎🤖🐧🪟⌨               | A (local) service that keeps a record of all your uptimes |
 
 ## Legend
 
