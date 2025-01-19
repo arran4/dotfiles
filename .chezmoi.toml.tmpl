@@ -30,7 +30,7 @@
         {{- $usrbins = (list "games" ) -}}
         {{- $usrlocalbins = (list) -}}
 	{{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools" ) ) -}}
-        {{- $binroots = (list "/" "/usr/" "/usr/local/" .chezmoi.homeDir (joinPath .chezmoi.homeDir "/.local" ) (joinPath .chezmoi.homeDir "/go" ) (joinPath .chezmoi.homeDir "/libs/flutter" ) (joinPath .chezmoi.homeDir "/.pub-cache" ) (joinPath .chezmoi.homeDir "/.cache/npm" ) ) -}}
+        {{- $binroots = (list "/" "/usr/" "/usr/local/" .chezmoi.homeDir (joinPath .chezmoi.homeDir "/.local" ) (joinPath .chezmoi.homeDir "/go" ) (joinPath .chezmoi.homeDir "/.go/path" ) (joinPath .chezmoi.homeDir "/libs/flutter" ) (joinPath .chezmoi.homeDir "/.pub-cache" ) (joinPath .chezmoi.homeDir "/.cache/npm" ) ) -}}
         {{- $terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
         {{- $termfallback = (list "rxvt" "xterm" "linux" "vt100" ) -}}
 #{{ else if eq .chezmoi.os "windows" }} Windows
