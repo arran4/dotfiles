@@ -11,7 +11,7 @@
 	# quotepath = false # Unicode characters
 {{ if lookPath "vimdiff" }}
     pager = vimdiff
-{{ elif lookPath "delta" }}
+{{ else if lookPath "delta" }}
     pager = delta
 {{ end }}
 
