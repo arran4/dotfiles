@@ -9,13 +9,13 @@
 	excludesfile = {{ .chezmoi.homeDir}}/.gitignore
 	longpaths = true
 	# quotepath = false # Unicode characters
-{{ if lookPath "less" }}
-    pager = less
-{{ else if lookPath "vimpager" }}
-    pager = vimpager
-{{ else if lookPath "delta" }}
-    pager = delta
-{{ end }}
+#{{ if lookPath "less" }}
+#    pager = less
+#{{ else if lookPath "vimpager" }}
+#    pager = vimpager
+#{{ else if lookPath "delta" }}
+#    pager = delta
+#{{ end }}
 
 [rerere]
   enabled = 1
