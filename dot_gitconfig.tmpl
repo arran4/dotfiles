@@ -9,8 +9,8 @@
 	excludesfile = {{ .chezmoi.homeDir}}/.gitignore
 	longpaths = true
 	# quotepath = false # Unicode characters
-{{ if lookPath "vimdiff" }}
-    pager = vimdiff
+{{ if lookPath "vimpager" }}
+    pager = vimpager
 {{ else if lookPath "delta" }}
     pager = delta
 {{ end }}
