@@ -80,7 +80,10 @@
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
 	# Should probably use a script to select here.
-{{ if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
+{{ if lookPath "delta" }}
+    conflictstyle = zdiff3
+	tool = delta
+{{ else if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
 	tool = {{index . "vimdiffLocation"}}
     conflictstyle = diff3 # show original content before conflicts
 {{ else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" ) ) }}
@@ -162,10 +165,14 @@
 [delta]
     navigate = true
 
-{{ if lookPath "delta" }}
 [interactive]
+{{ if lookPath "delta" }}
     diffFilter = delta --color-only
-{{end}}
+{{ else if lookPath "vimpager" }}
+{{ else if lookPath "nvim" }}
+{{ else if lookPath "vim" }}
+{{ end }}
+
 
 [http]
 	cookiefile = ~/.cache/git/cookies
