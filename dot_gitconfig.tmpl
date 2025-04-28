@@ -145,6 +145,10 @@
 	gpgsign = true
 {{ end }}
 #	template = ~/.config/git/tagmessage
+{{ if lookPath "delta" }}
+	# Intentionally different
+	pager = nvimdiff
+{{end}}
 
 [push]
 {{ if index . "gpgconfigured" }}
