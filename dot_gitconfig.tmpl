@@ -11,6 +11,8 @@
 	# quotepath = false # Unicode characters
 {{ if lookPath "delta" }}
     pager = delta
+{{ else if lookPath "nvimpager" }}
+    pager = nvimpager
 {{ else if lookPath "vimpager" }}
     pager = vimpager
 {{ else if lookPath "nvim" }}
