@@ -106,7 +106,9 @@
 {{end}}
 
 [diff]
-{{ if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
+{{ if lookPath "delta" }}
+	tool = delta
+{{ else if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
 	tool = {{ index . "vimdiffLocation" }}
 {{ else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" )) }}
 	tool = {{ index . "kdiff3Location" }}
