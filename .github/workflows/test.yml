@@ -9,6 +9,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - run: shellcheck **/*.sh
+      - run: |
+          shopt -s globstar
+          shellcheck **/*.sh
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --apply arran4
