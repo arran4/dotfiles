@@ -6,7 +6,7 @@
 [core]
 	autocrlf = input
 	#editor = vim
-	excludesfile = {{ .chezmoi.homeDir}}/.gitignore
+	excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
 	longpaths = true
 	# quotepath = false # Unicode characters
 {{ if lookPath "delta" }}
