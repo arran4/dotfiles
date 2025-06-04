@@ -9,6 +9,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
       - run: |
           shopt -s globstar
           shellcheck **/*.sh
