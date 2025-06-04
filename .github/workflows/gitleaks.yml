@@ -1,11 +1,15 @@
 name: gitleaks
 
-on: [push,pull_request]
+on: [push, pull_request]
 
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: gitleaks-action
-      uses: zricethezav/gitleaks-action@master
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks-action
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
