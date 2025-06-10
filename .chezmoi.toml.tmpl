@@ -61,6 +61,15 @@
 #{{ end }} End OS Specific code
 
 {{- $gitCredentialManagerLocation := findExecutable "bin/git-credential-manager" $binroots -}}
+{{- $gitCredentialOAuthLocation := "" -}}
+{{- if stat (joinPath .chezmoi.homeDir "/.local/bin/git-credential-oauth") -}}
+  {{- $gitCredentialOAuthLocation = joinPath .chezmoi.homeDir "/.local/bin/git-credential-oauth" -}}
+{{- else -}}
+  {{- $gitCredentialOAuthLocation = findExecutable "bin/git-credential-oauth" $binroots -}}
+  {{- if eq $gitCredentialOAuthLocation "" -}}
+    {{- $gitCredentialOAuthLocation = lookPath "git-credential-oauth" -}}
+  {{- end -}}
+{{- end -}}
 {{- $vimdiffLocation := findExecutable "bin/vimdiff" $binroots -}}
 {{- $nvimdiffLocation := findExecutable "bin/nvimdiff" $binroots -}}
 {{- $kdiff3Location := findExecutable "bin/kdiff3" $binroots -}}
@@ -133,6 +142,7 @@
         isDevcontainer={{ $isDevcontainer }}
         isGnome={{ $isGnome }}
         gitCredentialManagerLocation="{{ $gitCredentialManagerLocation }}"
+        gitCredentialOAuthLocation="{{ $gitCredentialOAuthLocation }}"
         vimdiffLocation="{{ $vimdiffLocation }}"
         nvimdiffLocation="{{ $nvimdiffLocation }}"
         kdiff3Location="{{ $kdiff3Location }}"
