@@ -28,10 +28,19 @@
 	useHttpPath = true
 
 [credential]
+{{ $oauthHelper := (index . "gitCredentialOAuthLocation") }}
+{{ if ne $oauthHelper "" }}
+  helper = cache --timeout 21600 # six hours
+  {{ if index . "headless" }}
+  helper = oauth -device
+  {{ else }}
+  helper = oauth
+  {{ end }}
+{{ end }}
 {{ if index . "headless" }}
-	credentialStore = cache
-	cacheOptions = "--timeout 14400"
-	helper = {{ index $ "gitCredentialManagerLocation" }}
+        credentialStore = cache
+        cacheOptions = "--timeout 14400"
+        helper = {{ index $ "gitCredentialManagerLocation" }}
 {{ else if eq .chezmoi.os "linux" }}
 	{{ if eq .chezmoi.osRelease.id "ubuntu" }}
 	       credentialStore = secretservice
