@@ -7,6 +7,8 @@
 {{- $headless := promptBool "headless" $headlessGuess -}}
 {{- $gpgconfigured := promptBool "gpgconfigured" $gpgconfiguredGuess -}}
 {{- $autoGit := promptBool "auto git?" true -}}
+{{- $gitUserName := promptString "git user.name" (trimSpace (output "sh" "-c" "git config --get user.name 2>/dev/null || getent passwd $(id -un) | cut -d ':' -f5 | cut -d ',' -f1 || getent passwd $(id -un) | cut -d ':' -f1")) -}}
+{{- $gitUserEmail := promptString "git user.email" (trimSpace (output "sh" "-c" "git config --get user.email 2>/dev/null || true")) -}}
 
 {{- $optbins := (list) -}}
 {{- $usrbins := (list) -}}
@@ -141,6 +143,8 @@
         isWsl={{ $isWsl }}
         isDevcontainer={{ $isDevcontainer }}
         isGnome={{ $isGnome }}
+        gitUserName="{{ $gitUserName }}"
+        gitUserEmail="{{ $gitUserEmail }}"
         gitCredentialManagerLocation="{{ $gitCredentialManagerLocation }}"
         gitCredentialOAuthLocation="{{ $gitCredentialOAuthLocation }}"
         vimdiffLocation="{{ $vimdiffLocation }}"

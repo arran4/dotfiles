@@ -1,6 +1,7 @@
 [user]
-	name = Arran Ubels
-	useConfigOnly = true
+  name = {{ index . "gitUserName" }}
+  email = {{ index . "gitUserEmail" }}
+  useConfigOnly = true
 [init]
 	defaultBranch=main
 [core]
