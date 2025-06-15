@@ -1,22 +1,25 @@
 # Terminfo Path discovery
-if [ ! -e "$TERMINFO" ]; then
-	{{range $i, $p := ( index $ "terminfosearch" ) -}} 
-		{{- if stat $p -}}if [ -e "{{$p}}" ]; then
-		export TERMINFO="{{$p}}"
-	el
-		{{- end -}} 
-	{{- else}}if [ ]; then echo -n; el{{- end }}se
-		echo "No term path discovered"
-	fi
-fi
+{{- $terminfo := "" -}}
+{{- range $p := (index $ "terminfosearch") -}}
+  {{- if and (eq $terminfo "") (stat $p) -}}
+    {{- $terminfo = $p -}}
+  {{- end -}}
+{{- end -}}
+{{- if and (eq (index . "TERMINFO") "") (ne $terminfo "") }}
+export TERMINFO="{{ $terminfo }}"
+{{- end }}
 
 # TERM fallback discovery
-if [ -e "$TERMINFO" ] && [ ! "$TERMINFO/$TERM[0]/$TERM" ]; then
-	{{range $i, $p := ( index $ "termfallback" ) -}} 
-		if [ -e "${TERMINFO}}/{{printf "%c" ( index $p 0 ) }}/{{$p}}" ]; then
-		export TERM="{{$p}}"
-	el	
-	{{- else}}if [ ]; then echo -n; el{{- end }}se
-		echo "No term discovered"
-	fi
+{{- if ne $terminfo "" -}}
+  {{- $fallback := "" -}}
+  {{- range $t := (index $ "termfallback") -}}
+    {{- if and (eq $fallback "") (stat (printf "%s/%c/%s" $terminfo (index $t 0) $t)) -}}
+      {{- $fallback = $t -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if ne $fallback "" -}}
+if [ ! -e "$TERMINFO/$(printf '%s' "$TERM" | cut -c1)/$TERM" ]; then
+  export TERM="{{ $fallback }}"
 fi
+  {{- end -}}
+{{- end -}}
