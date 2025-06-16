@@ -10,17 +10,10 @@
 	excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
 	longpaths = true
 	# quotepath = false # Unicode characters
-{{ if lookPath "delta" }}
-    pager = delta
-{{ else if lookPath "nvimpager" }}
-    pager = nvimpager
-{{ else if lookPath "vimpager" }}
-    pager = vimpager
-{{ else if lookPath "nvim" }}
-    pager = nvim
-{{ else if lookPath "vim" }}
-    pager = vim
-{{ end }}
+{{- $pager := findOneExecutable "delta" "nvimpager" "vimpager" "nvim" "vim" -}}
+{{- if ne $pager "" }}
+  pager = {{$pager}}
+{{- end }}
 
 [rerere]
   enabled = 1
@@ -92,19 +85,15 @@
 	# Include summaries of merged commits in newly created merge commit messages
 	log = true
 	# Should probably use a script to select here.
-{{ if lookPath "delta" }}
+{{- $mergeTool := findOneExecutable "delta" (index . "vimdiffLocation") (index . "kdiff3Location") -}}
+{{- if ne $mergeTool "" }}
+  {{- if eq $mergeTool "delta" }}
     conflictstyle = zdiff3
-	tool = delta
-{{ else if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
-	tool = {{index . "vimdiffLocation"}}
+  {{- else }}
     conflictstyle = diff3 # show original content before conflicts
-{{ else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" ) ) }}
-	tool = {{index . "kdiff3Location" }}
-    conflictstyle = diff3 # show original content before conflicts
-{{ else if stat (index . "vimdiffLocation") }}
-    conflictstyle = diff3 # show original content before conflicts
-	tool = {{ index . "vimdiffLocation" }}
-{{ end }}
+  {{- end }}
+  tool = {{$mergeTool}}
+{{- end }}
 
 [mergetool "kdiff3"]
     trustExitCode = false
