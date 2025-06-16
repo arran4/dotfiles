@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+  pull_request:
 
 jobs:
   build:
@@ -15,4 +16,4 @@ jobs:
           shopt -s globstar
           shellcheck **/*.sh
       - run: |
-          yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --apply arran4
+          yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
