@@ -79,6 +79,7 @@
 {{- $neovimLocation := findExecutable "bin/nvim" $binroots -}}
 {{- $vimpagerLocation := findExecutable "bin/vimpager" $binroots -}}
 {{- $nvimpagerLocation := findExecutable "bin/nvimpager" $binroots -}}
+{{- $gitPagerLocation := findOneExecutable (list "delta" "nvimpager" "vimpager" "nvim" "vim") $binroots -}}
 {{- $zshLocation := findExecutable "bin/zsh" $binroots -}}
 {{- $lessLocation := findExecutable "bin/less" $binroots -}}
 {{- $mvnLocation := findExecutable "bin/mvn" $binroots -}}
@@ -146,6 +147,9 @@
 
 {{- if and (eq .chezmoi.os "linux") (not (stat $vimpagerLocation)) -}}
         {{- writeToStdout "Can't find vimpager \n" -}}
+{{- end -}}
+{{- if not (stat $gitPagerLocation ) -}}
+        {{- writeToStdout "Can't find suitable git pager \n" -}}
 {{- end -}}
 
 {{- if and (not (eq .chezmoi.os "windows")) (not (stat $zellijLocation)) -}}
@@ -221,6 +225,7 @@
         neovimLocation="{{ $neovimLocation }}"
         vimpagerLocation="{{ $vimpagerLocation }}"
         nvimpagerLocation="{{ $nvimpagerLocation }}"
+        gitPagerLocation="{{ $gitPagerLocation }}"
         gpgLocation="{{$gpgLocation}}"
         zshLocation="{{$zshLocation}}"
         lessLocation="{{$lessLocation}}"
