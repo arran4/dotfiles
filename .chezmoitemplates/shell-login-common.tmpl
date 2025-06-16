@@ -13,10 +13,10 @@ echo "Unknown shell"
 
 echo "System is `uname -a`"
 echo "$USER@$HOST Using term $TERM";
-if [ -n "$SSH_CLIENT" ]; then 
+if [ -n "$SSH_CLIENT" ]; then
 	echo "Connecting from $SSH_CLIENT"
 fi
-if [ -n "$DISPLAY" ]; then 
+if [ -n "$DISPLAY" ]; then
 	echo "Display is set ${DISPLAY}"
 fi
 echo "Chezmoi last generated {{ now }}"

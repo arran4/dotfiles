@@ -1,6 +1,7 @@
 [user]
-	name = Arran Ubels
-	useConfigOnly = true
+  name = {{ index . "gitUserName" }}
+  email = {{ index . "gitUserEmail" }}
+  useConfigOnly = true
 [init]
 	defaultBranch=main
 [core]
@@ -9,16 +10,9 @@
 	excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
 	longpaths = true
 	# quotepath = false # Unicode characters
-{{ if lookPath "delta" }}
-    pager = delta
-{{ else if lookPath "nvimpager" }}
-    pager = nvimpager
-{{ else if lookPath "vimpager" }}
-    pager = vimpager
-{{ else if lookPath "nvim" }}
-    pager = nvim
-{{ else if lookPath "vim" }}
-    pager = vim
+{{- $pager := findOneExecutable (list "delta" "nvimpager" "vimpager" "nvim" "vim") -}}
+{{ if ne $pager "" }}
+    pager = {{ $pager }}
 {{ end }}
 
 [rerere]

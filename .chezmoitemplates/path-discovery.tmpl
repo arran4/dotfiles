@@ -1,34 +1,33 @@
 # Path discovery
 # Path searching
-#{{- range $i, $p := ( index $ "binroots" ) }} Root bins
-#	{{- if stat (joinPath $p "/bin") }} Adding {{ joinPath $p "/bin" }}
-PATH="${PATH}:{{ joinPath $p "/bin" }}"
-#	{{- end }}
-#	{{- if stat (joinPath $p "/sbin") }} Adding {{ joinPath $p "/sbin" }}
-PATH="${PATH}:{{ joinPath $p "/sbin" }}"
-#	{{- end }}
-#{{- end }}
+{{- range $p := (index $ "binroots") }}
+for d in "{{ joinPath $p "/bin" }}" "{{ joinPath $p "/sbin" }}"; do
+  if [ -d "$d" ]; then
+    PATH="${PATH}:$d"
+  fi
+done
+{{- end }}
 
-#{{- range $i, $p := ( index $ "binpaths" ) }} Direct bin paths
-#	{{- if $p }} Adding {{ $p }}
-PATH="${PATH}:{{ $p }}"
-#	{{- end }}
-#{{- end }}
+{{- range $p := (index $ "binpaths") }}
+if [ -d "{{ $p }}" ]; then
+  PATH="${PATH}:{{ $p }}"
+fi
+{{- end }}
 
-#{{- range $i, $p := ( index $ "optbins" ) }} Opt bins
-#	{{- if stat (joinPath "/opt/" $p "/bin") }} Adding {{ joinPath "/opt/" $p "/bin" }}
-PATH="${PATH}:{{ joinPath "/opt/" $p "/bin" }}"
-#	{{- end }}
-#{{- end }}
+{{- range $p := (index $ "optbins") }}
+if [ -d "{{ joinPath "/opt/" $p "/bin" }}" ]; then
+  PATH="${PATH}:{{ joinPath "/opt/" $p "/bin" }}"
+fi
+{{- end }}
 
-#{{- range $i, $p := ( index $ "usrbins" ) }} User bins
-#	{{- if stat (joinPath "/usr/" $p "/bin") }} Adding {{ joinPath "/usr/" $p "/bin" }}
-PATH="${PATH}:{{ joinPath "/usr/" $p "/bin" }}"
-#	{{- end }}
-#{{- end }}
+{{- range $p := (index $ "usrbins") }}
+if [ -d "{{ joinPath "/usr/" $p "/bin" }}" ]; then
+  PATH="${PATH}:{{ joinPath "/usr/" $p "/bin" }}"
+fi
+{{- end }}
 
-#{{- range $i, $p := ( index $ "usrlocalbins" ) }} User bins
-#	{{- if stat (joinPath "/usr/local/" $p "/bin") }} Adding {{ joinPath "/usr/local/" $p "/bin" }}
-PATH="${PATH}:{{ joinPath "/usr/local/" $p "/bin" }}"
-#	{{- end }}
-#{{- end }} Done path discovery
+{{- range $p := (index $ "usrlocalbins") }}
+if [ -d "{{ joinPath "/usr/local/" $p "/bin" }}" ]; then
+  PATH="${PATH}:{{ joinPath "/usr/local/" $p "/bin" }}"
+fi
+{{- end }}

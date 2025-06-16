@@ -7,7 +7,7 @@ set background=light
 
 set showmode
 set expandtab
-set tabstop=4 
+set tabstop=4
 
 set number
 set cursorline
