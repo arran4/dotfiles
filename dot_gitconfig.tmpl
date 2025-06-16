@@ -10,10 +10,10 @@
 	excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
 	longpaths = true
 	# quotepath = false # Unicode characters
-{{- $pager := findOneExecutable (list "delta" "nvimpager" "vimpager" "nvim" "vim") -}}
-{{ if ne $pager "" }}
+{{- $pager := index . "gitPagerLocation" -}}
+{{- if ne $pager "" }}
     pager = {{ $pager }}
-{{ end }}
+{{- end }}
 
 [rerere]
   enabled = 1
