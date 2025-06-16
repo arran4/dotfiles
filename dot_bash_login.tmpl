@@ -4,10 +4,11 @@
 
 # From https://github.com/jordansissel/dotfiles/blob/master/.bash_profile
 # Exec zsh if it exists.
-if test -x `which zsh`; then
-	echo "zsh found on system "
-else
-	echo "No zsh found, sorry I couldn't save you..."
-fi
+{{- $zshLocation := index . "zshLocation" -}}
+{{- if stat $zshLocation -}}
+echo "zsh found on system"
+{{- else -}}
+echo "No zsh found, sorry I couldn't save you..."
+{{- end -}}
 
 # SSH Agent if required
