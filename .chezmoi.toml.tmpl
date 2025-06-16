@@ -84,6 +84,45 @@
 {{- $mvnLocation := findExecutable "bin/mvn" $binroots -}}
 {{- $zellijLocation := findExecutable "bin/zellij" $binroots -}}
 {{- $tmuxLocation := findExecutable "bin/tmux" $binroots -}}
+{{- $ghLocation := "" -}}
+{{- if stat (joinPath .chezmoi.homeDir "/.local/bin/gh") -}}
+  {{- $ghLocation = joinPath .chezmoi.homeDir "/.local/bin/gh" -}}
+{{- else -}}
+  {{- $ghLocation = findExecutable "bin/gh" $binroots -}}
+  {{- if eq $ghLocation "" -}}
+    {{- $ghLocation = lookPath "gh" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $gitTagIncLocation := "" -}}
+{{- if stat (joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc") -}}
+  {{- $gitTagIncLocation = joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc" -}}
+{{- else -}}
+  {{- $gitTagIncLocation = findExecutable "bin/git-tag-inc" $binroots -}}
+  {{- if eq $gitTagIncLocation "" -}}
+    {{- $gitTagIncLocation = lookPath "git-tag-inc" -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $rarLocation := findExecutable "bin/rar" $binroots -}}
+{{- if eq $rarLocation "" -}}
+  {{- $rarLocation = lookPath "rar" -}}
+{{- end -}}
+
+{{- $sevenZipLocation := findExecutable "bin/7z" $binroots -}}
+{{- if eq $sevenZipLocation "" -}}
+  {{- $sevenZipLocation = lookPath "7z" -}}
+{{- end -}}
+
+{{- $digLocation := findExecutable "bin/dig" $binroots -}}
+{{- if eq $digLocation "" -}}
+  {{- $digLocation = lookPath "dig" -}}
+{{- end -}}
+
+{{- $xinputLocation := findExecutable "bin/xinput" $binroots -}}
+{{- if eq $xinputLocation "" -}}
+  {{- $xinputLocation = lookPath "xinput" -}}
+{{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (not (stat $gitCredentialManagerLocation )) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
@@ -133,6 +172,30 @@
         {{- writeToStdout "Can't find maven (mvn) \n" -}}
 {{- end -}}
 
+{{- if not (stat $ghLocation ) -}}
+        {{- writeToStdout "Can't find GitHub CLI (gh) \n" -}}
+{{- end -}}
+
+{{- if not (stat $gitTagIncLocation ) -}}
+        {{- writeToStdout "Can't find git-tag-inc \n" -}}
+{{- end -}}
+
+{{- if not (stat $rarLocation ) -}}
+        {{- writeToStdout "Can't find rar \n" -}}
+{{- end -}}
+
+{{- if not (stat $sevenZipLocation ) -}}
+        {{- writeToStdout "Can't find 7z \n" -}}
+{{- end -}}
+
+{{- if not (stat $digLocation ) -}}
+        {{- writeToStdout "Can't find dig \n" -}}
+{{- end -}}
+
+{{- if and (eq .chezmoi.os "linux") (not (stat $xinputLocation )) -}}
+        {{- writeToStdout "Can't find xinput \n" -}}
+{{- end -}}
+
 [git]
     autoCommit = {{ $autoGit }}
     autoPush = {{ $autoGit }}
@@ -158,6 +221,12 @@
         zshLocation="{{$zshLocation}}"
         lessLocation="{{$lessLocation}}"
         mvnLocation="{{$mvnLocation}}"
+        ghLocation="{{$ghLocation}}"
+        gitTagIncLocation="{{$gitTagIncLocation}}"
+        rarLocation="{{$rarLocation}}"
+        sevenZipLocation="{{$sevenZipLocation}}"
+        digLocation="{{$digLocation}}"
+        xinputLocation="{{$xinputLocation}}"
         optbins = [{{range $each := $optbins}}"{{$each}}", {{end}}]
         usrbins = [{{range $each := $usrbins}}"{{$each}}", {{end}}]
         usrlocalbins = [{{range $each := $usrlocalbins}}"{{$each}}", {{end}}]
