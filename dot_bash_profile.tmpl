@@ -48,17 +48,7 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# Prompts
-ctx=""
-if test "$SHLVL" -gt 1; then
-	ctx="${ctx}:${SHLVL}"
-fi
-if test -n "${ctx}"; then
-	ctx="(${ctx})"
-fi
-# TODO Set title: PS1="\[\e]0;\u@\h: \w\a\]$PS1" ish
-export PS1='\u@\h:'"\${PWD} ${ctx}"$'\n''\$ '
-unset ctx
+{{ template "prompt.tmpl" deepCopy $ | merge (dict "shell" "bash") }}
 
 {{ template "dev-utils-env.tmpl" $ }}
 

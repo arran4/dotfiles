@@ -6,20 +6,4 @@ case $- in
       *) return;;
 esac
 
-# Prompts
-ctx=""
-if test -n "${TMUX}"; then
-        ctx="${ctx}:tmux"
-        if test "$SHLVL" -gt 2; then
-                ctx="${ctx}:${SHLVL}"
-        fi
-else
-        if test "$SHLVL" -gt 1; then
-                ctx="${ctx}:${SHLVL}"
-        fi
-fi
-if test -n "${ctx}"; then
-	ctx="(${ctx})"
-fi
-export PS1='\u@\h:'"\${PWD} ${ctx}"$'\n''\$ '
-unset ctx
+{{ template "prompt.tmpl" deepCopy $ | merge (dict "shell" "bash") }}

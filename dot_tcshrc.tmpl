@@ -1,0 +1,6 @@
+#!/bin/tcsh
+
+{{ template "prompt.tmpl" deepCopy $ | merge (dict "shell" "tcsh") }}
+
+{{ template "shell-aliases.tmpl" $ }}
+
