@@ -1,7 +1,7 @@
 gtk-enable-animations=1
 gtk-cursor-theme-size=24
 # Configs for GTK2 programs -- todo smarter path finding for gtkrc file
-style "user-font" 
+style "user-font"
 {
     font_name="Noto Sans Regular"
 }

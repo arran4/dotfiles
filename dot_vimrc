@@ -14,7 +14,7 @@ set cursorline
 set encoding=utf-8
 
 "set expandtab			" Tabs are tabs not spaces
-set showtabline         =2 
+set showtabline         =2
 "set smarttab			" Treats spaces as tabs.. based on shiftwidth
 "set cursorline			" Runs a line across the screen where the cursor is.. Might be useful on large vims.
 "set nocp			" Turns on Vi incompatiable options
@@ -44,7 +44,7 @@ set ruler
 " Ignore case when searching
 set ignorecase
 
-" When searching try to be smart about cases 
+" When searching try to be smart about cases
 set smartcase
 
 " For regular expressions turn magic on

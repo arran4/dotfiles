@@ -72,7 +72,7 @@ else
                 ctx="${ctx}:${SHLVL}"
         fi
 fi
-if test -n "${ctx}"; then 
+if test -n "${ctx}"; then
 	ctx="(${ctx})"
 fi
 export PROMPT="%("'!'".%S%n%s.%n)@%m:%d %h ${ctx}"$'\n'"%# "

@@ -18,7 +18,7 @@ else
                 ctx="${ctx}:${SHLVL}"
         fi
 fi
-if test -n "${ctx}"; then 
+if test -n "${ctx}"; then
 	ctx="(${ctx})"
 fi
 export PS1='\u@\h:'"\${PWD} ${ctx}"$'\n''\$ '
