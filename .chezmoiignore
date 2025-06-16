@@ -367,7 +367,7 @@
 /.dart-tool
 /.dartServer
 /.directory
-/.flutter 
+/.flutter
 /.fppkg
 /.gcm/store
 /.go
