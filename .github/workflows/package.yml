@@ -1,0 +1,24 @@
+name: Package Dotfiles
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Apply configuration
+        run: |
+          yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
+      - name: Create archive
+        run: |
+          ./bin/chezmoi archive --source=$PWD --format zip --output dotfiles.zip
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dotfiles-${{ github.ref_name }}
+          path: dotfiles.zip
