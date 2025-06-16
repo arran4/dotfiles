@@ -124,6 +124,15 @@
   {{- $xinputLocation = lookPath "xinput" -}}
 {{- end -}}
 
+{{- $chromeLocation := findOneExecutable (list
+  "bin/google-chrome"
+  "bin/google-chrome-stable"
+  "bin/google-chrome-unstable"
+  "bin/google-chrome-beta") $binroots -}}
+{{- if eq $chromeLocation "" -}}
+        {{- writeToStdout "Can't find chrome \n" -}}
+{{- end -}}
+
 {{- if and (eq .chezmoi.os "linux") (not (stat $gitCredentialManagerLocation )) -}}
         {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
 {{- end -}}
@@ -233,6 +242,7 @@
         sevenZipLocation="{{$sevenZipLocation}}"
         digLocation="{{$digLocation}}"
         xinputLocation="{{$xinputLocation}}"
+        chromeLocation="{{$chromeLocation}}"
         optbins = [{{range $each := $optbins}}"{{$each}}", {{end}}]
         usrbins = [{{range $each := $usrbins}}"{{$each}}", {{end}}]
         usrlocalbins = [{{range $each := $usrlocalbins}}"{{$each}}", {{end}}]
