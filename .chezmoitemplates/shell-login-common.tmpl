@@ -17,6 +17,8 @@ if [ -n "$SSH_CLIENT" ]; then
 	echo "Connecting from $SSH_CLIENT"
 fi
 if [ -n "$DISPLAY" ]; then
-	echo "Display is set ${DISPLAY}"
+        echo "Display is set ${DISPLAY}"
 fi
-echo "Chezmoi last generated {{ now }}"
+# generatedTime comes from .chezmoi.toml.tmpl to avoid churn from the {{`now`}}
+# function changing on every re-apply.
+echo "Chezmoi last generated {{ .generatedTime }}"
