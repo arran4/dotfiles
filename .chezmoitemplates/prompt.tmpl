@@ -21,7 +21,7 @@ if test "$(id -u)" -eq 0; then
   pchar="#"
 fi
 
-  {{- if eq $shell "zsh" -}}
+  {{ if eq $shell "zsh" -}}
 export SPROMPT="Potential spelling error %R , could be %r"
 export PROMPT='%n@%m:%~ ${ctx}\n'"${pchar} "
   {{- else if eq $shell "bash" -}}
