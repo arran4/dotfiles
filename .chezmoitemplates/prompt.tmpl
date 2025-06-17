@@ -23,7 +23,8 @@ fi
 
   {{ if eq $shell "zsh" }}
 export SPROMPT="Potential spelling error %R , could be %r"
-export PROMPT='%n@%m:%~ '"${ctx}\n${pchar} "
+export PROMPT='%n@%m:%~ '"${ctx}
+${pchar} "
   {{- else if eq $shell "bash" }}
 export PS1='\u@\h:\w '"${ctx}\n${pchar} "
   {{- else if eq $shell "ksh" }}
