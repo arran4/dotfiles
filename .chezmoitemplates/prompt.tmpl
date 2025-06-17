@@ -23,11 +23,11 @@ fi
 
   {{ if eq $shell "zsh" }}
 export SPROMPT="Potential spelling error %R , could be %r"
-export PROMPT='%n@%m:%~ ${ctx}\n'"${pchar} "
+export PROMPT='%n@%m:%~ '"${ctx}\n${pchar} "
   {{- else if eq $shell "bash" }}
-export PS1='\u@\h:\w ${ctx}\n'"${pchar} "
+export PS1='\u@\h:\w '"${ctx}\n${pchar} "
   {{- else if eq $shell "ksh" }}
-export PS1='${USER}@$(hostname -s):${PWD} ${ctx}\n'"${pchar} "
+export PS1='${USER}@$(hostname -s):${PWD} '"${ctx}\n${pchar} "
   {{- else if eq $shell "tcsh" }}
 set prompt="%n@%m:%~ ${ctx}\n${pchar} "
   {{- end }}
