@@ -17,3 +17,15 @@ jobs:
           shellcheck **/*.sh
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
+      - name: Verify shell configuration parses
+        run: |
+          for f in ~/.bashrc ~/.bash_profile ~/.bash_login ~/.bash_logout ~/.profile; do
+            if [ -f "$f" ]; then
+              bash -n "$f"
+            fi
+          done
+          for f in ~/.zshrc ~/.zprofile ~/.zlogin ~/.zlogout ~/.zshenv; do
+            if [ -f "$f" ]; then
+              zsh -n "$f"
+            fi
+          done
