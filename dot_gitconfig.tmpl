@@ -6,11 +6,33 @@
   defaultBranch = main
   templateDir = ~/.config/git/template
 [core]
-	autocrlf = input
-	#editor = vim
-	excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
-	longpaths = true
-	# quotepath = false # Unicode characters
+  autocrlf = input
+{{- if eq .chezmoi.os "windows" }}
+  {{- if stat (index . "notepadppLocation") }}
+  editor = {{ index . "notepadppLocation" }}
+  {{- else if stat (index . "gvimLocation") }}
+  editor = {{ index . "gvimLocation" }}
+  {{- else if stat (index . "vscodeLocation") }}
+  editor = {{ index . "vscodeLocation" }} --wait
+  {{- else if stat (index . "intellijLocation") }}
+  editor = {{ index . "intellijLocation" }}
+  {{- else if stat (index . "notepadLocation") }}
+  editor = {{ index . "notepadLocation" }}
+  {{- else }}
+  editor = notepad
+  {{- end }}
+{{- else }}
+  {{- if stat (index . "neovimLocation") }}
+  editor = {{ index . "neovimLocation" }}
+  {{- else if stat (index . "vimLocation") }}
+  editor = {{ index . "vimLocation" }}
+  {{- else }}
+  editor = vi
+  {{- end }}
+{{- end }}
+  excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
+  longpaths = true
+  # quotepath = false # Unicode characters
 {{- $pager := index . "gitPagerLocation" -}}
 {{- if ne $pager "" }}
     pager = {{ $pager }}
@@ -20,7 +42,7 @@
   enabled = 1
 
 [credential "https://github.com"]
-	useHttpPath = true
+  useHttpPath = true
 
 [credential]
 {{ $oauthHelper := (index . "gitCredentialOAuthLocation") }}
@@ -37,25 +59,25 @@
         cacheOptions = "--timeout 14400"
         helper = {{ index $ "gitCredentialManagerLocation" }}
 {{ else if eq .chezmoi.os "linux" }}
-	{{ if eq .chezmoi.osRelease.id "ubuntu" }}
-	       credentialStore = secretservice
-	       helper = {{ index $ "gitCredentialManagerLocation" }}
-	{{ else if eq .chezmoi.osRelease.id "gentoo" }}
-	       credentialStore = secretservice
-	       helper = {{ index $ "gitCredentialManagerLocation" }}
-	{{ end}}
+  {{ if eq .chezmoi.osRelease.id "ubuntu" }}
+         credentialStore = secretservice
+         helper = {{ index $ "gitCredentialManagerLocation" }}
+  {{ else if eq .chezmoi.osRelease.id "gentoo" }}
+         credentialStore = secretservice
+         helper = {{ index $ "gitCredentialManagerLocation" }}
+  {{ end}}
 {{ else }}
-	helper = manager
+  helper = manager
 {{ end }}
 
 [credential "https://dev.azure.com"]
    useHttpPath = true
 
 [credential "https://git.assembla.com"]
-	useHttpPath = true
+  useHttpPath = true
 {{ if eq .chezmoi.os "windows" }}
 [gpg]
-	program = "{{ index . "gpgLocation" }}"
+  program = "{{ index . "gpgLocation" }}"
 {{ end }}
 
 [credential "https://source.developers.google.com"]
@@ -80,21 +102,21 @@
 {{ end }}
 
 [merge]
-	# Include summaries of merged commits in newly created merge commit messages
-	log = true
-	# Should probably use a script to select here.
+  # Include summaries of merged commits in newly created merge commit messages
+  log = true
+  # Should probably use a script to select here.
 {{ if lookPath "delta" }}
     conflictstyle = zdiff3
-	tool = delta
+  tool = delta
 {{ else if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
-	tool = {{index . "vimdiffLocation"}}
+  tool = {{index . "vimdiffLocation"}}
     conflictstyle = diff3 # show original content before conflicts
 {{ else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" ) ) }}
-	tool = {{index . "kdiff3Location" }}
+  tool = {{index . "kdiff3Location" }}
     conflictstyle = diff3 # show original content before conflicts
 {{ else if stat (index . "vimdiffLocation") }}
     conflictstyle = diff3 # show original content before conflicts
-	tool = {{ index . "vimdiffLocation" }}
+  tool = {{ index . "vimdiffLocation" }}
 {{ end }}
 
 [mergetool "kdiff3"]
@@ -102,33 +124,33 @@
 
 {{ if eq .chezmoi.os "darwin" }}
 [mergetool "sourcetree"]
-	cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
-	trustExitCode = true
+  cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+  trustExitCode = true
 {{end}}
 
 [diff]
 {{ if lookPath "delta" }}
-	tool = delta
+  tool = delta
 {{ else if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
-	tool = {{ index . "vimdiffLocation" }}
+  tool = {{ index . "vimdiffLocation" }}
 {{ else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" )) }}
-	tool = {{ index . "kdiff3Location" }}
+  tool = {{ index . "kdiff3Location" }}
 {{ else if stat (index . "vimdiffLocation" ) }}
-	tool = {{ index . "vimdiffLocation" }}
+  tool = {{ index . "vimdiffLocation" }}
 {{ end }}
     colorMoved = default
 
 [difftool]
-	prompt = true
+  prompt = true
 
 [difftool "kdiff3"]
     trustExitCode = false
 
 [difftool "sourcetree"]
-	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
-	path =
+  cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+  path =
 [difftool "vscode"]
-	cmd = code --wait --diff $LOCAL $REMOTE
+  cmd = code --wait --diff $LOCAL $REMOTE
 [difftool "nvimdiff"]
   cmd = "nvim -d \"$LOCAL\" \"$REMOTE\""
 [difftool "difftastic"]
@@ -136,26 +158,26 @@
 
 [commit]
 {{ if index . "gpgconfigured" }}
-	gpgsign = true
+  gpgsign = true
 {{ end }}
-	template = ~/.config/git/message
+  template = ~/.config/git/message
   status = true
 
 [tag]
 {{ if index . "gpgconfigured" }}
-	gpgsign = true
+  gpgsign = true
 {{ end }}
-#	template = ~/.config/git/tagmessage
+#  template = ~/.config/git/tagmessage
 
 [pager]
 {{ if lookPath "delta" }}
-	# Intentionally different
-	#tag = nvimpager
+  # Intentionally different
+  #tag = nvimpager
 {{end}}
 
 [push]
 {{ if index . "gpgconfigured" }}
-	gpgsign = if-asked
+  gpgsign = if-asked
 {{ end }}
     followTags = true
 
@@ -186,7 +208,7 @@
 
 
 [http]
-	cookiefile = ~/.cache/git/cookies
+  cookiefile = ~/.cache/git/cookies
 
 [status]
   submodulesummary = true

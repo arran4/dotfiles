@@ -1,0 +1,11 @@
+{{- $shell := index . "shell" -}}
+{{- if eq $shell "tcsh" }}
+if ( $?prompt ) then
+  setenv GPG_TTY `tty`
+endif
+{{- else }}
+if [[ $- == *i* ]]; then
+  GPG_TTY=$(tty)
+  export GPG_TTY
+fi
+{{- end }}

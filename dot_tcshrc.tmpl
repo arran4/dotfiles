@@ -4,3 +4,5 @@
 
 {{ template "shell-aliases.tmpl" $ }}
 
+{{ template "gpg-tty.tmpl" deepCopy $ | merge (dict "shell" "tcsh") }}
+
