@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+# Determine repository directory
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Check for network connectivity
+if command -v curl >/dev/null 2>&1; then
+  if ! curl -fs https://github.com >/dev/null 2>&1; then
+    echo "Offline: skipping chezmoi initialization." >&2
+    exit 0
+  fi
+fi
+
+# Install chezmoi if missing
+if ! command -v chezmoi >/dev/null 2>&1; then
+  echo "Installing chezmoi..." >&2
+  sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+  PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Initialize chezmoi using this repo as sourceDir
+chezmoi init --apply --no-tty --source="$REPO_DIR"
