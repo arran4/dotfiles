@@ -24,7 +24,7 @@
         {{- $optbins = (list) -}}
         {{- $usrbins = (list) -}}
         {{- $usrlocalbins = (list) -}}
-	{{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools") ) -}}
+  {{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools") ) -}}
         {{- $binroots = (list "/" "/usr/" .chezmoi.homeDir (joinPath .chezmoi.homeDir "/.local" ) (joinPath .chezmoi.homeDir "/go" ) (joinPath .chezmoi.homeDir "/Library/flutter" ) (joinPath .chezmoi.homeDir "/.pub-cache" ) (joinPath .chezmoi.homeDir "/.cache/npm" ) ) -}}
         {{- $terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
         {{- $termfallback = (list "xterm" "linux" "vt100" ) -}}
@@ -32,7 +32,7 @@
         {{- $optbins = (list) -}}
         {{- $usrbins = (list "games" ) -}}
         {{- $usrlocalbins = (list) -}}
-	{{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools" ) ) -}}
+  {{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools" ) ) -}}
         {{- $binroots = (list "/" "/usr/" "/usr/local/" .chezmoi.homeDir (joinPath .chezmoi.homeDir "/.local" ) (joinPath .chezmoi.homeDir "/go" ) (joinPath .chezmoi.homeDir "/.go/path" ) (joinPath .chezmoi.homeDir "/libs/flutter" ) (joinPath .chezmoi.homeDir "/.pub-cache" ) (joinPath .chezmoi.homeDir "/.cache/npm" ) ) -}}
         {{- $terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
         {{- $termfallback = (list "rxvt" "xterm" "linux" "vt100" ) -}}
@@ -40,16 +40,19 @@
         {{- $optbins = (list) -}}
         {{- $usrbins = (list) -}}
         {{- $usrlocalbins = (list) -}}
-	{{- $binpaths = (list) -}}
-        {{- $binroots = (list) -}}
+        {{- $binpaths = (list (joinPath .chezmoi.homeDir "AppData/Local/Microsoft/WindowsApps" )) -}}
+        {{- $programFiles := (env "ProgramFiles" | default "C:/Program Files") -}}
+        {{- $programFilesX86 := (env "ProgramFiles(x86)" | default "C:/Program Files (x86)") -}}
+        {{- $systemRoot := (env "SystemRoot" | default "C:/Windows") -}}
+        {{- $binroots = (list $programFiles $programFilesX86 $systemRoot (joinPath $systemRoot "System32")) -}}
         {{- $terminfosearch = (list) -}}
         {{- $termfallback = (list "linux" "vt100" ) -}}
-        {{- $gpgLocation = "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe" -}}
+        {{- $gpgLocation = (joinPath $programFilesX86 "GnuPG/bin/gpg.exe") -}}
 #{{ else if eq .chezmoi.os "solaris" }} Solaris
         {{- $optbins = (list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" ) -}}
         {{- $usrbins = (list "local" "sfw" "ccs" ) -}}
         {{- $usrlocalbins = (list "mysql" "apache" "apache2" "php" ) -}}
-	{{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools" ) ) -}}
+  {{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools" ) ) -}}
         {{- $binroots = (list "/" "/usr/" .chezmoi.homeDir (joinPath .chezmoi.homeDir "/.local" ) (joinPath .chezmoi.homeDir "/go" ) ) -}}
         {{- $terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
         {{- $termfallback = (list "xterm" "linux" "vt100" ) -}}
@@ -57,7 +60,7 @@
         {{- $optbins = (list) -}}
         {{- $usrbins = (list) -}}
         {{- $usrlocalbins = (list) -}}
-	{{- $binpaths = (list) -}}
+  {{- $binpaths = (list) -}}
         {{- $binroots = (list) -}}
         {{- $terminfosearch = (list) -}}
         {{- $termfallback = (list "linux" "vt100" ) -}}
@@ -78,6 +81,29 @@
 {{- $kdiff3Location := findExecutable "bin/kdiff3" $binroots -}}
 {{- $vimLocation := findExecutable "bin/vim" $binroots -}}
 {{- $neovimLocation := findExecutable "bin/nvim" $binroots -}}
+{{- $notepadppLocation := findExecutable "Notepad++/notepad++.exe" $binroots -}}
+{{- if eq $notepadppLocation "" -}}
+  {{- $notepadppLocation = lookPath "notepad++" -}}
+{{- end -}}
+{{- $notepadLocation := findExecutable "notepad.exe" $binroots -}}
+{{- if eq $notepadLocation "" -}}
+  {{- $notepadLocation = lookPath "notepad" -}}
+{{- end -}}
+{{- $gvimLocation := lookPath "gvim" -}}
+{{- if eq $gvimLocation "" -}}
+  {{- $gvimLocation = findExecutable "Vim/vim90/gvim.exe" $binroots -}}
+  {{- if eq $gvimLocation "" -}}
+    {{- $gvimLocation = findExecutable "Vim/vim91/gvim.exe" $binroots -}}
+  {{- end -}}
+{{- end -}}
+{{- $vscodeLocation := lookPath "code" -}}
+{{- if eq $vscodeLocation "" -}}
+  {{- $vscodeLocation = findExecutable "Microsoft VS Code/Code.exe" $binroots -}}
+{{- end -}}
+{{- $intellijLocation := findExecutable "JetBrains/IntelliJ IDEA/bin/idea64.exe" $binroots -}}
+{{- if eq $intellijLocation "" -}}
+  {{- $intellijLocation = lookPath "idea64" -}}
+{{- end -}}
 {{- $vimpagerLocation := findExecutable "bin/vimpager" $binroots -}}
 {{- $nvimpagerLocation := findExecutable "bin/nvimpager" $binroots -}}
 {{- $gitPagerLocation := findOneExecutable (list "delta" "nvimpager" "vimpager" "nvim" "vim") $binroots -}}
@@ -174,6 +200,16 @@
         {{- writeToStdout "Can't find kdiff3 \n" -}}
 {{- end -}}
 
+{{- if and (eq .chezmoi.os "windows") (not (stat $notepadppLocation )) -}}
+        {{- writeToStdout "Can't find Notepad++ \n" -}}
+{{- end -}}
+{{- if and (eq .chezmoi.os "windows") (not (stat $gvimLocation )) -}}
+        {{- writeToStdout "Can't find gVim \n" -}}
+{{- end -}}
+{{- if and (eq .chezmoi.os "windows") (not (stat $notepadLocation )) -}}
+        {{- writeToStdout "Can't find Notepad \n" -}}
+{{- end -}}
+
 {{- if and (eq .chezmoi.os "windows") (not (stat $gpgLocation )) -}}
         {{- writeToStdout "Missing GPG install Kleopatra https://gpg4win.org/download.html \n" -}}
 {{- end -}}
@@ -233,6 +269,11 @@
         kdiff3Location="{{ $kdiff3Location }}"
         vimLocation="{{ $vimLocation }}"
         neovimLocation="{{ $neovimLocation }}"
+        notepadppLocation="{{ $notepadppLocation }}"
+        notepadLocation="{{ $notepadLocation }}"
+        gvimLocation="{{ $gvimLocation }}"
+        vscodeLocation="{{ $vscodeLocation }}"
+        intellijLocation="{{ $intellijLocation }}"
         vimpagerLocation="{{ $vimpagerLocation }}"
         nvimpagerLocation="{{ $nvimpagerLocation }}"
         gitPagerLocation="{{ $gitPagerLocation }}"
@@ -262,11 +303,11 @@
         termfallback = [{{range $each := $termfallback}}"{{$each}}", {{end}}]
 
 [diff]
-	command = "more"
+  command = "more"
 {{if stat $nvimdiffLocation -}}
 [merge]
-	command = "{{$nvimdiffLocation}}"
+  command = "{{$nvimdiffLocation}}"
 {{else if stat $vimdiffLocation -}}
 [merge]
-	command = "{{$vimdiffLocation}}"
+  command = "{{$vimdiffLocation}}"
 {{end -}}

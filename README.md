@@ -124,3 +124,39 @@ encrypt.
 ## KDE setup
 
 Chezmoi includes a run-once script that sets KDE's super user command to `sudo` when `kwriteconfig6` is present. If you install KDE after applying these dotfiles, run `chezmoi apply` again to trigger the script.
+
+## Git editor selection
+
+`dot_gitconfig.tmpl` chooses a default editor based on what is installed. On
+Windows it searches the directories pointed to by the `ProgramFiles`,
+`ProgramFiles(x86)` and `SystemRoot` environment variables. GUI tools are
+preferred: `notepad++`, `gvim`, Visual Studio Code (`code`), IntelliJ
+(`idea64`) and finally plain `notepad`. Other systems use `neovim` or `vim`
+when available.
+If you want a different editor, override the setting after applying the
+dotfiles:
+
+```sh
+git config --global core.editor <command>
+
+## SSH configuration
+
+The default SSH configuration adds keys to your agent, stores passphrases in the
+macOS keychain and limits authentication to the specified identities:
+
+```sshconfig
+Host *
+  UseKeychain yes
+  AddKeysToAgent yes
+  IdentitiesOnly yes
+```
+
+To disable or override these options, create another `Host` block with your
+preferred values. For example:
+
+```sshconfig
+Host legacy.example.com
+  UseKeychain no
+  AddKeysToAgent no
+  IdentitiesOnly no
+```
