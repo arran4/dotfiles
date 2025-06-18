@@ -173,7 +173,7 @@
 /.nv
 /.mozilla
 /.gnome/apps
-/.fonts/**/.uuid
+/.local/share/fonts/**/.uuid
 /.factorio
 /.asc
 /.zoom
