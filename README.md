@@ -120,3 +120,18 @@ file named `private_gitlab_oauth.ejson`:
 Store the private key where `ejson` can read it when applying your dotfiles.
 Feel free to change the JSON keys to suit whichever credentials you need to
 encrypt.
+
+## Git editor selection
+
+`dot_gitconfig.tmpl` chooses a default editor based on what is installed. On
+Windows it searches the directories pointed to by the `ProgramFiles`,
+`ProgramFiles(x86)` and `SystemRoot` environment variables. GUI tools are
+preferred: `notepad++`, `gvim`, Visual Studio Code (`code`), IntelliJ
+(`idea64`) and finally plain `notepad`. Other systems use `neovim` or `vim`
+when available.
+If you want a different editor, override the setting after applying the
+dotfiles:
+
+```sh
+git config --global core.editor <command>
+```
