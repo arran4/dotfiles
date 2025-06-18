@@ -61,11 +61,8 @@
     provider = generic
 
 [credential "https://gitlab.arran.net.au"]
-  # provider = generic
-  # provider = gitlab
-	gitLabAuthModes = pat
-	# gitLabDevClientId = FUCK
-	# gitLabDevClientSecret FUCK
+  gitLabAuthModes = pat
+  # oauthClientId = {{/* (ejsonDecrypt "private_gitlab_oauth.ejson").gitlab_oauth_client_id */}}
 
 {{ if ne .chezmoi.os "windows" }}
 [color]
