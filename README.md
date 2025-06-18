@@ -120,3 +120,7 @@ file named `private_gitlab_oauth.ejson`:
 Store the private key where `ejson` can read it when applying your dotfiles.
 Feel free to change the JSON keys to suit whichever credentials you need to
 encrypt.
+
+## KDE setup
+
+Chezmoi includes a run-once script that sets KDE's super user command to `sudo` when `kwriteconfig6` is present. If you install KDE after applying these dotfiles, run `chezmoi apply` again to trigger the script.
