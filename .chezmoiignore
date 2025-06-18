@@ -130,7 +130,9 @@
 /.editorconfig
 /.config/pulse
 /.config/gcloud
+{{ if eq .chezmoi.os "windows" }}
 /.local/bin
+{{ end }}
 /.local/include
 /.local/lib
 
