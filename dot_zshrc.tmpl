@@ -91,5 +91,7 @@ autoload -U colors && colors
 
 {{ template "atuin.tmpl" deepCopy $ | merge (dict "shell" "zsh") }}
 
+{{ template "gpg-tty.tmpl" deepCopy $ | merge (dict "shell" "zsh") }}
+
 return # This prevents scripts which append their own installers from "working"
 {{/* vim: set filetype=zsh: */}}

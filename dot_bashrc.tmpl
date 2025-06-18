@@ -7,3 +7,5 @@ case $- in
 esac
 
 {{ template "prompt.tmpl" deepCopy $ | merge (dict "shell" "bash") }}
+
+{{ template "gpg-tty.tmpl" deepCopy $ | merge (dict "shell" "bash") }}
