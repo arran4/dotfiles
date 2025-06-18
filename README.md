@@ -88,3 +88,35 @@ of PR or issues.
 # Interesting tools:
 
 * https://github.com/tep/terminal-decor
+
+## Encrypting credentials with ejson
+
+Use ejson to store secrets such as a GitLab OAuth client ID. Create an encrypted
+file named `private_gitlab_oauth.ejson`:
+
+1. Install [ejson](https://github.com/Shopify/ejson).
+2. Generate a keypair and save the secret key:
+
+   ```sh
+   ejson keygen -w
+   ```
+
+   Note the printed public key and keep the private key in the output path.
+3. Create `private_gitlab_oauth.ejson` containing your public key and OAuth client ID:
+
+   ```json
+   {
+     "_public_key": "<public key>",
+     "gitlab_oauth_client_id": "<your client ID>"
+   }
+   ```
+
+4. Encrypt the file:
+
+   ```sh
+   ejson encrypt private_gitlab_oauth.ejson
+   ```
+
+Store the private key where `ejson` can read it when applying your dotfiles.
+Feel free to change the JSON keys to suit whichever credentials you need to
+encrypt.
