@@ -134,4 +134,25 @@ dotfiles:
 
 ```sh
 git config --global core.editor <command>
+
+## SSH configuration
+
+The default SSH configuration adds keys to your agent, stores passphrases in the
+macOS keychain and limits authentication to the specified identities:
+
+```sshconfig
+Host *
+  UseKeychain yes
+  AddKeysToAgent yes
+  IdentitiesOnly yes
+```
+
+To disable or override these options, create another `Host` block with your
+preferred values. For example:
+
+```sshconfig
+Host legacy.example.com
+  UseKeychain no
+  AddKeysToAgent no
+  IdentitiesOnly no
 ```

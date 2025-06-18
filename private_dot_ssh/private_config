@@ -5,4 +5,17 @@ Compression yes
 ControlMaster auto
 ControlPath ~/.ssh/cm_socket/%r@%h:%p
 
+# Default key handling
+Host *
+  UseKeychain yes
+  AddKeysToAgent yes
+  IdentitiesOnly yes
+
+# To override these options for a specific host, create another Host block
+# with the desired settings, e.g.:
+# Host example.com
+#   UseKeychain no
+#   AddKeysToAgent no
+#   IdentitiesOnly no
+
 # vim: set ft=sshconfig:
