@@ -126,5 +126,5 @@ set smartcase		" Enable smart-case search
 set ignorecase		" Always case-insensitive
 set cursorline		" Activate cursorline
 
-" Map :w!! to save the current file with sudo if needed
+" w!! allows saving with elevated privileges when needed
 cnoremap w!! write !sudo tee -- % >/dev/null <bar> edit!
