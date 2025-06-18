@@ -1,0 +1,8 @@
+# Common OS files
+.DS_Store
+Thumbs.db
+
+# Editor backups
+*~
+*.swp
+

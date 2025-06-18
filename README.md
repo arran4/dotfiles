@@ -79,6 +79,14 @@ Store the private key where `ejson` can read it when applying your dotfiles.
 Feel free to change the JSON keys to suit whichever credentials you need to
 encrypt.
 
+## Git template files
+
+Git initialises new repositories using the contents of
+`~/.config/git/template`. `chezmoi` copies everything under
+`dot_config/git/template` into this directory. Update the stub `README.md` and
+`.gitignore` files there to provide your own defaults for new repositories,
+then run `chezmoi apply` to install them.
+
 ## KDE setup
 
 Chezmoi includes a run-once script that sets KDE's super user command to `sudo` when `kwriteconfig6` is present. If you install KDE after applying these dotfiles, run `chezmoi apply` again to trigger the script.
@@ -118,3 +126,4 @@ Host legacy.example.com
   AddKeysToAgent no
   IdentitiesOnly no
 ```
+
