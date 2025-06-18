@@ -22,15 +22,15 @@ if test "$(id -u)" -eq 0; then
 fi
 
   {{ if eq $shell "zsh" }}
-export SPROMPT="Potential spelling error %R , could be %r"
-export PROMPT='%n@%m:%~ '"${ctx}
+  export SPROMPT="Potential spelling error %R , could be %r"
+  export PROMPT='%n@%m:%~ %h '"${ctx}
 ${pchar} "
   {{- else if eq $shell "bash" }}
-export PS1='\u@\h:\w '"${ctx}\n${pchar} "
+  export PS1='\u@\h:\w \! '"${ctx}\n${pchar} "
   {{- else if eq $shell "ksh" }}
-export PS1='${USER}@$(hostname -s):${PWD} '"${ctx}\n${pchar} "
+  export PS1='${USER}@$(hostname -s):${PWD} ! '"${ctx}\n${pchar} "
   {{- else if eq $shell "tcsh" }}
-set prompt="%n@%m:%~ ${ctx}\n${pchar} "
+  set prompt="%n@%m:%~ %h ${ctx}\n${pchar} "
   {{- end }}
 unset ctx pchar
 {{- else }}
