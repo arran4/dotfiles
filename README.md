@@ -120,3 +120,11 @@ file named `private_gitlab_oauth.ejson`:
 Store the private key where `ejson` can read it when applying your dotfiles.
 Feel free to change the JSON keys to suit whichever credentials you need to
 encrypt.
+
+## Git template files
+
+Git initialises new repositories using the contents of
+`~/.config/git/template`. `chezmoi` copies everything under
+`dot_config/git/template` into this directory. Update the stub `README.md` and
+`.gitignore` files there to provide your own defaults for new repositories,
+then run `chezmoi apply` to install them.
