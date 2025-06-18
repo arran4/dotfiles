@@ -147,6 +147,7 @@
 
 {{ if ne .chezmoi.os "darwin" }}
 /bin/executable_screenshot-location_mac.sh
+/.local/bin/macos_defaults.sh
 {{ end }}
 
 {{ if ne .chezmoi.os "windows" }}
