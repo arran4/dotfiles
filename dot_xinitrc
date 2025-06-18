@@ -1,0 +1,10 @@
+# ~/.xinitrc
+# Source scripts in /etc/X11/xinit/xinitrc.d when present.
+# This allows system packages to configure the X session.
+if [ -d /etc/X11/xinit/xinitrc.d ]; then
+  for f in /etc/X11/xinit/xinitrc.d/*; do
+    [ -x "$f" ] && . "$f"
+  done
+  unset f
+fi
+
