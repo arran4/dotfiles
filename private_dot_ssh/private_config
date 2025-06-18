@@ -7,6 +7,7 @@ ControlPath ~/.ssh/cm_socket/%r@%h:%p
 
 # Default key handling
 Host *
+  IgnoreUnknown UseKeychain
   UseKeychain yes
   AddKeysToAgent yes
   IdentitiesOnly yes
