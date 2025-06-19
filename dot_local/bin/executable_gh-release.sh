@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eux
 
-version=$(git-tag-inc "$@" -print-version-only)
+version=$(git-tag-inc -print-version-only "$@")
 if [ "${version}" = "" ]; then
   echo failed to generate version
   exit 1
