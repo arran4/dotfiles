@@ -7,5 +7,6 @@ if [ "${version}" = "" ]; then
   exit 1
 fi
 git-tag-inc "$@"
+git push --tags
 gh release create "$version" --generate-notes
 
