@@ -19,13 +19,29 @@ fi
 
 name=$(git config --get user.name || echo "$email")
 
-gpg --batch --generate-key <<KEY
-Key-Type: default
-Subkey-Type: default
+if gpg --version | grep -q "EDDSA"; then
+  gpg --batch --generate-key <<KEY || true
+Key-Type: eddsa
+Key-Curve: ed25519
+Subkey-Type: ecdh
+Subkey-Curve: cv25519
 Name-Real: $name
 Name-Email: $email
 Expire-Date: 0
 %no-protection
 %commit
 KEY
+else
+  gpg --batch --default-new-key-algo rsa4096 --generate-key <<KEY || true
+Key-Type: rsa
+Key-Length: 4096
+Subkey-Type: rsa
+Subkey-Length: 4096
+Name-Real: $name
+Name-Email: $email
+Expire-Date: 0
+%no-protection
+%commit
+KEY
+fi
 
