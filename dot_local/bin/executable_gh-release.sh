@@ -1,7 +1,11 @@
 #!/bin/sh
-set -eu
+set -eux
 
 version=$(git-tag-inc "$@" -print-version-only)
+if [ "${version}" = "" ]; then
+  echo failed to generate version
+  exit 1
+fi
 git-tag-inc "$@"
 gh release create "$version" --generate-notes
 
