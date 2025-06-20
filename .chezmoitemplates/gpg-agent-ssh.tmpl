@@ -1,0 +1,11 @@
+{{- $shell := index . "shell" -}}
+{{- if eq $shell "tcsh" }}
+if ( $?prompt ) then
+  setenv SSH_AUTH_SOCK `gpgconf --list-dirs agent-ssh-socket`
+endif
+{{- else }}
+if command -v gpgconf >/dev/null 2>&1; then
+  SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  export SSH_AUTH_SOCK
+fi
+{{- end }}

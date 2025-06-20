@@ -11,3 +11,4 @@ else
 fi
 
 # SSH Agent if required
+{{ template "gpg-agent-ssh.tmpl" deepCopy $ | merge (dict "shell" "bash") }}
