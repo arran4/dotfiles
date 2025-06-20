@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Load common login settings
+{{ template "shell-login-common.tmpl" deepCopy $ | merge (dict "shell" "sh") }}
+
+# History configuration
+HISTFILE="$HOME/.sh_history"
+HISTSIZE=32768
+export HISTFILE HISTSIZE
+
+# Editor and pager
+export VISUAL=vi
+export EDITOR=vi
+export PAGER=less
+
+# Basic aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+{{ template "path-discovery.tmpl" $ }}
+{{ template "common-misc-env.tmpl" $ }}
+
+return # This prevents scripts which append their own installers from "working"
