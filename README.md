@@ -127,3 +127,9 @@ Host legacy.example.com
   IdentitiesOnly no
 ```
 
+## GPG agent with SSH support
+
+`dot_gnupg/gpg-agent.conf` installs `enable-ssh-support` so `gpg-agent` can act
+as your SSH agent. Login scripts export `SSH_AUTH_SOCK` from
+`gpgconf --list-dirs agent-ssh-socket` to point SSH at the agent's socket.
+

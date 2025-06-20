@@ -115,6 +115,7 @@
 /.gdrive
 /.gitlab
 /.gnupg
+!/.gnupg/gpg-agent.conf
 /.googlecl
 /.hushlogin
 /.kde
