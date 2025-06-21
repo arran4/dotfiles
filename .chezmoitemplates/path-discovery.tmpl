@@ -1,33 +1,9 @@
 # Path discovery
+# Always include the user's local bin directory
+PATH="$HOME/.local/bin:$PATH"
 # Path searching
-{{- range $p := (index $ "binroots") }}
-for d in "{{ joinPath $p "/bin" }}" "{{ joinPath $p "/sbin" }}"; do
-  if [ -d "$d" ]; then
-    PATH="${PATH}:$d"
-  fi
-done
-{{- end }}
-
-{{- range $p := (index $ "binpaths") }}
+{{- range $p := (index $ "paths") }}
 if [ -d "{{ $p }}" ]; then
   PATH="${PATH}:{{ $p }}"
-fi
-{{- end }}
-
-{{- range $p := (index $ "optbins") }}
-if [ -d "{{ joinPath "/opt/" $p "/bin" }}" ]; then
-  PATH="${PATH}:{{ joinPath "/opt/" $p "/bin" }}"
-fi
-{{- end }}
-
-{{- range $p := (index $ "usrbins") }}
-if [ -d "{{ joinPath "/usr/" $p "/bin" }}" ]; then
-  PATH="${PATH}:{{ joinPath "/usr/" $p "/bin" }}"
-fi
-{{- end }}
-
-{{- range $p := (index $ "usrlocalbins") }}
-if [ -d "{{ joinPath "/usr/local/" $p "/bin" }}" ]; then
-  PATH="${PATH}:{{ joinPath "/usr/local/" $p "/bin" }}"
 fi
 {{- end }}
