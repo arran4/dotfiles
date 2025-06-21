@@ -12,84 +12,109 @@
 {{- $generatedTime := now | date "2006-01-02 15:04:05 -0700" -}}
 
 {{- $paths := list -}}
-{{- $binroots := list -}}
+{{- $homeRoots := list -}}
+{{- $systemRoots := list -}}
+{{- $pathroots := list -}}
 {{- $terminfosearch := list -}}
 {{- $termfallback := list "linux" "vt100" -}}
 {{- $gpgLocation := "/usr/bin/gpg" -}}
 
-#{{ if eq .chezmoi.os "darwin" }} Darwin
-        {{- $binroots = list
-          "/"
-          "/usr/"
-          .chezmoi.homeDir
-          (joinPath .chezmoi.homeDir "/.local")
-          (joinPath .chezmoi.homeDir "/go")
-          (joinPath .chezmoi.homeDir "/Library/flutter")
-          (joinPath .chezmoi.homeDir "/.pub-cache")
-          (joinPath .chezmoi.homeDir "/.cache/npm")
-        -}}
-        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
+{{- /* OS independent unix roots */ -}}
+{{- if ne .chezmoi.os "windows" -}}
+  {{- range list "/" "/usr/" "/usr/local/" -}}
+    {{- $systemRoots = append $systemRoots . -}}
+  {{- end -}}
+{{- end -}}
+
+{{ if eq .chezmoi.os "darwin" }}
+        {{- range list "" "/.local" "/go" "/Library/flutter" "/.pub-cache" "/.cache/npm" -}}
+          {{- $homeRoots = append $homeRoots (joinPath .chezmoi.homeDir .) -}}
+        {{- end -}}
+        {{- $dotnet := joinPath .chezmoi.homeDir "/.dotnet/tools" -}}
+        {{- if stat $dotnet -}}
+          {{- $paths = append $paths $dotnet -}}
+        {{- end -}}
         {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
         {{- $termfallback = list "xterm" "linux" "vt100" -}}
-#{{ else if eq .chezmoi.os "linux" }} Linux
-        {{- $binroots = list
-          "/"
-          "/usr/"
-          "/usr/local/"
-          .chezmoi.homeDir
-          (joinPath .chezmoi.homeDir "/.local")
-          (joinPath .chezmoi.homeDir "/go")
-          (joinPath .chezmoi.homeDir "/.go/path")
-          (joinPath .chezmoi.homeDir "/libs/flutter")
-          (joinPath .chezmoi.homeDir "/sdk/flutter")
-          (joinPath .chezmoi.homeDir "/.pub-cache")
-          (joinPath .chezmoi.homeDir "/.cache/npm")
-        -}}
-        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
-        {{- $paths = append $paths "/usr/games/bin" -}}
+{{ else if eq .chezmoi.os "linux" }}
+        {{- range list "" "/.local" "/go" "/.go/path" "/libs/flutter" "/sdk/flutter" "/.pub-cache" "/.cache/npm" -}}
+          {{- $homeRoots = append $homeRoots (joinPath .chezmoi.homeDir .) -}}
+        {{- end -}}
+        {{- $dotnet := joinPath .chezmoi.homeDir "/.dotnet/tools" -}}
+        {{- if stat $dotnet -}}
+          {{- $paths = append $paths $dotnet -}}
+        {{- end -}}
+        {{- if stat "/usr/games/bin" -}}
+          {{- $paths = append $paths "/usr/games/bin" -}}
+        {{- end -}}
         {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
         {{- $termfallback = list "rxvt" "xterm" "linux" "vt100" -}}
-#{{ else if eq .chezmoi.os "windows" }} Windows
+{{ else if eq .chezmoi.os "windows" }}
         {{- $programFiles := (env "ProgramFiles" | default "C:/Program Files") -}}
         {{- $programFilesX86 := (env "ProgramFiles(x86)" | default "C:/Program Files (x86)") -}}
         {{- $systemRoot := (env "SystemRoot" | default "C:/Windows") -}}
-        {{- $binroots = list $programFiles $programFilesX86 $systemRoot (joinPath $systemRoot "System32") -}}
-        {{- $paths = append $paths (joinPath .chezmoi.homeDir "AppData/Local/Microsoft/WindowsApps") -}}
+        {{- range list $programFiles $programFilesX86 $systemRoot (joinPath $systemRoot "System32") -}}
+          {{- $systemRoots = append $systemRoots . -}}
+        {{- end -}}
+        {{- $winapps := joinPath .chezmoi.homeDir "AppData/Local/Microsoft/WindowsApps" -}}
+        {{- if stat $winapps -}}
+          {{- $paths = append $paths $winapps -}}
+        {{- end -}}
         {{- $terminfosearch = list -}}
         {{- $termfallback = list "linux" "vt100" -}}
         {{- $gpgLocation = joinPath $programFilesX86 "GnuPG/bin/gpg.exe" -}}
-#{{ else if eq .chezmoi.os "solaris" }} Solaris
-        {{- $binroots = list
-          "/"
-          "/usr/"
-          .chezmoi.homeDir
-          (joinPath .chezmoi.homeDir "/.local")
-          (joinPath .chezmoi.homeDir "/go")
-        -}}
-        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
+{{ else if eq .chezmoi.os "solaris" }}
+        {{- range list "" "/.local" "/go" -}}
+          {{- $homeRoots = append $homeRoots (joinPath .chezmoi.homeDir .) -}}
+        {{- end -}}
+        {{- $dotnet := joinPath .chezmoi.homeDir "/.dotnet/tools" -}}
+        {{- if stat $dotnet -}}
+          {{- $paths = append $paths $dotnet -}}
+        {{- end -}}
         {{- range list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" -}}
-          {{- $paths = append $paths (joinPath "/opt" . "/bin") -}}
+          {{- $p := joinPath "/opt" . "/bin" -}}
+          {{- if stat $p -}}
+            {{- $paths = append $paths $p -}}
+          {{- end -}}
         {{- end -}}
         {{- range list "local" "sfw" "ccs" -}}
-          {{- $paths = append $paths (joinPath "/usr" . "/bin") -}}
+          {{- $p := joinPath "/usr" . "/bin" -}}
+          {{- if stat $p -}}
+            {{- $paths = append $paths $p -}}
+          {{- end -}}
         {{- end -}}
         {{- range list "mysql" "apache" "apache2" "php" -}}
-          {{- $paths = append $paths (joinPath "/usr/local" . "/bin") -}}
+          {{- $p := joinPath "/usr/local" . "/bin" -}}
+          {{- if stat $p -}}
+            {{- $paths = append $paths $p -}}
+          {{- end -}}
         {{- end -}}
         {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
         {{- $termfallback = list "xterm" "linux" "vt100" -}}
-#{{ else }} Unknown OS {{ .chezmoi.os }}
-        {{- $binroots = list -}}
+{{ else }}
         {{- $paths = list -}}
         {{- $terminfosearch = list -}}
         {{- $termfallback = list "linux" "vt100" -}}
-#{{ end }} End OS Specific code
+{{ end }}
 
-{{- /* Build unified paths list for PATH discovery */ -}}
-{{- range $p := $binroots -}}
-  {{- $paths = append $paths (joinPath $p "bin") -}}
-  {{- $paths = append $paths (joinPath $p "sbin") -}}
+{{- range $root := $homeRoots -}}
+  {{- $pathroots = append $pathroots $root -}}
 {{- end -}}
+{{- range $root := $systemRoots -}}
+  {{- $pathroots = append $pathroots $root -}}
+{{- end -}}
+
+{{- range $root := $pathroots -}}
+  {{- $bin := joinPath $root "bin" -}}
+  {{- if stat $bin -}}
+    {{- $paths = append $paths $bin -}}
+  {{- end -}}
+  {{- $sbin := joinPath $root "sbin" -}}
+  {{- if stat $sbin -}}
+    {{- $paths = append $paths $sbin -}}
+  {{- end -}}
+{{- end -}}
+
 
 {{- $gitCredentialManagerLocation := findExecutable "git-credential-manager" $paths -}}
 {{- $gitCredentialOAuthLocation := "" -}}
@@ -106,26 +131,39 @@
 {{- $kdiff3Location := findExecutable "kdiff3" $paths -}}
 {{- $vimLocation := findExecutable "vim" $paths -}}
 {{- $neovimLocation := findExecutable "nvim" $paths -}}
-{{- $notepadppLocation := findExecutable "Notepad++/notepad++.exe" $binroots -}}
+{{- $notepadppLocation := "" -}}
+{{- if eq .chezmoi.os "windows" -}}
+  {{- $notepadppLocation = findExecutable "Notepad++/notepad++.exe" $pathroots -}}
+{{- end -}}
 {{- if eq $notepadppLocation "" -}}
   {{- $notepadppLocation = lookPath "notepad++" -}}
 {{- end -}}
-{{- $notepadLocation := findExecutable "notepad.exe" $binroots -}}
+{{- $notepadLocation := "" -}}
+{{- if eq .chezmoi.os "windows" -}}
+  {{- $notepadLocation = findExecutable "notepad.exe" $pathroots -}}
+{{- end -}}
 {{- if eq $notepadLocation "" -}}
   {{- $notepadLocation = lookPath "notepad" -}}
 {{- end -}}
 {{- $gvimLocation := lookPath "gvim" -}}
 {{- if eq $gvimLocation "" -}}
-  {{- $gvimLocation = findExecutable "Vim/vim90/gvim.exe" $binroots -}}
-  {{- if eq $gvimLocation "" -}}
-    {{- $gvimLocation = findExecutable "Vim/vim91/gvim.exe" $binroots -}}
+  {{- if eq .chezmoi.os "windows" -}}
+    {{- $gvimLocation = findExecutable "Vim/vim90/gvim.exe" $pathroots -}}
+    {{- if eq $gvimLocation "" -}}
+      {{- $gvimLocation = findExecutable "Vim/vim91/gvim.exe" $pathroots -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- $vscodeLocation := lookPath "code" -}}
 {{- if eq $vscodeLocation "" -}}
-  {{- $vscodeLocation = findExecutable "Microsoft VS Code/Code.exe" $binroots -}}
+  {{- if eq .chezmoi.os "windows" -}}
+    {{- $vscodeLocation = findExecutable "Microsoft VS Code/Code.exe" $pathroots -}}
+  {{- end -}}
 {{- end -}}
-{{- $intellijLocation := findExecutable "JetBrains/IntelliJ IDEA/bin/idea64.exe" $binroots -}}
+{{- $intellijLocation := "" -}}
+{{- if eq .chezmoi.os "windows" -}}
+  {{- $intellijLocation = findExecutable "JetBrains/IntelliJ IDEA/bin/idea64.exe" $pathroots -}}
+{{- end -}}
 {{- if eq $intellijLocation "" -}}
   {{- $intellijLocation = lookPath "idea64" -}}
 {{- end -}}
