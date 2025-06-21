@@ -11,76 +11,101 @@
 {{- $gitUserEmail := promptString "git user.email" (trim (output "sh" "-c" "git config --get user.email 2>/dev/null || true")) -}}
 {{- $generatedTime := now | date "2006-01-02 15:04:05 -0700" -}}
 
-{{- $optbins := (list) -}}
-{{- $usrbins := (list) -}}
-{{- $usrlocalbins := (list) -}}
-{{- $binpaths := (list) -}}
-{{- $binroots := (list) -}}
-{{- $terminfosearch := (list) -}}
-{{- $termfallback := (list "linux" "vt100" ) -}}
+{{- $paths := list -}}
+{{- $binroots := list -}}
+{{- $terminfosearch := list -}}
+{{- $termfallback := list "linux" "vt100" -}}
 {{- $gpgLocation := "/usr/bin/gpg" -}}
 
 #{{ if eq .chezmoi.os "darwin" }} Darwin
-        {{- $optbins = (list) -}}
-        {{- $usrbins = (list) -}}
-        {{- $usrlocalbins = (list) -}}
-  {{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools") ) -}}
-        {{- $binroots = (list "/" "/usr/" .chezmoi.homeDir (joinPath .chezmoi.homeDir "/.local" ) (joinPath .chezmoi.homeDir "/go" ) (joinPath .chezmoi.homeDir "/Library/flutter" ) (joinPath .chezmoi.homeDir "/.pub-cache" ) (joinPath .chezmoi.homeDir "/.cache/npm" ) ) -}}
-        {{- $terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
-        {{- $termfallback = (list "xterm" "linux" "vt100" ) -}}
+        {{- $binroots = list
+          "/"
+          "/usr/"
+          .chezmoi.homeDir
+          (joinPath .chezmoi.homeDir "/.local")
+          (joinPath .chezmoi.homeDir "/go")
+          (joinPath .chezmoi.homeDir "/Library/flutter")
+          (joinPath .chezmoi.homeDir "/.pub-cache")
+          (joinPath .chezmoi.homeDir "/.cache/npm")
+        -}}
+        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
+        {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
+        {{- $termfallback = list "xterm" "linux" "vt100" -}}
 #{{ else if eq .chezmoi.os "linux" }} Linux
-        {{- $optbins = (list) -}}
-        {{- $usrbins = (list "games" ) -}}
-        {{- $usrlocalbins = (list) -}}
-  {{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools" ) ) -}}
-        {{- $binroots = (list "/" "/usr/" "/usr/local/" .chezmoi.homeDir (joinPath .chezmoi.homeDir "/.local" ) (joinPath .chezmoi.homeDir "/go" ) (joinPath .chezmoi.homeDir "/.go/path" ) (joinPath .chezmoi.homeDir "/libs/flutter" ) (joinPath .chezmoi.homeDir "/sdk/flutter" ) (joinPath .chezmoi.homeDir "/.pub-cache" ) (joinPath .chezmoi.homeDir "/.cache/npm" ) ) -}}
-        {{- $terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
-        {{- $termfallback = (list "rxvt" "xterm" "linux" "vt100" ) -}}
+        {{- $binroots = list
+          "/"
+          "/usr/"
+          "/usr/local/"
+          .chezmoi.homeDir
+          (joinPath .chezmoi.homeDir "/.local")
+          (joinPath .chezmoi.homeDir "/go")
+          (joinPath .chezmoi.homeDir "/.go/path")
+          (joinPath .chezmoi.homeDir "/libs/flutter")
+          (joinPath .chezmoi.homeDir "/sdk/flutter")
+          (joinPath .chezmoi.homeDir "/.pub-cache")
+          (joinPath .chezmoi.homeDir "/.cache/npm")
+        -}}
+        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
+        {{- $paths = append $paths "/usr/games/bin" -}}
+        {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
+        {{- $termfallback = list "rxvt" "xterm" "linux" "vt100" -}}
 #{{ else if eq .chezmoi.os "windows" }} Windows
-        {{- $optbins = (list) -}}
-        {{- $usrbins = (list) -}}
-        {{- $usrlocalbins = (list) -}}
-        {{- $binpaths = (list (joinPath .chezmoi.homeDir "AppData/Local/Microsoft/WindowsApps" )) -}}
         {{- $programFiles := (env "ProgramFiles" | default "C:/Program Files") -}}
         {{- $programFilesX86 := (env "ProgramFiles(x86)" | default "C:/Program Files (x86)") -}}
         {{- $systemRoot := (env "SystemRoot" | default "C:/Windows") -}}
-        {{- $binroots = (list $programFiles $programFilesX86 $systemRoot (joinPath $systemRoot "System32")) -}}
-        {{- $terminfosearch = (list) -}}
-        {{- $termfallback = (list "linux" "vt100" ) -}}
-        {{- $gpgLocation = (joinPath $programFilesX86 "GnuPG/bin/gpg.exe") -}}
+        {{- $binroots = list $programFiles $programFilesX86 $systemRoot (joinPath $systemRoot "System32") -}}
+        {{- $paths = append $paths (joinPath .chezmoi.homeDir "AppData/Local/Microsoft/WindowsApps") -}}
+        {{- $terminfosearch = list -}}
+        {{- $termfallback = list "linux" "vt100" -}}
+        {{- $gpgLocation = joinPath $programFilesX86 "GnuPG/bin/gpg.exe" -}}
 #{{ else if eq .chezmoi.os "solaris" }} Solaris
-        {{- $optbins = (list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" ) -}}
-        {{- $usrbins = (list "local" "sfw" "ccs" ) -}}
-        {{- $usrlocalbins = (list "mysql" "apache" "apache2" "php" ) -}}
-  {{- $binpaths = (list (joinPath .chezmoi.homeDir "/.dotnet/tools" ) ) -}}
-        {{- $binroots = (list "/" "/usr/" .chezmoi.homeDir (joinPath .chezmoi.homeDir "/.local" ) (joinPath .chezmoi.homeDir "/go" ) ) -}}
-        {{- $terminfosearch = (list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" ) -}}
-        {{- $termfallback = (list "xterm" "linux" "vt100" ) -}}
+        {{- $binroots = list
+          "/"
+          "/usr/"
+          .chezmoi.homeDir
+          (joinPath .chezmoi.homeDir "/.local")
+          (joinPath .chezmoi.homeDir "/go")
+        -}}
+        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
+        {{- range list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" -}}
+          {{- $paths = append $paths (joinPath "/opt" . "/bin") -}}
+        {{- end -}}
+        {{- range list "local" "sfw" "ccs" -}}
+          {{- $paths = append $paths (joinPath "/usr" . "/bin") -}}
+        {{- end -}}
+        {{- range list "mysql" "apache" "apache2" "php" -}}
+          {{- $paths = append $paths (joinPath "/usr/local" . "/bin") -}}
+        {{- end -}}
+        {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
+        {{- $termfallback = list "xterm" "linux" "vt100" -}}
 #{{ else }} Unknown OS {{ .chezmoi.os }}
-        {{- $optbins = (list) -}}
-        {{- $usrbins = (list) -}}
-        {{- $usrlocalbins = (list) -}}
-  {{- $binpaths = (list) -}}
-        {{- $binroots = (list) -}}
-        {{- $terminfosearch = (list) -}}
-        {{- $termfallback = (list "linux" "vt100" ) -}}
+        {{- $binroots = list -}}
+        {{- $paths = list -}}
+        {{- $terminfosearch = list -}}
+        {{- $termfallback = list "linux" "vt100" -}}
 #{{ end }} End OS Specific code
 
-{{- $gitCredentialManagerLocation := findExecutable "bin/git-credential-manager" $binroots -}}
+{{- /* Build unified paths list for PATH discovery */ -}}
+{{- range $p := $binroots -}}
+  {{- $paths = append $paths (joinPath $p "bin") -}}
+  {{- $paths = append $paths (joinPath $p "sbin") -}}
+{{- end -}}
+
+{{- $gitCredentialManagerLocation := findExecutable "git-credential-manager" $paths -}}
 {{- $gitCredentialOAuthLocation := "" -}}
 {{- if stat (joinPath .chezmoi.homeDir "/.local/bin/git-credential-oauth") -}}
   {{- $gitCredentialOAuthLocation = joinPath .chezmoi.homeDir "/.local/bin/git-credential-oauth" -}}
 {{- else -}}
-  {{- $gitCredentialOAuthLocation = findExecutable "bin/git-credential-oauth" $binroots -}}
+  {{- $gitCredentialOAuthLocation = findExecutable "git-credential-oauth" $paths -}}
   {{- if eq $gitCredentialOAuthLocation "" -}}
     {{- $gitCredentialOAuthLocation = lookPath "git-credential-oauth" -}}
   {{- end -}}
 {{- end -}}
-{{- $vimdiffLocation := findExecutable "bin/vimdiff" $binroots -}}
-{{- $nvimdiffLocation := findExecutable "bin/nvimdiff" $binroots -}}
-{{- $kdiff3Location := findExecutable "bin/kdiff3" $binroots -}}
-{{- $vimLocation := findExecutable "bin/vim" $binroots -}}
-{{- $neovimLocation := findExecutable "bin/nvim" $binroots -}}
+{{- $vimdiffLocation := findExecutable "vimdiff" $paths -}}
+{{- $nvimdiffLocation := findExecutable "nvimdiff" $paths -}}
+{{- $kdiff3Location := findExecutable "kdiff3" $paths -}}
+{{- $vimLocation := findExecutable "vim" $paths -}}
+{{- $neovimLocation := findExecutable "nvim" $paths -}}
 {{- $notepadppLocation := findExecutable "Notepad++/notepad++.exe" $binroots -}}
 {{- if eq $notepadppLocation "" -}}
   {{- $notepadppLocation = lookPath "notepad++" -}}
@@ -104,19 +129,19 @@
 {{- if eq $intellijLocation "" -}}
   {{- $intellijLocation = lookPath "idea64" -}}
 {{- end -}}
-{{- $vimpagerLocation := findExecutable "bin/vimpager" $binroots -}}
-{{- $nvimpagerLocation := findExecutable "bin/nvimpager" $binroots -}}
-{{- $gitPagerLocation := findOneExecutable (list "delta" "nvimpager" "vimpager" "nvim" "vim") $binroots -}}
-{{- $zshLocation := findExecutable "bin/zsh" $binroots -}}
-{{- $lessLocation := findExecutable "bin/less" $binroots -}}
-{{- $mvnLocation := findExecutable "bin/mvn" $binroots -}}
-{{- $zellijLocation := findExecutable "bin/zellij" $binroots -}}
-{{- $tmuxLocation := findExecutable "bin/tmux" $binroots -}}
+{{- $vimpagerLocation := findExecutable "vimpager" $paths -}}
+{{- $nvimpagerLocation := findExecutable "nvimpager" $paths -}}
+{{- $gitPagerLocation := findOneExecutable (list "delta" "nvimpager" "vimpager" "nvim" "vim") $paths -}}
+{{- $zshLocation := findExecutable "zsh" $paths -}}
+{{- $lessLocation := findExecutable "less" $paths -}}
+{{- $mvnLocation := findExecutable "mvn" $paths -}}
+{{- $zellijLocation := findExecutable "zellij" $paths -}}
+{{- $tmuxLocation := findExecutable "tmux" $paths -}}
 {{- $ghLocation := "" -}}
 {{- if stat (joinPath .chezmoi.homeDir "/.local/bin/gh") -}}
   {{- $ghLocation = joinPath .chezmoi.homeDir "/.local/bin/gh" -}}
 {{- else -}}
-  {{- $ghLocation = findExecutable "bin/gh" $binroots -}}
+  {{- $ghLocation = findExecutable "gh" $paths -}}
   {{- if eq $ghLocation "" -}}
     {{- $ghLocation = lookPath "gh" -}}
   {{- end -}}
@@ -126,37 +151,37 @@
 {{- if stat (joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc") -}}
   {{- $gitTagIncLocation = joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc" -}}
 {{- else -}}
-  {{- $gitTagIncLocation = findExecutable "bin/git-tag-inc" $binroots -}}
+  {{- $gitTagIncLocation = findExecutable "git-tag-inc" $paths -}}
   {{- if eq $gitTagIncLocation "" -}}
     {{- $gitTagIncLocation = lookPath "git-tag-inc" -}}
   {{- end -}}
 {{- end -}}
 
-{{- $rarLocation := findExecutable "bin/rar" $binroots -}}
+{{- $rarLocation := findExecutable "rar" $paths -}}
 {{- if eq $rarLocation "" -}}
   {{- $rarLocation = lookPath "rar" -}}
 {{- end -}}
 
-{{- $sevenZipLocation := findExecutable "bin/7z" $binroots -}}
+{{- $sevenZipLocation := findExecutable "7z" $paths -}}
 {{- if eq $sevenZipLocation "" -}}
   {{- $sevenZipLocation = lookPath "7z" -}}
 {{- end -}}
 
-{{- $digLocation := findExecutable "bin/dig" $binroots -}}
+{{- $digLocation := findExecutable "dig" $paths -}}
 {{- if eq $digLocation "" -}}
   {{- $digLocation = lookPath "dig" -}}
 {{- end -}}
 
-{{- $xinputLocation := findExecutable "bin/xinput" $binroots -}}
+{{- $xinputLocation := findExecutable "xinput" $paths -}}
 {{- if eq $xinputLocation "" -}}
   {{- $xinputLocation = lookPath "xinput" -}}
 {{- end -}}
 
 {{- $chromeLocation := findOneExecutable (list
-  "bin/google-chrome"
-  "bin/google-chrome-stable"
-  "bin/google-chrome-unstable"
-  "bin/google-chrome-beta") $binroots -}}
+  "google-chrome"
+  "google-chrome-stable"
+  "google-chrome-unstable"
+  "google-chrome-beta") $paths -}}
 {{- if eq $chromeLocation "" -}}
         {{- writeToStdout "Can't find chrome \n" -}}
 {{- end -}}
@@ -294,13 +319,9 @@
         # so it remains constant across templated files and prevents noisy diffs
         # when regenerating dotfiles.
         generatedTime="{{$generatedTime}}"
-        optbins = [{{range $each := $optbins}}"{{$each}}", {{end}}]
-        usrbins = [{{range $each := $usrbins}}"{{$each}}", {{end}}]
-        usrlocalbins = [{{range $each := $usrlocalbins}}"{{$each}}", {{end}}]
-        binpaths = [{{range $each := $binpaths}}"{{$each}}", {{end}}]
-        binroots = [{{range $each := $binroots}}"{{$each}}", {{end}}]
         terminfosearch = [{{range $each := $terminfosearch}}"{{$each}}", {{end}}]
         termfallback = [{{range $each := $termfallback}}"{{$each}}", {{end}}]
+        paths = [{{range $each := $paths}}"{{$each}}", {{end}}]
 
 [diff]
   command = "more"
