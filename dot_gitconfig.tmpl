@@ -101,23 +101,40 @@
 
 {{ end }}
 
+{{- $diffTool := "" -}}
+{{- $mergeTool := "" -}}
+{{- $pagerDiffTool := "" -}}
+{{- $pagerMergeTool := "" -}}
+{{- if lookPath "delta" -}}
+  {{- $diffTool = "delta" -}}
+  {{- $mergeTool = "delta" -}}
+{{- else if and (index . "headless") (stat (index . "vimdiffLocation" )) -}}
+  {{- $diffTool = index . "vimdiffLocation" -}}
+  {{- $mergeTool = index . "vimdiffLocation" -}}
+  {{- $pagerDiffTool = "false" -}}
+  {{- $pagerMergeTool = "false" -}}
+{{- else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" )) -}}
+  {{- $diffTool = index . "kdiff3Location" -}}
+  {{- $mergeTool = index . "kdiff3Location" -}}
+  {{- $pagerDiffTool = "false" -}}
+  {{- $pagerMergeTool = "false" -}}
+{{- else if stat (index . "vimdiffLocation" ) -}}
+  {{- $diffTool = index . "vimdiffLocation" -}}
+  {{- $mergeTool = index . "vimdiffLocation" -}}
+  {{- $pagerDiffTool = "false" -}}
+  {{- $pagerMergeTool = "false" -}}
+{{- end -}}
+
 [merge]
   # Include summaries of merged commits in newly created merge commit messages
   log = true
   # Should probably use a script to select here.
-{{ if lookPath "delta" }}
+{{- if eq $mergeTool "delta" }}
     conflictstyle = zdiff3
-  tool = delta
-{{ else if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
-  tool = {{index . "vimdiffLocation"}}
+{{- else if ne $mergeTool "" }}
     conflictstyle = diff3 # show original content before conflicts
-{{ else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" ) ) }}
-  tool = {{index . "kdiff3Location" }}
-    conflictstyle = diff3 # show original content before conflicts
-{{ else if stat (index . "vimdiffLocation") }}
-    conflictstyle = diff3 # show original content before conflicts
-  tool = {{ index . "vimdiffLocation" }}
-{{ end }}
+{{- end }}
+  tool = {{ $mergeTool }}
 
 [mergetool "kdiff3"]
     trustExitCode = false
@@ -129,15 +146,7 @@
 {{end}}
 
 [diff]
-{{ if lookPath "delta" }}
-  tool = delta
-{{ else if and (index . "headless") (stat (index . "vimdiffLocation" ) ) }}
-  tool = {{ index . "vimdiffLocation" }}
-{{ else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" )) }}
-  tool = {{ index . "kdiff3Location" }}
-{{ else if stat (index . "vimdiffLocation" ) }}
-  tool = {{ index . "vimdiffLocation" }}
-{{ end }}
+  tool = {{ $diffTool }}
     colorMoved = default
 
 [difftool]
@@ -173,7 +182,13 @@
 {{ if lookPath "delta" }}
   # Intentionally different
   #tag = nvimpager
-{{end}}
+{{ end }}
+{{- if ne $pagerDiffTool "" }}
+  difftool = {{ $pagerDiffTool }}
+{{- end }}
+{{- if ne $pagerMergeTool "" }}
+  mergetool = {{ $pagerMergeTool }}
+{{- end }}
 
 [push]
 {{ if index . "gpgconfigured" }}
