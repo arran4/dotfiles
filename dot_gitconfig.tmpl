@@ -47,7 +47,7 @@
 [credential]
 {{ $oauthHelper := (index . "gitCredentialOAuthLocation") }}
 {{ if ne $oauthHelper "" }}
-  helper = cache --timeout 21600 # six hours
+  helper = cache --timeout 5184000 # 60 days
   {{ if index . "headless" }}
   helper = oauth -device
   {{ else }}
@@ -56,7 +56,7 @@
 {{ end }}
 {{ if index . "headless" }}
         credentialStore = cache
-        cacheOptions = "--timeout 14400"
+        cacheOptions = "--timeout 5184000"
         helper = {{ index $ "gitCredentialManagerLocation" }}
 {{ else if eq .chezmoi.os "linux" }}
   {{ if eq .chezmoi.osRelease.id "ubuntu" }}
