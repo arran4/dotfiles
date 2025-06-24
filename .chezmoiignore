@@ -152,6 +152,10 @@
 /.local/bin/macos_defaults.sh
 {{ end }}
 
+{{ if not (lookPath "gh") }}
+/.local/bin/gh-release.sh
+{{ end }}
+
 {{ if ne .chezmoi.os "windows" }}
 /Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
 /bin/*.cmd

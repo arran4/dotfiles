@@ -37,6 +37,8 @@ Highlights include:
 - Example `.vimrc` and support files for Vim or Neovim.
 - OS-aware templates (`.chezmoi.toml.tmpl`) that select paths and tools based on your platform.
 - Scripts for one-time tasks such as updating the font cache.
+- Conditional `.chezmoiignore` rules skip local executables like
+  `gh-release.sh` when dependencies such as the GitHub CLI (`gh`) are absent.
 
 Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 
