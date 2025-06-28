@@ -1,7 +1,8 @@
 {{- $isWsl := or (env "WSL_DISTRO_NAME") (env "IS_WSL") | not | not -}}
 {{- $isDevcontainer := or (env "REMOTE_CONTAINERS") (env "CODESPACES") (env "VSCODE_REMOTE_CONTAINERS_SESSION") | not | not -}}
 {{- $isGnome := lookPath "gnome-shell" | not | not -}}
-{{- $hasHomeGPG := not ( kindIs "boolean" ( stat (joinPath .chezmoi.homeDir ".gnupg/private-keys-v1.d" ) ) ) -}}
+{{- $homeDir := (.chezmoi.homeDir | default (env "HOME")) -}}
+{{- $hasHomeGPG := not ( kindIs "boolean" ( stat (joinPath $homeDir ".gnupg/private-keys-v1.d" ) ) ) -}}
 {{- $headlessGuess := ( or $isWsl (not (or ( env "DISPLAY" ) (eq .chezmoi.os "windows" ) ) ) ) -}}
 {{- $gpgconfiguredGuess := $hasHomeGPG -}}
 {{- $headless := promptBool "headless" $headlessGuess -}}
@@ -21,14 +22,14 @@
         {{- $binroots = list
           "/"
           "/usr/"
-          .chezmoi.homeDir
-          (joinPath .chezmoi.homeDir "/.local")
-          (joinPath .chezmoi.homeDir "/go")
-          (joinPath .chezmoi.homeDir "/Library/flutter")
-          (joinPath .chezmoi.homeDir "/.pub-cache")
-          (joinPath .chezmoi.homeDir "/.cache/npm")
+          $homeDir
+          (joinPath $homeDir "/.local")
+          (joinPath $homeDir "/go")
+          (joinPath $homeDir "/Library/flutter")
+          (joinPath $homeDir "/.pub-cache")
+          (joinPath $homeDir "/.cache/npm")
         -}}
-        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
+        {{- $paths = append $paths (joinPath $homeDir "/.dotnet/tools") -}}
         {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
         {{- $termfallback = list "xterm" "linux" "vt100" -}}
 #{{ else if eq .chezmoi.os "linux" }} Linux
@@ -36,16 +37,16 @@
           "/"
           "/usr/"
           "/usr/local/"
-          .chezmoi.homeDir
-          (joinPath .chezmoi.homeDir "/.local")
-          (joinPath .chezmoi.homeDir "/go")
-          (joinPath .chezmoi.homeDir "/.go/path")
-          (joinPath .chezmoi.homeDir "/libs/flutter")
-          (joinPath .chezmoi.homeDir "/sdk/flutter")
-          (joinPath .chezmoi.homeDir "/.pub-cache")
-          (joinPath .chezmoi.homeDir "/.cache/npm")
+          $homeDir
+          (joinPath $homeDir "/.local")
+          (joinPath $homeDir "/go")
+          (joinPath $homeDir "/.go/path")
+          (joinPath $homeDir "/libs/flutter")
+          (joinPath $homeDir "/sdk/flutter")
+          (joinPath $homeDir "/.pub-cache")
+          (joinPath $homeDir "/.cache/npm")
         -}}
-        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
+        {{- $paths = append $paths (joinPath $homeDir "/.dotnet/tools") -}}
         {{- $paths = append $paths "/usr/games/bin" -}}
         {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
         {{- $termfallback = list "rxvt" "xterm" "linux" "vt100" -}}
@@ -54,7 +55,7 @@
         {{- $programFilesX86 := (env "ProgramFiles(x86)" | default "C:/Program Files (x86)") -}}
         {{- $systemRoot := (env "SystemRoot" | default "C:/Windows") -}}
         {{- $binroots = list $programFiles $programFilesX86 $systemRoot (joinPath $systemRoot "System32") -}}
-        {{- $paths = append $paths (joinPath .chezmoi.homeDir "AppData/Local/Microsoft/WindowsApps") -}}
+        {{- $paths = append $paths (joinPath $homeDir "AppData/Local/Microsoft/WindowsApps") -}}
         {{- $terminfosearch = list -}}
         {{- $termfallback = list "linux" "vt100" -}}
         {{- $gpgLocation = joinPath $programFilesX86 "GnuPG/bin/gpg.exe" -}}
@@ -62,11 +63,11 @@
         {{- $binroots = list
           "/"
           "/usr/"
-          .chezmoi.homeDir
-          (joinPath .chezmoi.homeDir "/.local")
-          (joinPath .chezmoi.homeDir "/go")
+          $homeDir
+          (joinPath $homeDir "/.local")
+          (joinPath $homeDir "/go")
         -}}
-        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
+        {{- $paths = append $paths (joinPath $homeDir "/.dotnet/tools") -}}
         {{- range list "httrack" "SUNWsneep" "test" "VRTSvxvm" "SUNWvts" "SUNWexplo" "VRTS" "VRTSob" -}}
           {{- $paths = append $paths (joinPath "/opt" . "/bin") -}}
         {{- end -}}
@@ -87,9 +88,9 @@
 #{{ end }} End OS Specific code
 
 {{- if ne .chezmoi.os "windows" -}}
-  {{- range $prefix := list "libs" "sdk" -}}
-    {{- range $tool := list "go" "flutter" -}}
-      {{- $root := joinPath .chezmoi.homeDir $prefix $tool -}}
+  {{- range $pidx, $prefix := list "libs" "sdk" -}}
+    {{- range $tidx, $tool := list "go" "flutter" -}}
+      {{- $root := joinPath $homeDir $prefix $tool -}}
       {{- if stat (joinPath $root "bin") -}}
         {{- $binroots = append $binroots $root -}}
       {{- end -}}
@@ -106,8 +107,8 @@
 
 {{- $gitCredentialManagerLocation := findExecutable "git-credential-manager" $paths -}}
 {{- $gitCredentialOAuthLocation := "" -}}
-{{- if stat (joinPath .chezmoi.homeDir "/.local/bin/git-credential-oauth") -}}
-  {{- $gitCredentialOAuthLocation = joinPath .chezmoi.homeDir "/.local/bin/git-credential-oauth" -}}
+{{- if stat (joinPath $homeDir "/.local/bin/git-credential-oauth") -}}
+  {{- $gitCredentialOAuthLocation = joinPath $homeDir "/.local/bin/git-credential-oauth" -}}
 {{- else -}}
   {{- $gitCredentialOAuthLocation = findExecutable "git-credential-oauth" $paths -}}
   {{- if eq $gitCredentialOAuthLocation "" -}}
@@ -159,8 +160,8 @@
   {{- $goLocation = lookPath "go" -}}
 {{- end -}}
 {{- $ghLocation := "" -}}
-{{- if stat (joinPath .chezmoi.homeDir "/.local/bin/gh") -}}
-  {{- $ghLocation = joinPath .chezmoi.homeDir "/.local/bin/gh" -}}
+{{- if stat (joinPath $homeDir "/.local/bin/gh") -}}
+  {{- $ghLocation = joinPath $homeDir "/.local/bin/gh" -}}
 {{- else -}}
   {{- $ghLocation = findExecutable "gh" $paths -}}
   {{- if eq $ghLocation "" -}}
@@ -169,8 +170,8 @@
 {{- end -}}
 
 {{- $gitTagIncLocation := "" -}}
-{{- if stat (joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc") -}}
-  {{- $gitTagIncLocation = joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc" -}}
+{{- if stat (joinPath $homeDir "/.local/bin/git-tag-inc") -}}
+  {{- $gitTagIncLocation = joinPath $homeDir "/.local/bin/git-tag-inc" -}}
 {{- else -}}
   {{- $gitTagIncLocation = findExecutable "git-tag-inc" $paths -}}
   {{- if eq $gitTagIncLocation "" -}}
