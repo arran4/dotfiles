@@ -87,9 +87,9 @@
 #{{ end }} End OS Specific code
 
 {{- if ne .chezmoi.os "windows" -}}
-  {{- range $prefix := list "libs" "sdk" -}}
-    {{- range $tool := list "go" "flutter" -}}
-      {{- $root := joinPath .chezmoi.homeDir $prefix $tool -}}
+  {{- range $pidx, $prefix := list "libs" "sdk" -}}
+    {{- range $tidx, $tool := list "go" "flutter" -}}
+      {{- $root := joinPath $.chezmoi.homeDir $prefix $tool -}}
       {{- if stat (joinPath $root "bin") -}}
         {{- $binroots = append $binroots $root -}}
       {{- end -}}
