@@ -83,13 +83,26 @@
         {{- $paths = list -}}
         {{- $terminfosearch = list -}}
         {{- $termfallback = list "linux" "vt100" -}}
+
 #{{ end }} End OS Specific code
+
+{{- if ne .chezmoi.os "windows" -}}
+  {{- range $prefix := list "libs" "sdk" -}}
+    {{- range $tool := list "go" "flutter" -}}
+      {{- $root := joinPath .chezmoi.homeDir $prefix $tool -}}
+      {{- if stat (joinPath $root "bin") -}}
+        {{- $binroots = append $binroots $root -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
 
 {{- /* Build unified paths list for PATH discovery */ -}}
 {{- range $p := $binroots -}}
   {{- $paths = append $paths (joinPath $p "bin") -}}
   {{- $paths = append $paths (joinPath $p "sbin") -}}
 {{- end -}}
+
 
 {{- $gitCredentialManagerLocation := findExecutable "git-credential-manager" $paths -}}
 {{- $gitCredentialOAuthLocation := "" -}}
@@ -137,6 +150,14 @@
 {{- $mvnLocation := findExecutable "mvn" $paths -}}
 {{- $zellijLocation := findExecutable "zellij" $paths -}}
 {{- $tmuxLocation := findExecutable "tmux" $paths -}}
+{{- $flutterLocation := findExecutable "flutter" $paths -}}
+{{- if eq $flutterLocation "" -}}
+  {{- $flutterLocation = lookPath "flutter" -}}
+{{- end -}}
+{{- $goLocation := findExecutable "go" $paths -}}
+{{- if eq $goLocation "" -}}
+  {{- $goLocation = lookPath "go" -}}
+{{- end -}}
 {{- $ghLocation := "" -}}
 {{- if stat (joinPath .chezmoi.homeDir "/.local/bin/gh") -}}
   {{- $ghLocation = joinPath .chezmoi.homeDir "/.local/bin/gh" -}}
@@ -255,6 +276,20 @@
         {{- writeToStdout "Can't find GitHub CLI (gh) \n" -}}
 {{- end -}}
 
+{{- if eq $flutterLocation "" -}}
+        {{- writeToStdout "Can't find flutter \n" -}}
+{{- else -}}
+        {{- $flutterVersion := trim (output $flutterLocation "--version") -}}
+        {{- writeToStdout (printf "Flutter installed at %s (%s)\n" $flutterLocation $flutterVersion) -}}
+{{- end -}}
+
+{{- if eq $goLocation "" -}}
+        {{- writeToStdout "Can't find go \n" -}}
+{{- else -}}
+        {{- $goVersion := trim (output $goLocation "version") -}}
+        {{- writeToStdout (printf "Go installed at %s (%s)\n" $goLocation $goVersion) -}}
+{{- end -}}
+
 {{- if not (stat $gitTagIncLocation ) -}}
         {{- writeToStdout "Can't find git-tag-inc \n" -}}
 {{- end -}}
@@ -308,6 +343,8 @@
         mvnLocation="{{$mvnLocation}}"
         zellijLocation="{{$zellijLocation}}"
         tmuxLocation="{{$tmuxLocation}}"
+        flutterLocation="{{$flutterLocation}}"
+        goLocation="{{$goLocation}}"
         ghLocation="{{$ghLocation}}"
         gitTagIncLocation="{{$gitTagIncLocation}}"
         rarLocation="{{$rarLocation}}"
