@@ -283,7 +283,7 @@
 {{- if eq $flutterLocation "" -}}
         {{- writeToStdout "Can't find flutter \n" -}}
 {{- else -}}
-        {{- $flutterVersion := include (joinPath (dir $flutterLocation ) "/cache/flutter.version.json") -}}
+        {{- $flutterVersion := include (joinPath (dir $flutterLocation ) "/cache/flutter.version.json") | jq ".flutterVersion" -}}
         {{- writeToStdout (printf "Flutter installed at %s (%s)\n" $flutterLocation $flutterVersion) -}}
 {{- end -}}
 
