@@ -68,7 +68,6 @@ check_version() {
         echo "Could not determine if $command version $installed meets recommended $minimum"
         ;;
     esac
-  fi
 }
 
 {{- if (index . "gitLocation") }}
