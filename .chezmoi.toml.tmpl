@@ -145,6 +145,10 @@
 {{- $vimpagerLocation := findExecutable "vimpager" $paths -}}
 {{- $nvimpagerLocation := findExecutable "nvimpager" $paths -}}
 {{- $gitPagerLocation := findOneExecutable (list "delta" "nvimpager" "vimpager" "nvim" "vim") $paths -}}
+{{- $gitLocation := findExecutable "git" $paths -}}
+{{- if eq $gitLocation "" -}}
+  {{- $gitLocation = lookPath "git" -}}
+{{- end -}}
 {{- $zshLocation := findExecutable "zsh" $paths -}}
 {{- $lessLocation := findExecutable "less" $paths -}}
 {{- $mvnLocation := findExecutable "mvn" $paths -}}
@@ -337,6 +341,7 @@
         vimpagerLocation="{{ $vimpagerLocation }}"
         nvimpagerLocation="{{ $nvimpagerLocation }}"
         gitPagerLocation="{{ $gitPagerLocation }}"
+        gitLocation="{{ $gitLocation }}"
         gpgLocation="{{$gpgLocation}}"
         zshLocation="{{$zshLocation}}"
         lessLocation="{{$lessLocation}}"
