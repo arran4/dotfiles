@@ -45,9 +45,10 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 ### Try it out
 
 1. Clone the repository and run `./install`.
-2. Open a new terminal and check the prompt, aliases and git settings.
-3. Start `tmux` to see the multiplexer configuration.
-4. Inspect `.chezmoitemplates` to learn how the templates are structured.
+2. Version checks run during setup using a PATH built from the `paths` defined in `.chezmoi.toml.tmpl` and warn only when a tool is older than the listed minimum version or the comparison fails.
+3. Open a new terminal and check the prompt, aliases and git settings.
+4. Start `tmux` to see the multiplexer configuration.
+5. Inspect `.chezmoitemplates` to learn how the templates are structured.
 
 ## Encrypting credentials with ejson
 
