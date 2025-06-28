@@ -89,7 +89,7 @@
 {{- if ne .chezmoi.os "windows" -}}
   {{- range $prefix := list "libs" "sdk" -}}
     {{- range $tool := list "go" "flutter" -}}
-      {{- $root := joinPath .chezmoi.homeDir $prefix $tool -}}
+      {{- $root := joinPath $.chezmoi.homeDir $prefix $tool -}}
       {{- if stat (joinPath $root "bin") -}}
         {{- $binroots = append $binroots $root -}}
       {{- end -}}
