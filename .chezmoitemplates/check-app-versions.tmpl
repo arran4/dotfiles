@@ -36,7 +36,7 @@ check_version() {
   fi
 }
 
-check_version git {{ .minGitVersion }} "--version"
+check_version git {{ index . "minGitVersion" }} "--version"
 check_version zsh {{ .minZshVersion }} "--version"
 check_version tmux {{ .minTmuxVersion }} "-V"
 check_version vim {{ .minVimVersion }} "--version"
