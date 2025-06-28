@@ -1,0 +1,44 @@
+# Build PATH from template variables so version checks find installed tools
+{{ template "path-discovery.tmpl" $ }}
+
+check_version() {
+  command="$1"
+  minimum="$2"
+  args="$3"
+  if command -v "$command" >/dev/null 2>&1; then
+    out=$($command $args 2>&1 | head -n 1 | tr -d '\r')
+    installed=$(echo "$out" | grep -o '[0-9][0-9.]*[0-9]' | head -n 1)
+    [ -z "$installed" ] && return
+    result=$(awk -v inst="$installed" -v min="$minimum" '
+      function split_nums(str, arr,  n,i,j) {
+        n = split(str, tmp, /[^0-9]+/); j = 0;
+        for (i = 1; i <= n; i++) if (tmp[i] != "") arr[++j] = tmp[i];
+        return j;
+      }
+      BEGIN {
+        ic = split_nums(inst, ia); mc = split_nums(min, ma);
+        len = (ic > mc ? ic : mc);
+        for (i = 1; i <= len; i++) {
+          if (i > ic || i > mc) { print "cmpfail"; exit }
+          if (ia[i] + 0 < ma[i] + 0) { print "less"; exit }
+          if (ia[i] + 0 > ma[i] + 0) { print "greater"; exit }
+        }
+        print "equal";
+      }')
+    case "$result" in
+      less)
+        echo "$command version $installed is older than the recommended $minimum"
+        ;;
+      cmpfail)
+        echo "Could not determine if $command version $installed meets recommended $minimum"
+        ;;
+    esac
+  fi
+}
+
+check_version git {{ index $ "minGitVersion" }} "--version"
+check_version zsh {{ index $ "minZshVersion" }} "--version"
+check_version tmux {{ index $ "minTmuxVersion" }} "-V"
+check_version vim {{ index $ "minVimVersion" }} "--version"
+check_version nvim {{ index $ "minNvimVersion" }} "--version"
+
