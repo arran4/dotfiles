@@ -4,11 +4,47 @@ check_version() {
   command="$1"
   minimum="$2"
   args="$3"
-  if command -v "$command" >/dev/null 2>&1; then
-    out=$($command $args 2>&1 | head -n 1 | tr -d '\r')
-    installed=$(echo "$out" | grep -o '[0-9][0-9.]*[0-9]' | head -n 1)
-    [ -z "$installed" ] && return
-    result=$(awk -v inst="$installed" -v min="$minimum" '
+  [ -z "$command" ] && return
+  if [ -x "$command" ]; then
+    cmdpath="$command"
+  else
+    cmdpath=$(command -v "$command" 2>/dev/null) || return
+  fi
+  cmdname=$(basename "$cmdpath")
+  out=$($cmdpath $args 2>&1 | head -n 1 | tr -d '\r')
+    case "$cmdname" in
+{{- if (index . "gitLocation") }}
+      git)
+        installed=${out#git version }
+        ;;
+{{- end }}
+{{- if (index . "zshLocation") }}
+      zsh)
+        installed=$(echo "$out" | awk '{print $2}')
+        ;;
+{{- end }}
+{{- if (index . "tmuxLocation") }}
+      tmux)
+        installed=$(echo "$out" | awk '{print $2}')
+        ;;
+{{- end }}
+{{- if (index . "vimLocation") }}
+      vim)
+        installed=$(echo "$out" | awk '{print $5}')
+        ;;
+{{- end }}
+{{- if (index . "neovimLocation") }}
+      nvim)
+        installed=$(echo "$out" | awk '{print $2}' | sed 's/^v//')
+        ;;
+{{- end }}
+      *)
+        installed=$(echo "$out" | grep -o '[0-9][0-9.]*[0-9a-z]*' | head -n 1)
+        ;;
+    esac
+    numeric=$(echo "$installed" | grep -o '[0-9][0-9.]*[0-9]' | head -n 1)
+    [ -z "$numeric" ] && return
+    result=$(awk -v inst="$numeric" -v min="$minimum" '
       function split_nums(str, arr,  n,i,j) {
         n = split(str, tmp, /[^0-9]+/); j = 0;
         for (i = 1; i <= n; i++) if (tmp[i] != "") arr[++j] = tmp[i];
@@ -35,9 +71,19 @@ check_version() {
   fi
 }
 
-check_version git "{{ index . "minGitVersion" }}" "--version"
-check_version zsh "{{ index . "minZshVersion" }}" "--version"
-check_version tmux "{{ index . "minTmuxVersion" }}" "-V"
-check_version vim "{{ index . "minVimVersion" }}" "--version"
-check_version nvim "{{ index . "minNvimVersion" }}" "--version"
+{{- if (index . "gitLocation") }}
+check_version "{{ index . "gitLocation" }}" "{{ index . "minGitVersion" }}" "--version"
+{{- end }}
+{{- if (index . "zshLocation") }}
+check_version "{{ index . "zshLocation" }}" "{{ index . "minZshVersion" }}" "--version"
+{{- end }}
+{{- if (index . "tmuxLocation") }}
+check_version "{{ index . "tmuxLocation" }}" "{{ index . "minTmuxVersion" }}" "-V"
+{{- end }}
+{{- if (index . "vimLocation") }}
+check_version "{{ index . "vimLocation" }}" "{{ index . "minVimVersion" }}" "--version"
+{{- end }}
+{{- if (index . "neovimLocation") }}
+check_version "{{ index . "neovimLocation" }}" "{{ index . "minNvimVersion" }}" "--version"
+{{- end }}
 
