@@ -5,7 +5,7 @@ check_version() {
   minimum="$2"
   args="$3"
   [ -z "$command" ] && return
-  if [ -z "$minimum" ]; then
+  if [ -z "$minimum" or "$minimum" = '<no value>' ]; then
     echo "Can't check $command minimum is empty, try --init"
     return
   fi
