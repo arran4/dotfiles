@@ -39,9 +39,9 @@ check_version() {
   fi
 }
 
-check_version git {{ index $ "minGitVersion" }} "--version"
-check_version zsh {{ index $ "minZshVersion" }} "--version"
-check_version tmux {{ index $ "minTmuxVersion" }} "-V"
-check_version vim {{ index $ "minVimVersion" }} "--version"
-check_version nvim {{ index $ "minNvimVersion" }} "--version"
+check_version git {{ index . "minGitVersion" }} "--version"
+check_version zsh {{ index . "minZshVersion" }} "--version"
+check_version tmux {{ index . "minTmuxVersion" }} "-V"
+check_version vim {{ index . "minVimVersion" }} "--version"
+check_version nvim {{ index . "minNvimVersion" }} "--version"
 
