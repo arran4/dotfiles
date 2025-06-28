@@ -285,7 +285,7 @@
 {{- else if not (stat (joinPath (dir $flutterLocation ) "/cache/flutter.version.json")) -}}
         {{- writeToStdout (printf "Flutter installed at %s (%s)\n" $flutterLocation "unknown version") -}}
 {{- else -}}
-        {{- $flutterVersion := include (joinPath (dir $flutterLocation ) "/cache/flutter.version.json") | fromJson | jq ".flutterVersion" -}}
+        {{- $flutterVersion := include (joinPath (dir $flutterLocation ) "/cache/flutter.version.json") | fromJson | jq ".flutterVersion" | first -}}
         {{- writeToStdout (printf "Flutter installed at %s (%s)\n" $flutterLocation $flutterVersion) -}}
 {{- end -}}
 
@@ -303,7 +303,7 @@
 {{- if not (stat $rarLocation ) -}}
         {{- writeToStdout "Can't find rar \n" -}}
 {{- end -}}
-
+`
 {{- if not (stat $sevenZipLocation ) -}}
         {{- writeToStdout "Can't find 7z \n" -}}
 {{- end -}}
