@@ -130,3 +130,20 @@ Host legacy.example.com
   IdentitiesOnly no
 ```
 
+## Foot terminal emulator
+
+These dotfiles include a template for [foot](https://codeberg.org/dnkl/foot), a
+fast Wayland terminal. Install foot from your package manager and apply the
+configuration:
+
+```sh
+chezmoi apply
+```
+
+To make foot the default terminal on systems that support `update-alternatives`,
+run:
+
+```sh
+sudo update-alternatives --set x-terminal-emulator /usr/bin/foot
+```
+
