@@ -1,0 +1,17 @@
+function fish_greeting
+  if test -e /etc/motd
+    if not cmp -s $HOME/.old_motd /etc/motd
+      cat /etc/motd | tee $HOME/.old_motd >/dev/null
+    end
+  end
+  echo "Shell is FISH version is $FISH_VERSION."
+  echo "System is (uname -a)"
+  echo "$USER@(hostname) Using term $TERM"
+  if test -n "$SSH_CLIENT"
+    echo "Connecting from $SSH_CLIENT"
+  end
+  if test -n "$DISPLAY"
+    echo "Display is set $DISPLAY"
+  end
+  echo "Chezmoi last generated {{ .generatedTime }}"
+end

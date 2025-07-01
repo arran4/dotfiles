@@ -83,6 +83,9 @@ check_version "{{ index . "zshLocation" }}" "{{ index . "minZshVersion" }}" "--v
 {{- if (index . "tmuxLocation") }}
 check_version "{{ index . "tmuxLocation" }}" "{{ index . "minTmuxVersion" }}" "-V"
 {{- end }}
+{{- if (index . "fishLocation") }}
+check_version "{{ index . "fishLocation" }}" "{{ index . "minFishVersion" }}" "--version"
+{{- end }}
 {{- if (index . "vimLocation") }}
 check_version "{{ index . "vimLocation" }}" "{{ index . "minVimVersion" }}" "--version"
 {{- end }}

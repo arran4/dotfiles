@@ -150,6 +150,10 @@
   {{- $gitLocation = lookPath "git" -}}
 {{- end -}}
 {{- $zshLocation := findExecutable "zsh" $paths -}}
+{{- $fishLocation := findExecutable "fish" $paths -}}
+{{- if eq $fishLocation "" -}}
+  {{- $fishLocation = lookPath "fish" -}}
+{{- end -}}
 {{- $lessLocation := findExecutable "less" $paths -}}
 {{- $mvnLocation := findExecutable "mvn" $paths -}}
 {{- $zellijLocation := findExecutable "zellij" $paths -}}
@@ -267,6 +271,9 @@
 {{- if and (not (eq .chezmoi.os "windows")) (not (stat $zshLocation )) -}}
         {{- writeToStdout "Can't find zsh \n" -}}
 {{- end -}}
+{{- if and (not (eq .chezmoi.os "windows")) (not (stat $fishLocation )) -}}
+        {{- writeToStdout "Can't find fish \n" -}}
+{{- end -}}
 
 {{- if and (not (eq .chezmoi.os "windows")) (not (stat $lessLocation )) -}}
         {{- writeToStdout "Can't find less \n" -}}
@@ -346,6 +353,7 @@
         gitLocation="{{ $gitLocation }}"
         gpgLocation="{{$gpgLocation}}"
         zshLocation="{{$zshLocation}}"
+        fishLocation="{{$fishLocation}}"
         lessLocation="{{$lessLocation}}"
         mvnLocation="{{$mvnLocation}}"
         zellijLocation="{{$zellijLocation}}"
@@ -362,6 +370,7 @@
         minGitVersion="2.45.1"
         minZshVersion="5.9"
         minTmuxVersion="3.3a"
+        minFishVersion="3.6"
         minVimVersion="9.1"
         minNvimVersion="0.9.5"
         # Timestamp of when chezmoi templates were last processed. Defined here
