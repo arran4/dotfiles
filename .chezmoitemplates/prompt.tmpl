@@ -1,6 +1,29 @@
 {{- $shell := index . "shell" -}}
 
-{{- if or (eq $shell "zsh") (eq $shell "bash") (eq $shell "ksh") (eq $shell "tcsh") -}}
+{{- if eq $shell "fish" -}}
+function fish_prompt
+  set -l ctx ""
+  if test -n "$TMUX"
+    set ctx "tmux"
+    if test $SHLVL -gt 2
+      set ctx "$ctx:$SHLVL"
+    end
+  else if test $SHLVL -gt 1
+    set ctx "$SHLVL"
+  end
+  if test -n "$ctx"
+    set ctx "($ctx)"
+  end
+
+  set -l pchar "$"
+  if test (id -u) -eq 0
+    set pchar "#"
+  end
+
+  set -l histnum (math (history | count))
+  printf "%s@%s:%s %s %s\n%s " $USER (hostname -s) (prompt_pwd) $histnum $ctx $pchar
+end
+{{- else if or (eq $shell "zsh") (eq $shell "bash") (eq $shell "ksh") (eq $shell "tcsh") -}}
 ctx=""
 if test -n "${TMUX}"; then
   ctx="tmux"
