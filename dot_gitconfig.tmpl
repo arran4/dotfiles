@@ -52,8 +52,8 @@
   excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
   longpaths = true
   # quotepath = false # Unicode characters
-{{- if ne $pager "" }}
-    pager = {{ $pager }}
+{{- if ne $pagerTool "" }}
+    pager = {{ $pagerToll }}
 {{- end }}
 
 [rerere]
