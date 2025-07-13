@@ -391,10 +391,8 @@
 {{end -}}
 
 [diff]
-{{if stat $nvimdiffLocation -}}
-  pager = "{{$nvimdiffLocation}}"
-{{else if stat $vimdiffLocation -}}
-  pager = "{{$vimdiffLocation}}"
+{{if stat $gitPagerLocation -}}
+  pager = "{{$gitPagerLocation}}"
 {{else -}}
   pager = "more"
 {{end -}}
