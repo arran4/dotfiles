@@ -381,12 +381,21 @@
         termfallback = [{{range $each := $termfallback}}"{{$each}}", {{end}}]
         paths = [{{range $each := $paths}}"{{$each}}", {{end}}]
 
-[diff]
-  #command = "more"
+[merge]
 {{if stat $nvimdiffLocation -}}
-[merge]
-  command = "{{$nvimdiffLocation}}"
+  pager = "{{$nvimdiffLocation}}"
 {{else if stat $vimdiffLocation -}}
-[merge]
-  command = "{{$vimdiffLocation}}"
+  pager = "{{$vimdiffLocation}}"
+{{else -}}
+  pager = "more"
 {{end -}}
+
+[diff]
+{{if stat $nvimdiffLocation -}}
+  pager = "{{$nvimdiffLocation}}"
+{{else if stat $vimdiffLocation -}}
+  pager = "{{$vimdiffLocation}}"
+{{else -}}
+  pager = "more"
+{{end -}}
+
