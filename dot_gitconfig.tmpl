@@ -108,6 +108,8 @@
 {{- if lookPath "delta" -}}
   {{- $diffTool = "delta" -}}
   {{- $mergeTool = "delta" -}}
+  {{- $pagerDiffTool = "false" -}}
+  {{- $pagerMergeTool = "false" -}}
 {{- else if and (index . "headless") (stat (index . "vimdiffLocation" )) -}}
   {{- $diffTool = index . "vimdiffLocation" -}}
   {{- $mergeTool = index . "vimdiffLocation" -}}
