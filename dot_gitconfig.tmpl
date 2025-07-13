@@ -1,3 +1,22 @@
+
+{{- $diffTool := "" -}}
+{{- $mergeTool := "" -}}
+{{- $pagerTool := index . "gitPagerLocation" -}}
+{{- if lookPath "delta" -}}
+  {{- $pagerTool = "delta" -}}
+  {{- $mergeTool = "delta" -}}
+{{- else if and (index . "headless") (stat (index . "vimdiffLocation" )) -}}
+  {{- $diffTool = index . "vimdiffLocation" -}}
+  {{- $mergeTool = index . "vimdiffLocation" -}}
+{{- else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" )) -}}
+  {{- $diffTool = index . "kdiff3Location" -}}
+  {{- $mergeTool = index . "kdiff3Location" -}}
+{{- else if stat (index . "vimdiffLocation" ) -}}
+  {{- $diffTool = index . "vimdiffLocation" -}}
+  {{- $mergeTool = index . "vimdiffLocation" -}}
+{{- end -}}
+
+
 [user]
   name = {{ index . "gitUserName" }}
   email = {{ index . "gitUserEmail" }}
@@ -33,7 +52,6 @@
   excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
   longpaths = true
   # quotepath = false # Unicode characters
-{{- $pager := index . "gitPagerLocation" -}}
 {{- if ne $pager "" }}
     pager = {{ $pager }}
 {{- end }}
@@ -101,32 +119,6 @@
 
 {{ end }}
 
-{{- $diffTool := "" -}}
-{{- $mergeTool := "" -}}
-{{- $pagerDiffTool := "" -}}
-{{- $pagerMergeTool := "" -}}
-{{- if lookPath "delta" -}}
-  {{- $diffTool = "delta" -}}
-  {{- $mergeTool = "delta" -}}
-  {{- $pagerDiffTool = "false" -}}
-  {{- $pagerMergeTool = "false" -}}
-{{- else if and (index . "headless") (stat (index . "vimdiffLocation" )) -}}
-  {{- $diffTool = index . "vimdiffLocation" -}}
-  {{- $mergeTool = index . "vimdiffLocation" -}}
-  {{- $pagerDiffTool = "false" -}}
-  {{- $pagerMergeTool = "false" -}}
-{{- else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" )) -}}
-  {{- $diffTool = index . "kdiff3Location" -}}
-  {{- $mergeTool = index . "kdiff3Location" -}}
-  {{- $pagerDiffTool = "false" -}}
-  {{- $pagerMergeTool = "false" -}}
-{{- else if stat (index . "vimdiffLocation" ) -}}
-  {{- $diffTool = index . "vimdiffLocation" -}}
-  {{- $mergeTool = index . "vimdiffLocation" -}}
-  {{- $pagerDiffTool = "false" -}}
-  {{- $pagerMergeTool = "false" -}}
-{{- end -}}
-
 [merge]
   # Include summaries of merged commits in newly created merge commit messages
   log = true
@@ -135,8 +127,9 @@
     conflictstyle = zdiff3
 {{- else if ne $mergeTool "" }}
     conflictstyle = diff3 # show original content before conflicts
-{{- end }}
+{{- else }}
   tool = {{ $mergeTool }}
+{{- end }}
 
 [mergetool "kdiff3"]
     trustExitCode = false
@@ -149,7 +142,7 @@
 
 [diff]
   tool = {{ $diffTool }}
-    colorMoved = default
+  colorMoved = default
 
 [difftool]
   prompt = true
@@ -181,15 +174,11 @@
 #  template = ~/.config/git/tagmessage
 
 [pager]
-{{ if lookPath "delta" }}
-  # Intentionally different
-  #tag = nvimpager
-{{ end }}
-{{- if ne $pagerDiffTool "" }}
-  difftool = {{ $pagerDiffTool }}
+{{- if ne $diffTool "" }}
+  difftool = {{ $diffTool }}
 {{- end }}
-{{- if ne $pagerMergeTool "" }}
-  mergetool = {{ $pagerMergeTool }}
+{{- if ne $mergeTool "" }}
+  mergetool = {{ $mergeTool }}
 {{- end }}
 
 [push]
