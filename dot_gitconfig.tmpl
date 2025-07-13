@@ -1,21 +1,8 @@
 
 {{- $diffTool := "" -}}
 {{- $mergeTool := "" -}}
+{{- $editTool := "" -}}
 {{- $pagerTool := index . "gitPagerLocation" -}}
-{{- if lookPath "delta" -}}
-  {{- $pagerTool = "delta" -}}
-  {{- $mergeTool = "delta" -}}
-{{- else if and (index . "headless") (stat (index . "vimdiffLocation" )) -}}
-  {{- $diffTool = index . "vimdiffLocation" -}}
-  {{- $mergeTool = index . "vimdiffLocation" -}}
-{{- else if and (eq .chezmoi.os "linux") (stat (index . "kdiff3Location" )) -}}
-  {{- $diffTool = index . "kdiff3Location" -}}
-  {{- $mergeTool = index . "kdiff3Location" -}}
-{{- else if stat (index . "vimdiffLocation" ) -}}
-  {{- $diffTool = index . "vimdiffLocation" -}}
-  {{- $mergeTool = index . "vimdiffLocation" -}}
-{{- end -}}
-
 
 [user]
   name = {{ index . "gitUserName" }}
@@ -41,13 +28,7 @@
   editor = notepad
   {{- end }}
 {{- else }}
-  {{- if stat (index . "neovimLocation") }}
-  editor = {{ index . "neovimLocation" }}
-  {{- else if stat (index . "vimLocation") }}
-  editor = {{ index . "vimLocation" }}
-  {{- else }}
-  editor = vi
-  {{- end }}
+  editor = {{ $editTool }}
 {{- end }}
   excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
   longpaths = true
@@ -173,14 +154,6 @@
 {{ end }}
 #  template = ~/.config/git/tagmessage
 
-[pager]
-{{- if ne $diffTool "" }}
-  difftool = {{ $diffTool }}
-{{- end }}
-{{- if ne $mergeTool "" }}
-  mergetool = {{ $mergeTool }}
-{{- end }}
-
 [push]
 {{ if index . "gpgconfigured" }}
   gpgsign = if-asked
@@ -204,14 +177,8 @@
 [delta]
     navigate = true
 
-[interactive]
-{{ if lookPath "delta" }}
+[interactive "delta"]
     diffFilter = delta --color-only
-{{ else if lookPath "vimpager" }}
-{{ else if lookPath "nvim" }}
-{{ else if lookPath "vim" }}
-{{ end }}
-
 
 [http]
   cookiefile = ~/.cache/git/cookies
