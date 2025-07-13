@@ -382,7 +382,7 @@
         paths = [{{range $each := $paths}}"{{$each}}", {{end}}]
 
 [diff]
-  command = "more"
+  #command = "more"
 {{if stat $nvimdiffLocation -}}
 [merge]
   command = "{{$nvimdiffLocation}}"
