@@ -18,9 +18,11 @@ export WATCH=root
 {{ if stat (index . "nvimpagerLocation") -}}
 	# Pager IS less
 	export PAGER={{(index . "nvimpagerLocation")}}
+	export DELTA_PAGER=less
 {{ else if stat (index . "vimpagerLocation") -}}
 	# Pager IS less
 	export PAGER={{(index . "vimpagerLocation")}}
+	export DELTA_PAGER=less
 {{ else if stat (index . "lessLocation") -}}
 	# Pager IS less
 	export PAGER={{(index . "lessLocation")}}
