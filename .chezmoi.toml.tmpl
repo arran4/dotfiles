@@ -143,7 +143,9 @@
   {{- $intellijLocation = lookPath "idea64" -}}
 {{- end -}}
 {{- $vimpagerLocation := findExecutable "vimpager" $paths -}}
+{{- $nvimLocation := findExecutable "nvim" $paths -}}
 {{- $nvimpagerLocation := findExecutable "nvimpager" $paths -}}
+{{- $deltaLocation := findExecutable "delta" $paths -}}
 {{- $gitPagerLocation := findOneExecutable (list "delta" "nvimpager" "vimpager" "nvim" "vim") $paths -}}
 {{- $gitLocation := findExecutable "git" $paths -}}
 {{- if eq $gitLocation "" -}}
@@ -382,18 +384,13 @@
         paths = [{{range $each := $paths}}"{{$each}}", {{end}}]
 
 [merge]
-{{if stat $nvimdiffLocation -}}
-  pager = "{{$nvimdiffLocation}}"
-{{else if stat $vimdiffLocation -}}
-  pager = "{{$vimdiffLocation}}"
-{{else -}}
-  pager = "more"
+{{if stat $nvimLocation -}}
+    command = "{{$nvimLocation}}"
+    args = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Target }}"]
 {{end -}}
 
 [diff]
-{{if stat $gitPagerLocation -}}
-  pager = "{{$gitPagerLocation}}"
-{{else -}}
-  pager = "more"
+{{if stat $deltaLocation -}}
+  pager = "{{$deltaLocation}}"
 {{end -}}
 
