@@ -1,4 +1,6 @@
-#URxvt*reverseVideo: True
+# Make urxvt use inverted colors and a large font
+URxvt*reverseVideo: true
+URxvt*font: xft:monospace:size=20
 URxvt*background: black
 URxvt*foreground: grey
 URxvt*colorBD: grey
