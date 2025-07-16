@@ -1,4 +1,4 @@
-URxvt*reverseVideo: True
+URxvt*reverseVideo: true
 URxvt*font: xft:monospace:size=20
 URxvt*background: black
 URxvt*foreground: grey
