@@ -160,6 +160,10 @@
 {{- $mvnLocation := findExecutable "mvn" $paths -}}
 {{- $zellijLocation := findExecutable "zellij" $paths -}}
 {{- $tmuxLocation := findExecutable "tmux" $paths -}}
+{{- $btopLocation := findExecutable "btop" $paths -}}
+{{- if eq $btopLocation "" -}}
+  {{- $btopLocation = lookPath "btop" -}}
+{{- end -}}
 {{- $flutterLocation := findExecutable "flutter" $paths -}}
 {{- if eq $flutterLocation "" -}}
   {{- $flutterLocation = lookPath "flutter" -}}
@@ -250,6 +254,9 @@
 
 {{- if and (not (eq .chezmoi.os "windows")) (not (stat $tmuxLocation)) -}}
         {{- writeToStdout "Can't find tmux \n" -}}
+{{- end -}}
+{{- if and (eq .chezmoi.os "linux") (not (stat $btopLocation)) -}}
+        {{- writeToStdout "Can't find btop \n" -}}
 {{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (not $headless) (not (stat $kdiff3Location)) -}}
@@ -360,6 +367,7 @@
         mvnLocation="{{$mvnLocation}}"
         zellijLocation="{{$zellijLocation}}"
         tmuxLocation="{{$tmuxLocation}}"
+        btopLocation="{{$btopLocation}}"
         flutterLocation="{{$flutterLocation}}"
         goLocation="{{$goLocation}}"
         ghLocation="{{$ghLocation}}"
@@ -369,6 +377,7 @@
         digLocation="{{$digLocation}}"
         xinputLocation="{{$xinputLocation}}"
         chromeLocation="{{$chromeLocation}}"
+        minBtopVersion="1.2.13"
         minGitVersion="2.45.1"
         minZshVersion="5.9"
         minTmuxVersion="3.3a"
