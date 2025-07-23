@@ -36,7 +36,7 @@ Highlights include:
 - Minimal tmux config with mouse mode and zsh as the default shell.
 - Example `.vimrc` and support files for Vim or Neovim.
 - OS-aware templates (`.chezmoi.toml.tmpl`) that select paths and tools based on your platform.
-- Scripts for one-time tasks such as updating the font cache.
+- Scripts for one-time tasks located in `.chezmoiscripts/` that run automatically on the first apply.
 - Conditional `.chezmoiignore` rules skip local executables like
   `gh-release.sh` when dependencies such as the GitHub CLI (`gh`) are absent.
 
