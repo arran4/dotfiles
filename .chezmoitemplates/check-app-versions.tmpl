@@ -98,4 +98,7 @@ check_version "{{ index . "neovimLocation" }}" "{{ index . "minNvimVersion" }}" 
 {{- if (index . "sevenZipLocation") }}
 check_version "{{ index . "sevenZipLocation" }}" "{{ index . "minSevenZipVersion" }}" ""
 {{- end }}
+{{- if (index . "jqLocation") }}
+check_version "{{ index . "jqLocation" }}" "{{ index . "minJqVersion" }}" "--version"
+{{- end }}
 
