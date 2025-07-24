@@ -182,6 +182,11 @@
   {{- end -}}
 {{- end -}}
 
+{{- $jqLocation := findExecutable "jq" $paths -}}
+{{- if eq $jqLocation "" -}}
+  {{- $jqLocation = lookPath "jq" -}}
+{{- end -}}
+
 {{- $gitTagIncLocation := "" -}}
 {{- if stat (joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc") -}}
   {{- $gitTagIncLocation = joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc" -}}
@@ -328,6 +333,10 @@
         {{- writeToStdout "Can't find dig \n" -}}
 {{- end -}}
 
+{{- if not (stat $jqLocation ) -}}
+        {{- writeToStdout "Can't find jq \n" -}}
+{{- end -}}
+
 {{- if and (eq .chezmoi.os "linux") (not (stat $xinputLocation )) -}}
         {{- writeToStdout "Can't find xinput \n" -}}
 {{- end -}}
@@ -375,6 +384,7 @@
         rarLocation="{{$rarLocation}}"
         sevenZipLocation="{{$sevenZipLocation}}"
         digLocation="{{$digLocation}}"
+        jqLocation="{{$jqLocation}}"
         xinputLocation="{{$xinputLocation}}"
         chromeLocation="{{$chromeLocation}}"
         minBtopVersion="1.2.13"
@@ -385,6 +395,7 @@
         minVimVersion="9.1"
         minNvimVersion="0.9.5"
         minSevenZipVersion="16.02"
+        minJqVersion="1.6"
         # Timestamp of when chezmoi templates were last processed. Defined here
         # so it remains constant across templated files and prevents noisy diffs
         # when regenerating dotfiles.
