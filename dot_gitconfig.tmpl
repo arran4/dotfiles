@@ -10,7 +10,9 @@
   useConfigOnly = true
 [init]
   defaultBranch = main
+{{- if stat (joinPath .chezmoi.homeDir ".config/git/template") }}
   templateDir = ~/.config/git/template
+{{- end }}
 [core]
   autocrlf = input
 {{- if eq .chezmoi.os "windows" }}
@@ -145,14 +147,18 @@
 {{ if index . "gpgconfigured" }}
   gpgsign = true
 {{ end }}
+{{- if stat (joinPath .chezmoi.homeDir ".config/git/message") }}
   template = ~/.config/git/message
+{{- end }}
   status = true
 
 [tag]
 {{ if index . "gpgconfigured" }}
   gpgsign = true
 {{ end }}
-#  template = ~/.config/git/tagmessage
+{{- if stat (joinPath .chezmoi.homeDir ".config/git/tagmessage") }}
+  template = ~/.config/git/tagmessage
+{{- end }}
 
 [push]
 {{ if index . "gpgconfigured" }}
