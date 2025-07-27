@@ -1,13 +1,12 @@
 {
   "layer": "top",
-  "position": "top",
+  "position": "left",
   "height": 30,
   "spacing": 1,
   "margin": 0,
-  "modules-left": ["sway/workspaces", "sway/mode", "custom/weather", "custom/quote"],
-    "modules-center": [],                                                                           //battery   //disk     // uptime      //updates        // systray
+  "modules-left": ["sway/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
+  "modules-center": ["custom/userhost"],
   "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
-
 
   "sway/workspaces": {
     "disable-scroll": true,
@@ -69,6 +68,18 @@
     "exec": "fortune -s",
     "on-click": "fortune | yad --text-info --width=400 --height=200 --title='Fortune'",
     "tooltip": true
+  },
+
+  "custom/pager": {
+    "exec": "$HOME/.config/waybar/scripts/pager.sh",
+    "interval": 1,
+    "on-click": "swaymsg workspace next",
+    "on-click-right": "swaymsg workspace prev"
+  },
+
+  "custom/userhost": {
+    "exec": "$HOME/.config/waybar/scripts/userhost.sh",
+    "interval": 600
   },
 
   "custom/updates": {

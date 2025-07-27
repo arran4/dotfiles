@@ -102,7 +102,7 @@
     border: none;
     border-radius: 0;
     font-family: "Iosevka Nerd Font";
-    font-size: 14px;
+  font-size: 18px;
     min-height: 0;
 }
 
@@ -117,7 +117,7 @@ window#waybar {
 #mode, #mpd, #custom-weather, #custom-playerctl, #custom-spotify, #clock, #cpu,
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
-#idle_inhibitor, #tray {
+#custom-pager, #custom-userhost, #idle_inhibitor, #tray {
     padding: 0 10px;
     margin: 0 2px;
     border-bottom: 2px solid transparent;
@@ -289,6 +289,17 @@ window#waybar {
 #custom-quote {
     color: @quote-color;
     border-bottom-color: @quote-color;
+}
+
+#custom-pager {
+    color: @foreground;
+    border-bottom-color: @foreground;
+}
+
+#custom-userhost {
+    font-weight: bold;
+    color: @foreground;
+    border-bottom-color: transparent;
 }
 
 #idle_inhibitor {
