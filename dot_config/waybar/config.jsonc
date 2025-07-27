@@ -4,7 +4,7 @@
   "height": 30,
   "spacing": 1,
   "margin": 0,
-  "modules-left": ["sway/workspaces", "sway/mode", "custom/weather", "custom/quote"],
+  "modules-left": ["sway/workspaces", "hyprland/workspaces", "sway/mode", "custom/weather", "custom/quote"],
     "modules-center": [],                                                                           //battery   //disk     // uptime      //updates        // systray
   "modules-right": ["clock","pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
 
@@ -24,6 +24,33 @@
       "8": "󰣇",
       "9": "",
       "10": ""
+    },
+    "persistent_workspaces": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+    }
+  },
+  "hyprland/workspaces": {
+    "all-outputs": true,
+    "format": "{name}",
+    "show-special": true,
+    "format-icons": {
+      "1": "󰖟",
+      "2": "",
+      "3": "",
+      "4": "󰭹",
+      "5": "󰕧",
+      "6": "",
+      "7": "",
+      "8": "󰣇",
+      "9": "",
+      "10": "",
+      "special:music": "󰝚",
+      "special:terminal": "",
+      "special:anytype": "󰛧"
     },
     "persistent_workspaces": {
       "1": [],

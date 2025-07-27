@@ -69,6 +69,7 @@
 @define-color workspaces-focused-fg @cyan;
 @define-color workspaces-urgent-bg @red;
 @define-color workspaces-urgent-fg @black;
+@define-color workspaces-special-fg @magenta;
 
 /* Text and border colors for modules */
 @define-color mode-color @orange;
@@ -145,6 +146,10 @@ window#waybar {
 #workspaces button.urgent {
     background-color: @workspaces-urgent-bg;
     color: @workspaces-urgent-fg;
+}
+
+#workspaces button.special {
+    color: @workspaces-special-fg;
 }
 
 /* Module-specific styling */
