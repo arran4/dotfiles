@@ -107,8 +107,8 @@
 
   "clock": {
     "format": "󰥔 {:%H:%M}",
-    "format-alt": "󰃮 {:%Y-%m-%d}",
-    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "format-alt": "󰃮 {:%Y-%m-%d %H:%M}",
+    "tooltip-format": "<big>{:%Y %B %H:%M}</big>\n<tt><small>{calendar}</small></tt>",
     "calendar": {
       "mode"          : "month",
       "mode-mon-col"  : 3,
