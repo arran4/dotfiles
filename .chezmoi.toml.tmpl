@@ -221,6 +221,27 @@
   {{- $xinputLocation = lookPath "xinput" -}}
 {{- end -}}
 
+{{- $grimLocation := findExecutable "grim" $paths -}}
+{{- if eq $grimLocation "" -}}
+  {{- $grimLocation = lookPath "grim" -}}
+{{- end -}}
+{{- $slurpLocation := findExecutable "slurp" $paths -}}
+{{- if eq $slurpLocation "" -}}
+  {{- $slurpLocation = lookPath "slurp" -}}
+{{- end -}}
+{{- $wlCopyLocation := findExecutable "wl-copy" $paths -}}
+{{- if eq $wlCopyLocation "" -}}
+  {{- $wlCopyLocation = lookPath "wl-copy" -}}
+{{- end -}}
+{{- $hyprpickerLocation := findExecutable "hyprpicker" $paths -}}
+{{- if eq $hyprpickerLocation "" -}}
+  {{- $hyprpickerLocation = lookPath "hyprpicker" -}}
+{{- end -}}
+{{- $hyprshotLocation := findExecutable "hyprshot" $paths -}}
+{{- if eq $hyprshotLocation "" -}}
+  {{- $hyprshotLocation = lookPath "hyprshot" -}}
+{{- end -}}
+
 {{- $wofiLocation := findExecutable "wofi" $paths -}}
 {{- if eq $wofiLocation "" -}}
   {{- $wofiLocation = lookPath "wofi" -}}
@@ -416,6 +437,24 @@
         {{- writeToStdout "Can't find xinput \n" -}}
 {{- end -}}
 
+{{- if not (stat $grimLocation ) -}}
+        {{- writeToStdout "Can't find grim \n" -}}
+{{- end -}}
+{{- if not (stat $slurpLocation ) -}}
+        {{- writeToStdout "Can't find slurp \n" -}}
+{{- end -}}
+{{- if not (stat $wlCopyLocation ) -}}
+        {{- writeToStdout "Can't find wl-copy \n" -}}
+{{- end -}}
+{{- if not (stat $hyprpickerLocation ) -}}
+        {{- writeToStdout "Can't find hyprpicker \n" -}}
+{{- end -}}
+{{- if not (stat $hyprshotLocation ) -}}
+        {{- writeToStdout "Can't find hyprshot (run installtool hyprshot) \n" -}}
+{{- else -}}
+        {{- writeToStdout (printf "hyprshot installed at %s\n" $hyprshotLocation) -}}
+{{- end -}}
+
 [git]
     autoCommit = {{ $autoGit }}
     autoPush = {{ $autoGit }}
@@ -461,6 +500,11 @@
         digLocation="{{$digLocation}}"
         jqLocation="{{$jqLocation}}"
         xinputLocation="{{$xinputLocation}}"
+        grimLocation="{{$grimLocation}}"
+        slurpLocation="{{$slurpLocation}}"
+        wlCopyLocation="{{$wlCopyLocation}}"
+        hyprpickerLocation="{{$hyprpickerLocation}}"
+        hyprshotLocation="{{$hyprshotLocation}}"
         chromeLocation="{{$chromeLocation}}"
         wofiLocation="{{$wofiLocation}}"
         rofiLocation="{{$rofiLocation}}"

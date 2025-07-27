@@ -32,7 +32,7 @@ while [[ $# -gt 0 ]]; do
       shift
       version="${1:-latest}"
       ;;
-    list|git-credential-oauth|git-tag-inc|flutter|gh|clipse)
+  list|git-credential-oauth|git-tag-inc|flutter|gh|clipse|hyprshot)
       command="$1"
       ;;
   esac
@@ -77,6 +77,14 @@ install_clipse() {
   go install github.com/arran4/clipse@"$version"
 }
 
+install_hyprshot() {
+  url="https://raw.githubusercontent.com/Gustash/Hyprshot/refs/heads/main/hyprshot"
+  dest="$HOME/.local/bin/hyprshot"
+  mkdir -p "$(dirname "$dest")"
+  curl -fsSL "$url" -o "$dest"
+  chmod +x "$dest"
+}
+
 is_installed() {
   case "$1" in
     git-credential-oauth)
@@ -94,11 +102,14 @@ is_installed() {
     clipse)
       command -v clipse >/dev/null 2>&1
       ;;
+    hyprshot)
+      command -v hyprshot >/dev/null 2>&1
+      ;;
   esac
 }
 
 cmd_list() {
-  for tool in git-credential-oauth git-tag-inc gh flutter clipse; do
+  for tool in git-credential-oauth git-tag-inc gh flutter clipse hyprshot; do
     if is_installed "$tool"; then
       echo "* $tool"
     else
@@ -125,6 +136,9 @@ case "$command" in
     ;;
   clipse)
     install_clipse
+    ;;
+  hyprshot)
+    install_hyprshot
     ;;
   *)
     usage
