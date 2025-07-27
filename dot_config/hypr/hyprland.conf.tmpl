@@ -257,10 +257,10 @@ exec-once = {{$clipse}} -listen
 exec-once = solaar -w hide
 exec-once = kded6
 exec-once = kdeconnect-indicator
-exec-once = [workspace special:music silent] flatpak run com.spotify.Client
+#exec-once = [workspace special:music silent] flatpak run com.spotify.Client
 windowrulev2 = workspace special:music, class:^(Spotify|spotify|org.spotify.Client)$
-exec-once = [workspace special:terminal silent] {{$terminal}}
+#exec-once = [workspace special:terminal silent] {{$terminal}}
 {{- if ne $anytype "" -}}
-exec-once = [workspace special:anytype silent] {{$anytype}}
+#exec-once = [workspace special:anytype silent] {{$anytype}}
 {{- end -}}
 windowrulev2 = workspace special:anytype, class:^(Anytype)$
