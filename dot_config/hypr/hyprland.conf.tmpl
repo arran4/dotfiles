@@ -107,11 +107,7 @@ gestures {
 bind = CTRL SUPER, T, exec, {{$terminal}}
 # Terminal as alternate: Meta+Return
 bind = SUPER, RETURN, exec, {{$terminal}}
-#bind = SUPER, SPACE, exec, wofi --show drun
-#bind = SUPER, SPACE, exec, rofi -show drun
 bind = SUPER, SPACE, exec, {{$launcher}}
-#bind = SUPER, SHIFT, SPACE, exec, wofi --show run
-#bind = SUPER, SHIFT, SPACE, exec, rofi -show window
 # Clipboard history: Meta+V
 bind = SUPER, V, exec, [float; focuswindow] {{$popupTerm}} {{$clipse}}
 # Windows
@@ -129,7 +125,7 @@ bind = SUPER, 6, workspace, 6
 bind = SUPER, 7, workspace, 7
 bind = SUPER, 8, workspace, 8
 bind = SUPER, 9, workspace, 9
-bind = SUPER, m, togglespecialworkspace, name:m
+bind = SUPER, m, togglespecialworkspace, music
 bind = SUPER CTRL, LEFT, workspace, -1
 bind = SUPER CTRL, RIGHT, workspace, +1
 bind = SUPER SHIFT CTRL, LEFT, movetoworkspace, -1
@@ -158,7 +154,7 @@ bind = ALT,Tab,bringactivetotop,
 #RectangularRegionScreenShot=Meta+Shift+Print
 #WindowUnderCursorScreenShot=Meta+Ctrl+Print
 
-#bind = META, PRINT, exec, spectacle -a -c 
+#bind = META, PRINT, exec, spectacle -a -c
 
 # Lock
 #bind = SUPER, L, exec, swaylock
@@ -182,6 +178,21 @@ bindm=ALT,mouse:273,resizewindow
 #windowrule = float, kitty
 
 # ------------------------
+# Workspace rules
+# ------------------------
+workspace = name:music, persistent:true
+workspace = 1, persistent:true
+workspace = 2, persistent:true
+workspace = 3, persistent:true
+workspace = 4, persistent:true
+workspace = 5, persistent:true
+workspace = 5, persistent:true
+workspace = 6, persistent:true
+workspace = 7, persistent:true
+workspace = 8, persistent:true
+workspace = 9, persistent:true
+
+# ------------------------
 # Autostart
 # ------------------------
 exec-once = mako
@@ -194,4 +205,5 @@ exec-once = kded5
 exec-once = kdeconnect-indicator
 exec-once = [workspace m silent] flatpak run com.spotify.Client
 exec-once = flatpak run com.spotify.Client
-windowrulev2 = workspace m, class:^(Spotify|spotify|org.spotify.Client)$
+exec-once = [workspace special:music silent] flatpak run com.spotify.Client
+windowrulev2 = workspace special:music, class:^(Spotify|spotify|org.spotify.Client)$
