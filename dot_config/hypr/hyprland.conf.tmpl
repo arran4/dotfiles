@@ -181,6 +181,7 @@ bindm=ALT,mouse:273,resizewindow
 # Workspace rules
 # ------------------------
 workspace = name:music, persistent:true
+workspace = name:terminal, persistent:true
 workspace = 1, persistent:true
 workspace = 2, persistent:true
 workspace = 3, persistent:true
@@ -203,7 +204,5 @@ exec-once = {{$clipse}} -listen
 exec-once = solaar -w hide
 exec-once = kded5
 exec-once = kdeconnect-indicator
-exec-once = [workspace m silent] flatpak run com.spotify.Client
-exec-once = flatpak run com.spotify.Client
 exec-once = [workspace special:music silent] flatpak run com.spotify.Client
 windowrulev2 = workspace special:music, class:^(Spotify|spotify|org.spotify.Client)$
