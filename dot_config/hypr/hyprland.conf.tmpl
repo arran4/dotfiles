@@ -106,43 +106,76 @@ gestures {
 # ------------------------
 # Terminal launch: Ctrl+Meta+T
 bind = CTRL SUPER, T, exec, {{$terminal}}
+bind = CTRL SUPERR, T, exec, {{$terminal}}
 # Terminal as alternate: Meta+Return
 bind = SUPER, RETURN, exec, {{$terminal}}
+bind = SUPERR, RETURN, exec, {{$terminal}}
 bind = SUPER, SPACE, exec, {{$launcher}}
+bind = SUPERR, SPACE, exec, {{$launcher}}
 # Clipboard history: Meta+V
 bind = SUPER, V, exec, [float; focuswindow] {{$popupTerm}} {{$clipse}}
+bind = SUPERR, V, exec, [float; focuswindow] {{$popupTerm}} {{$clipse}}
 # Windows
 bind = SUPER_SHIFT, Q, killactive
 bind = SUPER_SHIFT, W, closewindow
 bind = SUPER, F, fullscreen
+bind = SUPERR, F, fullscreen
 bind = SUPER, 0, workspace, empty
+bind = SUPERR, 0, workspace, empty
 bind = SUPER, 1, workspace, 1
+bind = SUPERR, 1, workspace, 1
 bind = SUPER, 2, workspace, 2
+bind = SUPERR, 2, workspace, 2
 bind = SUPER, 3, workspace, 3
+bind = SUPERR, 3, workspace, 3
 bind = SUPER, 4, workspace, 4
+bind = SUPERR, 4, workspace, 4
 bind = SUPER, 5, workspace, 5
+bind = SUPERR, 5, workspace, 5
 bind = SUPER, 5, workspace, 5
+bind = SUPERR, 5, workspace, 5
 bind = SUPER, 6, workspace, 6
+bind = SUPERR, 6, workspace, 6
 bind = SUPER, 7, workspace, 7
+bind = SUPERR, 7, workspace, 7
 bind = SUPER, 8, workspace, 8
+bind = SUPERR, 8, workspace, 8
 bind = SUPER, 9, workspace, 9
+bind = SUPERR, 9, workspace, 9
 bind = SUPER, m, togglespecialworkspace, music
+bind = SUPERR, m, togglespecialworkspace, music
 bind = SUPER, grave, togglespecialworkspace, terminal
+bind = SUPERR, grave, togglespecialworkspace, terminal
 bind = SUPER, T, togglespecialworkspace, terminal
+bind = SUPERR, T, togglespecialworkspace, terminal
 bind = SUPER CTRL, LEFT, workspace, -1
+bind = SUPERR CTRL, LEFT, workspace, -1
 bind = SUPER CTRL, RIGHT, workspace, +1
+bind = SUPERR CTRL, RIGHT, workspace, +1
 bind = SUPER SHIFT CTRL, LEFT, movetoworkspace, -1
+bind = SUPERR SHIFT CTRL, LEFT, movetoworkspace, -1
 bind = SUPER SHIFT CTRL, RIGHT, movetoworkspace, +1
+bind = SUPERR SHIFT CTRL, RIGHT, movetoworkspace, +1
 bind = SUPER SHIFT, 0, movetoworkspace, empty
+bind = SUPERR SHIFT, 0, movetoworkspace, empty
 bind = SUPER SHIFT, 1, movetoworkspace, 1
+bind = SUPERR SHIFT, 1, movetoworkspace, 1
 bind = SUPER SHIFT, 2, movetoworkspace, 2
+bind = SUPERR SHIFT, 2, movetoworkspace, 2
 bind = SUPER SHIFT, 3, movetoworkspace, 3
+bind = SUPERR SHIFT, 3, movetoworkspace, 3
 bind = SUPER SHIFT, 4, movetoworkspace, 4
+bind = SUPERR SHIFT, 4, movetoworkspace, 4
 bind = SUPER SHIFT, 5, movetoworkspace, 5
+bind = SUPERR SHIFT, 5, movetoworkspace, 5
 bind = SUPER SHIFT, 6, movetoworkspace, 6
+bind = SUPERR SHIFT, 6, movetoworkspace, 6
 bind = SUPER SHIFT, 7, movetoworkspace, 7
+bind = SUPERR SHIFT, 7, movetoworkspace, 7
 bind = SUPER SHIFT, 8, movetoworkspace, 8
+bind = SUPERR SHIFT, 8, movetoworkspace, 8
 bind = SUPER SHIFT, 9, movetoworkspace, 9
+bind = SUPERR SHIFT, 9, movetoworkspace, 9
 bind = ALT,Tab,cyclenext,
 bind = ALT,Tab,bringactivetotop,
 
@@ -162,6 +195,7 @@ bind = ALT,Tab,bringactivetotop,
 # Lock
 #bind = SUPER, L, exec, swaylock
 bind = SUPER, L, exec, {{$lockcmd}}
+bind = SUPERR, L, exec, {{$lockcmd}}
 # Media keys
 binde=, XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 1%+
 bindl=, XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-
