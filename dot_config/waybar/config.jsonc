@@ -1,14 +1,15 @@
 {
   "layer": "top",
-  "position": "top",
+  "position": "left",
   "height": 30,
   "spacing": 1,
   "margin": 0,
-  "modules-left": ["sway/workspaces", "sway/mode", "custom/weather", "custom/quote"],
-    "modules-center": ["hyprland/window"],                                                                           //battery   //disk     // uptime      //updates        // systray
-  "modules-right": ["clock","pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
 
+  "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
+  "modules-center": ["custom/userhost", "hyprland/window"],
+  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
 
+    
   "sway/workspaces": {
     "disable-scroll": true,
     "all-outputs": true,
@@ -33,6 +34,37 @@
       "5": []
     }
   },
+  "hyprland/workspaces": {
+    "all-outputs": true,
+    "format": "{name}",
+    "show-special": true,
+    "format-icons": {
+      "1": "󰖟",
+      "2": "",
+      "3": "",
+      "4": "󰭹",
+      "5": "󰕧",
+      "6": "",
+      "7": "",
+      "8": "󰣇",
+      "9": "",
+      "10": "",
+      "special:music": "󰝚",
+      "special:terminal": "",
+      "special:anytype": "󰛧"
+    },
+    "persistent_workspaces": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": [],
+      "6": [],
+      "7": [],
+      "8": [],
+      "9": []
+    }
+  },
 
   "sway/mode": {
     "format": "<span style=\"italic\">{}</span>"
@@ -45,6 +77,15 @@
     "exec": "playerctl -a metadata --format '{\"text\": \"{{artist}} - {{markup_escape(title)}}\", \"tooltip\": \"{{playerName}} : {{artist}} - {{markup_escape(title)}}\", \"alt\": \"{{status}}\", \"class\": \"{{status}}\"}' -F",
     "on-click": "playerctl play-pause",
     "on-click-right": "playerctl next",
+  },
+
+  "custom/spotify": {
+    "format": " {}",
+    "return-type": "json",
+    "max-length": 40,
+    "exec": "playerctl -p spotify metadata --format '{\"text\": \"{{artist}} - {{markup_escape(title)}}\", \"tooltip\": \"Spotify: {{artist}} - {{markup_escape(title)}}\", \"alt\": \"{{status}}\", \"class\": \"{{status}}\"}' -F",
+    "on-click": "playerctl play-pause",
+    "on-click-right": "playerctl next"
   },
 
   "custom/weather": {
@@ -60,6 +101,18 @@
     "exec": "fortune -s",
     "on-click": "fortune | yad --text-info --width=400 --height=200 --title='Fortune'",
     "tooltip": true
+  },
+
+  "custom/pager": {
+    "exec": "$HOME/.config/waybar/scripts/pager.sh",
+    "interval": 1,
+    "on-click": "swaymsg workspace next",
+    "on-click-right": "swaymsg workspace prev"
+  },
+
+  "custom/userhost": {
+    "exec": "$HOME/.config/waybar/scripts/userhost.sh",
+    "interval": 600
   },
 
   "custom/updates": {
@@ -87,8 +140,8 @@
 
   "clock": {
     "format": "󰥔 {:%H:%M}",
-    "format-alt": "󰃮 {:%Y-%m-%d}",
-    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "format-alt": "󰃮 {:%Y-%m-%d %H:%M}",
+    "tooltip-format": "<big>{:%Y %B %H:%M}</big>\n<tt><small>{calendar}</small></tt>",
     "calendar": {
       "mode"          : "month",
       "mode-mon-col"  : 3,

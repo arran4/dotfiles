@@ -69,12 +69,14 @@
 @define-color workspaces-focused-fg @cyan;
 @define-color workspaces-urgent-bg @red;
 @define-color workspaces-urgent-fg @black;
+@define-color workspaces-special-fg @magenta;
 
 /* Text and border colors for modules */
 @define-color mode-color @orange;
 @define-color mpd-color @magenta;
 @define-color weather-color @magenta;
 @define-color playerctl-color @magenta;
+@define-color spotify-color @magenta;
 @define-color clock-color @blue;
 @define-color cpu-color @green;
 @define-color memory-color @magenta;
@@ -101,7 +103,7 @@
     border: none;
     border-radius: 0;
     font-family: "Iosevka Nerd Font";
-    font-size: 14px;
+  font-size: 18px;
     min-height: 0;
 }
 
@@ -113,10 +115,10 @@ window#waybar {
 
 
 /* Common module styling with border-bottom */
-#mode, #mpd, #custom-weather, #custom-playerctl, #clock, #cpu,
+#mode, #mpd, #custom-weather, #custom-playerctl, #custom-spotify, #clock, #cpu,
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
-#idle_inhibitor, #tray {
+#custom-pager, #custom-userhost, #idle_inhibitor, #tray {
     padding: 0 10px;
     margin: 0 2px;
     border-bottom: 2px solid transparent;
@@ -147,6 +149,10 @@ window#waybar {
     color: @workspaces-urgent-fg;
 }
 
+#workspaces button.special {
+    color: @workspaces-special-fg;
+}
+
 /* Module-specific styling */
 #mode {
     color: @mode-color;
@@ -174,12 +180,28 @@ window#waybar {
     border-bottom-color: @playerctl-color;
 }
 
+
 #custom-playerctl.Playing {
     color: @cyan;
     border-bottom-color: @cyan;
 }
 
 #custom-playerctl.Paused {
+    color: @orange;
+    border-bottom-color: @orange;
+}
+
+#custom-spotify {
+    color: @spotify-color;
+    border-bottom-color: @spotify-color;
+}
+
+#custom-spotify.Playing {
+    color: @cyan;
+    border-bottom-color: @cyan;
+}
+
+#custom-spotify.Paused {
     color: @orange;
     border-bottom-color: @orange;
 }
@@ -272,6 +294,17 @@ window#waybar {
 #custom-quote {
     color: @quote-color;
     border-bottom-color: @quote-color;
+}
+
+#custom-pager {
+    color: @foreground;
+    border-bottom-color: @foreground;
+}
+
+#custom-userhost {
+    font-weight: bold;
+    color: @foreground;
+    border-bottom-color: transparent;
 }
 
 #idle_inhibitor {
