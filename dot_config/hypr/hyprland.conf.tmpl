@@ -107,11 +107,7 @@ gestures {
 bind = CTRL SUPER, T, exec, {{$terminal}}
 # Terminal as alternate: Meta+Return
 bind = SUPER, RETURN, exec, {{$terminal}}
-#bind = SUPER, SPACE, exec, wofi --show drun
-#bind = SUPER, SPACE, exec, rofi -show drun
 bind = SUPER, SPACE, exec, {{$launcher}}
-#bind = SUPER, SHIFT, SPACE, exec, wofi --show run
-#bind = SUPER, SHIFT, SPACE, exec, rofi -show window
 # Clipboard history: Meta+V
 bind = SUPER, V, exec, [float; focuswindow] {{$popupTerm}} {{$clipse}}
 # Windows
@@ -180,6 +176,21 @@ bindm=ALT,mouse:273,resizewindow
 # ------------------------
 #windowrule = float, ^(pavucontrol|blueman-manager)$
 #windowrule = float, kitty
+
+# ------------------------
+# Workspace rules
+# ------------------------
+workspace = name:music, persistent:true
+workspace = 1, persistent:true
+workspace = 2, persistent:true
+workspace = 3, persistent:true
+workspace = 4, persistent:true
+workspace = 5, persistent:true
+workspace = 5, persistent:true
+workspace = 6, persistent:true
+workspace = 7, persistent:true
+workspace = 8, persistent:true
+workspace = 9, persistent:true
 
 # ------------------------
 # Autostart
