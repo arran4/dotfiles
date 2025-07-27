@@ -174,6 +174,8 @@ bindl=, XF86AudioNext, exec, playerctl next
 ## Mouse bindings
 bindm=ALT,mouse:272,movewindow
 bindm=ALT,mouse:273,resizewindow
+bindm=SUPER, mouse_up, exec, hyprctl dispatch resizeactive +20 +20
+bindm=SUPER, mouse_down, exec, hyprctl dispatch resizeactive -20 -20
 
 # ------------------------
 # Window Rules (float dialogs)
