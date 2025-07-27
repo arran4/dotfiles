@@ -191,6 +191,5 @@ exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CUR
 exec-once = {{$clipse}} -listen
 exec-once = solaar -w hide
 exec-once = kded5
-exec-once = [workspace m silent] flatpak run com.spotify.Client
-exec-once = flatpak run com.spotify.Client
+exec-once = [workspace name:music silent] flatpak run com.spotify.Client
 windowrulev2 = workspace name:music, class:^(Spotify|spotify|org.spotify.Client)$
