@@ -289,12 +289,7 @@
 {{- if eq $clipseLocation "" -}}
         {{- writeToStdout "Can't find clipse (run installtool clipse) \n" -}}
 {{- else -}}
-        {{- $clipseVersion := trim (output "sh" "-c" (printf "%s --version 2>/dev/null" $clipseLocation)) -}}
-        {{- if eq $clipseVersion "" -}}
-                {{- writeToStdout (printf "clipse installed at %s\n" $clipseLocation) -}}
-        {{- else -}}
-                {{- writeToStdout (printf "clipse installed at %s (%s)\n" $clipseLocation $clipseVersion) -}}
-        {{- end -}}
+        {{- writeToStdout (printf "clipse installed at %s\n" $clipseLocation) -}}
 {{- end -}}
 
 
