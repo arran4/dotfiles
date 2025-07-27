@@ -218,6 +218,83 @@
   {{- $xinputLocation = lookPath "xinput" -}}
 {{- end -}}
 
+{{- $wofiLocation := findExecutable "wofi" $paths -}}
+{{- if eq $wofiLocation "" -}}
+  {{- $wofiLocation = lookPath "wofi" -}}
+{{- end -}}
+{{- $rofiLocation := findExecutable "rofi" $paths -}}
+{{- if eq $rofiLocation "" -}}
+  {{- $rofiLocation = lookPath "rofi" -}}
+{{- end -}}
+{{- $dmenuRunLocation := findExecutable "dmenu_run" $paths -}}
+{{- if eq $dmenuRunLocation "" -}}
+  {{- $dmenuRunLocation = lookPath "dmenu_run" -}}
+{{- end -}}
+
+{{- $terminatorLocation := findExecutable "terminator" $paths -}}
+{{- if eq $terminatorLocation "" -}}
+  {{- $terminatorLocation = lookPath "terminator" -}}
+{{- end -}}
+{{- $weztermLocation := findExecutable "wezterm" $paths -}}
+{{- if eq $weztermLocation "" -}}
+  {{- $weztermLocation = lookPath "wezterm" -}}
+{{- end -}}
+{{- $konsoleLocation := findExecutable "konsole" $paths -}}
+{{- if eq $konsoleLocation "" -}}
+  {{- $konsoleLocation = lookPath "konsole" -}}
+{{- end -}}
+{{- $alacrittyLocation := findExecutable "alacritty" $paths -}}
+{{- if eq $alacrittyLocation "" -}}
+  {{- $alacrittyLocation = lookPath "alacritty" -}}
+{{- end -}}
+{{- $urxvtLocation := findExecutable "urxvt" $paths -}}
+{{- if eq $urxvtLocation "" -}}
+  {{- $urxvtLocation = lookPath "urxvt" -}}
+{{- end -}}
+{{- $xtermLocation := findExecutable "xterm" $paths -}}
+{{- if eq $xtermLocation "" -}}
+  {{- $xtermLocation = lookPath "xterm" -}}
+{{- end -}}
+
+{{- if and (eq .chezmoi.os "linux") (eq $terminatorLocation "") (eq $weztermLocation "") (eq $konsoleLocation "") (eq $alacrittyLocation "") (eq $urxvtLocation "") (eq $xtermLocation "") -}}
+        {{- writeToStdout "Can't find terminal (terminator/wezterm/konsole/alacritty/urxvt/xterm) \n" -}}
+{{- end -}}
+
+{{- if and (eq .chezmoi.os "linux") (eq $wofiLocation "") (eq $rofiLocation "") (eq $dmenuRunLocation "") -}}
+        {{- writeToStdout "Can't find application launcher (wofi/rofi/dmenu_run) \n" -}}
+{{- end -}}
+
+{{- $swaylockLocation := findExecutable "swaylock" $paths -}}
+{{- if eq $swaylockLocation "" -}}
+  {{- $swaylockLocation = lookPath "swaylock" -}}
+{{- end -}}
+{{- $xscreensaverCommandLocation := findExecutable "xscreensaver-command" $paths -}}
+{{- if eq $xscreensaverCommandLocation "" -}}
+  {{- $xscreensaverCommandLocation = lookPath "xscreensaver-command" -}}
+{{- end -}}
+{{- $xscreensaverLocation := findExecutable "xscreensaver" $paths -}}
+{{- if eq $xscreensaverLocation "" -}}
+  {{- $xscreensaverLocation = lookPath "xscreensaver" -}}
+{{- end -}}
+{{- if and (eq .chezmoi.os "linux") (eq $swaylockLocation "") (eq $xscreensaverCommandLocation "") (eq $xscreensaverLocation "") -}}
+        {{- writeToStdout "Can't find screen locker (swaylock/xscreensaver) \n" -}}
+{{- end -}}
+{{- $clipseLocation := findExecutable "clipse" $paths -}}
+{{- if eq $clipseLocation "" -}}
+  {{- $clipseLocation = lookPath "clipse" -}}
+{{- end -}}
+{{- if eq $clipseLocation "" -}}
+        {{- writeToStdout "Can't find clipse (run installtool clipse) \n" -}}
+{{- else -}}
+        {{- $clipseVersion := trim (output $clipseLocation "--version" 2>/dev/null) -}}
+        {{- if eq $clipseVersion "" -}}
+                {{- writeToStdout (printf "clipse installed at %s\n" $clipseLocation) -}}
+        {{- else -}}
+                {{- writeToStdout (printf "clipse installed at %s (%s)\n" $clipseLocation $clipseVersion) -}}
+        {{- end -}}
+{{- end -}}
+
+
 {{- $chromeLocation := findOneExecutable (list
   "google-chrome"
   "google-chrome-stable"
@@ -325,7 +402,6 @@
 {{- if not (stat $rarLocation ) -}}
         {{- writeToStdout "Can't find rar \n" -}}
 {{- end -}}
-`
 {{- if not (stat $sevenZipLocation ) -}}
         {{- writeToStdout "Can't find 7z \n" -}}
 {{- end -}}
@@ -388,6 +464,19 @@
         jqLocation="{{$jqLocation}}"
         xinputLocation="{{$xinputLocation}}"
         chromeLocation="{{$chromeLocation}}"
+        wofiLocation="{{$wofiLocation}}"
+        rofiLocation="{{$rofiLocation}}"
+        dmenuRunLocation="{{$dmenuRunLocation}}"
+        terminatorLocation="{{$terminatorLocation}}"
+        weztermLocation="{{$weztermLocation}}"
+        konsoleLocation="{{$konsoleLocation}}"
+        alacrittyLocation="{{$alacrittyLocation}}"
+        urxvtLocation="{{$urxvtLocation}}"
+        xtermLocation="{{$xtermLocation}}"
+        swaylockLocation="{{$swaylockLocation}}"
+        xscreensaverCommandLocation="{{$xscreensaverCommandLocation}}"
+        xscreensaverLocation="{{$xscreensaverLocation}}"
+        clipse="{{$clipseLocation}}"
         minBtopVersion="1.2.13"
         minGitVersion="2.45.1"
         minZshVersion="5.9"

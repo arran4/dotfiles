@@ -11,6 +11,7 @@ Commands:
   git-tag-inc             Install git-tag-inc
   gh                      Install GitHub CLI
   flutter                 Install Flutter SDK
+  clipse                  Install clipse clipboard manager
 
 Options:
   -h, --help              Show this help
@@ -31,7 +32,7 @@ while [[ $# -gt 0 ]]; do
       shift
       version="${1:-latest}"
       ;;
-    list|git-credential-oauth|git-tag-inc|flutter|gh)
+    list|git-credential-oauth|git-tag-inc|flutter|gh|clipse)
       command="$1"
       ;;
   esac
@@ -72,6 +73,10 @@ install_flutter() {
   rm -rf "$tmpdir"
 }
 
+install_clipse() {
+  go install github.com/arran4/clipse@"$version"
+}
+
 is_installed() {
   case "$1" in
     git-credential-oauth)
@@ -86,11 +91,14 @@ is_installed() {
     flutter)
       [ -d "$HOME/sdk/flutter" ]
       ;;
+    clipse)
+      command -v clipse >/dev/null 2>&1
+      ;;
   esac
 }
 
 cmd_list() {
-  for tool in git-credential-oauth git-tag-inc gh flutter; do
+  for tool in git-credential-oauth git-tag-inc gh flutter clipse; do
     if is_installed "$tool"; then
       echo "* $tool"
     else
@@ -114,6 +122,9 @@ case "$command" in
     ;;
   flutter)
     install_flutter
+    ;;
+  clipse)
+    install_clipse
     ;;
   *)
     usage
