@@ -47,6 +47,8 @@
           (joinPath .chezmoi.homeDir "/.cache/npm")
         -}}
         {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.dotnet/tools") -}}
+        {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.local/share/flatpak/exports/bin") -}}
+        {{- $paths = append $paths "/var/lib/flatpak/exports/bin" -}}
         {{- $paths = append $paths "/usr/games/bin" -}}
         {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
         {{- $termfallback = list "rxvt" "xterm" "linux" "vt100" -}}
