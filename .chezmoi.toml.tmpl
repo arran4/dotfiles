@@ -51,6 +51,7 @@
         {{- $paths = append $paths "/var/lib/flatpak/exports/bin" -}}
         {{- $paths = append $paths "/usr/games/bin" -}}
         {{- $paths = append $paths "/opt/Bitwarden" -}}
+        {{- $paths = append $paths "/opt/bin" -}}
         {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
         {{- $termfallback = list "rxvt" "xterm" "linux" "vt100" -}}
 #{{ else if eq .chezmoi.os "windows" }} Windows
@@ -242,6 +243,10 @@
   {{- $hyprshotLocation = lookPath "hyprshot" -}}
 {{- end -}}
 
+{{- $anytypeLocation := findExecutable "Anytype.AppImage" $paths -}}
+{{- if eq $anytypeLocation "" -}}
+  {{- $anytypeLocation = lookPath "Anytype.AppImage" -}}
+{{- end -}}
 {{- $wofiLocation := findExecutable "wofi" $paths -}}
 {{- if eq $wofiLocation "" -}}
   {{- $wofiLocation = lookPath "wofi" -}}
@@ -455,6 +460,11 @@
         {{- writeToStdout (printf "hyprshot installed at %s\n" $hyprshotLocation) -}}
 {{- end -}}
 
+{{- if not (stat $anytypeLocation ) -}}
+        {{- writeToStdout "Can't find Anytype.AppImage \n" -}}
+{{- else -}}
+        {{- writeToStdout (printf "Anytype installed at %s\n" $anytypeLocation) -}}
+{{- end -}}
 [git]
     autoCommit = {{ $autoGit }}
     autoPush = {{ $autoGit }}
@@ -506,6 +516,7 @@
         hyprpickerLocation="{{$hyprpickerLocation}}"
         hyprshotLocation="{{$hyprshotLocation}}"
         chromeLocation="{{$chromeLocation}}"
+        anytypeLocation="{{$anytypeLocation}}"
         wofiLocation="{{$wofiLocation}}"
         rofiLocation="{{$rofiLocation}}"
         dmenuRunLocation="{{$dmenuRunLocation}}"

@@ -42,6 +42,7 @@
 {{- else if ne .xtermLocation "" -}}
   {{- $popupTerm = .xtermLocation -}}
 {{- end -}}
+{{- $anytype := .anytypeLocation -}}
 
 # ------------------------
 # Monitors (customize names + positions)
@@ -261,5 +262,7 @@ exec-once = kdeconnect-indicator
 exec-once = [workspace special:music silent] flatpak run com.spotify.Client
 windowrulev2 = workspace special:music, class:^(Spotify|spotify|org.spotify.Client)$
 exec-once = [workspace special:terminal silent] {{$terminal}}
-exec-once = [workspace special:anytype silent] /opt/bin/Anytype.AppImage
+{{- if ne $anytype "" -}}
+exec-once = [workspace special:anytype silent] {{$anytype}}
+{{- end -}}
 windowrulev2 = workspace special:anytype, class:^(Anytype)$
