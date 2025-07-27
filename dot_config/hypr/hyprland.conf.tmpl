@@ -114,7 +114,7 @@ bind = SUPERL, RETURN, exec, {{$terminal}}
 bind = SUPERL, SPACE, exec, {{$launcher}}
 #bind = SUPERR, SPACE, exec, {{$launcher}}
 # Clipboard history: Meta+V
-bind = SUPERL, V, exec, [float; focuswindow] {{$popupTerm}} {{$clipse}}
+bind = SUPERL, V, exec, [float; focuswindow] {{$popupTerm}} -e {{$clipse}}
 #bind = SUPERR, V, exec, [float; focuswindow] {{$popupTerm}} {{$clipse}}
 # Windows
 bind = SUPERL SHIFT, Q, killactive
