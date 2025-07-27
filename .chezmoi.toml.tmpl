@@ -242,6 +242,10 @@
 {{- if eq $hyprshotLocation "" -}}
   {{- $hyprshotLocation = lookPath "hyprshot" -}}
 {{- end -}}
+{{- $hyprctlLocation := findExecutable "hyprctl" $paths -}}
+{{- if eq $hyprctlLocation "" -}}
+  {{- $hyprctlLocation = lookPath "hyprctl" -}}
+{{- end -}}
 
 {{- $anytypeLocation := findExecutable "Anytype.AppImage" $paths -}}
 {{- if eq $anytypeLocation "" -}}
@@ -459,6 +463,9 @@
 {{- else -}}
         {{- writeToStdout (printf "hyprshot installed at %s\n" $hyprshotLocation) -}}
 {{- end -}}
+{{- if not (stat $hyprctlLocation ) -}}
+        {{- writeToStdout "Can't find hyprctl \n" -}}
+{{- end -}}
 
 {{- if not (stat $anytypeLocation ) -}}
         {{- writeToStdout "Can't find Anytype.AppImage \n" -}}
@@ -515,6 +522,7 @@
         wlCopyLocation="{{$wlCopyLocation}}"
         hyprpickerLocation="{{$hyprpickerLocation}}"
         hyprshotLocation="{{$hyprshotLocation}}"
+        hyprctlLocation="{{$hyprctlLocation}}"
         chromeLocation="{{$chromeLocation}}"
         anytypeLocation="{{$anytypeLocation}}"
         wofiLocation="{{$wofiLocation}}"
