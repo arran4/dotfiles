@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+menu_cmd={{- if ne .wofiLocation "" -}}"{{.wofiLocation}} --show dmenu --prompt 'Sink'"{{- else if ne .rofiLocation "" -}}"{{.rofiLocation}} -dmenu -p 'Sink'"{{- else -}}"dmenu -p 'Sink'"{{- end }}
+
+sinks=$(pactl -f json list sinks | jq -r '.sinks[] | "\(.index)\t\(.description)"')
+choice=$(echo "$sinks" | eval "$menu_cmd")
+[ -z "$choice" ] && exit 0
+
+sink_index=$(echo "$choice" | cut -f1)
+
+pactl set-default-sink "$sink_index"
+pactl list short sink-inputs | awk '{print $1}' | while read -r input; do
+  pactl move-sink-input "$input" "$sink_index"
+done
+
