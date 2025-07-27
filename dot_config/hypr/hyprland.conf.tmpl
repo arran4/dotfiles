@@ -22,8 +22,6 @@
 {{- $terminal := "" -}}
 {{- if ne .terminatorLocation "" -}}
   {{- $terminal = .terminatorLocation -}}
-{{- else if ne .weztermLocation "" -}}
-  {{- $terminal = .weztermLocation -}}
 {{- else if ne .konsoleLocation "" -}}
   {{- $terminal = .konsoleLocation -}}
 {{- else if ne .alacrittyLocation "" -}}
