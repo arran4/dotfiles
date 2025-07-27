@@ -264,10 +264,6 @@
 {{- if eq $terminatorLocation "" -}}
   {{- $terminatorLocation = lookPath "terminator" -}}
 {{- end -}}
-{{- $weztermLocation := findExecutable "wezterm" $paths -}}
-{{- if eq $weztermLocation "" -}}
-  {{- $weztermLocation = lookPath "wezterm" -}}
-{{- end -}}
 {{- $konsoleLocation := findExecutable "konsole" $paths -}}
 {{- if eq $konsoleLocation "" -}}
   {{- $konsoleLocation = lookPath "konsole" -}}
@@ -285,8 +281,8 @@
   {{- $xtermLocation = lookPath "xterm" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "linux") (eq $terminatorLocation "") (eq $weztermLocation "") (eq $konsoleLocation "") (eq $alacrittyLocation "") (eq $urxvtLocation "") (eq $xtermLocation "") -}}
-        {{- writeToStdout "Can't find terminal (terminator/wezterm/konsole/alacritty/urxvt/xterm) \n" -}}
+{{- if and (eq .chezmoi.os "linux") (eq $terminatorLocation "") (eq $konsoleLocation "") (eq $alacrittyLocation "") (eq $urxvtLocation "") (eq $xtermLocation "") -}}
+        {{- writeToStdout "Can't find terminal (terminator/konsole/alacritty/urxvt/xterm) \n" -}}
 {{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (eq $wofiLocation "") (eq $rofiLocation "") (eq $dmenuRunLocation "") -}}
@@ -521,7 +517,6 @@
         rofiLocation="{{$rofiLocation}}"
         dmenuRunLocation="{{$dmenuRunLocation}}"
         terminatorLocation="{{$terminatorLocation}}"
-        weztermLocation="{{$weztermLocation}}"
         konsoleLocation="{{$konsoleLocation}}"
         alacrittyLocation="{{$alacrittyLocation}}"
         urxvtLocation="{{$urxvtLocation}}"
