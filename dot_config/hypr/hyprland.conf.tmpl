@@ -1,9 +1,9 @@
 # Template variables
 {{- $launcher := "" -}}
-{{- if ne .wofiLocation "" -}}
-  {{- $launcher = printf "%s --show drun" .wofiLocation -}}
-{{- else if ne .rofiLocation "" -}}
+{{- if ne .rofiLocation "" -}}
   {{- $launcher = printf "%s -show combi -modes combi -combi-modes \"window,drun,run\"" .rofiLocation -}}
+{{- else if ne .wofiLocation "" -}}
+  {{- $launcher = printf "%s --show drun" .wofiLocation -}}
 {{- else if ne .dmenuRunLocation "" -}}
   {{- $launcher = .dmenuRunLocation -}}
 {{- end -}}
