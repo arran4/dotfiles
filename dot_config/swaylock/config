@@ -1,0 +1,14 @@
+# Dark theme for swaylock
+# Set the general background color to near-black
+color=11111b
+
+# Indicator colors
+inside-color=282828
+ring-color=444444
+text-color=f0f0f0
+key-hl-color=89b4fa
+bs-hl-color=f38ba8
+
+# Show clock and indicator
+clock
+indicator
