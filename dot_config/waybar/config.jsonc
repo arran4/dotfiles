@@ -5,9 +5,8 @@
   "spacing": 1,
   "margin": 0,
   "modules-left": ["sway/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
-    "modules-center": ["custom/userhost"],                                                                           //battery   //disk     // uptime      //updates        // systray
-  "modules-right": ["clock","pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
-
+  "modules-center": ["custom/userhost"],
+  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
 
   "sway/workspaces": {
     "disable-scroll": true,
@@ -45,6 +44,15 @@
     "exec": "playerctl -a metadata --format '{\"text\": \"{{artist}} - {{markup_escape(title)}}\", \"tooltip\": \"{{playerName}} : {{artist}} - {{markup_escape(title)}}\", \"alt\": \"{{status}}\", \"class\": \"{{status}}\"}' -F",
     "on-click": "playerctl play-pause",
     "on-click-right": "playerctl next",
+  },
+
+  "custom/spotify": {
+    "format": " {}",
+    "return-type": "json",
+    "max-length": 40,
+    "exec": "playerctl -p spotify metadata --format '{\"text\": \"{{artist}} - {{markup_escape(title)}}\", \"tooltip\": \"Spotify: {{artist}} - {{markup_escape(title)}}\", \"alt\": \"{{status}}\", \"class\": \"{{status}}\"}' -F",
+    "on-click": "playerctl play-pause",
+    "on-click-right": "playerctl next"
   },
 
   "custom/weather": {

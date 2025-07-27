@@ -75,6 +75,7 @@
 @define-color mpd-color @magenta;
 @define-color weather-color @magenta;
 @define-color playerctl-color @magenta;
+@define-color spotify-color @magenta;
 @define-color clock-color @blue;
 @define-color cpu-color @green;
 @define-color memory-color @magenta;
@@ -113,7 +114,7 @@ window#waybar {
 
 
 /* Common module styling with border-bottom */
-#mode, #mpd, #custom-weather, #custom-playerctl, #clock, #cpu,
+#mode, #mpd, #custom-weather, #custom-playerctl, #custom-spotify, #clock, #cpu,
 #memory, #temperature, #battery, #network, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
 #custom-pager, #custom-userhost, #idle_inhibitor, #tray {
@@ -174,12 +175,28 @@ window#waybar {
     border-bottom-color: @playerctl-color;
 }
 
+
 #custom-playerctl.Playing {
     color: @cyan;
     border-bottom-color: @cyan;
 }
 
 #custom-playerctl.Paused {
+    color: @orange;
+    border-bottom-color: @orange;
+}
+
+#custom-spotify {
+    color: @spotify-color;
+    border-bottom-color: @spotify-color;
+}
+
+#custom-spotify.Playing {
+    color: @cyan;
+    border-bottom-color: @cyan;
+}
+
+#custom-spotify.Paused {
     color: @orange;
     border-bottom-color: @orange;
 }
