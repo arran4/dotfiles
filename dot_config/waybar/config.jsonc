@@ -4,10 +4,12 @@
   "height": 30,
   "spacing": 1,
   "margin": 0,
-  "modules-left": ["sway/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
+
+  "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
   "modules-center": ["custom/userhost"],
   "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
 
+    
   "sway/workspaces": {
     "disable-scroll": true,
     "all-outputs": true,
@@ -23,6 +25,33 @@
       "8": "󰣇",
       "9": "",
       "10": ""
+    },
+    "persistent_workspaces": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+    }
+  },
+  "hyprland/workspaces": {
+    "all-outputs": true,
+    "format": "{name}",
+    "show-special": true,
+    "format-icons": {
+      "1": "󰖟",
+      "2": "",
+      "3": "",
+      "4": "󰭹",
+      "5": "󰕧",
+      "6": "",
+      "7": "",
+      "8": "󰣇",
+      "9": "",
+      "10": "",
+      "special:music": "󰝚",
+      "special:terminal": "",
+      "special:anytype": "󰛧"
     },
     "persistent_workspaces": {
       "1": [],
