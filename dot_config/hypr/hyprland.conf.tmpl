@@ -158,7 +158,7 @@ bind = ALT,Tab,bringactivetotop,
 #RectangularRegionScreenShot=Meta+Shift+Print
 #WindowUnderCursorScreenShot=Meta+Ctrl+Print
 
-#bind = META, PRINT, exec, spectacle -a -c 
+#bind = META, PRINT, exec, spectacle -a -c
 
 # Lock
 #bind = SUPER, L, exec, swaylock
@@ -193,4 +193,4 @@ exec-once = solaar -w hide
 exec-once = kded5
 exec-once = [workspace m silent] flatpak run com.spotify.Client
 exec-once = flatpak run com.spotify.Client
-windowrulev2 = workspace m, class:^(Spotify|spotify|org.spotify.Client)$
+windowrulev2 = workspace special m, class:^(Spotify|spotify|org.spotify.Client)$
