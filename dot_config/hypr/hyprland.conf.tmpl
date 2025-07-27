@@ -106,81 +106,81 @@ gestures {
 # Keybindings
 # ------------------------
 # Terminal launch: Ctrl+Meta+T
-bind = CTRL SUPER, T, exec, {{$terminal}}
+bind = CTRL SUPERL, T, exec, {{$terminal}}
 bind = CTRL SUPERR, T, exec, {{$terminal}}
 # Terminal as alternate: Meta+Return
-bind = SUPER, RETURN, exec, {{$terminal}}
+bind = SUPERL, RETURN, exec, {{$terminal}}
 bind = SUPERR, RETURN, exec, {{$terminal}}
-bind = SUPER, SPACE, exec, {{$launcher}}
+bind = SUPERL, SPACE, exec, {{$launcher}}
 bind = SUPERR, SPACE, exec, {{$launcher}}
 # Clipboard history: Meta+V
-bind = SUPER, V, exec, [float; focuswindow] {{$popupTerm}} {{$clipse}}
+bind = SUPERL, V, exec, [float; focuswindow] {{$popupTerm}} {{$clipse}}
 bind = SUPERR, V, exec, [float; focuswindow] {{$popupTerm}} {{$clipse}}
 # Windows
-bind = SUPER_SHIFT, Q, killactive
-bind = SUPER_SHIFT, W, closewindow
-bind = SUPER, F, fullscreen
+bind = SUPERL SHIFT, Q, killactive
+bind = SUPERL SHIFT, W, closewindow
+bind = SUPERL, F, fullscreen
 bind = SUPERR, F, fullscreen
-bind = SUPER, 0, workspace, empty
+bind = SUPERL, 0, workspace, empty
 bind = SUPERR, 0, workspace, empty
-bind = SUPER, 1, workspace, 1
+bind = SUPERL, 1, workspace, 1
 bind = SUPERR, 1, workspace, 1
-bind = SUPER, 2, workspace, 2
+bind = SUPERL, 2, workspace, 2
 bind = SUPERR, 2, workspace, 2
-bind = SUPER, 3, workspace, 3
+bind = SUPERL, 3, workspace, 3
 bind = SUPERR, 3, workspace, 3
-bind = SUPER, 4, workspace, 4
+bind = SUPERL, 4, workspace, 4
 bind = SUPERR, 4, workspace, 4
-bind = SUPER, 5, workspace, 5
+bind = SUPERL, 5, workspace, 5
 bind = SUPERR, 5, workspace, 5
-bind = SUPER, 5, workspace, 5
+bind = SUPERL, 5, workspace, 5
 bind = SUPERR, 5, workspace, 5
-bind = SUPER, 6, workspace, 6
+bind = SUPERL, 6, workspace, 6
 bind = SUPERR, 6, workspace, 6
-bind = SUPER, 7, workspace, 7
+bind = SUPERL, 7, workspace, 7
 bind = SUPERR, 7, workspace, 7
-bind = SUPER, 8, workspace, 8
+bind = SUPERL, 8, workspace, 8
 bind = SUPERR, 8, workspace, 8
-bind = SUPER, 9, workspace, 9
+bind = SUPERL, 9, workspace, 9
 bind = SUPERR, 9, workspace, 9
-bind = SUPER, m, togglespecialworkspace, music
+bind = SUPERL, m, togglespecialworkspace, music
 bind = SUPERR, m, togglespecialworkspace, music
-bind = SUPER, grave, togglespecialworkspace, terminal
+bind = SUPERL, grave, togglespecialworkspace, terminal
 bind = SUPERR, grave, togglespecialworkspace, terminal
-bind = SUPER, T, togglespecialworkspace, terminal
+bind = SUPERL, T, togglespecialworkspace, terminal
 bind = SUPERR, T, togglespecialworkspace, terminal
-bind = SUPER, P, togglespecialworkspace, anytype
+bind = SUPERL, P, togglespecialworkspace, anytype
 bind = SUPERR, P, togglespecialworkspace, anytype
-bind = SUPER CTRL, LEFT, workspace, -1
+bind = SUPERL CTRL, LEFT, workspace, -1
 bind = SUPERR CTRL, LEFT, workspace, -1
-bind = SUPER CTRL, RIGHT, workspace, +1
+bind = SUPERL CTRL, RIGHT, workspace, +1
 bind = SUPERR CTRL, RIGHT, workspace, +1
-bind = SUPER SHIFT CTRL, LEFT, movetoworkspace, -1
+bind = SUPERL SHIFT CTRL, LEFT, movetoworkspace, -1
 bind = SUPERR SHIFT CTRL, LEFT, movetoworkspace, -1
-bind = SUPER SHIFT CTRL, RIGHT, movetoworkspace, +1
+bind = SUPERL SHIFT CTRL, RIGHT, movetoworkspace, +1
 bind = SUPERR SHIFT CTRL, RIGHT, movetoworkspace, +1
-bind = SUPER SHIFT, 0, movetoworkspace, empty
+bind = SUPERL SHIFT, 0, movetoworkspace, empty
 bind = SUPERR SHIFT, 0, movetoworkspace, empty
-bind = SUPER SHIFT, 1, movetoworkspace, 1
+bind = SUPERL SHIFT, 1, movetoworkspace, 1
 bind = SUPERR SHIFT, 1, movetoworkspace, 1
-bind = SUPER SHIFT, 2, movetoworkspace, 2
+bind = SUPERL SHIFT, 2, movetoworkspace, 2
 bind = SUPERR SHIFT, 2, movetoworkspace, 2
-bind = SUPER SHIFT, 3, movetoworkspace, 3
+bind = SUPERL SHIFT, 3, movetoworkspace, 3
 bind = SUPERR SHIFT, 3, movetoworkspace, 3
-bind = SUPER SHIFT, 4, movetoworkspace, 4
+bind = SUPERL SHIFT, 4, movetoworkspace, 4
 bind = SUPERR SHIFT, 4, movetoworkspace, 4
-bind = SUPER SHIFT, 5, movetoworkspace, 5
+bind = SUPERL SHIFT, 5, movetoworkspace, 5
 bind = SUPERR SHIFT, 5, movetoworkspace, 5
-bind = SUPER SHIFT, 6, movetoworkspace, 6
+bind = SUPERL SHIFT, 6, movetoworkspace, 6
 bind = SUPERR SHIFT, 6, movetoworkspace, 6
-bind = SUPER SHIFT, 7, movetoworkspace, 7
+bind = SUPERL SHIFT, 7, movetoworkspace, 7
 bind = SUPERR SHIFT, 7, movetoworkspace, 7
-bind = SUPER SHIFT, 8, movetoworkspace, 8
+bind = SUPERL SHIFT, 8, movetoworkspace, 8
 bind = SUPERR SHIFT, 8, movetoworkspace, 8
-bind = SUPER SHIFT, 9, movetoworkspace, 9
+bind = SUPERL SHIFT, 9, movetoworkspace, 9
 bind = SUPERR SHIFT, 9, movetoworkspace, 9
 bind = ALT,Tab,cyclenext,
-bind = SUPER SHIFT, Tab, cyclenext, prev
+bind = SUPERL SHIFT, Tab, cyclenext, prev
 bind = ALT,Tab,bringactivetotop,
 
 # Screen shots
@@ -197,21 +197,21 @@ bind = ALT,Tab,bringactivetotop,
 #bind = META, PRINT, exec, spectacle -a -c
 {{- if and (ne .grimLocation "") (ne .slurpLocation "") (ne .wlCopyLocation "") (ne .hyprpickerLocation "") -}}
   {{- if ne .hyprshotLocation "" -}}
-bind = SUPER, PRINT, exec, hyprshot -m window
+bind = SUPERL, PRINT, exec, hyprshot -m window
 bind = SHIFT, PRINT, exec, hyprshot -m screen
-bind = SUPER SHIFT, PRINT, exec, hyprshot -m region
-bind = SUPER CTRL, PRINT, exec, hyprshot -m window
+bind = SUPERL SHIFT, PRINT, exec, hyprshot -m region
+bind = SUPERL CTRL, PRINT, exec, hyprshot -m window
   {{- else -}}
-bind = SUPER, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
+bind = SUPERL, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
 bind = SHIFT, PRINT, exec, grim - | wl-copy
-bind = SUPER SHIFT, PRINT, exec, grim -g "$(slurp)" - | wl-copy
-bind = SUPER CTRL, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
+bind = SUPERL SHIFT, PRINT, exec, grim -g "$(slurp)" - | wl-copy
+bind = SUPERL CTRL, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
   {{- end -}}
 {{- end -}}
 
 # Lock
-#bind = SUPER, L, exec, swaylock
-bind = SUPER, L, exec, {{$lockcmd}}
+#bind = SUPERL, L, exec, swaylock
+bind = SUPERL, L, exec, {{$lockcmd}}
 bind = SUPERR, L, exec, {{$lockcmd}}
 # Media keys
 binde=, XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 1%+
