@@ -1,4 +1,5 @@
-/*Colorschemes, there are Gruvbox, Tokyo Night, and Everforest by default. The way it works is whichever colorscheme section is defined last will be used. Here everforest is last, but put any one you want to use as the last one.*/
+/* Colorschemes: Tokyo Night, Everforest, Pastel TTY, Gruvbox Dark, and Cyberpunk Neon.
+ * The scheme defined last overrides the rest, so Cyberpunk Neon is currently active. */
 
 
 
@@ -60,6 +61,21 @@
 @define-color cyan #689d6a;
 @define-color white #ebdbb2;
 @define-color orange #d65d0e;
+
+
+/* Cyberpunk Neon Colors */
+@define-color background #0e0b16;
+@define-color background-light #1a1a2e;
+@define-color foreground #e6e6e6;
+@define-color black #0a0f0d;
+@define-color red #ff2e63;
+@define-color green #72f1b8;
+@define-color yellow #f9f871;
+@define-color blue #08d9d6;
+@define-color magenta #d640ff;
+@define-color cyan #08f7fe;
+@define-color white #ffffff;
+@define-color orange #ff9f1c;
 
 
 
