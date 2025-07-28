@@ -248,6 +248,23 @@
   {{- $swaymsgLocation = lookPath "swaymsg" -}}
 {{- end -}}
 
+{{- $solaarLocation := findExecutable "solaar" $paths -}}
+{{- if eq $solaarLocation "" -}}
+  {{- $solaarLocation = lookPath "solaar" -}}
+{{- end -}}
+{{- $kded6Location := findExecutable "kded6" $paths -}}
+{{- if eq $kded6Location "" -}}
+  {{- $kded6Location = lookPath "kded6" -}}
+{{- end -}}
+{{- $kdeconnectIndicatorLocation := findExecutable "kdeconnect-indicator" $paths -}}
+{{- if eq $kdeconnectIndicatorLocation "" -}}
+  {{- $kdeconnectIndicatorLocation = lookPath "kdeconnect-indicator" -}}
+{{- end -}}
+{{- $nmAppletLocation := findExecutable "nm-applet" $paths -}}
+{{- if eq $nmAppletLocation "" -}}
+  {{- $nmAppletLocation = lookPath "nm-applet" -}}
+{{- end -}}
+
 {{- $anytypeLocation := findExecutable "Anytype.AppImage" $paths -}}
 {{- if eq $anytypeLocation "" -}}
   {{- $anytypeLocation = lookPath "Anytype.AppImage" -}}
@@ -463,6 +480,18 @@
 {{- if not (stat $swaymsgLocation ) -}}
         {{- writeToStdout "Can't find swaymsg \n" -}}
 {{- end -}}
+{{- if not (stat $solaarLocation ) -}}
+        {{- writeToStdout "Can't find solaar \n" -}}
+{{- end -}}
+{{- if not (stat $kded6Location ) -}}
+        {{- writeToStdout "Can't find kded6 \n" -}}
+{{- end -}}
+{{- if not (stat $kdeconnectIndicatorLocation ) -}}
+        {{- writeToStdout "Can't find kdeconnect-indicator \n" -}}
+{{- end -}}
+{{- if not (stat $nmAppletLocation ) -}}
+        {{- writeToStdout "Can't find nm-applet \n" -}}
+{{- end -}}
 
 {{- if not (stat $anytypeLocation ) -}}
         {{- writeToStdout "Can't find Anytype.AppImage \n" -}}
@@ -520,6 +549,10 @@
         hyprpickerLocation="{{$hyprpickerLocation}}"
         hyprshotLocation="{{$hyprshotLocation}}"
         swaymsgLocation="{{$swaymsgLocation}}"
+        solaarLocation="{{$solaarLocation}}"
+        kded6Location="{{$kded6Location}}"
+        kdeconnectIndicatorLocation="{{$kdeconnectIndicatorLocation}}"
+        nmAppletLocation="{{$nmAppletLocation}}"
         chromeLocation="{{$chromeLocation}}"
         anytypeLocation="{{$anytypeLocation}}"
         wofiLocation="{{$wofiLocation}}"

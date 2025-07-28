@@ -41,6 +41,10 @@
   {{- $popupTerm = .xtermLocation -}}
 {{- end -}}
 {{- $anytype := .anytypeLocation -}}
+{{- $solaar := .solaarLocation -}}
+{{- $kded6 := .kded6Location -}}
+{{- $kdeconnectIndicator := .kdeconnectIndicatorLocation -}}
+{{- $nmApplet := .nmAppletLocation -}}
 
 # ------------------------
 # Monitors (customize names + positions)
@@ -257,10 +261,18 @@ exec-once = waybar
 exec-once = set-wallpaper
 exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=hyprland
 exec-once = {{$clipse}} -listen
+{{- if ne $solaar "" -}}
 exec-once = solaar -w hide
+{{- end -}}
+{{- if ne $kded6 "" -}}
 exec-once = kded6
+{{- end -}}
+{{- if ne $kdeconnectIndicator "" -}}
 exec-once = kdeconnect-indicator
+{{- end -}}
+{{- if ne $nmApplet "" -}}
 exec-once = nm-applet
+{{- end -}}
 #exec-once = [workspace special:music silent] flatpak run com.spotify.Client
 windowrulev2 = workspace special:music, class:^(Spotify|spotify|org.spotify.Client|com.spotify.Client)$
 #exec-once = [workspace special:terminal silent] {{$terminal}}
