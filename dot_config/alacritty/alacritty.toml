@@ -6,6 +6,10 @@
   dynamic_title = true
 
 [[keyboard.bindings]]
+key = "Tab"
+mods = "Control"
+action = "SelectNextTab"
+
   key = "T"
   mods = "Control|Shift"
   action = "CreateNewTab"
