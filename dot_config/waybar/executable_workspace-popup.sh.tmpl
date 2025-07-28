@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+menu_cmd={{- if ne .wofiLocation "" -}}"{{.wofiLocation}} --show dmenu --prompt 'Workspace'"{{- else if ne .rofiLocation "" -}}"{{.rofiLocation}} -dmenu -p 'Workspace'"{{- else -}}"dmenu -p 'Workspace'"{{- end }}
+
+if [ -n "${SWAYSOCK-}" ]; then
+  workspaces=$(swaymsg -t get_workspaces | jq -r '.[] | "\(.num)\t\(.name)"')
+  choice=$(echo "$workspaces" | eval "$menu_cmd")
+  [ -z "$choice" ] && exit 0
+  num=$(echo "$choice" | cut -f1)
+  swaymsg workspace number "$num"
+elif command -v hyprctl >/dev/null 2>&1; then
+  workspaces=$(hyprctl workspaces -j | jq -r '.[] | "\(.id)\t\(.name)"')
+  choice=$(echo "$workspaces" | eval "$menu_cmd")
+  [ -z "$choice" ] && exit 0
+  id=$(echo "$choice" | cut -f1)
+  hyprctl dispatch workspace "$id"
+fi
+

@@ -5,7 +5,7 @@
   "spacing": 1,
   "margin": 0,
 
-  "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
+  "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/workspace-popup", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
   "modules-center": ["custom/userhost", "hyprland/window"],
   "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
 
@@ -108,6 +108,11 @@
     "interval": 1,
     "on-click": "swaymsg workspace next",
     "on-click-right": "swaymsg workspace prev"
+  },
+
+  "custom/workspace-popup": {
+    "format": "󰕰",
+    "on-click": "~/.config/waybar/workspace-popup.sh"
   },
 
   "custom/userhost": {
