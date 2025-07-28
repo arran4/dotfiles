@@ -2,3 +2,8 @@
 [window]
 opacity = 0.9
 
+[[keyboard.bindings]]
+key = "Tab"
+mods = "Control"
+action = "SelectNextTab"
+
