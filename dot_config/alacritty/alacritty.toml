@@ -1,5 +1,6 @@
 # Alacritty configuration
 [window]
+  blur = true
   opacity = 0.8
   decorations = "full"
 
@@ -69,5 +70,5 @@
   background = '#282a36'
 
 [colors.footer_bar]
-background = "#3b4252"
-foreground = "#eceff4"
+  background = "#3b4252"
+  foreground = "#eceff4"
