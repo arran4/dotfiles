@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Cycle through Hyprland layouts
+layouts=(master dwindle)
+current=$(hyprctl getoption general:layout | awk '/str/ {print $2}')
+for i in "${!layouts[@]}"; do
+  if [[ "${layouts[$i]}" == "$current" ]]; then
+    next_index=$(( (i + 1) % ${#layouts[@]} ))
+    hyprctl keyword general:layout "${layouts[$next_index]}"
+    exit 0
+  fi
+done
+
+# If current layout not in list, set to first
+hyprctl keyword general:layout "${layouts[0]}"
