@@ -242,6 +242,10 @@
 {{- if eq $hyprshotLocation "" -}}
   {{- $hyprshotLocation = lookPath "hyprshot" -}}
 {{- end -}}
+{{- $wfRecorderLocation := findExecutable "wf-recorder" $paths -}}
+{{- if eq $wfRecorderLocation "" -}}
+  {{- $wfRecorderLocation = lookPath "wf-recorder" -}}
+{{- end -}}
 
 {{- $swaymsgLocation := findExecutable "swaymsg" $paths -}}
 {{- if eq $swaymsgLocation "" -}}
@@ -325,6 +329,13 @@
 {{- end -}}
 {{- if and (eq .chezmoi.os "linux") (eq $swaylockLocation "") (eq $xscreensaverCommandLocation "") (eq $xscreensaverLocation "") -}}
         {{- writeToStdout "Can't find screen locker (swaylock/xscreensaver) \n" -}}
+{{- end -}}
+{{- $swayidleLocation := findExecutable "swayidle" $paths -}}
+{{- if eq $swayidleLocation "" -}}
+  {{- $swayidleLocation = lookPath "swayidle" -}}
+{{- end -}}
+{{- if and (eq .chezmoi.os "linux") (eq $swayidleLocation "") -}}
+        {{- writeToStdout "Can't find swayidle \n" -}}
 {{- end -}}
 {{- $clipseLocation := findExecutable "clipse" $paths -}}
 {{- if eq $clipseLocation "" -}}
@@ -477,6 +488,12 @@
 {{- else -}}
         {{- writeToStdout (printf "hyprshot installed at %s\n" $hyprshotLocation) -}}
 {{- end -}}
+{{- if not (stat $wfRecorderLocation ) -}}
+        {{- writeToStdout "Can't find wf-recorder \n" -}}
+{{- else -}}
+        {{- $wfRecorderVersion := trim (output $wfRecorderLocation "--version") -}}
+        {{- writeToStdout (printf "wf-recorder installed at %s (%s)\n" $wfRecorderLocation $wfRecorderVersion) -}}
+{{- end -}}
 {{- if not (stat $swaymsgLocation ) -}}
         {{- writeToStdout "Can't find swaymsg \n" -}}
 {{- end -}}
@@ -548,6 +565,7 @@
         wlCopyLocation="{{$wlCopyLocation}}"
         hyprpickerLocation="{{$hyprpickerLocation}}"
         hyprshotLocation="{{$hyprshotLocation}}"
+        wfRecorderLocation="{{$wfRecorderLocation}}"
         swaymsgLocation="{{$swaymsgLocation}}"
         solaarLocation="{{$solaarLocation}}"
         kded6Location="{{$kded6Location}}"
@@ -564,6 +582,7 @@
         urxvtLocation="{{$urxvtLocation}}"
         xtermLocation="{{$xtermLocation}}"
         swaylockLocation="{{$swaylockLocation}}"
+        swayidleLocation="{{$swayidleLocation}}"
         xscreensaverCommandLocation="{{$xscreensaverCommandLocation}}"
         xscreensaverLocation="{{$xscreensaverLocation}}"
         clipse="{{$clipseLocation}}"

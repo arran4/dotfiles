@@ -32,19 +32,17 @@
   {{- $terminal = .xtermLocation -}}
 {{- end -}}
 
-{{- $popupTerm := "" -}}
-{{- if ne .alacrittyLocation "" -}}
-  {{- $popupTerm = .alacrittyLocation -}}
-{{- else if ne .urxvtLocation "" -}}
-  {{- $popupTerm = .urxvtLocation -}}
-{{- else if ne .xtermLocation "" -}}
-  {{- $popupTerm = .xtermLocation -}}
-{{- end -}}
+{{- $popupTerm := $terminal -}}
 {{- $anytype := .anytypeLocation -}}
 {{- $solaar := .solaarLocation -}}
 {{- $kded6 := .kded6Location -}}
 {{- $kdeconnectIndicator := .kdeconnectIndicatorLocation -}}
 {{- $nmApplet := .nmAppletLocation -}}
+
+{{- $playerctlPlayer := "spotify" -}}
+{{- if ne .playerctlPlayer "" -}}
+  {{- $playerctlPlayer = .playerctlPlayer -}}
+{{- end -}}
 
 # ------------------------
 # Monitors (customize names + positions)
@@ -68,6 +66,7 @@ env = LIBVA_DRIVER_NAME,nvidia
 env = XDG_SESSION_TYPE,wayland
 env = GBM_BACKEND,nvidia-drm
 env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+env = XDG_CURRENT_DESKTOP,hyprland
 
 cursor {
     no_hardware_cursors = true
@@ -112,6 +111,8 @@ bind = CTRL SUPER_L, T, exec, {{$terminal}}
 #bind = CTRL SUPER_R, T, exec, {{$terminal}}
 # Terminal as alternate: Meta+Return
 bind = SUPER_L, RETURN, exec, {{$terminal}}
+# Floating terminal: Ctrl+Return
+bind = CTRL, RETURN, exec, [float] {{$terminal}}
 #bind = SUPER_R, RETURN, exec, {{$terminal}}
 bind = SUPER_L, SPACE, exec, {{$launcher}}
 #bind = SUPER_R, SPACE, exec, {{$launcher}}
@@ -151,6 +152,7 @@ bind = SUPER_L, grave, togglespecialworkspace, terminal
 #bind = SUPER_R, grave, togglespecialworkspace, terminal
 bind = SUPER_L, T, togglespecialworkspace, terminal
 #bind = SUPER_R, T, togglespecialworkspace, terminal
+bind = SUPER_L, D, togglespecialworkspace, scratchpad
 bind = SUPER_L, P, togglespecialworkspace, anytype
 #bind = SUPER_R, P, togglespecialworkspace, anytype
 bind = SUPER_L CTRL, LEFT, workspace, -1
@@ -193,21 +195,26 @@ bind = ALT,Tab,bringactivetotop,
 #RecordRegion=Meta+Shift+R
 #RecordScreen=Meta+Alt+R
 #RecordWindow=Meta+Ctrl+R
+{{- if and (ne .wfRecorderLocation "") (ne .slurpLocation "") -}}
+bind = SUPER_L SHIFT, R, exec, {{.wfRecorderLocation}} -g "$(slurp)"
+bind = SUPER_L ALT, R, exec, {{.wfRecorderLocation}}
+bind = SUPER_L CTRL, R, exec, {{.wfRecorderLocation}} -g "$(slurp -w)"
+{{- end -}}
 #RectangularRegionScreenShot=Meta+Shift+Print
 #WindowUnderCursorScreenShot=Meta+Ctrl+Print
 
 #bind = META, PRINT, exec, spectacle -a -c
 {{- if and (ne .grimLocation "") (ne .slurpLocation "") (ne .wlCopyLocation "") (ne .hyprpickerLocation "") -}}
   {{- if ne .hyprshotLocation "" -}}
-bind = SUPER_L, PRINT, exec, hyprshot -m window
-bind = SHIFT, PRINT, exec, hyprshot -m screen
-bind = SUPER_L SHIFT, PRINT, exec, hyprshot -m region
-bind = SUPER_L CTRL, PRINT, exec, hyprshot -m window
+bind = SUPER_L, PRINT, exec, hyprshot -m window -o "$HOME/Pictures/Screenshots"
+bind = SHIFT, PRINT, exec, hyprshot -m screen -o "$HOME/Pictures/Screenshots"
+bind = SUPER_L SHIFT, PRINT, exec, hyprshot -m region -o "$HOME/Pictures/Screenshots"
+bind = SUPER_L CTRL, PRINT, exec, hyprshot -m window -o "$HOME/Pictures/Screenshots"
   {{- else -}}
-bind = SUPER_L, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
-bind = SHIFT, PRINT, exec, grim - | wl-copy
-bind = SUPER_L SHIFT, PRINT, exec, grim -g "$(slurp)" - | wl-copy
-bind = SUPER_L CTRL, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
+bind = SUPER_L, PRINT, exec, grim -g "$(slurp -w)" - | tee "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png" | wl-copy
+bind = SHIFT, PRINT, exec, grim - | tee "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png" | wl-copy
+bind = SUPER_L SHIFT, PRINT, exec, grim -g "$(slurp)" - | tee "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png" | wl-copy
+bind = SUPER_L CTRL, PRINT, exec, grim -g "$(slurp -w)" - | tee "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png" | wl-copy
   {{- end -}}
 {{- end -}}
 
@@ -222,10 +229,10 @@ bind = SUPER_L, L, exec, {{$lockcmd}}
 binde=, XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 1%+
 bindl=, XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-
 bindl=, XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
-# Requires playerctl
-bindl=, XF86AudioPlay, exec, playerctl play-pause
-bindl=, XF86AudioPrev, exec, playerctl previous
-bindl=, XF86AudioNext, exec, playerctl next
+# Requires playerctl (set $playerctlPlayer to target a specific player)
+bindl=, XF86AudioPlay, exec, playerctl --player={{$playerctlPlayer}} play-pause
+bindl=, XF86AudioPrev, exec, playerctl --player={{$playerctlPlayer}} previous
+bindl=, XF86AudioNext, exec, playerctl --player={{$playerctlPlayer}} next
 ## Mouse bindings
 bindm=ALT,mouse:272,movewindow
 bindm=ALT,mouse:273,resizewindow
@@ -235,6 +242,7 @@ bindm=ALT,mouse:273,resizewindow
 # ------------------------
 #windowrule = float, ^(pavucontrol|blueman-manager)$
 #windowrule = float, kitty
+# windowrulev2 = float, class:^(alacritty|kitty)$
 
 # ------------------------
 # Workspace rules
@@ -242,6 +250,7 @@ bindm=ALT,mouse:273,resizewindow
 workspace = special:music, persistent:true
 workspace = special:terminal, persistent:true
 workspace = special:anytype, persistent:true
+workspace = special:scratchpad, persistent:true
 workspace = 1, persistent:true
 workspace = 2, persistent:true
 workspace = 3, persistent:true
@@ -269,6 +278,9 @@ exec-once = kded6
 {{- end -}}
 {{- if ne $kdeconnectIndicator "" -}}
 exec-once = kdeconnect-indicator
+{{- end -}}
+{{- if ne .swayidleLocation "" -}}
+exec-once = {{.swayidleLocation}} timeout 300 'swaylock -f -c 000000'
 {{- end -}}
 {{- if ne $nmApplet "" -}}
 exec-once = nm-applet

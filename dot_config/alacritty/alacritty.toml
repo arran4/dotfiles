@@ -5,12 +5,19 @@
   decorations = "full"
   dynamic_title = true
 
+
+[keyboard]
 [[keyboard.bindings]]
 key = "Tab"
 mods = "Control"
 action = "SelectNextTab"
 
-  key = "T"
+
+key = "Tab"
+mods = "Control|Shift"
+action = "SelectPreviousTab"
+
+key = "T"
   mods = "Control|Shift"
   action = "CreateNewTab"
 
