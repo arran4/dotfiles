@@ -59,7 +59,7 @@ general {
     border_size = 2                       # window border width
     col.active_border = rgba(135affcc)    # active window border color
     col.inactive_border = rgba(323232cc)  # inactive window border
-    layout = dwindle                      # bsp-like tiling
+    layout = master                       # master tiling
 }
 
 env = LIBVA_DRIVER_NAME,nvidia
@@ -109,6 +109,8 @@ bind = SUPER_L, RETURN, exec, {{$terminal}}
 # Floating terminal: Ctrl+Return
 bind = CTRL, RETURN, exec, [float] {{$terminal}}
 #bind = SUPER_R, RETURN, exec, {{$terminal}}
+# Toggle layout: Meta+Y
+bind = SUPER_L, Y, exec, hypr-cycle-layout
 bind = SUPER_L, SPACE, exec, {{$launcher}}
 #bind = SUPER_R, SPACE, exec, {{$launcher}}
 # Clipboard history: Meta+V
