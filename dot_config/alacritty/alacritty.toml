@@ -6,6 +6,10 @@
   dynamic_title = true
 
 [[keyboard.bindings]]
+  key = "T"
+  mods = "Control|Shift"
+  action = "CreateNewTab"
+
   key = "N"
   mods = "Control|Shift"
   action = "SpawnNewInstance"
