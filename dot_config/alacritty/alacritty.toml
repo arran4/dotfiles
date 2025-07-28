@@ -3,6 +3,7 @@
   blur = true
   opacity = 0.8
   decorations = "full"
+  dynamic_title = true
 
 [[keyboard.bindings]]
   key = "N"
