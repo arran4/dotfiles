@@ -109,7 +109,6 @@
 @define-color backlight-color @yellow;
 @define-color disk-color @cyan;
 @define-color uptime-color @green;
-@define-color updates-color @orange;
 @define-color quote-color @green;
 @define-color idle-inhibitor-color @foreground;
 @define-color idle-inhibitor-active-color @red;
@@ -132,7 +131,7 @@ window#waybar {
 
 /* Common module styling with border-bottom */
 #mode, #mpd, #custom-weather, #custom-playerctl, #custom-spotify, #clock, #cpu,
-#memory, #temperature, #battery, #network, #pulseaudio,
+#memory, #temperature, #battery, #network, #custom-net-total, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
 #custom-pager, #custom-workspace-popup, #custom-userhost, #idle_inhibitor, #tray {
     padding: 0 10px;
@@ -277,6 +276,11 @@ window#waybar {
     border-bottom-color: @network-disconnected-color;
 }
 
+#custom-net-total {
+  color: @network-color;
+  border-bottom-color: @network-color;
+}
+
 #pulseaudio {
     color: @pulseaudio-color;
     border-bottom-color: @pulseaudio-color;
@@ -302,10 +306,6 @@ window#waybar {
     border-bottom-color: @uptime-color;
 }
 
-#custom-updates {
-    color: @updates-color;
-    border-bottom-color: @updates-color;
-}
 
 #custom-quote {
     color: @quote-color;
