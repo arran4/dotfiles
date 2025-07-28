@@ -5,11 +5,10 @@
   "spacing": 1,
   "margin": 0,
 
-  "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
-  "modules-center": ["custom/userhost", "hyprland/window"],
-  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/sysinfo", "custom/uptime", "custom/updates", "tray"],
+  "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/workspace-popup", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
+  "modules-center": ["custom/userhost", "custom/hostname", "hyprland/window"],
+  "modules-right": ["clock", "custom/spotify", "pulseaudio", "bluetooth", "backlight", "network", "custom/net-total", "cpu", "memory", "custom/gpu", "temperature", "battery", "disk", "custom/sysinfo", "custom/uptime", "custom/screenshot", "custom/power", "tray"],
 
-    
   "sway/workspaces": {
     "disable-scroll": true,
     "all-outputs": true,
@@ -106,8 +105,13 @@
   "custom/pager": {
     "exec": "$HOME/.config/waybar/scripts/pager.sh",
     "interval": 1,
-    "on-click": "swaymsg workspace next",
-    "on-click-right": "swaymsg workspace prev"
+    "on-click": "$HOME/.config/waybar/scripts/workspace_switch.sh next",
+    "on-click-right": "$HOME/.config/waybar/scripts/workspace_switch.sh prev"
+  },
+
+  "custom/workspace-popup": {
+    "format": "󰕰",
+    "on-click": "~/.config/waybar/workspace-popup.sh"
   },
 
   "custom/userhost": {
@@ -115,12 +119,14 @@
     "interval": 600
   },
 
-  "custom/updates": {
-    "format": "󰚰 {}",
-    "exec": "checkupdates | wc -l",
-    "interval": 3600,
-    "on-click": "kitty -e sudo pacman -Syu",
-    "signal": 8
+  "custom/hostname": {
+    "exec": "hostname",
+    "interval": 600
+  },
+
+  "custom/screenshot": {
+    "format": "",
+    "on-click": "grim"
   },
 
   "custom/uptime": {
@@ -134,6 +140,11 @@
     "return-type": "json",
     "exec": "$HOME/.config/waybar/scripts/sysinfo.sh",
     "interval": 30
+  },
+
+  "custom/power": {
+    "format": "⏻",
+    "on-click": "$HOME/.config/waybar/scripts/power.sh"
   },
 
   "idle_inhibitor": {
@@ -185,6 +196,12 @@
     "on-click": "kitty -e htop"
   },
 
+  "custom/gpu": {
+    "format": "󰢮 {}",
+    "exec": "$HOME/.config/waybar/scripts/gpu.sh",
+    "interval": 5
+  },
+
   "temperature": {
     "critical-threshold": 80,
     "format": "{icon} {temperatureC}°C",
@@ -215,6 +232,20 @@
     "on-click": "kitty -e nmtui"
   },
 
+  "custom/net-total": {
+    "exec": "$HOME/.config/waybar/scripts/net-total.sh",
+    "interval": 5
+  },
+
+  "bluetooth": {
+    "format": "{icon} {status}",
+    "format-icons": {
+      "enabled": "󰂯",
+      "disabled": "󰂲",
+      "connected": "󰂰"
+    }
+  },
+
   "pulseaudio": {
     "format": "{icon} {volume}%",
     "format-bluetooth": "󰂰 {volume}%",
@@ -239,7 +270,7 @@
   "backlight": {
     "format": "{icon} {percent}%",
     "format-icons": ["󰃞", "󰃟", "󰃠"],
-    "on-scroll-up": "brightnessctl set +5%",
+    "on-scroll-up": "brightnessctl set 5%+",
     "on-scroll-down": "brightnessctl set 5%-"
   },
 
