@@ -3,6 +3,11 @@
   opacity = 0.8
   decorations = "full"
 
+[[keyboard.bindings]]
+  key = "N"
+  mods = "Control|Shift"
+  action = "SpawnNewInstance"
+
 [scrolling]
   history = 100000
 
