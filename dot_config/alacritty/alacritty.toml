@@ -3,3 +3,6 @@
 opacity = 0.9
 decorations = "full"
 
+[scrolling]
+history = 100000
+
