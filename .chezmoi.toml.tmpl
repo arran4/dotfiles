@@ -309,6 +309,13 @@
 {{- if and (eq .chezmoi.os "linux") (eq $swaylockLocation "") (eq $xscreensaverCommandLocation "") (eq $xscreensaverLocation "") -}}
         {{- writeToStdout "Can't find screen locker (swaylock/xscreensaver) \n" -}}
 {{- end -}}
+{{- $swayidleLocation := findExecutable "swayidle" $paths -}}
+{{- if eq $swayidleLocation "" -}}
+  {{- $swayidleLocation = lookPath "swayidle" -}}
+{{- end -}}
+{{- if and (eq .chezmoi.os "linux") (eq $swayidleLocation "") -}}
+        {{- writeToStdout "Can't find swayidle \n" -}}
+{{- end -}}
 {{- $clipseLocation := findExecutable "clipse" $paths -}}
 {{- if eq $clipseLocation "" -}}
   {{- $clipseLocation = lookPath "clipse" -}}
@@ -531,6 +538,7 @@
         urxvtLocation="{{$urxvtLocation}}"
         xtermLocation="{{$xtermLocation}}"
         swaylockLocation="{{$swaylockLocation}}"
+        swayidleLocation="{{$swayidleLocation}}"
         xscreensaverCommandLocation="{{$xscreensaverCommandLocation}}"
         xscreensaverLocation="{{$xscreensaverLocation}}"
         clipse="{{$clipseLocation}}"
