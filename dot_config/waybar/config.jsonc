@@ -7,7 +7,7 @@
 
   "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
   "modules-center": ["custom/userhost", "custom/hostname", "hyprland/window"],
-  "modules-right": ["clock", "custom/spotify", "pulseaudio", "bluetooth", "backlight", "network", "cpu", "memory", "custom/gpu", "temperature", "battery", "disk", "custom/uptime", "custom/screenshot", "custom/power", "tray"],
+  "modules-right": ["clock", "custom/spotify", "pulseaudio", "bluetooth", "backlight", "network", "custom/net-total", "cpu", "memory", "custom/gpu", "temperature", "battery", "disk", "custom/uptime", "custom/screenshot", "custom/power", "tray"],
 
   "sway/workspaces": {
     "disable-scroll": true,
@@ -218,6 +218,11 @@
     "format-alt": "{ifname}: {ipaddr}/{cidr}",
     "tooltip-format": "{ifname}: {ipaddr}",
     "on-click": "kitty -e nmtui"
+  },
+
+  "custom/net-total": {
+    "exec": "$HOME/.config/waybar/scripts/net-total.sh",
+    "interval": 5
   },
 
   "bluetooth": {
