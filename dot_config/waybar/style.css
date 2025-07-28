@@ -109,7 +109,6 @@
 @define-color backlight-color @yellow;
 @define-color disk-color @cyan;
 @define-color uptime-color @green;
-@define-color updates-color @orange;
 @define-color quote-color @green;
 @define-color idle-inhibitor-color @foreground;
 @define-color idle-inhibitor-active-color @red;
@@ -307,10 +306,6 @@ window#waybar {
     border-bottom-color: @uptime-color;
 }
 
-#custom-updates {
-    color: @updates-color;
-    border-bottom-color: @updates-color;
-}
 
 #custom-quote {
     color: @quote-color;
