@@ -8,19 +8,21 @@
 
 [keyboard]
 [[keyboard.bindings]]
-key = "Tab"
-mods = "Control"
-action = "SelectNextTab"
+  key = "Tab"
+  mods = "Control"
+  action = "SelectNextTab"
 
+[[keyboard.bindings]]
+  key = "Tab"
+  mods = "Control|Shift"
+  action = "SelectPreviousTab"
 
-key = "Tab"
-mods = "Control|Shift"
-action = "SelectPreviousTab"
-
-key = "T"
+[[keyboard.bindings]]
+  key = "T"
   mods = "Control|Shift"
   action = "CreateNewTab"
 
+[[keyboard.bindings]]
   key = "N"
   mods = "Control|Shift"
   action = "SpawnNewInstance"
@@ -85,6 +87,3 @@ key = "T"
   foreground = '#f1fa8c'
   background = '#282a36'
 
-[colors.footer_bar]
-  background = "#3b4252"
-  foreground = "#eceff4"
