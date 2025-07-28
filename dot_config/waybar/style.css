@@ -132,7 +132,7 @@ window#waybar {
 
 /* Common module styling with border-bottom */
 #mode, #mpd, #custom-weather, #custom-playerctl, #custom-spotify, #clock, #cpu,
-#memory, #temperature, #battery, #network, #pulseaudio,
+#memory, #temperature, #battery, #network, #custom-net-total, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
 #custom-pager, #custom-userhost, #idle_inhibitor, #tray {
     padding: 0 10px;
@@ -275,6 +275,11 @@ window#waybar {
 #network.disconnected {
     color: @network-disconnected-color;
     border-bottom-color: @network-disconnected-color;
+}
+
+#custom-net-total {
+  color: @network-color;
+  border-bottom-color: @network-color;
 }
 
 #pulseaudio {
