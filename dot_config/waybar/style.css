@@ -133,7 +133,7 @@ window#waybar {
 #mode, #mpd, #custom-weather, #custom-playerctl, #custom-spotify, #clock, #cpu,
 #memory, #temperature, #battery, #network, #custom-net-total, #pulseaudio,
 #backlight, #disk, #custom-uptime, #custom-updates, #custom-quote,
-#custom-pager, #custom-userhost, #idle_inhibitor, #tray {
+#custom-pager, #custom-workspace-popup, #custom-userhost, #idle_inhibitor, #tray {
     padding: 0 10px;
     margin: 0 2px;
     border-bottom: 2px solid transparent;
@@ -313,6 +313,11 @@ window#waybar {
 }
 
 #custom-pager {
+    color: @foreground;
+    border-bottom-color: @foreground;
+}
+
+#custom-workspace-popup {
     color: @foreground;
     border-bottom-color: @foreground;
 }

@@ -5,7 +5,7 @@
   "spacing": 1,
   "margin": 0,
 
-  "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
+  "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/workspace-popup", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
   "modules-center": ["custom/userhost", "custom/hostname", "hyprland/window"],
   "modules-right": ["clock", "custom/spotify", "pulseaudio", "bluetooth", "backlight", "network", "custom/net-total", "cpu", "memory", "custom/gpu", "temperature", "battery", "disk", "custom/uptime", "custom/screenshot", "custom/power", "tray"],
 
@@ -107,6 +107,11 @@
     "interval": 1,
     "on-click": "$HOME/.config/waybar/scripts/workspace_switch.sh next",
     "on-click-right": "$HOME/.config/waybar/scripts/workspace_switch.sh prev"
+  },
+
+  "custom/workspace-popup": {
+    "format": "󰕰",
+    "on-click": "~/.config/waybar/workspace-popup.sh"
   },
 
   "custom/userhost": {
