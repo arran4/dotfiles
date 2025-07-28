@@ -189,6 +189,11 @@ bind = ALT,Tab,bringactivetotop,
 #RecordRegion=Meta+Shift+R
 #RecordScreen=Meta+Alt+R
 #RecordWindow=Meta+Ctrl+R
+{{- if and (ne .wfRecorderLocation "") (ne .slurpLocation "") -}}
+bind = SUPER_L SHIFT, R, exec, {{.wfRecorderLocation}} -g "$(slurp)"
+bind = SUPER_L ALT, R, exec, {{.wfRecorderLocation}}
+bind = SUPER_L CTRL, R, exec, {{.wfRecorderLocation}} -g "$(slurp -w)"
+{{- end -}}
 #RectangularRegionScreenShot=Meta+Shift+Print
 #WindowUnderCursorScreenShot=Meta+Ctrl+Print
 

@@ -242,6 +242,10 @@
 {{- if eq $hyprshotLocation "" -}}
   {{- $hyprshotLocation = lookPath "hyprshot" -}}
 {{- end -}}
+{{- $wfRecorderLocation := findExecutable "wf-recorder" $paths -}}
+{{- if eq $wfRecorderLocation "" -}}
+  {{- $wfRecorderLocation = lookPath "wf-recorder" -}}
+{{- end -}}
 
 {{- $anytypeLocation := findExecutable "Anytype.AppImage" $paths -}}
 {{- if eq $anytypeLocation "" -}}
@@ -455,6 +459,12 @@
 {{- else -}}
         {{- writeToStdout (printf "hyprshot installed at %s\n" $hyprshotLocation) -}}
 {{- end -}}
+{{- if not (stat $wfRecorderLocation ) -}}
+        {{- writeToStdout "Can't find wf-recorder \n" -}}
+{{- else -}}
+        {{- $wfRecorderVersion := trim (output $wfRecorderLocation "--version") -}}
+        {{- writeToStdout (printf "wf-recorder installed at %s (%s)\n" $wfRecorderLocation $wfRecorderVersion) -}}
+{{- end -}}
 
 {{- if not (stat $anytypeLocation ) -}}
         {{- writeToStdout "Can't find Anytype.AppImage \n" -}}
@@ -511,6 +521,7 @@
         wlCopyLocation="{{$wlCopyLocation}}"
         hyprpickerLocation="{{$hyprpickerLocation}}"
         hyprshotLocation="{{$hyprshotLocation}}"
+        wfRecorderLocation="{{$wfRecorderLocation}}"
         chromeLocation="{{$chromeLocation}}"
         anytypeLocation="{{$anytypeLocation}}"
         wofiLocation="{{$wofiLocation}}"
