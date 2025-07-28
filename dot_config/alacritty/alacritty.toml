@@ -2,3 +2,14 @@
 [window]
 opacity = 0.9
 
+
+[keyboard]
+[[keyboard.bindings]]
+key = "Tab"
+mods = "Control"
+action = "SelectNextTab"
+
+[[keyboard.bindings]]
+key = "Tab"
+mods = "Control|Shift"
+action = "SelectPreviousTab"
