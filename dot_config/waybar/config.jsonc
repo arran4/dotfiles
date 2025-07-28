@@ -7,7 +7,7 @@
 
   "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
   "modules-center": ["custom/userhost", "hyprland/window"],
-  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
+  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "tray"],
 
     
   "sway/workspaces": {
@@ -115,13 +115,6 @@
     "interval": 600
   },
 
-  "custom/updates": {
-    "format": "󰚰 {}",
-    "exec": "checkupdates | wc -l",
-    "interval": 3600,
-    "on-click": "kitty -e sudo pacman -Syu",
-    "signal": 8
-  },
 
   "custom/uptime": {
     "format": "󰔟 {}",
