@@ -42,6 +42,11 @@
 {{- end -}}
 {{- $anytype := .anytypeLocation -}}
 
+{{- $playerctlPlayer := "spotify" -}}
+{{- if ne .playerctlPlayer "" -}}
+  {{- $playerctlPlayer = .playerctlPlayer -}}
+{{- end -}}
+
 # ------------------------
 # Monitors (customize names + positions)
 # ------------------------
@@ -215,10 +220,10 @@ bind = SUPER_L, L, exec, {{$lockcmd}}
 binde=, XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 1%+
 bindl=, XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-
 bindl=, XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
-# Requires playerctl
-bindl=, XF86AudioPlay, exec, playerctl play-pause
-bindl=, XF86AudioPrev, exec, playerctl previous
-bindl=, XF86AudioNext, exec, playerctl next
+# Requires playerctl (set $playerctlPlayer to target a specific player)
+bindl=, XF86AudioPlay, exec, playerctl --player={{$playerctlPlayer}} play-pause
+bindl=, XF86AudioPrev, exec, playerctl --player={{$playerctlPlayer}} previous
+bindl=, XF86AudioNext, exec, playerctl --player={{$playerctlPlayer}} next
 ## Mouse bindings
 bindm=ALT,mouse:272,movewindow
 bindm=ALT,mouse:273,resizewindow
