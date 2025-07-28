@@ -243,6 +243,11 @@
   {{- $hyprshotLocation = lookPath "hyprshot" -}}
 {{- end -}}
 
+{{- $swaymsgLocation := findExecutable "swaymsg" $paths -}}
+{{- if eq $swaymsgLocation "" -}}
+  {{- $swaymsgLocation = lookPath "swaymsg" -}}
+{{- end -}}
+
 {{- $anytypeLocation := findExecutable "Anytype.AppImage" $paths -}}
 {{- if eq $anytypeLocation "" -}}
   {{- $anytypeLocation = lookPath "Anytype.AppImage" -}}
@@ -455,6 +460,9 @@
 {{- else -}}
         {{- writeToStdout (printf "hyprshot installed at %s\n" $hyprshotLocation) -}}
 {{- end -}}
+{{- if not (stat $swaymsgLocation ) -}}
+        {{- writeToStdout "Can't find swaymsg \n" -}}
+{{- end -}}
 
 {{- if not (stat $anytypeLocation ) -}}
         {{- writeToStdout "Can't find Anytype.AppImage \n" -}}
@@ -511,6 +519,7 @@
         wlCopyLocation="{{$wlCopyLocation}}"
         hyprpickerLocation="{{$hyprpickerLocation}}"
         hyprshotLocation="{{$hyprshotLocation}}"
+        swaymsgLocation="{{$swaymsgLocation}}"
         chromeLocation="{{$chromeLocation}}"
         anytypeLocation="{{$anytypeLocation}}"
         wofiLocation="{{$wofiLocation}}"
