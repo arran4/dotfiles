@@ -1,6 +1,10 @@
 # Alacritty configuration
 [window]
-  opacity = 0.9
+  opacity = 0.8
+  decorations = "full"
+
+[scrolling]
+  history = 100000
 
 [colors.primary]
   background = '#282a36'
