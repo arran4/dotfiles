@@ -7,7 +7,7 @@
 
   "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
   "modules-center": ["custom/userhost", "hyprland/window"],
-  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
+  "modules-right": ["clock", "custom/spotify", "pulseaudio", "bluetooth", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "custom/updates", "tray"],
 
     
   "sway/workspaces": {
@@ -206,6 +206,15 @@
     "format-alt": "{ifname}: {ipaddr}/{cidr}",
     "tooltip-format": "{ifname}: {ipaddr}",
     "on-click": "kitty -e nmtui"
+  },
+
+  "bluetooth": {
+    "format": "{icon} {status}",
+    "format-icons": {
+      "enabled": "󰂯",
+      "disabled": "󰂲",
+      "connected": "󰂰"
+    }
   },
 
   "pulseaudio": {
