@@ -202,15 +202,15 @@ bind = SUPER_L CTRL, R, exec, {{.wfRecorderLocation}} -g "$(slurp -w)"
 #bind = META, PRINT, exec, spectacle -a -c
 {{- if and (ne .grimLocation "") (ne .slurpLocation "") (ne .wlCopyLocation "") (ne .hyprpickerLocation "") -}}
   {{- if ne .hyprshotLocation "" -}}
-bind = SUPER_L, PRINT, exec, hyprshot -m window
-bind = SHIFT, PRINT, exec, hyprshot -m screen
-bind = SUPER_L SHIFT, PRINT, exec, hyprshot -m region
-bind = SUPER_L CTRL, PRINT, exec, hyprshot -m window
+bind = SUPER_L, PRINT, exec, hyprshot -m window -o "$HOME/Pictures/Screenshots"
+bind = SHIFT, PRINT, exec, hyprshot -m screen -o "$HOME/Pictures/Screenshots"
+bind = SUPER_L SHIFT, PRINT, exec, hyprshot -m region -o "$HOME/Pictures/Screenshots"
+bind = SUPER_L CTRL, PRINT, exec, hyprshot -m window -o "$HOME/Pictures/Screenshots"
   {{- else -}}
-bind = SUPER_L, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
-bind = SHIFT, PRINT, exec, grim - | wl-copy
-bind = SUPER_L SHIFT, PRINT, exec, grim -g "$(slurp)" - | wl-copy
-bind = SUPER_L CTRL, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
+bind = SUPER_L, PRINT, exec, grim -g "$(slurp -w)" - | tee "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png" | wl-copy
+bind = SHIFT, PRINT, exec, grim - | tee "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png" | wl-copy
+bind = SUPER_L SHIFT, PRINT, exec, grim -g "$(slurp)" - | tee "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png" | wl-copy
+bind = SUPER_L CTRL, PRINT, exec, grim -g "$(slurp -w)" - | tee "$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png" | wl-copy
   {{- end -}}
 {{- end -}}
 
