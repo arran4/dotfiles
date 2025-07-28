@@ -32,14 +32,7 @@
   {{- $terminal = .xtermLocation -}}
 {{- end -}}
 
-{{- $popupTerm := "" -}}
-{{- if ne .alacrittyLocation "" -}}
-  {{- $popupTerm = .alacrittyLocation -}}
-{{- else if ne .urxvtLocation "" -}}
-  {{- $popupTerm = .urxvtLocation -}}
-{{- else if ne .xtermLocation "" -}}
-  {{- $popupTerm = .xtermLocation -}}
-{{- end -}}
+{{- $popupTerm := $terminal -}}
 {{- $anytype := .anytypeLocation -}}
 
 # ------------------------
@@ -64,6 +57,7 @@ env = LIBVA_DRIVER_NAME,nvidia
 env = XDG_SESSION_TYPE,wayland
 env = GBM_BACKEND,nvidia-drm
 env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+env = XDG_CURRENT_DESKTOP,hyprland
 
 cursor {
     no_hardware_cursors = true
@@ -212,6 +206,9 @@ bind = SUPER_L CTRL, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
   {{- end -}}
 {{- end -}}
 
+# Wallpaper
+bind = SUPER_L, F5, exec, set-wallpaper
+
 # Lock
 #bind = SUPER_L, L, exec, swaylock
 bind = SUPER_L, L, exec, {{$lockcmd}}
@@ -256,16 +253,21 @@ workspace = 9, persistent:true
 # ------------------------
 exec-once = mako
 exec-once = waybar
-exec-once = swaybg -m fill /usr/share/backgrounds/your-wallpaper.jpg
+exec-once = set-wallpaper
 exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=hyprland
 exec-once = {{$clipse}} -listen
 exec-once = solaar -w hide
 exec-once = kded6
 exec-once = kdeconnect-indicator
+{{- if ne .swayidleLocation "" -}}
+exec-once = {{.swayidleLocation}} timeout 300 'swaylock -f -c 000000'
+{{- end -}}
+exec-once = nm-applet
 #exec-once = [workspace special:music silent] flatpak run com.spotify.Client
-windowrulev2 = workspace special:music, class:^(Spotify|spotify|org.spotify.Client)$
+windowrulev2 = workspace special:music, class:^(Spotify|spotify|org.spotify.Client|com.spotify.Client)$
 #exec-once = [workspace special:terminal silent] {{$terminal}}
 {{- if ne $anytype "" -}}
 #exec-once = [workspace special:anytype silent] {{$anytype}}
 {{- end -}}
 windowrulev2 = workspace special:anytype, class:^(Anytype)$
+windowrulev2 = center, class:^(zenity|kdialog)$
