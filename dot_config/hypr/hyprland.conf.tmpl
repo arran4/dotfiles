@@ -32,14 +32,7 @@
   {{- $terminal = .xtermLocation -}}
 {{- end -}}
 
-{{- $popupTerm := "" -}}
-{{- if ne .alacrittyLocation "" -}}
-  {{- $popupTerm = .alacrittyLocation -}}
-{{- else if ne .urxvtLocation "" -}}
-  {{- $popupTerm = .urxvtLocation -}}
-{{- else if ne .xtermLocation "" -}}
-  {{- $popupTerm = .xtermLocation -}}
-{{- end -}}
+{{- $popupTerm := $terminal -}}
 {{- $anytype := .anytypeLocation -}}
 
 # ------------------------
