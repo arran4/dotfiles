@@ -108,6 +108,8 @@ bind = CTRL SUPER_L, T, exec, {{$terminal}}
 #bind = CTRL SUPER_R, T, exec, {{$terminal}}
 # Terminal as alternate: Meta+Return
 bind = SUPER_L, RETURN, exec, {{$terminal}}
+# Floating terminal: Ctrl+Return
+bind = CTRL, RETURN, exec, [float] {{$terminal}}
 #bind = SUPER_R, RETURN, exec, {{$terminal}}
 bind = SUPER_L, SPACE, exec, {{$launcher}}
 #bind = SUPER_R, SPACE, exec, {{$launcher}}
@@ -228,6 +230,7 @@ bindm=ALT,mouse:273,resizewindow
 # ------------------------
 #windowrule = float, ^(pavucontrol|blueman-manager)$
 #windowrule = float, kitty
+# windowrulev2 = float, class:^(alacritty|kitty)$
 
 # ------------------------
 # Workspace rules
