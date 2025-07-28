@@ -2,3 +2,8 @@
 [window]
 opacity = 0.9
 
+[[keyboard.bindings]]
+  key = "T"
+  mods = "Control|Shift"
+  action = "CreateNewTab"
+
