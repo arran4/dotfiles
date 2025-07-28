@@ -6,8 +6,9 @@
   "margin": 0,
 
   "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
+
   "modules-center": ["custom/userhost", "custom/hostname", "hyprland/window"],
-  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "custom/gpu", "temperature", "battery", "disk", "custom/uptime", "tray"],
+  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "custom/gpu", "temperature", "battery", "disk", "custom/uptime", "custom/screenshot", "tray"],
 
   "sway/workspaces": {
     "disable-scroll": true,
@@ -117,6 +118,11 @@
   "custom/hostname": {
     "exec": "hostname",
     "interval": 600
+  },
+
+  "custom/screenshot": {
+    "format": "",
+    "on-click": "grim"
   },
 
   "custom/uptime": {
