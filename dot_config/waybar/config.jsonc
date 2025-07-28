@@ -5,9 +5,40 @@
   "spacing": 1,
   "margin": 0,
 
-  "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/workspace-popup", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
-  "modules-center": ["custom/userhost", "custom/hostname", "hyprland/window"],
-  "modules-right": ["clock", "custom/spotify", "pulseaudio", "bluetooth", "backlight", "network", "custom/net-total", "cpu", "memory", "custom/gpu", "temperature", "battery", "disk", "custom/sysinfo", "custom/uptime", "custom/screenshot", "custom/power", "tray"],
+  "modules-left": [
+    "sway/workspaces",
+    "hyprland/workspaces",
+    "custom/workspace-popup",
+    "custom/pager",
+    "sway/mode",
+    "custom/weather",
+    "custom/quote"
+  ],
+  "modules-center": [
+    "custom/userhost",
+    "custom/hostname",
+    "hyprland/window"
+  ],
+  "modules-right": [
+    "clock",
+    "custom/spotify",
+    "pulseaudio",
+    "bluetooth",
+    "backlight",
+    "network",
+    "custom/net-total",
+    "cpu",
+    "memory",
+    "custom/gpu",
+    "temperature",
+    "battery",
+    "disk",
+    "custom/sysinfo",
+    "custom/uptime",
+    "custom/screenshot",
+    "custom/power",
+    "tray"
+  ],
 
   "sway/workspaces": {
     "disable-scroll": true,
