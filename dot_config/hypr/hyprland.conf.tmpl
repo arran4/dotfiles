@@ -39,10 +39,7 @@
 {{- $kdeconnectIndicator := .kdeconnectIndicatorLocation -}}
 {{- $nmApplet := .nmAppletLocation -}}
 
-{{- $playerctlPlayer := "spotify" -}}
-{{- if ne .playerctlPlayer "" -}}
-  {{- $playerctlPlayer = .playerctlPlayer -}}
-{{- end -}}
+{{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") -}}
 
 # ------------------------
 # Monitors (customize names + positions)
