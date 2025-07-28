@@ -207,6 +207,9 @@ bind = SUPER_L CTRL, PRINT, exec, grim -g "$(slurp -w)" - | wl-copy
   {{- end -}}
 {{- end -}}
 
+# Wallpaper
+bind = SUPER_L, F5, exec, set-wallpaper
+
 # Lock
 #bind = SUPER_L, L, exec, swaylock
 bind = SUPER_L, L, exec, {{$lockcmd}}
@@ -251,7 +254,7 @@ workspace = 9, persistent:true
 # ------------------------
 exec-once = mako
 exec-once = waybar
-exec-once = swaybg -m fill /usr/share/backgrounds/your-wallpaper.jpg
+exec-once = set-wallpaper
 exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=hyprland
 exec-once = {{$clipse}} -listen
 exec-once = solaar -w hide
