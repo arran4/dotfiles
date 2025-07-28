@@ -63,3 +63,6 @@
   foreground = '#f1fa8c'
   background = '#282a36'
 
+[colors.footer_bar]
+background = "#3b4252"
+foreground = "#eceff4"
