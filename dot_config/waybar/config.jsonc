@@ -7,9 +7,8 @@
 
   "modules-left": ["sway/workspaces", "hyprland/workspaces", "custom/pager", "sway/mode", "custom/weather", "custom/quote"],
   "modules-center": ["custom/userhost", "hyprland/window"],
-  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "temperature", "battery", "disk", "custom/uptime", "tray"],
+  "modules-right": ["clock", "custom/spotify", "pulseaudio", "backlight", "network", "cpu", "memory", "custom/gpu", "temperature", "battery", "disk", "custom/uptime", "tray"],
 
-    
   "sway/workspaces": {
     "disable-scroll": true,
     "all-outputs": true,
@@ -169,6 +168,12 @@
     "format": "󰍛 {}%",
     "interval": 1,
     "on-click": "kitty -e htop"
+  },
+
+  "custom/gpu": {
+    "format": "󰢮 {}",
+    "exec": "$HOME/.config/waybar/scripts/gpu.sh",
+    "interval": 5
   },
 
   "temperature": {
