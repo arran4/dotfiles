@@ -98,6 +98,51 @@ gestures {
 # ------------------------
 # Keybindings
 # ------------------------
+{{- if eq .hyprland_features "quickshell" }}
+exec = hyprctl dispatch submap global
+submap = global
+
+# Quickshell keybinds
+# Launcher
+bindi = Super, Super_L, global, caelestia:launcher
+bindin = Super, catchall, global, caelestia:launcherInterrupt
+bindin = Super, mouse:272, global, caelestia:launcherInterrupt
+bindin = Super, mouse:273, global, caelestia:launcherInterrupt
+bindin = Super, mouse:274, global, caelestia:launcherInterrupt
+bindin = Super, mouse:275, global, caelestia:launcherInterrupt
+bindin = Super, mouse:276, global, caelestia:launcherInterrupt
+bindin = Super, mouse:277, global, caelestia:launcherInterrupt
+bindin = Super, mouse_up, global, caelestia:launcherInterrupt
+bindin = Super, mouse_down, global, caelestia:launcherInterrupt
+
+# Misc
+bind = Ctrl+Alt, Delete, global, caelestia:session
+bindl = Ctrl+Alt, C, global, caelestia:clearNotifs
+bind = Super, K, global, caelestia:showall
+bind = Super, L, global, caelestia:lock
+
+# Restore lock
+bindl = Super+Alt, L, exec, caelestia shell -d
+bindl = Super+Alt, L, global, caelestia:lock
+
+# Brightness
+bindl = , XF86MonBrightnessUp, global, caelestia:brightnessUp
+bindl = , XF86MonBrightnessDown, global, caelestia:brightnessDown
+
+# Media
+bindl = Ctrl+Super, Space, global, caelestia:mediaToggle
+bindl = , XF86AudioPlay, global, caelestia:mediaToggle
+bindl = , XF86AudioPause, global, caelestia:mediaToggle
+bindl = Ctrl+Super, Equal, global, caelestia:mediaNext
+bindl = , XF86AudioNext, global, caelestia:mediaNext
+bindl = Ctrl+Super, Minus, global, caelestia:mediaPrev
+bindl = , XF86AudioPrev, global, caelestia:mediaPrev
+bindl = , XF86AudioStop, global, caelestia:mediaStop
+
+# Kill/restart
+bindr = Ctrl+Super+Shift, R, exec, qs -c caelestia kill
+bindr = Ctrl+Super+Alt, R, exec, qs -c caelestia kill; caelestia shell -d
+{{- end }}
 # Terminal launch: Ctrl+Meta+T
 bind = CTRL SUPER_L, T, exec, {{$terminal}}
 #bind = CTRL SUPER_R, T, exec, {{$terminal}}
@@ -216,9 +261,11 @@ bind = SUPER_L CTRL, PRINT, exec, grim -g "$(slurp -w)" - | tee "$HOME/Pictures/
 bind = SUPER_L, F5, exec, set-wallpaper
 
 # Lock
+{{- if ne .hyprland_features "quickshell" }}
 #bind = SUPER_L, L, exec, swaylock
 bind = SUPER_L, L, exec, {{$lockcmd}}
 #bind = SUPER_R, L, exec, {{$lockcmd}}
+{{- end }}
 # Media keys
 binde=, XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 1%+
 bindl=, XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-
