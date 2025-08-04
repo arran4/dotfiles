@@ -34,6 +34,7 @@ Highlights include:
 - Zsh and Bash setups with a shared prompt and a library of useful aliases (see `.chezmoitemplates`).
 - `.gitconfig.tmpl` that wires in the best available editor, color output and credential helpers.
 - Minimal tmux config with mouse mode and zsh as the default shell.
+- Quickshell configuration derived from [caelestia-dots/shell](https://github.com/caelestia-dots/shell) with Nix-only pieces stripped.
 - Example `.vimrc` and support files for Vim or Neovim.
 - OS-aware templates (`.chezmoi.toml.tmpl`) that select paths and tools based on your platform.
 - Scripts for one-time tasks located in `.chezmoiscripts/` that run automatically on the first apply.
