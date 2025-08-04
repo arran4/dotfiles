@@ -602,6 +602,7 @@
         terminfosearch = [{{range $each := $terminfosearch}}"{{$each}}", {{end}}]
         termfallback = [{{range $each := $termfallback}}"{{$each}}", {{end}}]
         paths = [{{range $each := $paths}}"{{$each}}", {{end}}]
+        hyprland_features = "quickshell"
 
 [merge]
 {{if stat $nvimLocation -}}

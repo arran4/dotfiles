@@ -259,8 +259,12 @@ workspace = 9, persistent:true
 # ------------------------
 # Autostart
 # ------------------------
+{{- if eq .hyprland_features "quickshell" }}
+exec-once = ~/.config/quickshell/run.sh
+{{- else }}
 exec-once = mako
 exec-once = waybar
+{{- end }}
 exec-once = set-wallpaper
 exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=hyprland
 exec-once = {{$clipse}} -listen
