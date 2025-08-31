@@ -1,6 +1,6 @@
 pragma ComponentBehavior: Bound
 
-import qs.services
+import qs.components
 import qs.config
 import "popouts" as BarPopouts
 import Quickshell
@@ -9,70 +9,74 @@ import QtQuick
 Item {
   id: root
 
-  required property ShellScreen screen
-  required property PersistentProperties visibilities
-  required property BarPopouts.Wrapper popouts
+    required property ShellScreen screen
+    required property PersistentProperties visibilities
+    required property BarPopouts.Wrapper popouts
 
-  readonly property int exclusiveZone: Config.bar.persistent || visibilities.bar ? content.implicitWidth : Config.border.thickness
-  property bool isHovered
+    readonly property int padding: Math.max(Appearance.padding.smaller, Config.border.thickness)
+    readonly property int contentWidth: Config.bar.sizes.innerWidth + padding * 2
+    readonly property int exclusiveZone: Config.bar.persistent || visibilities.bar ? contentWidth : Config.border.thickness
+    readonly property bool shouldBeVisible: Config.bar.persistent || visibilities.bar || isHovered
+    property bool isHovered
 
-  function checkPopout(y: real): void {
-  content.item?.checkPopout(y);
-  }
-
-  visible: width > Config.border.thickness
-  implicitWidth: Config.border.thickness
-  implicitHeight: content.implicitHeight
-
-  states: State {
-  name: "visible"
-  when: Config.bar.persistent || root.visibilities.bar || root.isHovered
-
-  PropertyChanges {
-    root.implicitWidth: content.implicitWidth
-  }
-  }
-
-  transitions: [
-  Transition {
-    from: ""
-    to: "visible"
-
-    NumberAnimation {
-    target: root
-    property: "implicitWidth"
-    duration: Appearance.anim.durations.expressiveDefaultSpatial
-    easing.type: Easing.BezierSpline
-    easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+    function checkPopout(y: real): void {
+        content.item?.checkPopout(y);
     }
-  },
-  Transition {
-    from: "visible"
-    to: ""
 
-    NumberAnimation {
-    target: root
-    property: "implicitWidth"
-    duration: Appearance.anim.durations.normal
-    easing.type: Easing.BezierSpline
-    easing.bezierCurve: Appearance.anim.curves.emphasized
+    function handleWheel(y: real, angleDelta: point): void {
+        content.item?.handleWheel(y, angleDelta);
     }
-  }
-  ]
 
-  Loader {
-  id: content
+    visible: width > Config.border.thickness
+    implicitWidth: Config.border.thickness
 
-  Component.onCompleted: active = Qt.binding(() => Config.bar.persistent || root.visibilities.bar || root.isHovered || root.visible)
+    states: State {
+        name: "visible"
+        when: root.shouldBeVisible
 
-  anchors.top: parent.top
-  anchors.bottom: parent.bottom
-  anchors.right: parent.right
+        PropertyChanges {
+            root.implicitWidth: root.contentWidth
+        }
+    }
 
-  sourceComponent: Bar {
-    screen: root.screen
-    visibilities: root.visibilities
-    popouts: root.popouts
-  }
-  }
+    transitions: [
+        Transition {
+            from: ""
+            to: "visible"
+
+            Anim {
+                target: root
+                property: "implicitWidth"
+                duration: Appearance.anim.durations.expressiveDefaultSpatial
+                easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+            }
+        },
+        Transition {
+            from: "visible"
+            to: ""
+
+            Anim {
+                target: root
+                property: "implicitWidth"
+                easing.bezierCurve: Appearance.anim.curves.emphasized
+            }
+        }
+    ]
+
+    Loader {
+        id: content
+
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+
+        active: root.shouldBeVisible || root.visible
+
+        sourceComponent: Bar {
+            width: root.contentWidth
+            screen: root.screen
+            visibilities: root.visibilities
+            popouts: root.popouts
+        }
+    }
 }

@@ -1,0 +1,21 @@
+name: Restore QuickShell assets
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore binary assets
+        run: ./dot_config/quickshell/scripts/restore-assets.sh
+      - name: Remove workflow
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git rm .github/workflows/restore-quickshell-assets.yml
+          git commit -m "chore: remove restore QuickShell assets workflow"
+          git push

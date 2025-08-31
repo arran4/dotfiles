@@ -1,0 +1,8 @@
+.direnv
+/result
+/.qmlls.ini
+build/
+assets/bongocat.gif
+assets/kurukuru.gif
+assets/dino.png
+assets/shaders/opacitymask.frag.qsb

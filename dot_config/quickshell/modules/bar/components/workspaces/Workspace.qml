@@ -1,4 +1,4 @@
-import qs.widgets
+import qs.components
 import qs.services
 import qs.utils
 import qs.config
@@ -6,101 +6,96 @@ import Quickshell
 import QtQuick
 import QtQuick.Layouts
 
-Item {
+ColumnLayout {
   id: root
 
-  required property int index
-  required property var occupied
-  required property int groupOffset
+    required property int index
+    required property int activeWsId
+    required property var occupied
+    required property int groupOffset
 
-  readonly property bool isWorkspace: true // Flag for finding workspace children
-  // Unanimated prop for others to use as reference
-  readonly property real size: childrenRect.height + (hasWindows ? Appearance.padding.smaller : 0)
+    readonly property bool isWorkspace: true // Flag for finding workspace children
+    // Unanimated prop for others to use as reference
+    readonly property int size: implicitHeight + (hasWindows ? Appearance.padding.small : 0)
 
-  readonly property int ws: groupOffset + index + 1
-  readonly property bool isOccupied: occupied[ws] ?? false
-  readonly property bool hasWindows: isOccupied && Config.bar.workspaces.showWindows
+    readonly property int ws: groupOffset + index + 1
+    readonly property bool isOccupied: occupied[ws] ?? false
+    readonly property bool hasWindows: isOccupied && Config.bar.workspaces.showWindows
 
-  Layout.preferredWidth: childrenRect.width
-  Layout.preferredHeight: size
+    Layout.alignment: Qt.AlignHCenter
+    Layout.preferredHeight: size
 
-  StyledText {
-  id: indicator
-
-  readonly property string label: Config.bar.workspaces.label || root.ws
-  readonly property string occupiedLabel: Config.bar.workspaces.occupiedLabel || label
-  readonly property string activeLabel: Config.bar.workspaces.activeLabel || (root.isOccupied ? occupiedLabel : label)
-
-  animate: true
-  text: Hyprland.activeWsId === root.ws ? activeLabel : root.isOccupied ? occupiedLabel : label
-  color: Config.bar.workspaces.occupiedBg || root.isOccupied || Hyprland.activeWsId === root.ws ? Colours.palette.m3onSurface : Colours.palette.m3outlineVariant
-  horizontalAlignment: StyledText.AlignHCenter
-  verticalAlignment: StyledText.AlignVCenter
-
-  width: Config.bar.sizes.innerHeight
-  height: Config.bar.sizes.innerHeight
-  }
-
-  Loader {
-  id: windows
-
-  active: Config.bar.workspaces.showWindows
-  asynchronous: true
-
-  anchors.horizontalCenter: indicator.horizontalCenter
-  anchors.top: indicator.bottom
-  anchors.topMargin: -Config.bar.sizes.innerHeight / 10
-
-  sourceComponent: Column {
     spacing: 0
 
-    add: Transition {
-    Anim {
-      properties: "scale"
-      from: 0
-      to: 1
-      easing.bezierCurve: Appearance.anim.curves.standardDecel
-    }
+    StyledText {
+        id: indicator
+
+        Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+        Layout.preferredHeight: Config.bar.sizes.innerWidth - Appearance.padding.small * 2
+
+        animate: true
+        text: {
+            const ws = Hypr.workspaces.values.find(w => w.id === root.ws);
+            const label = Config.bar.workspaces.label || (!ws || ws.name == root.ws ? root.ws : ws.name[0].toUpperCase());
+            const occupiedLabel = Config.bar.workspaces.occupiedLabel || label;
+            const activeLabel = Config.bar.workspaces.activeLabel || (root.isOccupied ? occupiedLabel : label);
+            return root.activeWsId === root.ws ? activeLabel : root.isOccupied ? occupiedLabel : label;
+        }
+        color: Config.bar.workspaces.occupiedBg || root.isOccupied || root.activeWsId === root.ws ? Colours.palette.m3onSurface : Colours.layer(Colours.palette.m3outlineVariant, 2)
+        verticalAlignment: Qt.AlignVCenter
     }
 
-    move: Transition {
-    Anim {
-      properties: "scale"
-      to: 1
-      easing.bezierCurve: Appearance.anim.curves.standardDecel
-    }
-    Anim {
-      properties: "x,y"
-    }
+    Loader {
+        id: windows
+
+        Layout.alignment: Qt.AlignHCenter
+        Layout.fillHeight: true
+        Layout.topMargin: -Config.bar.sizes.innerWidth / 10
+
+        visible: active
+        active: root.hasWindows
+        asynchronous: true
+
+        sourceComponent: Column {
+            spacing: 0
+
+            add: Transition {
+                Anim {
+                    properties: "scale"
+                    from: 0
+                    to: 1
+                    easing.bezierCurve: Appearance.anim.curves.standardDecel
+                }
+            }
+
+            move: Transition {
+                Anim {
+                    properties: "scale"
+                    to: 1
+                    easing.bezierCurve: Appearance.anim.curves.standardDecel
+                }
+                Anim {
+                    properties: "x,y"
+                }
+            }
+
+            Repeater {
+                model: ScriptModel {
+                    values: Hypr.toplevels.values.filter(c => c.workspace?.id === root.ws)
+                }
+
+                MaterialIcon {
+                    required property var modelData
+
+                    grade: 0
+                    text: Icons.getAppCategoryIcon(modelData.lastIpcObject.class, "terminal")
+                    color: Colours.palette.m3onSurfaceVariant
+                }
+            }
+        }
     }
 
-    Repeater {
-    model: ScriptModel {
-      values: Hyprland.toplevels.values.filter(c => c.workspace?.id === root.ws)
+    Behavior on Layout.preferredHeight {
+        Anim {}
     }
-
-    MaterialIcon {
-      required property var modelData
-
-      grade: 0
-      text: Icons.getAppCategoryIcon(modelData.lastIpcObject.class, "terminal")
-      color: Colours.palette.m3onSurfaceVariant
-    }
-    }
-  }
-  }
-
-  Behavior on Layout.preferredWidth {
-  Anim {}
-  }
-
-  Behavior on Layout.preferredHeight {
-  Anim {}
-  }
-
-  component Anim: NumberAnimation {
-  duration: Appearance.anim.durations.normal
-  easing.type: Easing.BezierSpline
-  easing.bezierCurve: Appearance.anim.curves.standard
-  }
 }
