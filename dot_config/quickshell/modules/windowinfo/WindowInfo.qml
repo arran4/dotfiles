@@ -1,4 +1,4 @@
-import qs.widgets
+import qs.components
 import qs.services
 import qs.config
 import Quickshell
@@ -9,56 +9,56 @@ import QtQuick.Layouts
 Item {
   id: root
 
-  required property ShellScreen screen
-  required property HyprlandToplevel client
+    required property ShellScreen screen
+    required property HyprlandToplevel client
 
-  implicitWidth: child.implicitWidth
-  implicitHeight: screen.height * Config.winfo.sizes.heightMult
+    implicitWidth: child.implicitWidth
+    implicitHeight: screen.height * Config.winfo.sizes.heightMult
 
-  RowLayout {
-  id: child
+    RowLayout {
+        id: child
 
-  anchors.fill: parent
-  anchors.margins: Appearance.padding.large
+        anchors.fill: parent
+        anchors.margins: Appearance.padding.large
 
-  spacing: Appearance.spacing.normal
+        spacing: Appearance.spacing.normal
 
-  Preview {
-    screen: root.screen
-    client: root.client
-  }
+        Preview {
+            screen: root.screen
+            client: root.client
+        }
 
-  ColumnLayout {
-    spacing: Appearance.spacing.normal
+        ColumnLayout {
+            spacing: Appearance.spacing.normal
 
-    Layout.preferredWidth: Config.winfo.sizes.detailsWidth
-    Layout.fillHeight: true
+            Layout.preferredWidth: Config.winfo.sizes.detailsWidth
+            Layout.fillHeight: true
 
-    StyledRect {
-    Layout.fillWidth: true
-    Layout.fillHeight: true
+            StyledRect {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-    color: Colours.palette.m3surfaceContainer
-    radius: Appearance.rounding.normal
+                color: Colours.tPalette.m3surfaceContainer
+                radius: Appearance.rounding.normal
 
-    Details {
-      client: root.client
+                Details {
+                    client: root.client
+                }
+            }
+
+            StyledRect {
+                Layout.fillWidth: true
+                Layout.preferredHeight: buttons.implicitHeight
+
+                color: Colours.tPalette.m3surfaceContainer
+                radius: Appearance.rounding.normal
+
+                Buttons {
+                    id: buttons
+
+                    client: root.client
+                }
+            }
+        }
     }
-    }
-
-    StyledRect {
-    Layout.fillWidth: true
-    Layout.preferredHeight: buttons.implicitHeight
-
-    color: Colours.palette.m3surfaceContainer
-    radius: Appearance.rounding.normal
-
-    Buttons {
-      id: buttons
-
-      client: root.client
-    }
-    }
-  }
-  }
 }

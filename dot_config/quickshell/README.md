@@ -23,14 +23,51 @@ https://github.com/user-attachments/assets/0840f496-575c-4ca6-83a8-87bb01a85c5f
 > This repo is for the desktop shell of the caelestia dots. If you want installation instructions
 > for the entire dots, head to [the main repo](https://github.com/caelestia-dots/caelestia) instead.
 
-### Package manager
+### Arch linux
 
 > [!NOTE]
 > If you want to make your own changes/tweaks to the shell do NOT edit the files installed by the AUR
 > package. Instead, follow the instructions in the [manual installation section](#manual-installation).
 
-The shell is available from the AUR as `caelestia-shell-git`. You can install it with an AUR helper
+The shell is available from the AUR as `caelestia-shell`. You can install it with an AUR helper
 like [`yay`](https://github.com/Jguer/yay) or manually downloading the PKGBUILD and running `makepkg -si`.
+
+A package following the latest commit also exists as `caelestia-shell-git`. This is bleeding edge
+and likely to be unstable/have bugs. Regular users are recommended to use the stable package
+(`caelestia-shell`).
+
+### Nix
+
+You can run the shell directly via `nix run`:
+
+```sh
+nix run github:caelestia-dots/shell
+```
+
+Or add it to your system configuration:
+
+```nix
+{
+  inputs = {
+  nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    caelestia-shell = {
+      url = "github:caelestia-dots/shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+}
+```
+
+The package is available as `caelestia-shell.packages.<system>.default`, which can be added to your
+`environment.systemPackages`, `users.users.<username>.packages`, `home.packages` if using home-manager,
+or a devshell. The shell can then be run via `caelestia-shell`.
+
+> [!TIP]
+> The default package does not have the CLI enabled by default, which is required for full funcionality.
+> To enable the CLI, use the `with-cli` package.
+
+For home-manager, you can also use the Caelestia's home manager module (explained in [configuring](https://github.com/caelestia-dots/shell?tab=readme-ov-file#configuring)) that installs and configures the shell and the CLI.
 
 ### Manual installation
 
@@ -51,25 +88,46 @@ Dependencies:
 -   `qt6-declarative`
 -   `gcc-libs`
 -   [`material-symbols`](https://fonts.google.com/icons)
--   [`jetbrains-mono-nerd`](https://www.nerdfonts.com/font-downloads)
--   [`grim`](https://gitlab.freedesktop.org/emersion/grim)
+-   [`caskaydia-cove-nerd`](https://www.nerdfonts.com/font-downloads)
 -   [`swappy`](https://github.com/jtheoof/swappy)
 -   [`libqalculate`](https://github.com/Qalculate/libqalculate)
+-   [`bash`](https://www.gnu.org/software/bash)
+-   `qt6-base`
+-   `qt6-declarative`
+
+Build dependencies:
+
+-   [`cmake`](https://cmake.org)
+-   [`ninja`](https://github.com/ninja-build/ninja)
 
 To install the shell manually, install all dependencies and clone this repo to `$XDG_CONFIG_HOME/quickshell/caelestia`.
-Then compile the beat detector and install it to `/usr/lib/caelestia/beat_detector`.
+Then simply build and install using `cmake`.
 
 ```sh
 cd $XDG_CONFIG_HOME/quickshell
 git clone https://github.com/caelestia-dots/shell.git caelestia
-g++ -std=c++17 -Wall -Wextra -I/usr/include/pipewire-0.3 -I/usr/include/spa-0.2 -I/usr/include/aubio -o beat_detector caelestia/assets/beat_detector.cpp -lpipewire-0.3 -laubio
-sudo mv beat_detector /usr/lib/caelestia/beat_detector
+
+cd caelestia
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/
+cmake --build build
+sudo cmake --install build
 ```
 
 > [!TIP]
-> The beat detector can actually be installed anywhere. However, if it is not installed to the default
-> location of `/usr/lib/caelestia/beat_detector`, you must set the environment variable `CAELESTIA_BD_PATH`
-> to wherever you have installed the beat detector.
+> You can customise the installation location via the `cmake` flags `INSTALL_LIBDIR`, `INSTALL_QMLDIR` and
+> `INSTALL_QSCONFDIR` for the libraries (the beat detector), QML plugin and Quickshell config directories
+> respectively. If changing the library directory, remember to set the `CAELESTIA_LIB_DIR` environment
+> variable to the custom directory when launching the shell.
+>
+> e.g. installing to `~/.config/quickshell/caelestia` for easy local changes:
+>
+> ```sh
+> mkdir -p ~/.config/quickshell/caelestia
+> cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/ -DINSTALL_QSCONFDIR=~/.config/quickshell/caelestia
+> cmake --build build
+> sudo cmake --install build
+> sudo chown -R $USER ~/.config/quickshell/caelestia
+> ```
 
 ## Usage
 
@@ -145,104 +203,283 @@ git pull
 
 ## Configuring
 
-All configuration options are in `~/.config/caelestia/shell.json`.
+All configuration options should be put in `~/.config/caelestia/shell.json`. This file is _not_ created by
+default, you must create it manually.
+
+For NixOS users, a home manager module is also available.
+
+<details><summary><code>home.nix</code></summary>
+
+```nix
+programs.caelestia = {
+  enable = true;
+  systemd.enable = false; # if you prefer starting from your compositor
+  settings = {
+    bar.status = {
+      showBattery = false;
+    };
+    paths.wallpaperDir = "~/Images";
+  };
+  cli = {
+    enable = true; # Also add caelestia-cli to path
+    settings = {
+      theme.enableGtk = false;
+    };
+  };
+};
+```
+
+The module automatically adds Caelestia shell to the path with **full functionality**. The CLI is not required, however you have the option to enable and configure it.
+
+</details>
+
+> [!NOTE]
+> The example configuration only includes recommended configuration options. For more advanced customisation
+> such as modifying the size of individual items or changing constants in the code, there are some other
+> options which can be found in the source files in the `config` directory.
 
 <details><summary>Example configuration</summary>
 
 ```json
 {
-  "general": {
-  "apps": {
-    "terminal": ["foot"],
-    "audio": ["pavucontrol"]
-  }
-  },
-  "background": {
-  "enabled": true
-  },
-  "bar": {
-  "dragThreshold": 20,
-  "persistent": true,
-  "showOnHover": true,
-  "status": {
-    "showAudio": false,
-    "showBattery": true,
-    "showBluetooth": true,
-    "showKbLayout": false,
-    "showNetwork": true
-  },
-  "workspaces": {
-    "activeIndicator": true,
-    "activeLabel": "󰮯 ",
-    "activeTrail": false,
-    "label": "  ",
-    "occupiedBg": false,
-    "occupiedLabel": "󰮯 ",
-    "rounded": true,
-    "showWindows": true,
-    "shown": 5
-  }
-  },
-  "border": {
-  "rounding": 25,
-  "thickness": 10
-  },
-  "dashboard": {
-  "mediaUpdateInterval": 500,
-  "visualiserBars": 45
-  },
-  "launcher": {
-  "actionPrefix": ">",
-  "dragThreshold": 50,
-  "vimKeybinds": false,
-  "enableDangerousActions": false,
-  "maxShown": 8,
-  "maxWallpapers": 9,
-  "useFuzzy": {
-    "apps": false,
-    "actions": false,
-    "schemes": false,
-    "variants": false,
-    "wallpapers": false
-  }
-  },
-  "lock": {
-  "maxNotifs": 5
-  },
-  "notifs": {
-  "actionOnClick": false,
-  "clearThreshold": 0.3,
-  "defaultExpireTimeout": 5000,
-  "expandThreshold": 20,
-  "expire": false
-  },
-  "osd": {
-  "hideDelay": 2000
-  },
-  "paths": {
-  "mediaGif": "root:/assets/bongocat.gif",
-  "sessionGif": "root:/assets/kurukuru.gif",
-  "wallpaperDir": "~/Pictures/Wallpapers"
-  },
-  "services": {
-  "weatherLocation": "10,10",
-  "useFahrenheit": false,
-  "useTwelveHourClock": false
-  },
-  "session": {
-  "dragThreshold": 30,
-  "vimKeybinds": false,
-  "commands": {
-    "logout": ["loginctl", "terminate-user", ""],
-    "shutdown": ["systemctl", "poweroff"],
-    "hibernate": ["systemctl", "hibernate"],
-    "reboot": ["systemctl", "reboot"]
-  }
-  }
+    "appearance": {
+        "anim": {
+            "durations": {
+                "scale": 1
+            }
+        },
+        "font": {
+            "family": {
+                "material": "Material Symbols Rounded",
+                "mono": "CaskaydiaCove NF",
+                "sans": "Rubik"
+            },
+            "size": {
+                "scale": 1
+            }
+        },
+        "padding": {
+            "scale": 1
+        },
+        "rounding": {
+            "scale": 1
+        },
+        "spacing": {
+            "scale": 1
+        },
+        "transparency": {
+            "enabled": false,
+            "base": 0.85,
+            "layers": 0.4
+        }
+    },
+    "general": {
+        "apps": {
+            "terminal": ["foot"],
+            "audio": ["pavucontrol"]
+        }
+    },
+    "background": {
+        "desktopClock": {
+            "enabled": false
+        },
+        "enabled": true,
+        "visualiser": {
+            "enabled": false,
+            "autoHide": true,
+            "rounding": 1,
+            "spacing": 1
+        }
+    },
+    "bar": {
+        "clock": {
+            "showIcon": true
+        },
+        "dragThreshold": 20,
+        "entries": [
+            {
+                "id": "logo",
+                "enabled": true
+            },
+            {
+                "id": "workspaces",
+                "enabled": true
+            },
+            {
+                "id": "spacer",
+                "enabled": true
+            },
+            {
+                "id": "activeWindow",
+                "enabled": true
+            },
+            {
+                "id": "spacer",
+                "enabled": true
+            },
+            {
+                "id": "tray",
+                "enabled": true
+            },
+            {
+                "id": "clock",
+                "enabled": true
+            },
+            {
+                "id": "statusIcons",
+                "enabled": true
+            },
+            {
+                "id": "power",
+                "enabled": true
+            },
+            {
+                "id": "idleInhibitor",
+                "enabled": false
+            }
+        ],
+        "persistent": true,
+        "showOnHover": true,
+        "status": {
+            "showAudio": false,
+            "showBattery": true,
+            "showBluetooth": true,
+            "showKbLayout": false,
+            "showNetwork": true
+        },
+        "tray": {
+            "background": false,
+            "recolour": false
+        },
+        "workspaces": {
+            "activeIndicator": true,
+            "activeLabel": "󰮯",
+            "activeTrail": false,
+            "label": "  ",
+            "occupiedBg": false,
+            "occupiedLabel": "󰮯",
+            "perMonitorWorkspaces": true,
+            "showWindows": true,
+            "shown": 5
+        }
+    },
+    "border": {
+        "rounding": 25,
+        "thickness": 10
+    },
+    "dashboard": {
+        "enabled": true,
+        "dragThreshold": 50,
+        "mediaUpdateInterval": 500,
+        "showOnHover": true
+    },
+    "launcher": {
+        "actionPrefix": ">",
+        "dragThreshold": 50,
+        "vimKeybinds": false,
+        "enableDangerousActions": false,
+        "maxShown": 8,
+        "maxWallpapers": 9,
+        "specialPrefix": "@",
+        "useFuzzy": {
+            "apps": false,
+            "actions": false,
+            "schemes": false,
+            "variants": false,
+            "wallpapers": false
+        },
+        "showOnHover": false
+    },
+    "lock": {
+        "recolourLogo": false
+    },
+    "notifs": {
+        "actionOnClick": false,
+        "clearThreshold": 0.3,
+        "defaultExpireTimeout": 5000,
+        "expandThreshold": 20,
+        "expire": false
+    },
+    "osd": {
+        "enabled": true,
+        "enableBrightness": true,
+        "enableMicrophone": false,
+        "hideDelay": 2000
+    },
+    "paths": {
+        "mediaGif": "root:/assets/bongocat.gif",
+        "sessionGif": "root:/assets/kurukuru.gif",
+        "wallpaperDir": "~/Pictures/Wallpapers"
+    },
+    "services": {
+        "audioIncrement": 0.1,
+        "defaultPlayer": "Spotify",
+        "gpuType": "",
+        "playerAliases": [
+            { "from": "com.github.th_ch.youtube_music", "to": "YT Music" }
+        ],
+        "weatherLocation": "",
+        "useFahrenheit": false,
+        "useTwelveHourClock": false,
+        "smartScheme": true,
+        "visualiserBars": 45
+    },
+    "session": {
+        "dragThreshold": 30,
+        "vimKeybinds": false,
+        "commands": {
+            "logout": ["loginctl", "terminate-user", ""],
+            "shutdown": ["systemctl", "poweroff"],
+            "hibernate": ["systemctl", "hibernate"],
+            "reboot": ["systemctl", "reboot"]
+        }
+    }
 }
 ```
 
 </details>
+
+## FAQ
+
+### My screen is flickering, help pls!
+
+Try disabling VRR in the hyprland config. You can do this by adding the following to `~/.config/caelestia/hypr-user.conf`:
+
+```conf
+misc {
+    vrr = 0
+}
+```
+
+### I want to make my own changes to the hyprland config!
+
+You can add your custom hyprland configs to `~/.config/caelestia/hypr-user.conf`.
+
+### I want to make my own changes to other stuff!
+
+See the [manual installation](https://github.com/caelestia-dots/shell?tab=readme-ov-file#manual-installation) section
+for the corresponding repo.
+
+### I want to disable XXX feature!
+
+Please read the [configuring](https://github.com/caelestia-dots/shell?tab=readme-ov-file#configuring) section in the readme.
+If there is no corresponding option, make feature request.
+
+### How do I make my colour scheme change with my wallpaper?
+
+Set a wallpaper via the launcher or `caelestia wallpaper` and set the scheme to the dynamic scheme via the launcher
+or `caelestia scheme set`. e.g.
+
+```sh
+caelestia wallpaper -f <path/to/file>
+caelestia scheme set -n dynamic
+```
+
+### My wallpapers aren't showing up in the launcher!
+
+The launcher pulls wallpapers from `~/Pictures/Wallpapers` by default. You can change this in the config. Additionally,
+the launcher only shows an odd number of wallpapers at one time. If you only have 2 wallpapers, consider getting more
+(or just putting one).
 
 ## Credits
 
@@ -257,7 +494,7 @@ which helped me a lot with learning how to use Quickshell.
 
 Finally another thank you to all the configs I took inspiration from (only one for now):
 
--   [Axenide/Ax-Shell](https://github.com/Axenide/Ax-Shell)
+- [Axenide/Ax-Shell](https://github.com/Axenide/Ax-Shell)
 
 ## Stonks 📈
 

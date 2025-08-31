@@ -1,203 +1,193 @@
-import qs.widgets
+import qs.components
+import qs.components.effects
+import qs.components.images
 import qs.services
 import qs.config
 import qs.utils
 import Quickshell
-import Quickshell.Io
 import QtQuick
-import QtQuick.Dialogs
 
 Row {
   id: root
 
-  required property PersistentProperties visibilities
-  required property PersistentProperties state
+    required property PersistentProperties visibilities
+    required property PersistentProperties state
 
-  padding: Appearance.padding.large
-  spacing: Appearance.spacing.normal
+    padding: Appearance.padding.large
+    spacing: Appearance.spacing.normal
 
-  StyledClippingRect {
-  implicitWidth: info.implicitHeight
-  implicitHeight: info.implicitHeight
+    StyledClippingRect {
+        implicitWidth: info.implicitHeight
+        implicitHeight: info.implicitHeight
 
-  radius: Appearance.rounding.large
-  color: Colours.palette.m3surfaceContainerHigh
+        radius: Appearance.rounding.large
+        color: Colours.layer(Colours.palette.m3surfaceContainerHigh, 2)
 
-  MaterialIcon {
-    anchors.centerIn: parent
+        MaterialIcon {
+            anchors.centerIn: parent
 
-    text: "person"
-    fill: 1
-    grade: 200
-    font.pointSize: Math.floor(info.implicitHeight / 2) || 1
-  }
+            text: "person"
+            fill: 1
+            grade: 200
+            font.pointSize: Math.floor(info.implicitHeight / 2) || 1
+        }
 
-  CachingImage {
-    id: pfp
+        CachingImage {
+            id: pfp
 
-    anchors.fill: parent
-    path: `${Paths.stringify(Paths.home)}/.face`
-  }
+            anchors.fill: parent
+            path: `${Paths.stringify(Paths.home)}/.face`
+        }
 
-  MouseArea {
-    anchors.fill: parent
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
 
-    cursorShape: Qt.PointingHandCursor
-    hoverEnabled: true
+            StyledRect {
+                anchors.fill: parent
 
-    onClicked: {
-    root.visibilities.launcher = false;
-    root.state.facePicker.open();
+                color: Qt.alpha(Colours.palette.m3scrim, 0.5)
+                opacity: parent.containsMouse ? 1 : 0
+
+                Behavior on opacity {
+                    Anim {
+                        duration: Appearance.anim.durations.expressiveFastSpatial
+                    }
+                }
+            }
+
+            StyledRect {
+                anchors.centerIn: parent
+
+                implicitWidth: selectIcon.implicitHeight + Appearance.padding.small * 2
+                implicitHeight: selectIcon.implicitHeight + Appearance.padding.small * 2
+
+                radius: Appearance.rounding.normal
+                color: Colours.palette.m3primary
+                scale: parent.containsMouse ? 1 : 0.5
+                opacity: parent.containsMouse ? 1 : 0
+
+                StateLayer {
+                    color: Colours.palette.m3onPrimary
+
+                    function onClicked(): void {
+                        root.visibilities.launcher = false;
+                        root.state.facePicker.open();
+                    }
+                }
+
+                MaterialIcon {
+                    id: selectIcon
+
+                    anchors.centerIn: parent
+                    anchors.horizontalCenterOffset: -font.pointSize * 0.02
+
+                    text: "frame_person"
+                    color: Colours.palette.m3onPrimary
+                    font.pointSize: Appearance.font.size.extraLarge
+                }
+
+                Behavior on scale {
+                    Anim {
+                        duration: Appearance.anim.durations.expressiveFastSpatial
+                        easing.bezierCurve: Appearance.anim.curves.expressiveFastSpatial
+                    }
+                }
+
+                Behavior on opacity {
+                    Anim {
+                        duration: Appearance.anim.durations.expressiveFastSpatial
+                    }
+                }
+            }
+        }
     }
 
-    StyledRect {
-    anchors.fill: parent
+    Column {
+        id: info
 
-    color: Qt.alpha(Colours.palette.m3primary, 0.1)
-    opacity: parent.containsMouse ? 1 : 0
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Appearance.spacing.normal
 
-    Behavior on opacity {
-      NumberAnimation {
-      duration: Appearance.anim.durations.normal
-      easing.type: Easing.BezierSpline
-      easing.bezierCurve: Appearance.anim.curves.standard
-      }
-    }
-    }
+        Item {
+            id: line
 
-    StyledRect {
-    anchors.centerIn: parent
+            implicitWidth: icon.implicitWidth + text.width + text.anchors.leftMargin
+            implicitHeight: Math.max(icon.implicitHeight, text.implicitHeight)
 
-    implicitWidth: selectIcon.implicitHeight + Appearance.padding.small * 2
-    implicitHeight: selectIcon.implicitHeight + Appearance.padding.small * 2
+            ColouredIcon {
+                id: icon
 
-    radius: Appearance.rounding.normal
-    color: Colours.palette.m3primary
-    scale: parent.containsMouse ? 1 : 0.5
-    opacity: parent.containsMouse ? 1 : 0
+                anchors.left: parent.left
+                anchors.leftMargin: (Config.dashboard.sizes.infoIconSize - implicitWidth) / 2
 
-    MaterialIcon {
-      id: selectIcon
+                source: SysInfo.osLogo
+                implicitSize: Math.floor(Appearance.font.size.normal * 1.34)
+                colour: Colours.palette.m3primary
+            }
 
-      anchors.centerIn: parent
-      anchors.horizontalCenterOffset: -font.pointSize * 0.02
+            StyledText {
+                id: text
 
-      text: "frame_person"
-      color: Colours.palette.m3onPrimary
-      font.pointSize: Appearance.font.size.extraLarge
-    }
+                anchors.verticalCenter: icon.verticalCenter
+                anchors.left: icon.right
+                anchors.leftMargin: icon.anchors.leftMargin
+                text: `:  ${SysInfo.osPrettyName || SysInfo.osName}`
+                font.pointSize: Appearance.font.size.normal
 
-    Behavior on scale {
-      NumberAnimation {
-      duration: Appearance.anim.durations.expressiveFastSpatial
-      easing.type: Easing.BezierSpline
-      easing.bezierCurve: Appearance.anim.curves.expressiveFastSpatial
-      }
-    }
+                width: Config.dashboard.sizes.infoWidth
+                elide: Text.ElideRight
+            }
+        }
 
-    Behavior on opacity {
-      NumberAnimation {
-      duration: Appearance.anim.durations.expressiveFastSpatial
-      easing.type: Easing.BezierSpline
-      easing.bezierCurve: Appearance.anim.curves.expressiveFastSpatial
-      }
-    }
-    }
-  }
-  }
+        InfoLine {
+            icon: "select_window_2"
+            text: SysInfo.wm
+            colour: Colours.palette.m3secondary
+        }
 
-  Column {
-  id: info
+        InfoLine {
+            id: uptime
 
-  anchors.verticalCenter: parent.verticalCenter
-  spacing: Appearance.spacing.normal
-
-  InfoLine {
-    icon: Icons.osIcon
-    text: Icons.osName
-    colour: Colours.palette.m3primary
-    materialIcon: false
-  }
-
-  InfoLine {
-    icon: "select_window_2"
-    text: Quickshell.env("XDG_CURRENT_DESKTOP") || Quickshell.env("XDG_SESSION_DESKTOP")
-    colour: Colours.palette.m3secondary
-  }
-
-  InfoLine {
-    id: uptime
-
-    icon: "timer"
-    text: qsTr("Loading uptime...")
-    colour: Colours.palette.m3tertiary
-
-    Timer {
-    running: true
-    repeat: true
-    interval: 15000
-    onTriggered: fileUptime.reload()
+            icon: "timer"
+            text: qsTr("up %1").arg(SysInfo.uptime)
+            colour: Colours.palette.m3tertiary
+        }
     }
 
-    FileView {
-    id: fileUptime
+    component InfoLine: Item {
+        id: line
 
-    path: "/proc/uptime"
-    onLoaded: {
-      const up = parseInt(text().split(" ")[0] ?? 0);
+        required property string icon
+        required property string text
+        required property color colour
 
-      const days = Math.floor(up / 86400);
-      const hours = Math.floor((up % 86400) / 3600);
-      const minutes = Math.floor((up % 3600) / 60);
+        implicitWidth: icon.implicitWidth + text.width + text.anchors.leftMargin
+        implicitHeight: Math.max(icon.implicitHeight, text.implicitHeight)
 
-      let str = "";
-      if (days > 0)
-      str += `${days} day${days === 1 ? "" : "s"}`;
-      if (hours > 0)
-      str += `${str ? ", " : ""}${hours} hour${hours === 1 ? "" : "s"}`;
-      if (minutes > 0 || !str)
-      str += `${str ? ", " : ""}${minutes} minute${minutes === 1 ? "" : "s"}`;
-      uptime.text = qsTr("up %1").arg(str);
+        MaterialIcon {
+            id: icon
+
+            anchors.left: parent.left
+            anchors.leftMargin: (Config.dashboard.sizes.infoIconSize - implicitWidth) / 2
+
+            fill: 1
+            text: line.icon
+            color: line.colour
+            font.pointSize: Appearance.font.size.normal
+        }
+
+        StyledText {
+            id: text
+
+            anchors.verticalCenter: icon.verticalCenter
+            anchors.left: icon.right
+            anchors.leftMargin: icon.anchors.leftMargin
+            text: `:  ${line.text}`
+            font.pointSize: Appearance.font.size.normal
+
+            width: Config.dashboard.sizes.infoWidth
+            elide: Text.ElideRight
+        }
     }
-    }
-  }
-  }
-
-  component InfoLine: Item {
-  id: line
-
-  required property string icon
-  required property string text
-  required property color colour
-  property bool materialIcon: true
-
-  implicitWidth: icon.implicitWidth + text.width + text.anchors.leftMargin
-  implicitHeight: Math.max(icon.implicitHeight, text.implicitHeight)
-
-  MaterialIcon {
-    id: icon
-
-    anchors.left: parent.left
-    anchors.leftMargin: (Config.dashboard.sizes.infoIconSize - implicitWidth) / 2
-
-    fill: 1
-    text: line.icon
-    color: line.colour
-    font.pointSize: Appearance.font.size.normal
-    font.family: line.materialIcon ? Appearance.font.family.material : Appearance.font.family.sans
-  }
-
-  StyledText {
-    id: text
-
-    anchors.verticalCenter: icon.verticalCenter
-    anchors.left: icon.right
-    anchors.leftMargin: icon.anchors.leftMargin
-    text: `:  ${line.text}`
-    font.pointSize: Appearance.font.size.normal
-
-    width: Config.dashboard.sizes.infoWidth
-    elide: Text.ElideRight
-  }
-  }
 }

@@ -1,75 +1,140 @@
 pragma ComponentBehavior: Bound
 
-import qs.widgets
 import qs.services
 import qs.config
+import qs.components
+import Quickshell
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Effects
 
-Item {
+StyledClippingRect {
   id: root
 
-  readonly property list<Workspace> workspaces: layout.children.filter(c => c.isWorkspace).sort((w1, w2) => w1.ws - w2.ws)
-  readonly property var occupied: Hyprland.workspaces.values.reduce((acc, curr) => {
-  acc[curr.id] = curr.lastIpcObject.windows > 0;
-  return acc;
-  }, {})
-  readonly property int groupOffset: Math.floor((Hyprland.activeWsId - 1) / Config.bar.workspaces.shown) * Config.bar.workspaces.shown
+    required property ShellScreen screen
 
-  implicitWidth: layout.implicitWidth
-  implicitHeight: layout.implicitHeight
+    readonly property bool onSpecial: (Config.bar.workspaces.perMonitorWorkspaces ? Hypr.monitorFor(screen) : Hypr.focusedMonitor)?.lastIpcObject.specialWorkspace.name !== ""
+    readonly property int activeWsId: Config.bar.workspaces.perMonitorWorkspaces ? (Hypr.monitorFor(screen).activeWorkspace?.id ?? 1) : Hypr.activeWsId
 
-  ColumnLayout {
-  id: layout
+    readonly property var occupied: Hypr.workspaces.values.reduce((acc, curr) => {
+        acc[curr.id] = curr.lastIpcObject.windows > 0;
+        return acc;
+    }, {})
+    readonly property int groupOffset: Math.floor((activeWsId - 1) / Config.bar.workspaces.shown) * Config.bar.workspaces.shown
 
-  spacing: 0
-  layer.enabled: true
-  layer.smooth: true
+    property real blur: onSpecial ? 1 : 0
 
-  Repeater {
-    model: Config.bar.workspaces.shown
+    implicitWidth: Config.bar.sizes.innerWidth
+    implicitHeight: layout.implicitHeight + Appearance.padding.small * 2
 
-    Workspace {
-    occupied: root.occupied
-    groupOffset: root.groupOffset
+    color: Colours.tPalette.m3surfaceContainer
+    radius: Appearance.rounding.full
+
+    Item {
+        anchors.fill: parent
+        scale: root.onSpecial ? 0.8 : 1
+        opacity: root.onSpecial ? 0.5 : 1
+
+        layer.enabled: root.blur > 0
+        layer.effect: MultiEffect {
+            blurEnabled: true
+            blur: root.blur
+            blurMax: 32
+        }
+
+        Loader {
+            active: Config.bar.workspaces.occupiedBg
+            asynchronous: true
+
+            anchors.fill: parent
+            anchors.margins: Appearance.padding.small
+
+            sourceComponent: OccupiedBg {
+                workspaces: workspaces
+                occupied: root.occupied
+                groupOffset: root.groupOffset
+            }
+        }
+
+        ColumnLayout {
+            id: layout
+
+            anchors.centerIn: parent
+            spacing: Math.floor(Appearance.spacing.small / 2)
+
+            Repeater {
+                id: workspaces
+
+                model: Config.bar.workspaces.shown
+
+                Workspace {
+                    activeWsId: root.activeWsId
+                    occupied: root.occupied
+                    groupOffset: root.groupOffset
+                }
+            }
+        }
+
+        Loader {
+            anchors.horizontalCenter: parent.horizontalCenter
+            active: Config.bar.workspaces.activeIndicator
+            asynchronous: true
+
+            sourceComponent: ActiveIndicator {
+                activeWsId: root.activeWsId
+                workspaces: workspaces
+                mask: layout
+            }
+        }
+
+        MouseArea {
+            anchors.fill: layout
+            onClicked: event => {
+                const ws = layout.childAt(event.x, event.y).ws;
+                if (Hypr.activeWsId !== ws)
+                    Hypr.dispatch(`workspace ${ws}`);
+                else
+                    Hypr.dispatch("togglespecialworkspace special");
+            }
+        }
+
+        Behavior on scale {
+            Anim {}
+        }
+
+        Behavior on opacity {
+            Anim {}
+        }
     }
-  }
-  }
 
-  Loader {
-  active: Config.bar.workspaces.occupiedBg
-  asynchronous: true
+    Loader {
+        id: specialWs
 
-  z: -1
-  anchors.fill: parent
+        anchors.fill: parent
+        anchors.margins: Appearance.padding.small
 
-  sourceComponent: OccupiedBg {
-    workspaces: root.workspaces
-    occupied: root.occupied
-    groupOffset: root.groupOffset
-  }
-  }
+        active: opacity > 0
+        asynchronous: true
 
-  Loader {
-  active: Config.bar.workspaces.activeIndicator
-  asynchronous: true
+        scale: root.onSpecial ? 1 : 0.5
+        opacity: root.onSpecial ? 1 : 0
 
-  sourceComponent: ActiveIndicator {
-    workspaces: root.workspaces
-    mask: layout
-    maskWidth: root.width
-    maskHeight: root.height
-    groupOffset: root.groupOffset
-  }
-  }
+        sourceComponent: SpecialWorkspaces {
+            screen: root.screen
+        }
 
-  MouseArea {
-  anchors.fill: parent
+        Behavior on scale {
+            Anim {}
+        }
 
-  onPressed: event => {
-    const ws = layout.childAt(event.x, event.y).index + root.groupOffset + 1;
-    if (Hyprland.activeWsId !== ws)
-    Hyprland.dispatch(`workspace ${ws}`);
-  }
-  }
+        Behavior on opacity {
+            Anim {}
+        }
+    }
+
+    Behavior on blur {
+        Anim {
+            duration: Appearance.anim.durations.small
+        }
+    }
 }

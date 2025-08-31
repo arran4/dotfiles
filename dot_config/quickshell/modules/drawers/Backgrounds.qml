@@ -13,62 +13,61 @@ import QtQuick.Shapes
 Shape {
   id: root
 
-  required property Panels panels
-  required property Item bar
+    required property Panels panels
+    required property Item bar
 
-  anchors.fill: parent
-  anchors.margins: Config.border.thickness
-  anchors.leftMargin: bar.implicitWidth
-  preferredRendererType: Shape.CurveRenderer
-  opacity: Colours.transparency.enabled ? Colours.transparency.base : 1
+    anchors.fill: parent
+    anchors.margins: Config.border.thickness
+    anchors.leftMargin: bar.implicitWidth
+    preferredRendererType: Shape.CurveRenderer
 
-  Osd.Background {
-  wrapper: panels.osd
+    Osd.Background {
+        wrapper: root.panels.osd
 
-  startX: root.width - panels.session.width
-  startY: (root.height - wrapper.height) / 2 - rounding
-  }
+        startX: root.width - root.panels.session.width
+        startY: (root.height - wrapper.height) / 2 - rounding
+    }
 
-  Notifications.Background {
-  wrapper: panels.notifications
+    Notifications.Background {
+        wrapper: root.panels.notifications
 
-  startX: root.width
-  startY: 0
-  }
+        startX: root.width
+        startY: 0
+    }
 
-  Session.Background {
-  wrapper: panels.session
+    Session.Background {
+        wrapper: root.panels.session
 
-  startX: root.width
-  startY: (root.height - wrapper.height) / 2 - rounding
-  }
+        startX: root.width
+        startY: (root.height - wrapper.height) / 2 - rounding
+    }
 
-  Launcher.Background {
-  wrapper: panels.launcher
+    Launcher.Background {
+        wrapper: root.panels.launcher
 
-  startX: (root.width - wrapper.width) / 2 - rounding
-  startY: root.height
-  }
+        startX: (root.width - wrapper.width) / 2 - rounding
+        startY: root.height
+    }
 
-  Dashboard.Background {
-  wrapper: panels.dashboard
+    Dashboard.Background {
+        wrapper: root.panels.dashboard
 
-  startX: (root.width - wrapper.width) / 2 - rounding
-  startY: 0
-  }
+        startX: (root.width - wrapper.width) / 2 - rounding
+        startY: 0
+    }
 
-  BarPopouts.Background {
-  wrapper: panels.popouts
-  invertBottomRounding: wrapper.y + wrapper.height + 1 >= root.height
+    BarPopouts.Background {
+        wrapper: root.panels.popouts
+        invertBottomRounding: wrapper.y + wrapper.height + 1 >= root.height
 
-  startX: wrapper.x
-  startY: wrapper.y - rounding * sideRounding
-  }
+        startX: wrapper.x
+        startY: wrapper.y - rounding * sideRounding
+    }
 
-  Utilities.Background {
-  wrapper: panels.utilities
+    Utilities.Background {
+        wrapper: root.panels.utilities
 
-  startX: root.width
-  startY: root.height
-  }
+        startX: root.width
+        startY: root.height
+    }
 }

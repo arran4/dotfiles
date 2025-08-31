@@ -10,9 +10,9 @@ import Quickshell
 
 ShellRoot {
   Background {}
-  Drawers {}
-  AreaPicker {}
-  Lock {}
+    Drawers {}
+    AreaPicker {}
+    Lock {}
 
-  Shortcuts {}
+    Shortcuts {}
 }
