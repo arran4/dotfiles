@@ -16,6 +16,9 @@
 {{- $terminfosearch := list -}}
 {{- $termfallback := list "linux" "vt100" -}}
 {{- $gpgLocation := "/usr/bin/gpg" -}}
+{{- $flutterPrependPaths := list -}}
+{{- $androidSdkRoot := "" -}}
+{{- $androidPathEntries := list -}}
 
 #{{ if eq .chezmoi.os "darwin" }} Darwin
         {{- $binroots = list
@@ -108,6 +111,45 @@
 {{- range $p := $binroots -}}
   {{- $paths = append $paths (joinPath $p "bin") -}}
   {{- $paths = append $paths (joinPath $p "sbin") -}}
+{{- end -}}
+
+{{- range $candidate := list
+  (joinPath .chezmoi.homeDir "sdk/flutter/bin")
+  (joinPath .chezmoi.homeDir "libs/flutter/bin")
+-}}
+  {{- if stat $candidate -}}
+    {{- $flutterPrependPaths = append $flutterPrependPaths $candidate -}}
+  {{- end -}}
+{{- end -}}
+
+{{- range $candidate := list
+  (env "ANDROID_HOME")
+  (env "ANDROID_SDK_ROOT")
+  (joinPath .chezmoi.homeDir "Android/Sdk")
+  (joinPath .chezmoi.homeDir "sdk/Android/Sdk")
+  (joinPath .chezmoi.homeDir "lib/Android/Sdk")
+  (joinPath .chezmoi.homeDir "sdk/android-sdk")
+  (joinPath .chezmoi.homeDir "lib/android-sdk")
+  (joinPath .chezmoi.homeDir "sdk/android-sdk-linux")
+  (joinPath .chezmoi.homeDir "lib/android-sdk-linux")
+-}}
+  {{- if and (eq $androidSdkRoot "") (ne (default "" $candidate) "") (stat $candidate) -}}
+    {{- $androidSdkRoot = $candidate -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if ne $androidSdkRoot "" -}}
+  {{- range $tool := list
+    (joinPath $androidSdkRoot "cmdline-tools/latest/bin")
+    (joinPath $androidSdkRoot "cmdline-tools/bin")
+    (joinPath $androidSdkRoot "tools/bin")
+    (joinPath $androidSdkRoot "platform-tools")
+  -}}
+    {{- if stat $tool -}}
+      {{- $androidPathEntries = append $androidPathEntries $tool -}}
+      {{- $paths = append $paths $tool -}}
+    {{- end -}}
+  {{- end -}}
 {{- end -}}
 
 
@@ -588,6 +630,9 @@
         xscreensaverCommandLocation="{{$xscreensaverCommandLocation}}"
         xscreensaverLocation="{{$xscreensaverLocation}}"
         clipse="{{$clipseLocation}}"
+        androidSdkRoot="{{$androidSdkRoot}}"
+        androidPathEntries = [{{range $each := $androidPathEntries}}"{{$each}}", {{end}}]
+        flutterPrependPaths = [{{range $each := $flutterPrependPaths}}"{{$each}}", {{end}}]
         minBtopVersion="1.2.13"
         minGitVersion="2.45.1"
         minZshVersion="5.9"

@@ -1,9 +1,62 @@
 # Path discovery
 # Always include the user's local bin directory
 PATH="$HOME/.local/bin:$PATH"
-# Path searching
-{{- range $p := (index $ "paths") }}
-if [ -d "{{ $p }}" ]; then
-  PATH="${PATH}:{{ $p }}"
+# Ensure locally installed Flutter SDK is preferred over system Dart installations
+{{- $flutterPrependPaths := .chezmoi.data.flutterPrependPaths -}}
+{{- if $flutterPrependPaths }}
+for _flutter_path in{{ range $index, $path := $flutterPrependPaths }}{{ if eq $index 0 }} "{{ $path }}"{{ else }} "{{ $path }}"{{ end }}{{ end }}; do
+  if [ -d "${_flutter_path}" ]; then
+    case ":$PATH:" in
+      *":${_flutter_path}:"*) ;;
+      *) PATH="${_flutter_path}:$PATH" ;;
+    esac
+  fi
+done
+{{- end }}
+
+# Detect common Android SDK installs and expose required tools on the PATH
+{{- $androidSdkRoot := .chezmoi.data.androidSdkRoot -}}
+{{- if $androidSdkRoot }}
+if [ -z "${ANDROID_HOME:-}" ] || [ ! -d "${ANDROID_HOME}" ]; then
+  ANDROID_HOME="{{ $androidSdkRoot }}"
+  export ANDROID_HOME
 fi
+if [ -z "${ANDROID_SDK_ROOT:-}" ] || [ ! -d "${ANDROID_SDK_ROOT}" ]; then
+  ANDROID_SDK_ROOT="{{ $androidSdkRoot }}"
+  export ANDROID_SDK_ROOT
+fi
+{{- end }}
+
+{{- $androidPathEntries := .chezmoi.data.androidPathEntries -}}
+{{- if $androidPathEntries }}
+for _android_bin in{{ range $index, $path := $androidPathEntries }}{{ if eq $index 0 }} "{{ $path }}"{{ else }} "{{ $path }}"{{ end }}{{ end }}; do
+  if [ -d "${_android_bin}" ]; then
+    case ":$PATH:" in
+      *":${_android_bin}:"*) ;;
+      *) PATH="${_android_bin}:$PATH" ;;
+    esac
+  fi
+done
+{{- end }}
+
+# Prefer a Chromium-based browser discovered in PATH when CHROME_EXECUTABLE is unset
+{{- $chromeExecutable := .chezmoi.data.chromeLocation -}}
+{{- if $chromeExecutable }}
+if [ -z "${CHROME_EXECUTABLE:-}" ]; then
+  CHROME_EXECUTABLE="{{ $chromeExecutable }}"
+  export CHROME_EXECUTABLE
+fi
+{{- end }}
+
+# Path searching
+{{- $paths := .chezmoi.data.paths -}}
+{{- if $paths }}
+for _path_entry in{{ range $index, $path := $paths }}{{ if eq $index 0 }} "{{ $path }}"{{ else }} "{{ $path }}"{{ end }}{{ end }}; do
+  if [ -d "${_path_entry}" ]; then
+    case ":$PATH:" in
+      *":${_path_entry}:"*) ;;
+      *) PATH="${PATH}:${_path_entry}" ;;
+    esac
+  fi
+done
 {{- end }}
