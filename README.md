@@ -51,6 +51,30 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 4. Start `tmux` to see the multiplexer configuration.
 5. Inspect `.chezmoitemplates` to learn how the templates are structured.
 
+## Flutter setup troubleshooting
+
+If you install Flutter using `bin/installtool flutter` or manually unpack the
+SDK and `flutter doctor` reports issues, try the following fixes:
+
+- **Dart executable precedence**: Ensure `~/sdk/flutter/bin` (or
+  `~/libs/flutter/bin`) appears before any system Dart installation in your
+  `PATH`. `.chezmoi.toml.tmpl` now records those Flutter SDK locations and
+  `path-discovery.tmpl` prepends them automatically when they exist, but open a
+  new shell to load the change.
+- **Android command-line tools**: Open Android Studio, go to **More
+  Actions → SDK Manager → SDK Tools** and install **Android SDK Command-line
+  Tools (latest)**. With the tools installed, run
+  `flutter doctor --android-licenses` to accept the SDK licences. The chezmoi
+  configuration now discovers SDKs in `~/Android/Sdk`, `~/sdk/Android/Sdk`,
+  `~/lib/Android/Sdk`, `~/sdk/android-sdk`, `~/lib/android-sdk`, and their
+  `*-linux` variants, exports `ANDROID_HOME`/`ANDROID_SDK_ROOT`, and prepends the
+  command-line tools plus platform-tools directories automatically.
+- **Chrome for web development**: Install a Chromium-based browser.
+  `.chezmoi.toml.tmpl` picks the first browser (`google-chrome-stable`,
+  `google-chrome`, `chromium`, `chromium-browser`, or `chrome`) available on the
+  combined PATH it builds, and `path-discovery.tmpl` exports that location as
+  `CHROME_EXECUTABLE` when the variable is unset.
+
 ## Encrypting credentials with ejson
 
 Use ejson to store secrets such as a GitLab OAuth client ID. Create an encrypted
