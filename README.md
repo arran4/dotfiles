@@ -14,6 +14,9 @@ config here which is specific to me or specific to a particular situation I had 
 
 Using chezmoi https://www.chezmoi.io/
 
+If chezmoi prints `warning: config file template has changed`, rerun `chezmoi init --apply arran4` to regenerate the configuration
+from `.chezmoi.toml.tmpl`.
+
 # Notes
 
 I don't think it's a good idea just to apply my dot files on to your system as there are a lot of configuration options

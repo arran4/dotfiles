@@ -1,4 +1,4 @@
 ["dot_config/quickshell"]
-type = "git"
+type = "git-repo"
 url = "https://github.com/caelestia-dots/shell.git"
 ref = "cfc1dc447c8bf6306de74d1fb1dba7943a1e1232"
