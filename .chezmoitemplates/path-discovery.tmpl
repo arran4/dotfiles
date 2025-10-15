@@ -2,7 +2,9 @@
 # Always include the user's local bin directory
 PATH="$HOME/.local/bin:$PATH"
 # Ensure locally installed Flutter SDK is preferred over system Dart installations
-{{- $flutterPrependPaths := .chezmoi.data.flutterPrependPaths -}}
+{{- $chezmoi := default (dict) .chezmoi -}}
+{{- $chezmoiData := default (dict) (index $chezmoi "data") -}}
+{{- $flutterPrependPaths := default (list) (index $chezmoiData "flutterPrependPaths") -}}
 {{- if $flutterPrependPaths }}
 for _flutter_path in{{ range $index, $path := $flutterPrependPaths }}{{ if eq $index 0 }} "{{ $path }}"{{ else }} "{{ $path }}"{{ end }}{{ end }}; do
   if [ -d "${_flutter_path}" ]; then
@@ -15,7 +17,7 @@ done
 {{- end }}
 
 # Detect common Android SDK installs and expose required tools on the PATH
-{{- $androidSdkRoot := .chezmoi.data.androidSdkRoot -}}
+{{- $androidSdkRoot := (index $chezmoiData "androidSdkRoot") -}}
 {{- if $androidSdkRoot }}
 if [ -z "${ANDROID_HOME:-}" ] || [ ! -d "${ANDROID_HOME}" ]; then
   ANDROID_HOME="{{ $androidSdkRoot }}"
@@ -27,7 +29,7 @@ if [ -z "${ANDROID_SDK_ROOT:-}" ] || [ ! -d "${ANDROID_SDK_ROOT}" ]; then
 fi
 {{- end }}
 
-{{- $androidPathEntries := .chezmoi.data.androidPathEntries -}}
+{{- $androidPathEntries := default (list) (index $chezmoiData "androidPathEntries") -}}
 {{- if $androidPathEntries }}
 for _android_bin in{{ range $index, $path := $androidPathEntries }}{{ if eq $index 0 }} "{{ $path }}"{{ else }} "{{ $path }}"{{ end }}{{ end }}; do
   if [ -d "${_android_bin}" ]; then
@@ -40,7 +42,7 @@ done
 {{- end }}
 
 # Prefer a Chromium-based browser discovered in PATH when CHROME_EXECUTABLE is unset
-{{- $chromeExecutable := .chezmoi.data.chromeLocation -}}
+{{- $chromeExecutable := (index $chezmoiData "chromeLocation") -}}
 {{- if $chromeExecutable }}
 if [ -z "${CHROME_EXECUTABLE:-}" ]; then
   CHROME_EXECUTABLE="{{ $chromeExecutable }}"
@@ -49,7 +51,7 @@ fi
 {{- end }}
 
 # Path searching
-{{- $paths := .chezmoi.data.paths -}}
+{{- $paths := default (list) (index $chezmoiData "paths") -}}
 {{- if $paths }}
 for _path_entry in{{ range $index, $path := $paths }}{{ if eq $index 0 }} "{{ $path }}"{{ else }} "{{ $path }}"{{ end }}{{ end }}; do
   if [ -d "${_path_entry}" ]; then
