@@ -5,6 +5,11 @@
 {{ template "shell-aliases.tmpl" $ }}
 
 export VISUAL=vi
-export PATH=$PATH:$HOME/bin
+if [ -d "$HOME/.local/bin" ]; then
+  export PATH=$PATH:$HOME/.local/bin
+fi
+if [ -d "$HOME/bin" ]; then
+  export PATH=$PATH:$HOME/bin
+fi
 alias d="ls --color"
 
