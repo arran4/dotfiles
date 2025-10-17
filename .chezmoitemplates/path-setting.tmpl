@@ -1,6 +1,5 @@
 # Path discovery
 # Always include the user's local bin directory
-PATH="$HOME/.local/bin:$PATH"
 {{- $chezmoi := default (dict) .chezmoi -}}
 {{- $chezmoiData := default (dict) (index $chezmoi "data") -}}
 
@@ -40,13 +39,8 @@ fi
 
 # Path searching
 {{- $paths := default (list) (index $chezmoiData "paths") -}}
-{{- if $paths }}
-for _path_entry in{{ range $index, $path := $paths }}{{ if eq $index 0 }} "{{ $path }}"{{ else }} "{{ $path }}"{{ end }}{{ end }}; do
-  if [ -d "${_path_entry}" ]; then
-    case ":$PATH:" in
-      *":${_path_entry}:"*) ;;
-      *) PATH="${PATH}:${_path_entry}" ;;
-    esac
+{{- range $p := (index $ "paths") }}
+  if [ -d "{{ $p }}" ]; then
+  PATH="${PATH}:{{ $p }}"
   fi
-done
 {{- end }}
