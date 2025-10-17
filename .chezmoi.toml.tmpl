@@ -107,7 +107,7 @@
   {{- end -}}
 {{- end -}}
 
-{{- /* Build unified paths list for PATH discovery */ -}}
+{{- /* Build unified paths list for PATH environment settings */ -}}
 {{- range $p := $binroots -}}
   {{- $paths = append $paths (joinPath $p "bin") -}}
   {{- $paths = append $paths (joinPath $p "sbin") -}}

@@ -1,4 +1,4 @@
-# Path discovery
+# PATH environment settings
 # Always include the user's local bin directory
 {{- $chezmoi := default (dict) .chezmoi -}}
 {{- $chezmoiData := default (dict) (index $chezmoi "data") -}}
@@ -37,7 +37,7 @@ if [ -z "${CHROME_EXECUTABLE:-}" ]; then
 fi
 {{- end }}
 
-# Path searching
+# Append configured PATH entries
 {{- $paths := default (list) (index $chezmoiData "paths") -}}
 {{- range $p := (index $ "paths") }}
   if [ -d "{{ $p }}" ]; then
