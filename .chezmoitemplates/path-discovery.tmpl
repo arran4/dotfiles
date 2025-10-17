@@ -1,20 +1,8 @@
 # Path discovery
 # Always include the user's local bin directory
 PATH="$HOME/.local/bin:$PATH"
-# Ensure locally installed Flutter SDK is preferred over system Dart installations
 {{- $chezmoi := default (dict) .chezmoi -}}
 {{- $chezmoiData := default (dict) (index $chezmoi "data") -}}
-{{- $flutterPrependPaths := default (list) (index $chezmoiData "flutterPrependPaths") -}}
-{{- if $flutterPrependPaths }}
-for _flutter_path in{{ range $index, $path := $flutterPrependPaths }}{{ if eq $index 0 }} "{{ $path }}"{{ else }} "{{ $path }}"{{ end }}{{ end }}; do
-  if [ -d "${_flutter_path}" ]; then
-    case ":$PATH:" in
-      *":${_flutter_path}:"*) ;;
-      *) PATH="${_flutter_path}:$PATH" ;;
-    esac
-  fi
-done
-{{- end }}
 
 # Detect common Android SDK installs and expose required tools on the PATH
 {{- $androidSdkRoot := (index $chezmoiData "androidSdkRoot") -}}
