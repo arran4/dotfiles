@@ -18,7 +18,7 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 
-{{ template "path-discovery.tmpl" $ }}
+{{ template "path-setting.tmpl" $ }}
 {{ template "common-misc-env.tmpl" $ }}
 
 return # This prevents scripts which append their own installers from "working"

@@ -9,7 +9,7 @@
 #{{ else if eq .chezmoi.os "solaris" }} Solaris -- Been a while
 #{{ end }} End OS Specific code
 
-{{ template "path-discovery.tmpl" $ }}
+{{ template "path-setting.tmpl" $ }}
 
 # TODO make this detect the dir -- this is still screwy and it was a slack XDLG work around which failed.
 #if [[ "$XDG_DATA_DIRS" != *"/var/lib/snapd/desktop"* ]]; then

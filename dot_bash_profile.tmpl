@@ -92,7 +92,7 @@ GIT_COMPLETION_PATH="/usr/local/etc/bash_completion.d/git-completion.bash"
 #{{ else if eq .chezmoi.os "solaris" }} Solaris -- Been a while
 #{{ end }} End OS Specific code
 
-{{ template "path-discovery.tmpl" $ }}
+{{ template "path-setting.tmpl" $ }}
 
 {{ template "dev-utils-env.tmpl" $ }}
 
