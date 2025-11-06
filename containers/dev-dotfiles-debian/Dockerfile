@@ -67,6 +67,7 @@ RUN set -euxo pipefail \
   && rm -rf /var/lib/apt/lists/*
 
 RUN set -euxo pipefail \
+  && dpkg-reconfigure locales \
   && locale-gen en_US.UTF-8 \
   && update-locale LANG=en_US.UTF-8
 
