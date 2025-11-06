@@ -66,14 +66,17 @@ RUN set -euxo pipefail \
   locales \
   && rm -rf /var/lib/apt/lists/*
 
-RUN set -euxo pipefail \
-  && dpkg-reconfigure locales \
-  && locale-gen en_US.UTF-8 \
-  && update-locale LANG=en_US.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
 
+RUN set -euxo pipefail \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends locales \
+  && sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
+  && locale-gen
+
+# Make UTF-8 the default for every process
 ENV LANG=en_US.UTF-8 \
-  LANGUAGE=en_US:en \
-  LC_ALL=en_US.UTF-8
+    LC_ALL=en_US.UTF-8
 
 RUN set -euxo pipefail \
   && groupadd --gid "${USER_GID}" "${USER_NAME}" \
