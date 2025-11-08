@@ -89,7 +89,7 @@ ENV PIPX_BIN_DIR=/usr/local/bin \
   PIPX_HOME=/usr/local/pipx
 
 RUN set -euxo pipefail \
-  && python3 -m pip install --upgrade pip \
+  && python3 -m pip install --upgrade pip --break-system-packages \
   && pipx ensurepath \
   && pipx install --pip-args "--upgrade" "${GEMINI_CLI_PACKAGE}" \
   && pipx install --pip-args "--upgrade" "${CODEX_CLI_PACKAGE}"
