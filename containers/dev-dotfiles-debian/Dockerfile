@@ -103,16 +103,15 @@ RUN set -euxo pipefail \
 
 ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
 
-COPY . /tmp/dotfiles
+COPY --from=dotfiles . /tmp/dotfiles
 RUN set -euxo pipefail \
   && chown -R "${USER_UID}:${USER_GID}" /tmp/dotfiles
 
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
-RUN set -euxo pipefail \
-  && yes "" | sh -c "$chezmoi init --source /tmp/dotfiles --apply --force --no-tty " \
-  && rm -rf /tmp/dotfiles
+RUN yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug "; \
+  rm -rf /tmp/dotfiles
 
 RUN set -euxo pipefail \
   && flutter --version \
