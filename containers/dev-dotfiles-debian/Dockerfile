@@ -111,7 +111,7 @@ USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
 RUN set -euxo pipefail \
-  && chezmoi init --source /tmp/dotfiles --apply \
+  && chezmoi init --source /tmp/dotfiles --apply --force \
   && rm -rf /tmp/dotfiles
 
 RUN set -euxo pipefail \
