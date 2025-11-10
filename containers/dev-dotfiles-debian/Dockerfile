@@ -57,7 +57,6 @@ RUN set -euxo pipefail \
   python3 \
   python3-pip \
   python3-venv \
-  pipx \
   golang \
   default-jdk \
   unzip \
@@ -85,14 +84,10 @@ RUN set -euxo pipefail \
   && echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME} \
   && chmod 0440 /etc/sudoers.d/${USER_NAME}
 
-ENV PIPX_BIN_DIR=/usr/local/bin \
-  PIPX_HOME=/usr/local/pipx
-
-#RUN set -euxo pipefail \
-#  && python3 -m pip install --upgrade pip --break-system-packages \
-#  && pipx ensurepath \
-#  && pipx install --pip-args "--upgrade" "${GEMINI_CLI_PACKAGE}" \
-#  && pipx install --pip-args "--upgrade" "${CODEX_CLI_PACKAGE}"
+RUN set -euxo pipefail \
+  && python3 -m pip install --no-cache-dir --break-system-packages \
+    "${GEMINI_CLI_PACKAGE}" \
+    "${CODEX_CLI_PACKAGE}"
 
 RUN set -euxo pipefail \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin
