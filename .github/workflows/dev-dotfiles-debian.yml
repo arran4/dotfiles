@@ -41,6 +41,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          build-contexts: dotfiles=.
           file: containers/dev-dotfiles-debian/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
