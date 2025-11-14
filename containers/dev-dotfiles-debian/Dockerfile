@@ -59,6 +59,8 @@ RUN set -euxo pipefail \
   python3-venv \
   golang \
   default-jdk \
+  nodejs \
+  npm \
   unzip \
   xz-utils \
   ca-certificates \
@@ -88,6 +90,9 @@ RUN set -euxo pipefail \
   && python3 -m pip install --no-cache-dir --break-system-packages \
     "${GEMINI_CLI_PACKAGE}" \
     "${CODEX_CLI_PACKAGE}"
+
+RUN set -euxo pipefail \
+  && npm install -g @google/jules
 
 RUN set -euxo pipefail \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin
