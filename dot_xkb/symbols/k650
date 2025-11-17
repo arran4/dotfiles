@@ -1,0 +1,21 @@
+// Logitech K650
+default  partial alphanumeric_keys function_keys
+xkb_symbols "base" {
+  name[Group1] = "Logitech K650";
+
+  include "us(basic)"
+
+  // Special keys (placeholders)
+  key <DICT> { [ XF86VoiceCommand ] };
+  key <EMOJ> { [ XF86Launch4 ] };
+  key <CALC> { [ XF86Calculator ] };
+  key <BRTD> { [ XF86MonBrightnessDown ] };
+  key <BRTU> { [ XF86MonBrightnessUp ] };
+  key <LOCK> { [ XF86ScreenSaver ] };
+  key <PLYR> { [ XF86AudioPlay ] };
+  key <NEXT> { [ XF86AudioNext ] };
+  key <PREV> { [ XF86AudioPrev ] };
+  key <VOLU> { [ XF86AudioRaiseVolume ] };
+  key <VOLD> { [ XF86AudioLowerVolume ] };
+  key <MUTE> { [ XF86AudioMute ] };
+};
