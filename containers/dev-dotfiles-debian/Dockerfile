@@ -62,6 +62,7 @@ RUN set -euxo pipefail \
   nodejs \
   npm \
   unzip \
+  hugo \
   xz-utils \
   ca-certificates \
   locales \
