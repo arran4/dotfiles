@@ -1,0 +1,16 @@
+_gh_release_completions() {
+    local cur_word prev_word
+    cur_word="${COMP_WORDS[COMP_CWORD]}"
+    prev_word="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "$prev_word" in
+        gh-release.sh)
+            COMPREPLY=( $(compgen -W "test alpha beta rc" -- "$cur_word") )
+            ;;
+        *)
+            COMPREPLY=()
+            ;;
+    esac
+}
+
+complete -F _gh_release_completions gh-release.sh

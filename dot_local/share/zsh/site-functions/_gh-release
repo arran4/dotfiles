@@ -1,0 +1,14 @@
+#compdef gh-release.sh
+
+_gh_release_completions() {
+  local -a completions
+  completions=(
+    'test:Use test release version'
+    'alpha:Use alpha release version'
+    'beta:Use beta release version'
+    'rc:Use rc release version'
+  )
+  _describe 'gh-release options' completions
+}
+
+_gh_release_completions "$@"
