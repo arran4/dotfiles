@@ -99,6 +99,9 @@ RUN set -euxo pipefail \
   && npm install -g opencode-ai
 
 RUN set -euxo pipefail \
+  && npm install -g @anthropic-ai/claude-code
+
+RUN set -euxo pipefail \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin
 
 RUN set -euxo pipefail \
