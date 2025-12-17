@@ -68,6 +68,7 @@ setopt interactivecomments       # Enable comments in interactive mode (useful)
 # make less more friendly for non-text input files, see lesspipe(1)
 #[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
+fpath=($HOME/.local/share/zsh/site-functions $fpath)
 autoload -Uz compinit
 compinit
 
