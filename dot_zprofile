@@ -1,3 +1,8 @@
 #!/bin/zsh
 
+# Source /etc/profile if it exists (for environment variables like PATH)
+if [ -f /etc/profile ]; then
+  emulate sh -c '. /etc/profile'
+fi
+
 return # This prevents scripts which append their own installers from "working"
