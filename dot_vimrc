@@ -15,9 +15,6 @@ set encoding=utf-8
 
 "set expandtab			" Tabs are tabs not spaces
 set showtabline         =2
-"set smarttab			" Treats spaces as tabs.. based on shiftwidth
-"set cursorline			" Runs a line across the screen where the cursor is.. Might be useful on large vims.
-"set nocp			" Turns on Vi incompatiable options
 set foldclose=             " Automatic foldclosing is irritating too
 "set list                   " Show me whitespace where I care
 set nocompatible
