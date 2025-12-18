@@ -37,3 +37,14 @@ alias pushd_m2='pushd ~/.m2/'
 {{- if index $ "isWsl" }}
 alias open='explorer.exe'
 {{- end }}
+
+{{- if eq .chezmoi.os "linux" }}
+# Clipboard aliases
+if command -v xclip >/dev/null 2>&1; then
+  alias pbcopy='xclip -selection clipboard'
+  alias pbpaste='xclip -selection clipboard -o'
+elif command -v xsel >/dev/null 2>&1; then
+  alias pbcopy='xsel --clipboard --input'
+  alias pbpaste='xsel --clipboard --output'
+fi
+{{- end }}

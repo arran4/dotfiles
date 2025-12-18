@@ -2,12 +2,7 @@
 
 {{ template "common-misc-env.tmpl" $ }}
 
-# OS Specific
-#{{ if eq .chezmoi.os "darwin" }} Darwin
-#{{ else if eq .chezmoi.os "linux" }} Linux
-#{{ else if eq .chezmoi.os "windows" }} Windows
-#{{ else if eq .chezmoi.os "solaris" }} Solaris -- Been a while
-#{{ end }} End OS Specific code
+
 
 {{ template "path-setting.tmpl" $ }}
 
