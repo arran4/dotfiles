@@ -74,10 +74,26 @@ autoload -U colors && colors
 {{ template "shell-aliases.tmpl" $ }}
 
 
-#{{ if eq .chezmoi.os "darwin" }} Darwin
-#{{ else if eq .chezmoi.os "linux" }} Linux
-#{{ else if eq .chezmoi.os "windows" }} Windows
-#{{ end }} End OS Specific code
+{{- if eq .chezmoi.os "darwin" }}
+# Darwin
+export JAVA_HOME=$(/usr/libexec/java_home)
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+{{- else if eq .chezmoi.os "linux" }}
+# Linux
+# Clipboard aliases
+if command -v xclip >/dev/null 2>&1; then
+  alias pbcopy='xclip -selection clipboard'
+  alias pbpaste='xclip -selection clipboard -o'
+elif command -v xsel >/dev/null 2>&1; then
+  alias pbcopy='xsel --clipboard --input'
+  alias pbpaste='xsel --clipboard --output'
+fi
+{{- else if eq .chezmoi.os "windows" }}
+# Windows
+{{- end }}
+# End OS Specific code
 
 {{ template "shell-term-env.tmpl" $ }}
 
