@@ -122,26 +122,6 @@
   {{- end -}}
 {{- end -}}
 
-{{- $javaHome := "" -}}
-{{- $systemJavaHome := "" -}}
-{{- if and (eq .chezmoi.os "darwin") (stat "/usr/libexec/java_home") -}}
-  {{- $systemJavaHome = trim (output "/usr/libexec/java_home") -}}
-{{- end -}}
-
-{{- range $candidate := list
-  (env "JAVA_HOME")
-  (joinPath .chezmoi.homeDir ".sdkman/candidates/java/current")
-  (joinPath .chezmoi.homeDir ".jenv/versions/current")
-  $systemJavaHome
--}}
-  {{- if and (eq $javaHome "") (ne (default "" $candidate) "") (stat $candidate) -}}
-    {{- $javaHome = $candidate -}}
-  {{- end -}}
-{{- end -}}
-
-{{- if ne $javaHome "" -}}
-  {{- $paths = append $paths (joinPath $javaHome "bin") -}}
-{{- end -}}
 
 {{- range $candidate := list
   (env "ANDROID_HOME")
@@ -651,7 +631,6 @@
         xscreensaverCommandLocation="{{$xscreensaverCommandLocation}}"
         xscreensaverLocation="{{$xscreensaverLocation}}"
         clipse="{{$clipseLocation}}"
-        javaHome="{{$javaHome}}"
         androidSdkRoot="{{$androidSdkRoot}}"
         androidPathEntries = [{{range $each := $androidPathEntries}}"{{$each}}", {{end}}]
         flutterPrependPaths = [{{range $each := $flutterPrependPaths}}"{{$each}}", {{end}}]

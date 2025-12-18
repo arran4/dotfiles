@@ -34,3 +34,43 @@ export WATCH=root
 if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
     debian_chroot=$(cat /etc/debian_chroot)
 fi
+
+# Java Home Discovery
+# Prioritize manual candidates (SDKMAN, jEnv) over system defaults.
+# System defaults: Gentoo (java-config), macOS (/usr/libexec/java_home).
+
+_java_candidates=(
+  "$HOME/.sdkman/candidates/java/current"
+  "$HOME/.jenv/versions/current"
+)
+
+# Only attempt discovery if JAVA_HOME is not already set or invalid
+if [ -z "${JAVA_HOME:-}" ] || [ ! -d "${JAVA_HOME}" ]; then
+  for cand in "${_java_candidates[@]}"; do
+    if [ -d "$cand" ]; then
+      export JAVA_HOME="$cand"
+      break
+    fi
+  done
+fi
+
+if [ -z "${JAVA_HOME:-}" ]; then
+  if command -v java-config >/dev/null 2>&1; then
+    # Gentoo
+    _gentoo_java=$(java-config --jdk-home 2>/dev/null)
+    if [ -n "$_gentoo_java" ]; then
+      export JAVA_HOME="$_gentoo_java"
+    fi
+  elif [ -x /usr/libexec/java_home ]; then
+    # macOS
+    export JAVA_HOME=$(/usr/libexec/java_home)
+  fi
+fi
+
+if [ -n "${JAVA_HOME:-}" ]; then
+  # Prepend to PATH if not already present
+  case ":$PATH:" in
+    *":$JAVA_HOME/bin:"*) ;;
+    *) export PATH="$JAVA_HOME/bin:$PATH" ;;
+  esac
+fi

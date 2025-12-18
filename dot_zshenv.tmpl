@@ -10,9 +10,6 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
 fi
 {{- end }}
 
-{{- if index . "javaHome" }}
-export JAVA_HOME="{{ index . "javaHome" }}"
-{{- end }}
 
 {{ template "path-setting.tmpl" $ }}
 
