@@ -96,14 +96,13 @@ GIT_COMPLETION_PATH="/usr/local/etc/bash_completion.d/git-completion.bash"
 
 {{ template "dev-utils-env.tmpl" $ }}
 
-# TODO chezmoi'd a bit more
-if test -f /usr/share/bash-completion/bash_completion; then
-	. /usr/share/bash-completion/bash_completion
-elif test -f /etc/bash_completion; then
-	. /etc/bash_completion
-elif test -f /run/current-system/profile/etc/profile.d/bash_completion.sh; then
-	. /run/current-system/profile/etc/profile.d/bash_completion.sh
-fi
+{{- $bash_completion_files := list "/usr/share/bash-completion/bash_completion" "/etc/bash_completion" "/run/current-system/profile/etc/profile.d/bash_completion.sh" -}}
+{{- range $bash_completion_files -}}
+{{-   if stat . }}
+. {{ . }}
+{{-     break }}
+{{-   end -}}
+{{- end }}
 
 return # This prevents scripts which append their own installers from "working"
 {{/* vim: set filetype=bash: */}}
