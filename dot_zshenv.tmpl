@@ -5,10 +5,13 @@
 # OS Specific
 {{- if eq .chezmoi.os "darwin" }}
 # Darwin
-export JAVA_HOME=$(/usr/libexec/java_home)
 if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
+{{- end }}
+
+{{- if index . "javaHome" }}
+export JAVA_HOME="{{ index . "javaHome" }}"
 {{- end }}
 
 {{ template "path-setting.tmpl" $ }}
