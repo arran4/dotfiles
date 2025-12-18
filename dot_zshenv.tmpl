@@ -2,13 +2,6 @@
 
 {{ template "common-misc-env.tmpl" $ }}
 
-# OS Specific
-{{- if eq .chezmoi.os "darwin" }}
-# Darwin
-if [[ -x /opt/homebrew/bin/brew ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-{{- end }}
 
 
 {{ template "path-setting.tmpl" $ }}
