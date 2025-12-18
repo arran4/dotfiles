@@ -63,6 +63,7 @@ if [ -z "${JAVA_HOME:-}" ] || [ ! -d "${JAVA_HOME}" ]; then
 fi
 
 if [ -z "${JAVA_HOME:-}" ]; then
+  :
 {{- if lookPath "java-config" }}
   if command -v java-config >/dev/null 2>&1; then
     # Gentoo
