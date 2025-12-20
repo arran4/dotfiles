@@ -2,23 +2,23 @@
 
 {{ template "common-misc-env.tmpl" $ }}
 
-# OS Specific
-#{{ if eq .chezmoi.os "darwin" }} Darwin
-#{{ else if eq .chezmoi.os "linux" }} Linux
-#{{ else if eq .chezmoi.os "windows" }} Windows
-#{{ else if eq .chezmoi.os "solaris" }} Solaris -- Been a while
-#{{ end }} End OS Specific code
+
 
 {{ template "path-setting.tmpl" $ }}
 
-# TODO make this detect the dir -- this is still screwy and it was a slack XDLG work around which failed.
-#if [[ "$XDG_DATA_DIRS" != *"/var/lib/snapd/desktop"* ]]; then
-#        if [[ -n "$XDG_DATA_DIRS" ]]; then
-#                XDG_DATA_DIRS=/var/lib/snapd/desktop:"$XDG_DATA_DIRS"
-#        else
-#                XDG_DATA_DIRS=/var/lib/snapd/desktop
-#        fi
-#fi
+# Snapd desktop directory detection
+if [[ -d "/var/lib/snapd/desktop" ]]; then
+  # Check if it's already in the path, dealing with edge cases by wrapping in colons
+  if [[ ":$XDG_DATA_DIRS:" != *":/var/lib/snapd/desktop:"* ]]; then
+    # If XDG_DATA_DIRS is not empty, prepend with a colon
+    if [[ -n "$XDG_DATA_DIRS" ]]; then
+      XDG_DATA_DIRS="/var/lib/snapd/desktop:$XDG_DATA_DIRS"
+    else
+      XDG_DATA_DIRS="/var/lib/snapd/desktop"
+    fi
+    export XDG_DATA_DIRS
+  fi
+fi
 
 return # This prevents scripts which append their own installers from "working"
 {{/* vim: set filetype=zsh: */}}

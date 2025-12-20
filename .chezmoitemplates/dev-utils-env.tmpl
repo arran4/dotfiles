@@ -1,8 +1,18 @@
-## TODO Machine specifix
-#[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+{{- /* Machine specific configuration */ -}}
+{{- if stat (joinPath .chezmoi.homeDir ".rvm/scripts/rvm") }}
+source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+{{- end }}
 
+{{- if lookPath "gcc" }}
 # colored GCC warnings and errors
-#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+{{- end }}
+
+{{- $mvnLocation := index . "mvnLocation" -}}
+{{- if ne $mvnLocation "" }}
+# Once upon a time I had issues with the default memory allocation. -- These are way too small for my usage now left here for mod later
+# export MAVEN_OPTS="-Xmx768m -XX:MaxPermSize=512M"
+{{- end }}
 
 {{- $chromeExe := index . "chromeLocation" -}}
 {{- if and (ne $chromeExe "") (stat $chromeExe) }}

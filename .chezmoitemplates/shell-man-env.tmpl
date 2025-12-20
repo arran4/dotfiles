@@ -1,10 +1,26 @@
-# TODO oneday Manpage path discovery
+{{- /* Logic to find paths */ -}}
+{{- $manpaths := list -}}
+{{- range $path := (index . "paths") -}}
+  {{- $candidates := list (joinPath $path "../share/man") (joinPath $path "../man") -}}
+  {{- range $candidate := $candidates -}}
+    {{- if stat $candidate -}}
+      {{- $manpaths = append $manpaths $candidate -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $manpaths = uniq $manpaths -}}
+# Manpage path discovery
+{{ if $manpaths -}}
+export MANPATH="{{ range $p := $manpaths }}{{ $p }}:{{ end }}$MANPATH"
+{{ end -}}
 
-{{ if and (stat (index . "vimpagerLocation")) false -}}
-	export MANPAGER="{{(index . "vimpagerLocation")}}"
+{{ if stat (index . "nvimpagerLocation") -}}
+	export MANPAGER="{{ index . "nvimpagerLocation" }}"
+{{ else if stat (index . "vimpagerLocation") -}}
+	export MANPAGER="{{ index . "vimpagerLocation" }}"
 {{ else if stat (index . "lessLocation") -}}
 	# Don’t clear the screen after quitting a manual page.
-	export MANPAGER='{{(index . "lessLocation")}} -is -R -X'
+	export MANPAGER='{{ index . "lessLocation" }} -is -R -X'
 {{- else -}}
 	# No less found!
-{{- end }}
+{{ end }}
