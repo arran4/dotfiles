@@ -17,6 +17,9 @@ if ! command_exists git; then
   exit 1
 fi
 
+# Store original branch
+original_branch=$(git branch --show-current)
+
 # 1. Get Branch Name
 read -r -e -p "Enter new branch name: " branch_name
 if [ -z "$branch_name" ]; then
@@ -113,5 +116,35 @@ if ! gh pr create --title "$pr_title" --body-file "$processed_body_file"; then
   exit 1
 fi
 
-echo "Success!"
 rm "$tmp_file" "$processed_body_file"
+echo "Success!"
+
+# 6. Optional: Switch back and merge/rebase
+if [ -n "$original_branch" ]; then
+    echo ""
+    read -r -e -p "Switch back to '$original_branch'? (y/n): " switch_back
+    if [[ "$switch_back" == "y" || "$switch_back" == "Y" ]]; then
+        git checkout "$original_branch"
+
+        echo ""
+        echo "How would you like to update '$original_branch' with changes from '$branch_name'?"
+        echo "1) Merge"
+        echo "2) Rebase"
+        echo "3) None (skip)"
+        read -r -e -p "Select option (1-3): " update_option
+
+        case "$update_option" in
+            1)
+                echo "Merging '$branch_name' into '$original_branch'..."
+                git merge "$branch_name"
+                ;;
+            2)
+                echo "Rebasing '$original_branch' onto '$branch_name'..."
+                git rebase "$branch_name"
+                ;;
+            *)
+                echo "Skipping update."
+                ;;
+        esac
+    fi
+fi
