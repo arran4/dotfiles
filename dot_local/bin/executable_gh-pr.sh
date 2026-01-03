@@ -18,21 +18,21 @@ if ! command_exists git; then
 fi
 
 # 1. Get Branch Name
-read -e -p "Enter new branch name: " branch_name
+read -r -e -p "Enter new branch name: " branch_name
 if [ -z "$branch_name" ]; then
   echo "Error: Branch name is required."
   exit 1
 fi
 
 # 2. Get Commit Message
-read -e -p "Enter commit message: " commit_message
+read -r -e -p "Enter commit message: " commit_message
 if [ -z "$commit_message" ]; then
   echo "Error: Commit message is required."
   exit 1
 fi
 
 # 3. Get PR Title
-read -e -p "Enter PR title (default: '$commit_message'): " pr_title
+read -r -e -p "Enter PR title (default: '$commit_message'): " pr_title
 pr_title=${pr_title:-$commit_message}
 
 # 4. Get PR Body
@@ -74,7 +74,7 @@ cat "$processed_body_file"
 echo "------------------------------------------"
 echo ""
 
-read -e -p "Proceed? (y/n): " confirm
+read -r -e -p "Proceed? (y/n): " confirm
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
   echo "Aborted."
   rm "$tmp_file" "$processed_body_file"
