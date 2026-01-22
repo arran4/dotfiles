@@ -17,6 +17,7 @@
 /.wget-hsts
 /.zcompdump
 /.fontconfig
+/.gtkrc-2.0
 /.install4j
 /.java
 /.pulse-cookie
