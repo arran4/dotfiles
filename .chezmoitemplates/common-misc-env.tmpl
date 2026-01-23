@@ -88,3 +88,9 @@ if [ -n "${JAVA_HOME:-}" ]; then
     *) export PATH="$JAVA_HOME/bin:$PATH" ;;
   esac
 fi
+
+{{ if (index . "ksshaskpassLocation") -}}
+if [ -n "$DISPLAY" ]; then
+  export GIT_ASKPASS='{{(index . "ksshaskpassLocation")}}'
+fi
+{{- end }}
