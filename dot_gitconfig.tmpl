@@ -47,9 +47,10 @@
 
 [credential]
 {{ if ne (index . "gitCredentialOAuthLocation") "" }}
-  helper = cache --timeout 5184000 # 60 days
   {{ if ne (index . "gitCredentialLibSecretLocation") "" }}
   helper = {{ index . "gitCredentialLibSecretLocation" }}
+  {{ else }}
+  helper = cache --timeout 5184000 # 60 days
   {{ end }}
   {{ if index . "headless" }}
   helper = oauth -device
