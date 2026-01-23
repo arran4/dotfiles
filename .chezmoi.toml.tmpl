@@ -232,6 +232,11 @@
   {{- end -}}
 {{- end -}}
 
+{{- $ksshaskpassLocation := findExecutable "ksshaskpass" $paths -}}
+{{- if eq $ksshaskpassLocation "" -}}
+  {{- $ksshaskpassLocation = lookPath "ksshaskpass" -}}
+{{- end -}}
+
 {{- $jqLocation := findExecutable "jq" $paths -}}
 {{- if eq $jqLocation "" -}}
   {{- $jqLocation = lookPath "jq" -}}
@@ -599,6 +604,7 @@
         flutterLocation="{{$flutterLocation}}"
         goLocation="{{$goLocation}}"
         ghLocation="{{$ghLocation}}"
+        ksshaskpassLocation="{{$ksshaskpassLocation}}"
         gitTagIncLocation="{{$gitTagIncLocation}}"
         rarLocation="{{$rarLocation}}"
         sevenZipLocation="{{$sevenZipLocation}}"
