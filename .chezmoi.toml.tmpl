@@ -164,6 +164,17 @@
     {{- $gitCredentialOAuthLocation = lookPath "git-credential-oauth" -}}
   {{- end -}}
 {{- end -}}
+{{- $gitCredentialLibSecretLocation := findExecutable "git-credential-libsecret" $paths -}}
+{{- if eq $gitCredentialLibSecretLocation "" -}}
+  {{- $gitCredentialLibSecretLocation = lookPath "git-credential-libsecret" -}}
+{{- end -}}
+{{- if eq $gitCredentialLibSecretLocation "" -}}
+  {{- range $candidate := list "/usr/lib/git-core/git-credential-libsecret" "/usr/libexec/git-core/git-credential-libsecret" -}}
+    {{- if and (eq $gitCredentialLibSecretLocation "") (stat $candidate) -}}
+      {{- $gitCredentialLibSecretLocation = "libsecret" -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
 {{- $vimdiffLocation := findExecutable "vimdiff" $paths -}}
 {{- $nvimdiffLocation := findExecutable "nvimdiff" $paths -}}
 {{- $kdiff3Location := findExecutable "kdiff3" $paths -}}
@@ -579,6 +590,7 @@
         gitUserEmail="{{ $gitUserEmail }}"
         gitCredentialManagerLocation="{{ $gitCredentialManagerLocation }}"
         gitCredentialOAuthLocation="{{ $gitCredentialOAuthLocation }}"
+        gitCredentialLibSecretLocation="{{ $gitCredentialLibSecretLocation }}"
         vimdiffLocation="{{ $vimdiffLocation }}"
         nvimdiffLocation="{{ $nvimdiffLocation }}"
         kdiff3Location="{{ $kdiff3Location }}"
