@@ -13,7 +13,7 @@ Rxvt*saveLines: 65535
 
 XTerm*background: black
 XTerm*reverseVideo: True
-XTerm*font: xft:monospace:size=20
+XTerm*font: xft:monospace:size=10
 XTerm*foreground: grey
 XTerm*colorBD: grey
 XTerm*colorIT: grey
