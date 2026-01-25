@@ -14,14 +14,18 @@ style "user-font"
     {{- $theme = env "GTK_THEME" | splitList ":" | first }}
   {{- else if (eq .chezmoi.os "linux") }}
     {{- if lookPath "gsettings" }}
-      {{- $gsettingsTheme := output "sh" "-c" "gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null || true" | trim | trimAll "'" | trimAll "\"" }}
-      {{- if $gsettingsTheme }}
-        {{- $theme = $gsettingsTheme }}
+      {{- if eq (output "sh" "-c" "gsettings list-schemas | grep -q org.gnome.desktop.interface && echo exists || true" | trim) "exists" }}
+        {{- $gsettingsTheme := output "gsettings" "get" "org.gnome.desktop.interface" "gtk-theme" | trim | trimAll "'" | trimAll "\"" }}
+        {{- if $gsettingsTheme }}
+          {{- $theme = $gsettingsTheme }}
+        {{- end }}
       {{- end }}
     {{- else if lookPath "xfconf-query" }}
-      {{- $xfceTheme := output "sh" "-c" "xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || true" | trim }}
-      {{- if $xfceTheme }}
-        {{- $theme = $xfceTheme }}
+      {{- if eq (output "sh" "-c" "xfconf-query -l | grep -q xsettings && echo exists || true" | trim) "exists" }}
+        {{- $xfceTheme := output "xfconf-query" "-c" "xsettings" "-p" "/Net/ThemeName" | trim }}
+        {{- if $xfceTheme }}
+          {{- $theme = $xfceTheme }}
+        {{- end }}
       {{- end }}
     {{- end }}
   {{- end }}
