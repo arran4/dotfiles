@@ -36,7 +36,7 @@
   longpaths = true
   # quotepath = false # Unicode characters
 {{- if ne $pagerTool "" }}
-    pager = {{ $pagerTool }}
+  pager = {{ $pagerTool }}
 {{- end }}
 
 [rerere]
@@ -76,7 +76,7 @@
 {{ end }}
 
 [credential "https://dev.azure.com"]
-   useHttpPath = true
+  useHttpPath = true
 
 [credential "https://git.assembla.com"]
   useHttpPath = true
@@ -86,7 +86,7 @@
 {{ end }}
 
 [credential "https://source.developers.google.com"]
-    provider = generic
+  provider = generic
 
 [credential "https://gitlab.arran.net.au"]
   gitLabAuthModes = pat
@@ -111,15 +111,15 @@
   log = true
   # Should probably use a script to select here.
 {{- if eq $mergeTool "delta" }}
-    conflictstyle = zdiff3
+  conflictstyle = zdiff3
 {{- else if ne $mergeTool "" }}
-    conflictstyle = diff3 # show original content before conflicts
+  conflictstyle = diff3 # show original content before conflicts
 {{- else }}
   tool = {{ $mergeTool }}
 {{- end }}
 
 [mergetool "kdiff3"]
-    trustExitCode = false
+  trustExitCode = false
 
 {{ if eq .chezmoi.os "darwin" }}
 [mergetool "sourcetree"]
@@ -135,7 +135,7 @@
   prompt = true
 
 [difftool "kdiff3"]
-    trustExitCode = false
+  trustExitCode = false
 
 [difftool "sourcetree"]
   cmd = opendiff \"$LOCAL\" \"$REMOTE\"
@@ -168,7 +168,7 @@
 {{ if index . "gpgconfigured" }}
   gpgsign = if-asked
 {{ end }}
-    followTags = true
+  followTags = true
 
 [alias]
   #via http://stackoverflow.com/questions/5188320/how-can-i-get-a-list-of-git-branches-ordered-by-most-recent-commit
@@ -185,10 +185,10 @@
   viewer = less
 
 [delta]
-    navigate = true
+  navigate = true
 
 [interactive "delta"]
-    diffFilter = delta --color-only
+  diffFilter = delta --color-only
 
 [http]
   cookiefile = ~/.cache/git/cookies
