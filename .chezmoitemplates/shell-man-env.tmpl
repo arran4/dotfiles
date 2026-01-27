@@ -15,7 +15,11 @@ export MANPATH="{{ range $p := $manpaths }}{{ $p }}:{{ end }}$MANPATH"
 {{ end -}}
 
 {{ if stat (index . "nvimpagerLocation") -}}
-	export MANPAGER="{{ index . "nvimpagerLocation" }}"
+	if [ -x "${HOME}/.local/bin/manpager-nvimpager" ]; then
+		export MANPAGER="${HOME}/.local/bin/manpager-nvimpager"
+	else
+		export MANPAGER="{{ index . "nvimpagerLocation" }}"
+	fi
 {{ else if stat (index . "vimpagerLocation") -}}
 	export MANPAGER="{{ index . "vimpagerLocation" }}"
 {{ else if stat (index . "lessLocation") -}}
