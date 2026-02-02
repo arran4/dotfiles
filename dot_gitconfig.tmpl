@@ -49,12 +49,6 @@
   helper = !{{ index . "ghLocation" }} auth git-credential
 {{ end }}
 
-[credential "https://gist.github.com"]
-{{ if ne (index . "ghLocation") "" }}
-  helper =
-  helper = !{{ index . "ghLocation" }} auth git-credential
-{{ end }}
-
 [credential]
 {{ if ne (index . "gitCredentialOAuthLocation") "" }}
   {{ if ne (index . "gitCredentialLibSecretLocation") "" }}
@@ -198,3 +192,7 @@
 
 [advice]
   statusHints = false
+
+[credential "https://gist.github.com"]
+  helper =
+  helper = !/usr/bin/gh auth git-credential
