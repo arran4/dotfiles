@@ -32,19 +32,12 @@ if [ -n "$BROWSER_CMD" ]; then
   fi
 else
   # 3. Auto-detection (Konqueror -> Firefox -> Chrome -> xdg-open)
-  if exists "konqueror"; then
-    BROWSER_CMD="konqueror"
-  elif exists "firefox"; then
-    BROWSER_CMD="firefox"
-  elif exists "google-chrome"; then
-    BROWSER_CMD="google-chrome"
-  elif exists "google-chrome-stable"; then
-    BROWSER_CMD="google-chrome-stable"
-  elif exists "chromium"; then
-    BROWSER_CMD="chromium"
-  elif exists "xdg-open"; then
-    BROWSER_CMD="xdg-open"
-  fi
+  for browser in konqueror firefox google-chrome google-chrome-stable chromium xdg-open; do
+    if exists "$browser"; then
+      BROWSER_CMD="$browser"
+      break
+    fi
+  done
 fi
 
 if [ -z "$BROWSER_CMD" ]; then
