@@ -557,6 +557,7 @@
 /.local/share/akregator
 /.local/share/app.localai.desktop
 /.local/share/applications
+!/.local/share/applications/songmean.sh
 /.local/share/apps
 /.local/share/ark
 /.local/share/atuin
