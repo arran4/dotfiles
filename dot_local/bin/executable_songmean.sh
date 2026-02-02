@@ -47,7 +47,7 @@ fi
 
 # Generate URL
 # We capture the output of playerctl. If it fails, the query will be empty.
-METADATA=$(playerctl metadata --format '{{ artist }} - {{ title }}. Song lyrics, meaning, context and analysis' -p spotify 2>/dev/null | sed 's/ /+/g')
+METADATA=$(playerctl metadata --format '{{ artist }} - {{ title }}. Song lyrics, meaning, context and analysis' -p spotify 2>/dev/null | python3 -c "import urllib.parse, sys; print(urllib.parse.quote_plus(sys.stdin.read().strip()))")
 URL="https://grok.com/?q=$METADATA"
 
 # Execute
