@@ -19,9 +19,15 @@ fi
 # Resolve aliases or verify existence if a specific browser was requested
 if [ -n "$BROWSER_CMD" ]; then
   if [[ "$BROWSER_CMD" == "chrome" ]]; then
-    if exists "google-chrome"; then BROWSER_CMD="google-chrome"
-    elif exists "google-chrome-stable"; then BROWSER_CMD="google-chrome-stable"
-    elif exists "chromium"; then BROWSER_CMD="chromium"
+    if exists "google-chrome"; then
+      BROWSER_CMD="google-chrome"
+    elif exists "google-chrome-stable"; then
+      BROWSER_CMD="google-chrome-stable"
+    elif exists "chromium"; then
+      BROWSER_CMD="chromium"
+    else
+      # Unset BROWSER_CMD if 'chrome' alias cannot be resolved.
+      BROWSER_CMD=""
     fi
   fi
 else
