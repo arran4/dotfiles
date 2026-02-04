@@ -194,5 +194,7 @@
   statusHints = false
 
 [credential "https://gist.github.com"]
+{{ if ne (index . "ghLocation") "" }}
   helper =
-  helper = !/usr/bin/gh auth git-credential
+  helper = !{{ index . "ghLocation" }} auth git-credential
+{{ end }}
