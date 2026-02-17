@@ -51,6 +51,7 @@ if [ -n "$repo_info" ]; then
   enabled=$(echo "$repo_info" | cut -d' ' -f3)
 
   if [ "$enabled" = "true" ]; then
+    # shellcheck disable=SC2016
     categories=$(gh api graphql -F owner="$owner" -F name="$name" -f query='
       query($owner: String!, $name: String!) {
         repository(owner: $owner, name: $name) {
