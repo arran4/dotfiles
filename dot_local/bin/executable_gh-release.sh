@@ -46,9 +46,10 @@ discussion_arg=""
 repo_info=$(gh repo view --json owner,name,hasDiscussionsEnabled --jq '.owner.login + " " + .name + " " + (.hasDiscussionsEnabled|tostring)' || echo "")
 
 if [ -n "$repo_info" ]; then
-  owner=$(echo "$repo_info" | cut -d' ' -f1)
-  name=$(echo "$repo_info" | cut -d' ' -f2)
-  enabled=$(echo "$repo_info" | cut -d' ' -f3)
+  owner=${repo_info%% *}
+  rest=${repo_info#* }
+  name=${rest%% *}
+  enabled=${rest#* }
 
   if [ "$enabled" = "true" ]; then
     # shellcheck disable=SC2016
