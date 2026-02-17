@@ -42,9 +42,39 @@ if ! git push --tags; then
   fi
 fi
 
+discussion_arg=""
+repo_info=$(gh repo view --json owner,name,hasDiscussionsEnabled --jq '.owner.login + " " + .name + " " + (.hasDiscussionsEnabled|tostring)' || echo "")
+
+if [ -n "$repo_info" ]; then
+  owner=$(echo "$repo_info" | cut -d' ' -f1)
+  name=$(echo "$repo_info" | cut -d' ' -f2)
+  enabled=$(echo "$repo_info" | cut -d' ' -f3)
+
+  if [ "$enabled" = "true" ]; then
+    categories=$(gh api graphql -F owner="$owner" -F name="$name" -f query='
+      query($owner: String!, $name: String!) {
+        repository(owner: $owner, name: $name) {
+          discussionCategories(first: 10) {
+            nodes {
+              name
+            }
+          }
+        }
+      }' --jq '.data.repository.discussionCategories.nodes[].name')
+
+    if echo "$categories" | grep -q "^Announcements$"; then
+      discussion_arg="--discussion-category Announcements"
+    elif echo "$categories" | grep -q "^General$"; then
+      discussion_arg="--discussion-category General"
+    fi
+  fi
+fi
+
 if [ -n "$prerelease_flag" ]; then
-  gh release create "$version" --generate-notes "$prerelease_flag"
+  # shellcheck disable=SC2086
+  gh release create "$version" --generate-notes "$prerelease_flag" $discussion_arg
 else
-  gh release create "$version" --generate-notes
+  # shellcheck disable=SC2086
+  gh release create "$version" --generate-notes $discussion_arg
 fi
 
