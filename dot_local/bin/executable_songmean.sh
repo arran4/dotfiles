@@ -45,9 +45,25 @@ if [ -z "$BROWSER_CMD" ]; then
   exit 1
 fi
 
+urlencode() {
+  local LC_ALL=C
+  local string="$1"
+  local length="${#string}"
+  local i c
+  for (( i = 0; i < length; i++ )); do
+    c="${string:i:1}"
+    case "$c" in
+      [a-zA-Z0-9.~_-]) printf "%s" "$c" ;;
+      ' ') printf '+' ;;
+      *) printf '%%%02X' "'$c" ;;
+    esac
+  done
+}
+
 # Generate URL
 # We capture the output of playerctl. If it fails, the query will be empty.
-METADATA=$(playerctl metadata --format '{{ artist }} - {{ title }}. Song lyrics, meaning, context and analysis' -p spotify 2>/dev/null | sed 's/ /+/g')
+QUERY=$(playerctl metadata --format '{{ artist }} - {{ title }}. Song lyrics, meaning, context and analysis' -p spotify 2>/dev/null)
+METADATA=$(urlencode "$QUERY")
 URL="https://grok.com/?q=$METADATA"
 
 # Execute
