@@ -53,7 +53,7 @@ urlencode() {
   for (( i = 0; i < length; i++ )); do
     c="${string:i:1}"
     case "$c" in
-      [a-zA-Z0-9.~_-]) printf "$c" ;;
+      [a-zA-Z0-9.~_-]) printf "%s" "$c" ;;
       ' ') printf '+' ;;
       *) printf '%%%02X' "'$c" ;;
     esac
