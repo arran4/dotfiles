@@ -8,7 +8,16 @@ style "user-font"
 #widget_class "*" style "user-font"
 #gtk-font-name="Noto Sans,  10"
 
-{{- $theme := get . "gtkTheme" | default "Breeze" }}
+{{- $theme := get . "gtkTheme" }}
+{{- if not $theme }}
+  {{- $gtk3Config := joinPath .chezmoi.homeDir ".config/gtk-3.0/settings.ini" }}
+  {{- if stat $gtk3Config }}
+    {{- $ini := include $gtk3Config | fromIni }}
+    {{- if and $ini.Settings (index $ini.Settings "gtk-theme-name") }}
+      {{- $theme = index $ini.Settings "gtk-theme-name" }}
+    {{- end }}
+  {{- end }}
+{{- end }}
 {{- if not $theme }}
   {{- if env "GTK_THEME" }}
     {{- $theme = env "GTK_THEME" | splitList ":" | first }}
@@ -20,7 +29,8 @@ style "user-font"
           {{- $theme = $gsettingsTheme }}
         {{- end }}
       {{- end }}
-    {{- else if lookPath "xfconf-query" }}
+    {{- end }}
+    {{- if and (not $theme) (lookPath "xfconf-query") }}
       {{- if eq (output "sh" "-c" "xfconf-query -l | grep -q xsettings && echo exists || true" | trim) "exists" }}
         {{- $xfceTheme := output "xfconf-query" "-c" "xsettings" "-p" "/Net/ThemeName" | trim }}
         {{- if $xfceTheme }}
