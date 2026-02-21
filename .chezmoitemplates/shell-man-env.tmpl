@@ -14,7 +14,9 @@
 export MANPATH="{{ range $p := $manpaths }}{{ $p }}:{{ end }}$MANPATH"
 {{ end -}}
 
-{{ if stat (index . "nvimpagerLocation") -}}
+{{ if stat (index . "neovimLocation") -}}
+	export MANPAGER='nvim +Man!'
+{{ else if stat (index . "nvimpagerLocation") -}}
 	if [ -x "${HOME}/.local/bin/manpager-nvimpager" ]; then
 		export MANPAGER="${HOME}/.local/bin/manpager-nvimpager"
 	else
