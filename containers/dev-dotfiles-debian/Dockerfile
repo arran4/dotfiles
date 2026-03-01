@@ -27,11 +27,10 @@ RUN set -euxo pipefail \
   && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
   && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
   && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-  && curl -sL https://packages.gitlab.com/install/repositories/gitlab/gitlab-cli/script.deb.sh | bash \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  jq \
   gh \
-  glab \
   git \
   openssh-client \
   sudo \
@@ -76,6 +75,10 @@ RUN set -euxo pipefail \
   xz-utils \
   ca-certificates \
   locales \
+  && GLAB_LATEST_URL=$(curl -sL https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases | jq -r '.[0].assets.links[] | select(.name | test("deb")) | .url' | grep -i "$(dpkg --print-architecture)" | head -n 1) \
+  && curl -sL "$GLAB_LATEST_URL" -o glab.deb \
+  && dpkg -i glab.deb \
+  && rm glab.deb \
   && rm -rf /var/lib/apt/lists/*
 
 ENV DEBIAN_FRONTEND=noninteractive
