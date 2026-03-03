@@ -1,3 +1,7 @@
+if &secure
+  finish
+endif
+
 syntax on			" Syntax highlighting
 set foldmethod		=syntax	" Fold method
 set background		=dark	" Background colour scheme
