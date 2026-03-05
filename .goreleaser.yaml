@@ -1,0 +1,30 @@
+project_name: dotfiles
+
+builds:
+  - skip: true
+
+archives:
+  - id: archive
+    format: binary
+    name_template: "dummy"
+    allow_different_binary_count: true
+
+release:
+  extra_files:
+    - glob: ./dotfiles.zip
+
+homebrew_casks:
+  -
+    name: dotfiles
+    repository:
+      owner: arran4
+      name: homebrew-tap
+      branch: "{{.ProjectName}}-{{.Version}}"
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+      pull_request:
+        enabled: true
+        draft: false
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    url_template: "https://github.com/{{ .Env.GITHUB_REPOSITORY }}/releases/download/{{ .Tag }}/dotfiles.zip"
