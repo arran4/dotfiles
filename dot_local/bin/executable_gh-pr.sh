@@ -17,6 +17,12 @@ if ! command_exists git; then
   exit 1
 fi
 
+if ! gh repo set-default --view > /dev/null 2>&1; then
+  echo "X No default remote repository has been set." >&2
+  echo "please run \`gh repo set-default\` to select a default remote repository." >&2
+  exit 1
+fi
+
 # Store original branch
 original_branch=$(git branch --show-current)
 
