@@ -178,6 +178,11 @@
 {{- $vimdiffLocation := findExecutable "vimdiff" $paths -}}
 {{- $nvimdiffLocation := findExecutable "nvimdiff" $paths -}}
 {{- $kdiff3Location := findExecutable "kdiff3" $paths -}}
+{{- $sourceTreeLocation := findExecutable "SourceTree.app/Contents/Resources/opendiff-w.sh" (list "/Applications" (joinPath .chezmoi.homeDir "Applications")) -}}
+{{- $openDiffLocation := findExecutable "opendiff" $paths -}}
+{{- if eq $openDiffLocation "" -}}
+  {{- $openDiffLocation = lookPath "opendiff" -}}
+{{- end -}}
 {{- $vimLocation := findExecutable "vim" $paths -}}
 {{- $neovimLocation := findExecutable "nvim" $paths -}}
 {{- $notepadppLocation := findExecutable "Notepad++/notepad++.exe" $binroots -}}
@@ -594,6 +599,8 @@
         vimdiffLocation="{{ $vimdiffLocation }}"
         nvimdiffLocation="{{ $nvimdiffLocation }}"
         kdiff3Location="{{ $kdiff3Location }}"
+        sourceTreeLocation="{{ $sourceTreeLocation }}"
+        openDiffLocation="{{ $openDiffLocation }}"
         vimLocation="{{ $vimLocation }}"
         neovimLocation="{{ $neovimLocation }}"
         notepadppLocation="{{ $notepadppLocation }}"
