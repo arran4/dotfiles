@@ -103,7 +103,8 @@ RUN set -euxo pipefail \
 RUN set -euxo pipefail \
   && python3 -m pip install --no-cache-dir --break-system-packages \
     "${GEMINI_CLI_PACKAGE}" \
-    "${CODEX_CLI_PACKAGE}"
+    "${CODEX_CLI_PACKAGE}" \
+    "mini-swe-agent"
 
 RUN set -euxo pipefail \
   && npm install -g @google/jules
