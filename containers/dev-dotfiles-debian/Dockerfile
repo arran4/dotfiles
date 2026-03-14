@@ -118,6 +118,9 @@ RUN set -euxo pipefail \
   && npm install -g @githubnext/github-copilot-cli
 
 RUN set -euxo pipefail \
+  && bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source qwenchat
+
+RUN set -euxo pipefail \
   && go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
   && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI
 
