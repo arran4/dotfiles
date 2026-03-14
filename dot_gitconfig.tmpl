@@ -121,9 +121,9 @@
 [mergetool "kdiff3"]
   trustExitCode = false
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if ne (index . "sourceTreeLocation") "" }}
 [mergetool "sourcetree"]
-  cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+  cmd = {{ index . "sourceTreeLocation" }} \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
   trustExitCode = true
 {{end}}
 
@@ -137,9 +137,11 @@
 [difftool "kdiff3"]
   trustExitCode = false
 
+{{ if ne (index . "openDiffLocation") "" }}
 [difftool "sourcetree"]
-  cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+  cmd = {{ index . "openDiffLocation" }} \"$LOCAL\" \"$REMOTE\"
   path =
+{{end}}
 [difftool "vscode"]
   cmd = code --wait --diff $LOCAL $REMOTE
 [difftool "nvimdiff"]
