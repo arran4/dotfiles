@@ -533,6 +533,12 @@
         {{- writeToStdout "Can't find jq \n" -}}
 {{- end -}}
 
+{{- if not (stat (joinPath .chezmoi.homeDir ".gitconfig.local")) -}}
+        {{- writeToStdout "Can't find ~/.gitconfig.local (Create it to allow for local overrides)\n" -}}
+{{- else -}}
+        {{- writeToStdout "Found ~/.gitconfig.local\n" -}}
+{{- end -}}
+
 {{- if and (eq .chezmoi.os "linux") (not (stat $xinputLocation )) -}}
         {{- writeToStdout "Can't find xinput \n" -}}
 {{- end -}}
