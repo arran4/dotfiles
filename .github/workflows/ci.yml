@@ -246,6 +246,9 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+            type=semver,pattern={{version}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
+            type=semver,pattern={{major}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
             type=ref,event=branch
             type=raw,value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
             type=raw,value=latest,enable={{is_default_branch}}
