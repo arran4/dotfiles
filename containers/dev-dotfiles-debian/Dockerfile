@@ -3,6 +3,8 @@
 ARG DEBIAN_RELEASE=stable
 FROM debian:${DEBIAN_RELEASE}-slim
 
+LABEL org.opencontainers.image.description="Debian development container with dotfiles"
+
 ARG USER_NAME=user
 ARG USER_UID=1000
 ARG USER_GID=1000
