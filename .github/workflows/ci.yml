@@ -239,6 +239,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian
+          labels: |
+            org.opencontainers.image.description=Debian development container with dotfiles
           tags: |
             type=ref,event=tag
             type=semver,pattern={{version}}
@@ -255,6 +257,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
 
   package-dotfiles:
     name: Package Dotfiles
