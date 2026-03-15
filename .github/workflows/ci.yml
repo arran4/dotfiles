@@ -283,6 +283,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist-release
+          pattern: dotfiles-*
       - name: Publish draft GitHub release
         uses: softprops/action-gh-release@v2
         with:
