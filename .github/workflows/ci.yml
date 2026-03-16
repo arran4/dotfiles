@@ -243,13 +243,12 @@ jobs:
             org.opencontainers.image.description=Debian development container with dotfiles
           tags: |
             type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=semver,pattern={{version}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=semver,pattern={{major}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=ref,event=branch
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=semver,pattern=v{{version}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
+            type=semver,pattern=v{{major}}.{{minor}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
+            type=semver,pattern=v{{major}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
             type=raw,value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
             type=raw,value=latest,enable={{is_default_branch}}
       - uses: docker/build-push-action@v6
