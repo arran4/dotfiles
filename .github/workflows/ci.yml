@@ -281,6 +281,7 @@ jobs:
         with:
           name: dotfiles-archive
           path: dotfiles.zip
+          retention-days: 1
 
   publish-draft:
     name: Publish draft release assets
