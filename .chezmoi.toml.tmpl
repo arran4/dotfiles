@@ -258,6 +258,11 @@
   {{- $jqLocation = lookPath "jq" -}}
 {{- end -}}
 
+{{- $goPlayerctlLocation := findExecutable "go-playerctl" $paths -}}
+{{- if eq $goPlayerctlLocation "" -}}
+  {{- $goPlayerctlLocation = lookPath "go-playerctl" -}}
+{{- end -}}
+
 {{- $gitTagIncLocation := "" -}}
 {{- if stat (joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc") -}}
   {{- $gitTagIncLocation = joinPath .chezmoi.homeDir "/.local/bin/git-tag-inc" -}}
@@ -531,6 +536,10 @@
 
 {{- if not (stat $jqLocation ) -}}
         {{- writeToStdout "Can't find jq \n" -}}
+{{- end -}}
+
+{{- if not (eq $goPlayerctlLocation "") -}}
+        {{- writeToStdout (printf "go-playerctl installed at %s\n" $goPlayerctlLocation) -}}
 {{- end -}}
 
 {{- if not (stat (joinPath .chezmoi.homeDir ".gitconfig.local")) -}}
