@@ -45,7 +45,6 @@
 /.sudo*
 /*Projects
 /.dlv
-
 ## Windows defaults
 /NTUSER.DAT*
 /3D Objects
@@ -135,7 +134,6 @@
 {{ end }}
 /.local/include
 /.local/lib
-
 {{ if ne .chezmoi.os "linux" }}
 /bin/executable_disable-touchpad.sh
 /.config/yakuakerc
@@ -146,21 +144,17 @@
 {{ else }}
 !/.config/spotify/Users/12139113874-user/prefs
 {{ end }}
-
 {{ if ne .chezmoi.os "darwin" }}
 /bin/executable_screenshot-location_mac.sh
 /.local/bin/macos_defaults.sh
 {{ end }}
-
 {{ if not (lookPath "gh") }}
 /.local/bin/gh-release.sh
 {{ end }}
-
 {{ if ne .chezmoi.os "windows" }}
 /Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
 /bin/*.cmd
 {{ end }}
-
 /bin/chezmoi
 /bin/rssguard
 /*.gpg
@@ -186,7 +180,6 @@
 /.zoom
 /.config/akonadi*
 /.gnome
-
 .config/AdBlockadblockrc
 .config/Bitwarden
 .config/JetBrains
@@ -423,7 +416,6 @@
 /.config/matplotlib
 /.config/mcomix/preferences.conf
 /.config/microsoft-edge-dev
-/.config/mpv
 /.config/neochatrc
 /.config/obs-studio
 /.config/onedrive
@@ -528,10 +520,6 @@
 /.cert
 /.local/state
 /.local/sharekorganizer
-
-
-
-
 /.local/share/Android Open Source Project
 /.local/share/Google
 /.local/share/IntoTheBreach
@@ -661,9 +649,6 @@
 /.local/share/vulkan
 /.local/share/webkitgtk
 /.local/share/whatsapp-for-linux
-
-
 /.crack-attack/replay
-
 containers/
 /LICENSE
