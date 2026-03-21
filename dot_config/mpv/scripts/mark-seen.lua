@@ -65,7 +65,18 @@ local function mark_seen()
 
   -- Only operate on local files
   -- Note: On Windows paths might start with drive letter (e.g. C:\)
-  if not path:match("^/") and not path:match("^%a+:") then return end
+  -- If it's a relative path, resolve it to an absolute path.
+  -- But we must not resolve protocols like http:// or ftp://
+  if path:match("^%a+://") then return end
+
+  if not path:match("^/") and not path:match("^%a+:") then
+    local workdir = mp.get_property("working-directory")
+    if workdir then
+      path = utils.join_path(workdir, path)
+    else
+      return
+    end
+  end
 
   mp.msg.info("Attempting to mark as seen: " .. path)
 
