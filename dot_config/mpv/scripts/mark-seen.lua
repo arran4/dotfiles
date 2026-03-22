@@ -23,25 +23,95 @@ end
 
 local os_name = get_os()
 
-local function mark_seen_xattr(path)
-  local args = {}
-  if os_name == 'windows' then
-    args = {'powershell', '-NoProfile', '-Command', string.format('Set-Content -LiteralPath "%s" -Stream "%s" -Value "%s"', path, MARK_ATTR, MARK_VALUE)}
-  elseif os_name == 'macos' then
-    args = {'xattr', '-w', MARK_ATTR, MARK_VALUE, path}
-  else
-    args = {'setfattr', '-n', MARK_ATTR, '-v', MARK_VALUE, path}
+local function get_xattr(path, attr)
+  local res = mp.command_native({
+    name = "subprocess",
+    playback_only = false,
+    capture_stdout = true,
+    args = {"getfattr", "--only-values", "-n", attr, path}
+  })
+  if res.status == 0 and res.stdout then
+    return res.stdout:gsub("\n$", "")
   end
+  return nil
+end
 
+local function set_xattr(path, attr, value)
   local res = mp.command_native({
     name = "subprocess",
     playback_only = false,
     capture_stdout = true,
     capture_stderr = true,
-    args = args
+    args = {'setfattr', '-n', attr, '-v', value, path}
   })
-
   return res.status == 0
+end
+
+local function mark_seen_xattr(path, percent, time_pos)
+  if os_name == 'windows' then
+    local args = {'powershell', '-NoProfile', '-Command', string.format('Set-Content -LiteralPath "%s" -Stream "%s" -Value "%s"', path, MARK_ATTR, MARK_VALUE)}
+    local res = mp.command_native({
+      name = "subprocess",
+      playback_only = false,
+      capture_stdout = true,
+      capture_stderr = true,
+      args = args
+    })
+    return res.status == 0
+  elseif os_name == 'macos' then
+    local args = {'xattr', '-w', MARK_ATTR, MARK_VALUE, path}
+    local res = mp.command_native({
+      name = "subprocess",
+      playback_only = false,
+      capture_stdout = true,
+      capture_stderr = true,
+      args = args
+    })
+    return res.status == 0
+  else
+    local success = true
+
+    -- 1. user.xdg.tags
+    local tags = get_xattr(path, "user.xdg.tags")
+    local new_tags = tags
+    if not tags or tags == "" then
+      new_tags = "Seen"
+    elseif not string.find("," .. tags .. ",", ",Seen,") then
+      new_tags = tags .. ",Seen"
+    end
+    if new_tags ~= tags then
+      if not set_xattr(path, "user.xdg.tags", new_tags) then success = false end
+    end
+
+    -- 2. user.xdg.comment
+    local comment = get_xattr(path, "user.xdg.comment")
+
+    local s = math.floor(time_pos or 0)
+    local h = math.floor(s / 3600)
+    s = s % 3600
+    local m = math.floor(s / 60)
+    s = s % 60
+    local time_str = ""
+    if h > 0 then
+      time_str = string.format("%d:%02d:%02d", h, m, s)
+    else
+      time_str = string.format("%d:%02d", m, s)
+    end
+
+    local append_str = string.format("Watched %d%% at %s", math.floor(percent or 0), time_str)
+    local new_comment = comment
+    if not comment or comment == "" then
+      new_comment = append_str
+    else
+      new_comment = comment .. "\n" .. append_str
+    end
+    if not set_xattr(path, "user.xdg.comment", new_comment) then success = false end
+
+    -- 3. user.watched
+    if not set_xattr(path, "user.watched", tostring(time_pos or 0)) then success = false end
+
+    return success
+  end
 end
 
 local function mark_seen_fallback(path)
@@ -57,7 +127,7 @@ local function mark_seen_fallback(path)
   end
 end
 
-local function mark_seen()
+local function mark_seen(percent, time_pos)
   if marked then return end
 
   local path = mp.get_property("path")
@@ -80,7 +150,7 @@ local function mark_seen()
 
   mp.msg.info("Attempting to mark as seen: " .. path)
 
-  local success = mark_seen_xattr(path)
+  local success = mark_seen_xattr(path, percent, time_pos)
   if success then
     mp.msg.info("Marked as seen using extended attributes.")
   else
@@ -94,7 +164,8 @@ end
 mp.observe_property("percent-pos", "number", function(_, percent)
   if not percent then return end
   if percent >= THRESHOLD then
-    mark_seen()
+    local time_pos = mp.get_property_number("time-pos")
+    mark_seen(percent, time_pos)
   end
 end)
 
