@@ -130,11 +130,20 @@ local function update_comment(path, percent, time_pos)
 
   local append_str = string.format("Watched %d%% at %s", math.floor(percent or 0), time_str)
   local new_comment = comment
-  if not comment or comment == "" then
+
+  if comment and comment ~= "" then
+    -- Remove old watched progress string to prevent bloat
+    new_comment = string.gsub(comment, "Watched %d+%% at [0-9:]+\n?", "")
+    -- Remove any trailing newlines that might be left over
+    new_comment = string.gsub(new_comment, "\n+$", "")
+  end
+
+  if not new_comment or new_comment == "" then
     new_comment = append_str
   else
-    new_comment = comment .. "\n" .. append_str
+    new_comment = new_comment .. "\n" .. append_str
   end
+
   return set_xattr(path, "user.xdg.comment", new_comment)
 end
 
