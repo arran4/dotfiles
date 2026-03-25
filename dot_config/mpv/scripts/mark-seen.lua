@@ -7,7 +7,6 @@ local MARK_VALUE = "1"
 
 local seen_marked = false
 local last_update_percent = 0
-local last_append_str = nil
 local fallback_marked = false
 
 local function get_os()
@@ -111,28 +110,22 @@ local function mark_seen_xattr(path, percent, time_pos, is_seen)
     end
 
     local append_str = string.format("Watched %d%% at %s", math.floor(percent or 0), time_str)
-    local new_comment = comment
 
-    if last_append_str and comment and string.sub(comment, -string.len(last_append_str)) == last_append_str then
-      new_comment = string.sub(comment, 1, -string.len(last_append_str) - 1)
-      if string.sub(new_comment, -1) == "\n" then
-        new_comment = string.sub(new_comment, 1, -2)
+    local new_lines = {}
+    if comment and comment ~= "" then
+      for line in comment:gmatch("[^\r\n]+") do
+        if not line:match("^Watched %d+%% at [%d:]+$") then
+          table.insert(new_lines, line)
+        end
       end
     end
+    table.insert(new_lines, append_str)
 
-    if not new_comment or new_comment == "" then
-      new_comment = append_str
-    else
-      new_comment = new_comment .. "\n" .. append_str
-    end
+    local new_comment = table.concat(new_lines, "\n")
     if not set_xattr(path, "user.xdg.comment", new_comment) then success = false end
 
     -- 3. user.watched
     if not set_xattr(path, "user.watched", tostring(time_pos or 0)) then success = false end
-
-    if success then
-      last_append_str = append_str
-    end
 
     return success
   end
@@ -209,6 +202,5 @@ end)
 mp.register_event("file-loaded", function()
   seen_marked = false
   last_update_percent = 0
-  last_append_str = nil
   fallback_marked = false
 end)
