@@ -1,10 +1,14 @@
 local utils = require 'mp.utils'
 
 local THRESHOLD = 90
+local UPDATE_INTERVAL = 10
 local MARK_ATTR = "user.seen"
 local MARK_VALUE = "1"
 
-local marked = false
+local seen_marked = false
+local last_update_percent = 0
+local last_append_str = nil
+local fallback_marked = false
 
 local function get_os()
   if package.config:sub(1,1) == '\\' then
@@ -47,40 +51,48 @@ local function set_xattr(path, attr, value)
   return res.status == 0
 end
 
-local function mark_seen_xattr(path, percent, time_pos)
+local function mark_seen_xattr(path, percent, time_pos, is_seen)
   if os_name == 'windows' then
-    local args = {'powershell', '-NoProfile', '-Command', string.format('Set-Content -LiteralPath "%s" -Stream "%s" -Value "%s"', path, MARK_ATTR, MARK_VALUE)}
-    local res = mp.command_native({
-      name = "subprocess",
-      playback_only = false,
-      capture_stdout = true,
-      capture_stderr = true,
-      args = args
-    })
-    return res.status == 0
+    if is_seen then
+      local args = {'powershell', '-NoProfile', '-Command', string.format('Set-Content -LiteralPath "%s" -Stream "%s" -Value "%s"', path, MARK_ATTR, MARK_VALUE)}
+      local res = mp.command_native({
+        name = "subprocess",
+        playback_only = false,
+        capture_stdout = true,
+        capture_stderr = true,
+        args = args
+      })
+      return res.status == 0
+    end
+    return true
   elseif os_name == 'macos' then
-    local args = {'xattr', '-w', MARK_ATTR, MARK_VALUE, path}
-    local res = mp.command_native({
-      name = "subprocess",
-      playback_only = false,
-      capture_stdout = true,
-      capture_stderr = true,
-      args = args
-    })
-    return res.status == 0
+    if is_seen then
+      local args = {'xattr', '-w', MARK_ATTR, MARK_VALUE, path}
+      local res = mp.command_native({
+        name = "subprocess",
+        playback_only = false,
+        capture_stdout = true,
+        capture_stderr = true,
+        args = args
+      })
+      return res.status == 0
+    end
+    return true
   else
     local success = true
 
     -- 1. user.xdg.tags
-    local tags = get_xattr(path, "user.xdg.tags")
-    local new_tags = tags
-    if not tags or tags == "" then
-      new_tags = "Seen"
-    elseif not string.find("," .. tags .. ",", ",Seen,") then
-      new_tags = tags .. ",Seen"
-    end
-    if new_tags ~= tags then
-      if not set_xattr(path, "user.xdg.tags", new_tags) then success = false end
+    if is_seen then
+      local tags = get_xattr(path, "user.xdg.tags")
+      local new_tags = tags
+      if not tags or tags == "" then
+        new_tags = "Seen"
+      elseif not string.find("," .. tags .. ",", ",Seen,") then
+        new_tags = tags .. ",Seen"
+      end
+      if new_tags ~= tags then
+        if not set_xattr(path, "user.xdg.tags", new_tags) then success = false end
+      end
     end
 
     -- 2. user.xdg.comment
@@ -100,21 +112,34 @@ local function mark_seen_xattr(path, percent, time_pos)
 
     local append_str = string.format("Watched %d%% at %s", math.floor(percent or 0), time_str)
     local new_comment = comment
-    if not comment or comment == "" then
+
+    if last_append_str and comment and string.sub(comment, -string.len(last_append_str)) == last_append_str then
+      new_comment = string.sub(comment, 1, -string.len(last_append_str) - 1)
+      if string.sub(new_comment, -1) == "\n" then
+        new_comment = string.sub(new_comment, 1, -2)
+      end
+    end
+
+    if not new_comment or new_comment == "" then
       new_comment = append_str
     else
-      new_comment = comment .. "\n" .. append_str
+      new_comment = new_comment .. "\n" .. append_str
     end
     if not set_xattr(path, "user.xdg.comment", new_comment) then success = false end
 
     -- 3. user.watched
     if not set_xattr(path, "user.watched", tostring(time_pos or 0)) then success = false end
 
+    if success then
+      last_append_str = append_str
+    end
+
     return success
   end
 end
 
 local function mark_seen_fallback(path)
+  if fallback_marked then return end
   local config_dir = mp.command_native({"expand-path", "~~/"})
   local fallback_file = utils.join_path(config_dir, "seen.txt")
   local f = io.open(fallback_file, "a+")
@@ -122,21 +147,16 @@ local function mark_seen_fallback(path)
     f:write(path .. "\n")
     f:close()
     mp.msg.info("Fallback: Added to " .. fallback_file)
+    fallback_marked = true
   else
     mp.msg.error("Failed to write to fallback file: " .. fallback_file)
   end
 end
 
-local function mark_seen(percent, time_pos)
-  if marked then return end
-
+local function update_progress(percent, time_pos)
   local path = mp.get_property("path")
   if not path then return end
 
-  -- Only operate on local files
-  -- Note: On Windows paths might start with drive letter (e.g. C:\)
-  -- If it's a relative path, resolve it to an absolute path.
-  -- But we must not resolve protocols like http:// or ftp://
   if path:match("^%a+://") then return end
 
   if not path:match("^/") and not path:match("^%a+:") then
@@ -148,27 +168,47 @@ local function mark_seen(percent, time_pos)
     end
   end
 
-  mp.msg.info("Attempting to mark as seen: " .. path)
+  local is_seen = (percent >= THRESHOLD)
 
-  local success = mark_seen_xattr(path, percent, time_pos)
+  mp.msg.info("Attempting to update progress for: " .. path .. string.format(" (%d%%)", percent))
+
+  local success = mark_seen_xattr(path, percent, time_pos, is_seen)
   if success then
-    mp.msg.info("Marked as seen using extended attributes.")
+    mp.msg.info("Progress updated using extended attributes.")
   else
-    mp.msg.warn("Failed to set extended attribute, using fallback.")
-    mark_seen_fallback(path)
+    if is_seen then
+      mp.msg.warn("Failed to set extended attribute, using fallback.")
+      mark_seen_fallback(path)
+    end
   end
 
-  marked = true
+  if is_seen then
+    seen_marked = true
+  end
 end
 
 mp.observe_property("percent-pos", "number", function(_, percent)
   if not percent then return end
-  if percent >= THRESHOLD then
+
+  local do_update = false
+  if percent >= last_update_percent + UPDATE_INTERVAL then
+    do_update = true
+  elseif percent >= THRESHOLD and not seen_marked then
+    do_update = true
+  end
+
+  if do_update then
     local time_pos = mp.get_property_number("time-pos")
-    mark_seen(percent, time_pos)
+    update_progress(percent, time_pos)
+    if percent >= last_update_percent + UPDATE_INTERVAL then
+      last_update_percent = math.floor(percent / UPDATE_INTERVAL) * UPDATE_INTERVAL
+    end
   end
 end)
 
 mp.register_event("file-loaded", function()
-  marked = false
+  seen_marked = false
+  last_update_percent = 0
+  last_append_str = nil
+  fallback_marked = false
 end)
