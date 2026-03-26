@@ -6,6 +6,17 @@ local MARK_VALUE = "1"
 
 local marked = false
 local last_comment_percent = 0
+local current_interval = 5
+
+local function get_interval(duration)
+  if not duration or duration <= 0 then return 5 end
+  -- target ~120 seconds between updates
+  local target = (120 / duration) * 100
+  local interval = math.floor(target + 0.5)
+  if interval < 1 then interval = 1 end
+  if interval > 5 then interval = 5 end
+  return interval
+end
 
 local function get_os()
   if package.config:sub(1,1) == '\\' then
@@ -199,9 +210,10 @@ mp.observe_property("percent-pos", "number", function(_, percent)
 
   local time_pos = mp.get_property_number("time-pos")
 
-  if percent >= last_comment_percent + 5 then
-    mark_comment(percent, time_pos)
-    last_comment_percent = math.floor(percent)
+  local expected_mark = math.floor(percent / current_interval) * current_interval
+  if expected_mark > last_comment_percent and expected_mark > 0 then
+    mark_comment(expected_mark, time_pos)
+    last_comment_percent = expected_mark
   end
 
   if percent >= THRESHOLD then
@@ -212,4 +224,6 @@ end)
 mp.register_event("file-loaded", function()
   marked = false
   last_comment_percent = 0
+  local duration = mp.get_property_number("duration")
+  current_interval = get_interval(duration)
 end)
