@@ -70,7 +70,9 @@ style "user-font"
 {{- end }}
 
 {{- if $themePath }}
+{{- if stat $themePath }}
 include "{{ $themePath }}"
+{{- end }}
 gtk-theme-name="{{ $theme }}"
 {{- else }}
 # Theme "{{ $theme }}" not found in standard paths.
