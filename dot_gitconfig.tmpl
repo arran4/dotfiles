@@ -29,7 +29,7 @@
   {{- else }}
   editor = notepad
   {{- end }}
-{{- else }}
+{{- else if ne $editTool "" }}
   editor = {{ $editTool }}
 {{- end }}
   excludesfile = {{ .chezmoi.homeDir }}/.config/git/ignore
@@ -114,7 +114,8 @@
   conflictstyle = zdiff3
 {{- else if ne $mergeTool "" }}
   conflictstyle = diff3 # show original content before conflicts
-{{- else }}
+{{- end }}
+{{- if ne $mergeTool "" }}
   tool = {{ $mergeTool }}
 {{- end }}
 
@@ -128,7 +129,9 @@
 {{end}}
 
 [diff]
+{{- if ne $diffTool "" }}
   tool = {{ $diffTool }}
+{{- end }}
   colorMoved = default
 
 [difftool]
