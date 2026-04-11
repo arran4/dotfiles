@@ -8,6 +8,16 @@ command=flutter pub run build_runner build
 name=flutter run builder
 tooltip=
 
+[dev/git][git fetch all and prune]
+command=git fetch --all --prune && git remote prune origin
+name=git fetch all and prune
+tooltip=
+
+[dev/git][git interactive rebase master]
+command=git rebase -i origin/master
+name=git interactive rebase master
+tooltip=
+
 [dev/git][git log --oneline --graph --decorate]
 command=git log --oneline --graph --decorate
 name=git log --oneline --graph --decorate
@@ -38,14 +48,39 @@ command=docker compose up -d --build
 name=docker compose up build
 tooltip=
 
+[docker][docker prune system and volumes]
+command=docker system prune -a --volumes -f
+name=docker prune system and volumes
+tooltip=
+
+[docker][docker stop and remove all containers]
+command=docker stop $(docker ps -aq) && docker rm $(docker ps -aq)
+name=docker stop and remove all containers
+tooltip=
+
 [download][wget continue list.txt notify]
 command=wget --continue --input-file=list.txt --content-disposition --trust-server-names --retry-connrefused; notify-send "wget"
 name=wget continue list.txt notify
 tooltip=
 
+[media][mpv play clipboard]
+command=mpv "$(wl-paste)"
+name=mpv play clipboard
+tooltip=
+
+[system][chezmoi apply and notify]
+command=chezmoi apply && notify-send "Chezmoi" "Apply completed"
+name=chezmoi apply and notify
+tooltip=
+
 [system][chezmoi update apply init]
 command=chezmoi update --apply --init
 name=chezmoi update apply init
+tooltip=
+
+[system][update font cache]
+command=fc-cache -fv
+name=update font cache
 tooltip=
 
 
@@ -70,6 +105,22 @@ tooltip=
 [gentoo][emerge world update new-use new-deps deep ask keepgoing]
 command=sudo emerge -vauUDN @world --keep-going=y
 name=emerge world update new-use new-deps deep ask keepgoing
+tooltip=
+
+
+[gentoo][emerge sync and notify]
+command=sudo emerge --sync && notify-send "Emerge" "Sync complete"
+name=emerge sync and notify
+tooltip=
+
+[gentoo][eclean distfiles and depclean]
+command=sudo eclean-dist -d && sudo emerge --depclean && notify-send "Emerge" "Cleanup complete"
+name=eclean distfiles and depclean
+tooltip=
+
+[gentoo][revdep-rebuild and module rebuild]
+command=sudo revdep-rebuild && sudo emerge @module-rebuild && notify-send "Emerge" "Rebuilds complete"
+name=revdep-rebuild and module rebuild
 tooltip=
 
 {{- end -}}{{- end -}}{{- end -}}
