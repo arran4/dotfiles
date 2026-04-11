@@ -58,9 +58,9 @@ command=sudo emerge --sync && sudo emerge -avuDNU --with-bdeps=y @world --keep-g
 name=emerge sync world ask upgrade newuse with bdeps keepgoing notify
 tooltip=
 
-[gentoo][emerge world ask deep new-use new upgarde keep going and notify afterwards]
+[gentoo][emerge world ask deep new-use new upgrade keep going and notify afterwards]
 command=sudo emerge @world -vauDNU --keep-going=y ; notify-send "Emerge world done"\n
-name=emerge world ask deep new-use new upgarde keep going and notify afterwards
+name=emerge world ask deep new-use new upgrade keep going and notify afterwards
 tooltip=
 
 [gentoo][emerge world update ask]
