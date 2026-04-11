@@ -1,0 +1,180 @@
+[dev/appengine][arran4com datastore emulator]
+command=gcloud beta emulators datastore start --project arran4com
+name=arran4com datastore emulator
+tooltip=
+
+[dev/flutter][flutter analyze]
+command=flutter analyze
+name=flutter analyze
+tooltip=
+
+[dev/flutter][flutter run builder]
+command=flutter pub run build_runner build
+name=flutter run builder
+tooltip=
+
+[dev/git][git fetch --all]
+command=git fetch --all
+name=git fetch --all
+tooltip=
+
+[dev/git][git log --oneline --graph --decorate]
+command=git log --oneline --graph --decorate
+name=git log --oneline --graph --decorate
+tooltip=
+
+[dev/git][git pull --rebase]
+command=git pull --rebase
+name=git pull --rebase
+tooltip=
+
+[dev/go][go build ./...]
+command=go build ./...
+name=go build ./...
+tooltip=
+
+[dev/go][go install ./...]
+command=go install ./...
+name=go install ./...
+tooltip=
+
+[dev/go][go lint]
+command=golangci-lint run
+name=go lint
+tooltip=
+
+[dev/go][go mod tidy]
+command=go mod tidy
+name=go mod tidy
+tooltip=
+
+[dev/go][go test -v ./...]
+command=go test -v ./...
+name=go test -v ./...
+tooltip=
+
+[dev/go][go test vet fix lint format]
+command=go test ./... && go vet ./... && go fix ./... && golangci-lint run && go fmt ./...
+name=go test vet fix lint format
+tooltip=
+
+[dev][gh release push]
+command=gh-release.sh patch
+name=gh release push
+tooltip=
+
+[dev][git add ammend commit no edit tag release push tags and force push]
+command=git add . && git commit --amend --no-edit && git-tag-inc release && git push --tags && git push --force
+name=git add ammend commit no edit tag release push tags and force push
+tooltip=
+
+[dev][git-tag-inc release push]
+command=git-tag-inc release && git push --tags
+name=git-tag-inc release push
+tooltip=
+
+[docker][docker compose down]
+command=docker compose down
+name=docker compose down
+tooltip=
+
+[docker][docker compose up build]
+command=docker compose up -d --build
+name=docker compose up build
+tooltip=
+
+[docker][docker ps]
+command=docker ps
+name=docker ps
+tooltip=
+
+[download][wget continue list.txt notify]
+command=wget --continue --input-file=list.txt --content-disposition --trust-server-names --retry-connrefused; notify-send "wget"
+name=wget continue list.txt notify
+tooltip=
+
+[system][chezmoi apply]
+command=chezmoi apply
+name=chezmoi apply
+tooltip=
+
+[system][chezmoi cd]
+command=chezmoi cd
+name=chezmoi cd
+tooltip=
+
+[system][chezmoi update apply init]
+command=chezmoi update --apply --init
+name=chezmoi update apply init
+tooltip=
+
+[system][start cups]
+command=systemctl start cups
+name=start cups
+tooltip=
+
+[system][start docker]
+command=systemctl start docker
+name=start docker
+tooltip=
+
+[system][start mariadb]
+command=systemctl start mariadb
+name=start mariadb
+tooltip=
+
+[system][start ollama]
+command=systemctl start ollama
+name=start ollama
+tooltip=
+
+
+{{- if eq .chezmoi.os "linux" -}}
+{{- if hasKey .chezmoi "osRelease" -}}
+{{- if eq .chezmoi.osRelease.id "gentoo" -}}
+[gentoo][config dispatch]
+command=sudo dispatch-conf
+name=config dispatch
+tooltip=
+
+[gentoo][eclean distfiles]
+command=sudo eclean-dist
+name=eclean distfiles
+tooltip=
+
+[gentoo][emerge depclean]
+command=sudo emerge --depclean
+name=emerge depclean
+tooltip=
+
+[gentoo][emerge sync world ask upgrade newuse with bdeps keepgoing notify]
+command=sudo emerge --sync && sudo emerge -avuDNU --with-bdeps=y @world --keep-going=y; notify-send "Emerge world done"\n
+name=emerge sync world ask upgrade newuse with bdeps keepgoing notify
+tooltip=
+
+[gentoo][emerge world ask deep new-use new upgrade keep going and notify afterwards]
+command=sudo emerge @world -vauDNU --keep-going=y ; notify-send "Emerge world done"\n
+name=emerge world ask deep new-use new upgrade keep going and notify afterwards
+tooltip=
+
+[gentoo][emerge world update ask]
+command=sudo emerge -vau @world
+name=emerge world update ask
+tooltip=
+
+[gentoo][emerge world update new-use new-deps deep ask keepgoing]
+command=sudo emerge -vauUDN @world --keep-going=y
+name=emerge world update new-use new-deps deep ask keepgoing
+tooltip=
+
+[gentoo][gentoo sync]
+command=sudo emerge --sync
+name=gentoo sync
+tooltip=
+
+[gentoo][revdep-rebuild]
+command=sudo revdep-rebuild
+name=revdep-rebuild
+tooltip=
+
+{{- end -}}{{- end -}}{{- end -}}
