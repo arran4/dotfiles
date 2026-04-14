@@ -50,8 +50,17 @@ autoload -U url-quote-magic
 zle -N self-insert url-quote-magic
 
 # Tab completion changes
+{{- if index . "spellcheck" }}
 zstyle ':completion:*' completer _expand _complete _correct _approximate
+{{- else }}
+zstyle ':completion:*' completer _expand _complete
+{{- end }}
 zstyle :compinstall filename "${HOME}/.zshrc"
+
+{{- if not (index . "spellcheck") }}
+unsetopt correct
+unsetopt correct_all
+{{- end }}
 
 {{ template "prompt.tmpl" deepCopy $ | merge (dict "shell" "zsh") }}
 
