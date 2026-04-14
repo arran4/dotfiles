@@ -50,8 +50,11 @@ autoload -U url-quote-magic
 zle -N self-insert url-quote-magic
 
 # Tab completion changes
-zstyle ':completion:*' completer _expand _complete _correct _approximate
+zstyle ':completion:*' completer _expand _complete
 zstyle :compinstall filename "${HOME}/.zshrc"
+
+unsetopt correct
+unsetopt correct_all
 
 {{ template "prompt.tmpl" deepCopy $ | merge (dict "shell" "zsh") }}
 

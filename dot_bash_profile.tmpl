@@ -53,6 +53,10 @@ fi
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
 
+# Disable spell check
+shopt -u cdspell
+shopt -u dirspell
+
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
