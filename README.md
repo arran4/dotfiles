@@ -151,3 +151,7 @@ run:
 sudo update-alternatives --set x-terminal-emulator /usr/bin/foot
 ```
 
+## AI Assistants & Agents
+
+This environment includes support for several AI assistants:
+- [Junie](https://junie.jetbrains.com/)
