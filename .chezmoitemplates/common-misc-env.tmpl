@@ -94,3 +94,9 @@ if [ -n "$DISPLAY" ]; then
   export GIT_ASKPASS='{{(index . "ksshaskpassLocation")}}'
 fi
 {{- end }}
+
+if [ -n "$LANG" ]; then
+    if locale 2>&1 | grep -q 'Cannot set LC_'; then
+        export LANG=C.UTF-8
+    fi
+fi
