@@ -151,4 +151,8 @@ RUN set -euxo pipefail \
   && go version \
   && git --version
 
+RUN set -euxo pipefail \
+  && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
+  && junie --version
+
 ENTRYPOINT ["/usr/bin/zsh", "-l"]

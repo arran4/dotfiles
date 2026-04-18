@@ -150,4 +150,3 @@ run:
 ```sh
 sudo update-alternatives --set x-terminal-emulator /usr/bin/foot
 ```
-
