@@ -597,10 +597,6 @@
 {{- else -}}
         {{- writeToStdout (printf "Anytype installed at %s\n" $anytypeLocation) -}}
 {{- end -}}
-
-{{- if ne (trim (output "sh" "-c" "if command -v locale >/dev/null 2>&1 && locale 2>&1 | grep -q 'Cannot set LC_'; then echo 'error'; fi")) "" -}}
-        {{- writeToStdout "Warning: System locale is invalid or missing (locale reports 'Cannot set LC_'). The dotfiles will fallback to C.UTF-8 or C.\n" -}}
-{{- end -}}
 [git]
     autoCommit = {{ $autoGit }}
     autoPush = {{ $autoGit }}
@@ -713,4 +709,3 @@
 {{if stat $deltaLocation -}}
   pager = "{{$deltaLocation}}"
 {{end -}}
-
