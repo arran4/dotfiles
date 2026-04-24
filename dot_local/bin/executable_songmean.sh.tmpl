@@ -68,7 +68,7 @@ urlencode() {
 {{- end }}
 QUERY=$({{ $playerctlCmd }} metadata --format '{{ "{{" }} artist {{ "}}" }} - {{ "{{" }} title {{ "}}" }}. Song lyrics, meaning, context and analysis' -p spotify 2>/dev/null)
 METADATA=$(urlencode "$QUERY")
-URL="https://grok.com/?q=$METADATA"
+URL="https://www.perplexity.ai/search?q=$METADATA"
 
 # Execute
 "$BROWSER_CMD" "$URL"
