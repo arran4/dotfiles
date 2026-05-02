@@ -19,19 +19,21 @@ export WATCH=root
 	# Pager IS less
 	export PAGER={{(index . "nvimpagerLocation")}}
 	export DELTA_PAGER=less
+{{-   if stat (index . "lessLocation") }}
+	export GH_PAGER={{(index . "lessLocation")}}
+{{-   end }}
 {{ else if stat (index . "vimpagerLocation") -}}
 	# Pager IS less
 	export PAGER={{(index . "vimpagerLocation")}}
 	export DELTA_PAGER=less
+{{-   if stat (index . "lessLocation") }}
+	export GH_PAGER={{(index . "lessLocation")}}
+{{-   end }}
 {{ else if stat (index . "lessLocation") -}}
 	# Pager IS less
 	export PAGER={{(index . "lessLocation")}}
 {{- else -}}
 	# No less found!
-{{- end }}
-
-{{ if stat (index . "lessLocation") -}}
-	export GH_PAGER={{(index . "lessLocation")}}
 {{- end }}
 
 # set variable identifying the chroot you work in (used in the prompt below)
