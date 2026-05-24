@@ -66,7 +66,7 @@ urlencode() {
 {{- if lookPath "go-playerctl" }}
 {{-   $playerctlCmd = "go-playerctl" }}
 {{- end }}
-QUERY=$({{ $playerctlCmd }} metadata --format '{{ "{{" }} artist {{ "}}" }} - {{ "{{" }} title {{ "}}" }}. Song lyrics, meaning, context and analysis' -p spotify 2>/dev/null)
+QUERY=$({{ $playerctlCmd }} metadata --format '{{ "{{" }} artist {{ "}}" }} - {{ "{{" }} title {{ "}}" }}. Full song lyrics, meaning, context and analysis' -p spotify 2>/dev/null)
 METADATA=$(urlencode "$QUERY")
 URL="https://www.perplexity.ai/search?q=$METADATA"
 
