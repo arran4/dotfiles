@@ -42,15 +42,15 @@
 [rerere]
   enabled = 1
 
+{{ if ne (index . "ghLocation") "" }}
 [credential "https://github.com"]
   useHttpPath = true
-{{ if ne (index . "ghLocation") "" }}
   helper =
   helper = !{{ index . "ghLocation" }} auth git-credential
 {{ end }}
 
-[credential "https://gist.github.com"]
 {{ if ne (index . "ghLocation") "" }}
+[credential "https://gist.github.com"]
   helper =
   helper = !{{ index . "ghLocation" }} auth git-credential
 {{ end }}
