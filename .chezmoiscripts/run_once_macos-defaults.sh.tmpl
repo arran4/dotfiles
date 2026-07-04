@@ -1,0 +1,19 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+logger -t chezmoi-macos-defaults "Starting macOS screenshot configuration script"
+
+# Create the Screenshots directory if it doesn't exist
+mkdir -p "${HOME}/Pictures/Screenshots"
+logger -t chezmoi-macos-defaults "Created/verified Screenshots directory at ${HOME}/Pictures/Screenshots"
+
+# Save screenshots to the Pictures/Screenshots directory
+defaults write com.apple.screencapture location -string "${HOME}/Pictures/Screenshots"
+logger -t chezmoi-macos-defaults "Updated com.apple.screencapture location to ${HOME}/Pictures/Screenshots"
+
+# Ensure the changes take effect
+killall SystemUIServer 2>/dev/null || true
+logger -t chezmoi-macos-defaults "Restarted SystemUIServer to apply changes"
+
+logger -t chezmoi-macos-defaults "Finished macOS screenshot configuration script"
+{{- end -}}
