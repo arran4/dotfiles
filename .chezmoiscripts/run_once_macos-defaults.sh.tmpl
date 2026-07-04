@@ -8,5 +8,5 @@ mkdir -p "${HOME}/Pictures/Screenshots"
 defaults write com.apple.screencapture location -string "${HOME}/Pictures/Screenshots"
 
 # Ensure the changes take effect
-killall SystemUIServer
+killall SystemUIServer 2>/dev/null || true
 {{- end -}}
