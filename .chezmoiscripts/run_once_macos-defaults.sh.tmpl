@@ -1,0 +1,12 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+# Create the Screenshots directory if it doesn't exist
+mkdir -p "${HOME}/Pictures/Screenshots"
+
+# Save screenshots to the Pictures/Screenshots directory
+defaults write com.apple.screencapture location -string "${HOME}/Pictures/Screenshots"
+
+# Ensure the changes take effect
+killall SystemUIServer
+{{- end -}}
