@@ -15,9 +15,31 @@ logger -t chezmoi-macos-defaults "Updated com.apple.screencapture location to ${
 defaults write com.apple.screencapture type -string "png"
 logger -t chezmoi-macos-defaults "Updated com.apple.screencapture type to png"
 
+# Dock: auto hide and disable recent apps
+defaults write com.apple.dock autohide -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.dock autohide to true"
+
+defaults write com.apple.dock show-recents -bool false
+logger -t chezmoi-macos-defaults "Updated com.apple.dock show-recents to false"
+
+# Finder: show path bar and status bar
+defaults write com.apple.finder ShowPathbar -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder ShowPathbar to true"
+
+defaults write com.apple.finder ShowStatusBar -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder ShowStatusBar to true"
+
+# Finder: allow quitting via ⌘ + Q; doing so will also hide desktop icons
+defaults write com.apple.finder QuitMenuItem -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder QuitMenuItem to true"
+
+# Finder: disable window animations and Get Info animations
+defaults write com.apple.finder DisableAllAnimations -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder DisableAllAnimations to true"
+
 # Ensure the changes take effect
-killall SystemUIServer 2>/dev/null || true
-logger -t chezmoi-macos-defaults "Restarted SystemUIServer to apply changes"
+killall Dock Finder SystemUIServer 2>/dev/null || true
+logger -t chezmoi-macos-defaults "Restarted Dock, Finder and SystemUIServer to apply changes"
 
 logger -t chezmoi-macos-defaults "Finished macOS screenshot configuration script"
 {{- end -}}
