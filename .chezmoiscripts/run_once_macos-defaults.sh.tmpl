@@ -15,9 +15,17 @@ logger -t chezmoi-macos-defaults "Updated com.apple.screencapture location to ${
 defaults write com.apple.screencapture type -string "png"
 logger -t chezmoi-macos-defaults "Updated com.apple.screencapture type to png"
 
+# Finder: allow quitting via ⌘ + Q; doing so will also hide desktop icons
+defaults write com.apple.finder QuitMenuItem -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder QuitMenuItem to true"
+
+# Finder: disable window animations and Get Info animations
+defaults write com.apple.finder DisableAllAnimations -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder DisableAllAnimations to true"
+
 # Ensure the changes take effect
-killall SystemUIServer 2>/dev/null || true
-logger -t chezmoi-macos-defaults "Restarted SystemUIServer to apply changes"
+killall Finder SystemUIServer 2>/dev/null || true
+logger -t chezmoi-macos-defaults "Restarted Finder and SystemUIServer to apply changes"
 
 logger -t chezmoi-macos-defaults "Finished macOS screenshot configuration script"
 {{- end -}}

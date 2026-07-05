@@ -25,6 +25,8 @@ defaults write com.apple.dock show-recents -bool false
 # Finder: show path bar and status bar
 defaults write com.apple.finder ShowPathbar -bool true
 defaults write com.apple.finder ShowStatusBar -bool true
+defaults write com.apple.finder QuitMenuItem -bool true
+defaults write com.apple.finder DisableAllAnimations -bool true
 
 # Save screenshots to a dedicated directory
 screenshots_dir="${HOME}/Screenshots/mac defaults"
