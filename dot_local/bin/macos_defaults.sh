@@ -22,6 +22,10 @@ esac
 defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
 
+# Use list view in all Finder windows by default
+# Four-letter codes for the other view modes: `icnv`, `clmv`, `Flwv`
+defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
+
 # Finder: show path bar and status bar
 defaults write com.apple.finder ShowPathbar -bool true
 defaults write com.apple.finder ShowStatusBar -bool true
