@@ -77,6 +77,14 @@ logger -t chezmoi-macos-defaults "Updated com.apple.desktopservices DSDontWriteN
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 logger -t chezmoi-macos-defaults "Updated com.apple.desktopservices DSDontWriteUSBStores to true"
 
+# Automatically open a new Finder window when a volume is mounted
+defaults write com.apple.frameworks.diskimages auto-open-ro-root -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.frameworks.diskimages auto-open-ro-root to true"
+defaults write com.apple.frameworks.diskimages auto-open-rw-root -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.frameworks.diskimages auto-open-rw-root to true"
+defaults write com.apple.finder OpenWindowForNewRemovableDisk -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder OpenWindowForNewRemovableDisk to true"
+
 # Ensure the changes take effect
 killall Dock Finder SystemUIServer 2>/dev/null || true
 logger -t chezmoi-macos-defaults "Restarted Dock, Finder and SystemUIServer to apply changes"
