@@ -23,7 +23,7 @@ defaults write com.apple.dock show-recents -bool false
 logger -t chezmoi-macos-defaults "Updated com.apple.dock show-recents to false"
 
 # Use list view in all Finder windows by default
-# Four-letter codes for the other view modes: `icnv`, `clmv`, `Flwv`
+# Four-letter codes for the other view modes: `icnv` (Icon View), `clmv` (Column View), `glyv` (Gallery View)
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
 logger -t chezmoi-macos-defaults "Updated com.apple.finder FXPreferredViewStyle to Nlsv"
 
