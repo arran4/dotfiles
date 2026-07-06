@@ -58,5 +58,9 @@ screenshots_dir="${HOME}/Screenshots/mac defaults"
 mkdir -p "$screenshots_dir"
 defaults write com.apple.screencapture location "$screenshots_dir"
 
+# Avoid creating .DS_Store files on network or USB volumes
+defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+
 # Restart affected services
 killall Dock Finder SystemUIServer >/dev/null 2>&1 || true

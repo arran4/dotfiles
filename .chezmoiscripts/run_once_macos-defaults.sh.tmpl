@@ -70,6 +70,13 @@ logger -t chezmoi-macos-defaults "Updated com.apple.finder NewWindowTarget to Pf
 defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Documents/"
 logger -t chezmoi-macos-defaults "Updated com.apple.finder NewWindowTargetPath to file://${HOME}/Documents/"
 
+# Avoid creating .DS_Store files on network or USB volumes
+defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.desktopservices DSDontWriteNetworkStores to true"
+
+defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.desktopservices DSDontWriteUSBStores to true"
+
 # Ensure the changes take effect
 killall Dock Finder SystemUIServer 2>/dev/null || true
 logger -t chezmoi-macos-defaults "Restarted Dock, Finder and SystemUIServer to apply changes"
