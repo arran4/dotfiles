@@ -30,6 +30,10 @@ defaults write com.apple.finder QuitMenuItem -bool true
 # Finder: disable window animations and Get Info animations
 defaults write com.apple.finder DisableAllAnimations -bool true
 
+# Set Documents as the default location for new Finder windows
+defaults write com.apple.finder NewWindowTarget -string "PfLo"
+defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Documents/"
+
 # Save screenshots to a dedicated directory
 screenshots_dir="${HOME}/Screenshots/mac defaults"
 mkdir -p "$screenshots_dir"

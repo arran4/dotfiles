@@ -37,6 +37,13 @@ logger -t chezmoi-macos-defaults "Updated com.apple.finder QuitMenuItem to true"
 defaults write com.apple.finder DisableAllAnimations -bool true
 logger -t chezmoi-macos-defaults "Updated com.apple.finder DisableAllAnimations to true"
 
+# Set Documents as the default location for new Finder windows
+defaults write com.apple.finder NewWindowTarget -string "PfLo"
+logger -t chezmoi-macos-defaults "Updated com.apple.finder NewWindowTarget to PfLo"
+
+defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Documents/"
+logger -t chezmoi-macos-defaults "Updated com.apple.finder NewWindowTargetPath to file://${HOME}/Documents/"
+
 # Ensure the changes take effect
 killall Dock Finder SystemUIServer 2>/dev/null || true
 logger -t chezmoi-macos-defaults "Restarted Dock, Finder and SystemUIServer to apply changes"
