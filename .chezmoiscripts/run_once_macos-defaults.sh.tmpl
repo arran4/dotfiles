@@ -41,6 +41,28 @@ logger -t chezmoi-macos-defaults "Updated com.apple.finder DisableAllAnimations 
 defaults write com.apple.finder AppleShowAllFiles -bool true
 logger -t chezmoi-macos-defaults "Updated com.apple.finder AppleShowAllFiles to true"
 
+# Finder: show all filename extensions
+defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+logger -t chezmoi-macos-defaults "Updated NSGlobalDomain AppleShowAllExtensions to true"
+
+# Display full POSIX path as Finder window title
+defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder _FXShowPosixPathInTitle to true"
+
+# Keep folders on top when sorting by name
+defaults write com.apple.finder _FXSortFoldersFirst -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder _FXSortFoldersFirst to true"
+defaults write com.apple.finder _FXSortFoldersFirstOnDesktop -bool true
+logger -t chezmoi-macos-defaults "Updated com.apple.finder _FXSortFoldersFirstOnDesktop to true"
+
+# When performing a search, search the current folder by default
+defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+logger -t chezmoi-macos-defaults "Updated com.apple.finder FXDefaultSearchScope to SCcf"
+
+# Disable the warning when changing a file extension
+defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+logger -t chezmoi-macos-defaults "Updated com.apple.finder FXEnableExtensionChangeWarning to false"
+
 # Set Documents as the default location for new Finder windows
 defaults write com.apple.finder NewWindowTarget -string "PfLo"
 logger -t chezmoi-macos-defaults "Updated com.apple.finder NewWindowTarget to PfLo"
