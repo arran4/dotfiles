@@ -15,7 +15,13 @@ logger -t chezmoi-macos-defaults "Updated com.apple.screencapture location to ${
 defaults write com.apple.screencapture type -string "png"
 logger -t chezmoi-macos-defaults "Updated com.apple.screencapture type to png"
 
-# Dock: auto hide and disable recent apps
+# Dock: auto hide, remove delay and animation, and disable recent apps
+defaults write com.apple.dock autohide-delay -float 0
+logger -t chezmoi-macos-defaults "Updated com.apple.dock autohide-delay to 0"
+
+defaults write com.apple.dock autohide-time-modifier -float 0
+logger -t chezmoi-macos-defaults "Updated com.apple.dock autohide-time-modifier to 0"
+
 defaults write com.apple.dock autohide -bool true
 logger -t chezmoi-macos-defaults "Updated com.apple.dock autohide to true"
 

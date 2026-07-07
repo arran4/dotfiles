@@ -18,7 +18,9 @@ case "$answer" in
     ;;
 esac
 
-# Dock: auto hide and disable recent apps
+# Dock: auto hide, remove delay and animation, and disable recent apps
+defaults write com.apple.dock autohide-delay -float 0
+defaults write com.apple.dock autohide-time-modifier -float 0
 defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
 
