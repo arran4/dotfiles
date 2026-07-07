@@ -22,6 +22,12 @@ esac
 defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
 
+# Don't animate opening applications from the Dock
+defaults write com.apple.dock launchanim -bool false
+
+# Speed up Mission Control animations
+defaults write com.apple.dock expose-animation-duration -float 0.1
+
 # Use list view in all Finder windows by default
 # Four-letter codes for the other view modes: `icnv` (Icon View), `clmv` (Column View), `glyv` (Gallery View)
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"

@@ -22,6 +22,14 @@ logger -t chezmoi-macos-defaults "Updated com.apple.dock autohide to true"
 defaults write com.apple.dock show-recents -bool false
 logger -t chezmoi-macos-defaults "Updated com.apple.dock show-recents to false"
 
+# Don't animate opening applications from the Dock
+defaults write com.apple.dock launchanim -bool false
+logger -t chezmoi-macos-defaults "Updated com.apple.dock launchanim to false"
+
+# Speed up Mission Control animations
+defaults write com.apple.dock expose-animation-duration -float 0.1
+logger -t chezmoi-macos-defaults "Updated com.apple.dock expose-animation-duration to 0.1"
+
 # Use list view in all Finder windows by default
 # Four-letter codes for the other view modes: `icnv` (Icon View), `clmv` (Column View), `glyv` (Gallery View)
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
