@@ -141,6 +141,14 @@ if ls -ldO /Volumes | grep -q hidden; then
   fi
 fi
 
+# Don't animate opening applications from the Dock
+defaults write com.apple.dock launchanim -bool false
+logger -t chezmoi-macos-defaults "Updated com.apple.dock launchanim to false"
+
+# Speed up Mission Control animations
+defaults write com.apple.dock expose-animation-duration -float 0.1
+logger -t chezmoi-macos-defaults "Updated com.apple.dock expose-animation-duration to 0.1"
+
 # Ensure the changes take effect
 killall Dock Finder SystemUIServer 2>/dev/null || true
 logger -t chezmoi-macos-defaults "Restarted Dock, Finder and SystemUIServer to apply changes"

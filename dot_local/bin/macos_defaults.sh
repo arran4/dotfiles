@@ -110,5 +110,11 @@ if ls -ldO /Volumes | grep -q hidden; then
   sudo chflags nohidden /Volumes || true
 fi
 
+# Don't animate opening applications from the Dock
+defaults write com.apple.dock launchanim -bool false
+
+# Speed up Mission Control animations
+defaults write com.apple.dock expose-animation-duration -float 0.1
+
 # Restart affected services
 killall Dock Finder SystemUIServer >/dev/null 2>&1 || true
