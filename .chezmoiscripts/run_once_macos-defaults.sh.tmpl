@@ -123,6 +123,24 @@ set_finder_pref "FK_StandardViewSettings:IconViewSettings:gridSpacing" "integer"
 set_finder_pref "StandardViewSettings:IconViewSettings:gridSpacing" "integer" "100"
 logger -t chezmoi-macos-defaults "Updated com.apple.finder.plist icon view settings gridSpacing to 100"
 
+# Show the ~/Library folder
+if ls -ldO "$HOME/Library" | grep -q hidden; then
+  if chflags nohidden "$HOME/Library"; then
+    logger -t chezmoi-macos-defaults "Unhid ~/Library"
+  else
+    logger -t chezmoi-macos-defaults "Failed to unhide ~/Library"
+  fi
+fi
+
+# Show the /Volumes folder
+if ls -ldO /Volumes | grep -q hidden; then
+  if sudo chflags nohidden /Volumes; then
+    logger -t chezmoi-macos-defaults "Unhid /Volumes"
+  else
+    logger -t chezmoi-macos-defaults "Failed to unhide /Volumes"
+  fi
+fi
+
 # Ensure the changes take effect
 killall Dock Finder SystemUIServer 2>/dev/null || true
 logger -t chezmoi-macos-defaults "Restarted Dock, Finder and SystemUIServer to apply changes"

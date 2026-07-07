@@ -100,5 +100,15 @@ set_finder_pref "DesktopViewSettings:IconViewSettings:gridSpacing" "integer" "10
 set_finder_pref "FK_StandardViewSettings:IconViewSettings:gridSpacing" "integer" "100"
 set_finder_pref "StandardViewSettings:IconViewSettings:gridSpacing" "integer" "100"
 
+# Show the ~/Library folder
+if ls -ldO "$HOME/Library" | grep -q hidden; then
+  chflags nohidden "$HOME/Library" || true
+fi
+
+# Show the /Volumes folder
+if ls -ldO /Volumes | grep -q hidden; then
+  sudo chflags nohidden /Volumes || true
+fi
+
 # Restart affected services
 killall Dock Finder SystemUIServer >/dev/null 2>&1 || true
