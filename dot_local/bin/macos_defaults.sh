@@ -130,5 +130,15 @@ else
   sudo nvram SystemAudioVolume=" " || true
 fi
 
+# Disable the over-the-top focus ring animation (requires logout/restart to apply system-wide)
+defaults write NSGlobalDomain NSUseAnimatedFocusRing -bool false
+
+# Disable smooth scrolling
+# (Uncomment if you're on an older Mac that messes up the animation)
+#defaults write NSGlobalDomain NSScrollAnimationEnabled -bool false
+
+# Increase window resize speed for Cocoa applications (requires logout/restart to apply system-wide)
+defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
+
 # Restart affected services
 killall Dock Finder SystemUIServer >/dev/null 2>&1 || true
