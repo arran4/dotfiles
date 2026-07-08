@@ -170,6 +170,18 @@ else
   logger -t chezmoi-macos-defaults "Disabled sound effects on boot (SystemAudioVolume)"
 fi
 
+# Disable the over-the-top focus ring animation
+defaults write NSGlobalDomain NSUseAnimatedFocusRing -bool false
+logger -t chezmoi-macos-defaults "Updated NSGlobalDomain NSUseAnimatedFocusRing to false"
+
+# Disable smooth scrolling
+# (Uncomment if you’re on an older Mac that messes up the animation)
+#defaults write NSGlobalDomain NSScrollAnimationEnabled -bool false
+
+# Increase window resize speed for Cocoa applications
+defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
+logger -t chezmoi-macos-defaults "Updated NSGlobalDomain NSWindowResizeTime to 0.001"
+
 # Ensure the changes take effect
 killall Dock Finder SystemUIServer 2>/dev/null || true
 logger -t chezmoi-macos-defaults "Restarted Dock, Finder and SystemUIServer to apply changes"
