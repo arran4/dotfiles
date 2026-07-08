@@ -160,6 +160,16 @@ logger -t chezmoi-macos-defaults "Updated com.apple.dock expose-animation-durati
 defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
 logger -t chezmoi-macos-defaults "Updated NSGlobalDomain AppleShowScrollBars to Always"
 
+# Disable the sound effects on boot
+macos_major_version=$(sw_vers -productVersion | cut -d. -f1)
+if [ "$macos_major_version" -ge 11 ]; then
+  sudo nvram StartupMute=%01 || true
+  logger -t chezmoi-macos-defaults "Disabled sound effects on boot (StartupMute)"
+else
+  sudo nvram SystemAudioVolume=" " || true
+  logger -t chezmoi-macos-defaults "Disabled sound effects on boot (SystemAudioVolume)"
+fi
+
 # Ensure the changes take effect
 killall Dock Finder SystemUIServer 2>/dev/null || true
 logger -t chezmoi-macos-defaults "Restarted Dock, Finder and SystemUIServer to apply changes"

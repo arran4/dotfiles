@@ -122,5 +122,13 @@ defaults write com.apple.dock expose-animation-duration -float 0.1
 # Possible values: `WhenScrolling`, `Automatic` and `Always`
 defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
 
+# Disable the sound effects on boot
+macos_major_version=$(sw_vers -productVersion | cut -d. -f1)
+if [ "$macos_major_version" -ge 11 ]; then
+  sudo nvram StartupMute=%01 || true
+else
+  sudo nvram SystemAudioVolume=" " || true
+fi
+
 # Restart affected services
 killall Dock Finder SystemUIServer >/dev/null 2>&1 || true
