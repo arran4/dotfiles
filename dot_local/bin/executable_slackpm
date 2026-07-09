@@ -39,51 +39,52 @@ nick_to_userid(){
   local nick=$1
 
   # get the users
-  local users
-  users=$(curl -sSL -X POST \
+  local response
+  response=$(curl -sSL -X POST \
     --data-urlencode "token=${SLACK_TOKEN}" \
-    --data-urlencode "presence=1" \
-    https://slack.com/api/users.list | jq '.members')
+    https://slack.com/api/users.list)
 
-  # find the user we want
+  if [[ $(echo "$response" | jq -r '.ok') != "true" ]]; then
+    echo "Failed to fetch users list: $(echo "$response" | jq -r '.error')"
+    return 1
+  fi
+
+  local users
+  users=$(echo "$response" | jq '.members')
+
+  # find the user we want safely using --arg to prevent jq injection
   local user
   user=$(echo "$users" | jq --arg nick "$nick" '.[]? | select(.name == $nick)')
 
-  if [[ -z "$user" ]]; then
+  if [[ -z "$user" || "$user" == "null" ]]; then
     echo "Could not find user with nick ${nick}."
     return 1
   fi
 
-  # set presence and userid
-  local presence
-  presence=$(echo "$user" | jq --raw-output '.presence')
+  # set userid
   userid=$(echo "$user" | jq --raw-output '.id')
 
   echo "Sending private message to:"
   echo "  User:    ${nick}"
-  echo "  Status:  ${presence}"
 }
 
 user_to_channelid(){
   local user=$1
 
-  # get the im channels
-  local channels
-  channels=$(curl -sSL -X POST \
+  # Open a DM channel with the user using the Conversations API
+  local response
+  response=$(curl -sSL -X POST \
     --data-urlencode "token=${SLACK_TOKEN}" \
-    https://slack.com/api/im.list | jq '.ims')
+    --data-urlencode "users=${user}" \
+    https://slack.com/api/conversations.open)
 
-  # find the user we want
-  local channel
-  channel=$(echo "$channels" | jq --arg user "$user" '.[]? | select(.user == $user)')
-
-  if [[ -z "$channel" ]]; then
-    echo "Could not find im channel with user id ${user}."
+  if [[ $(echo "$response" | jq -r '.ok') != "true" ]]; then
+    echo "Could not open IM channel with user ID ${user}: $(echo "$response" | jq -r '.error')"
     return 1
   fi
 
   # set channelid
-  channelid=$(echo "$channel" | jq --raw-output '.id')
+  channelid=$(echo "$response" | jq --raw-output '.channel.id')
 }
 
 send_message(){
@@ -104,6 +105,11 @@ send_message(){
     --data-urlencode "text=${message}" \
     --data-urlencode "as_user=1" \
     https://slack.com/api/chat.postMessage)
+
+  if [[ $(echo "$postresp" | jq -r '.ok') != "true" ]]; then
+    echo "Failed to send message: $(echo "$postresp" | jq -r '.error')"
+    return 1
+  fi
 
   echo "$postresp" | jq .
 }
