@@ -25,7 +25,7 @@ defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
 
 # Use list view in all Finder windows by default
-# Four-letter codes for the other view modes: `icnv` (Icon View), `clmv` (Column View), `glyv` (Gallery View)
+# Four-letter codes for the view modes: `Nlsv` (List View), `icnv` (Icon View), `clmv` (Column View), `glyv` (Gallery View)
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
 
 # Finder: show path bar and status bar
@@ -50,12 +50,14 @@ defaults write com.apple.finder _FXSortFoldersFirst -bool true
 defaults write com.apple.finder _FXSortFoldersFirstOnDesktop -bool true
 
 # When performing a search, search the current folder by default
+# Search scope codes: `SCcf` (Search Current Folder), `SCsp` (Search Previous Scope), `SCev` (Search this Mac)
 defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 
 # Disable the warning when changing a file extension
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 
 # Set Documents as the default location for new Finder windows
+# Location codes: `PfLo` (Custom Location, requires NewWindowTargetPath), `PfDe` (Desktop), `PfHm` (Home), `PfDo` (Documents)
 defaults write com.apple.finder NewWindowTarget -string "PfLo"
 defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Documents/"
 
