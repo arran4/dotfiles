@@ -54,7 +54,7 @@ nick_to_userid(){
 
   # find the user we want safely using --arg to prevent jq injection
   local user
-  user=$(echo "$users" | jq --arg nick "$nick" '.[] | select(.name == $nick)')
+  user=$(echo "$users" | jq --arg nick "$nick" '.[]? | select(.name == $nick)')
 
   if [[ -z "$user" || "$user" == "null" ]]; then
     echo "Could not find user with nick ${nick}."
@@ -88,10 +88,9 @@ user_to_channelid(){
 }
 
 send_message(){
+  local userid channelid
   local nick=$1
-  local message=${*:2}
-  local userid
-  local channelid
+  local message="${*:2}"
 
   # get the users id
   nick_to_userid "${nick}"
