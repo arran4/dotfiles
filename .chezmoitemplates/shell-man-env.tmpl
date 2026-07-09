@@ -26,7 +26,7 @@ export MANPATH="{{ range $p := $manpaths }}{{ $p }}:{{ end }}$MANPATH"
 	export MANPAGER="{{ index . "vimpagerLocation" }}"
 {{ else if stat (index . "lessLocation") -}}
 	# Don’t clear the screen after quitting a manual page.
-	export MANPAGER='{{ index . "lessLocation" }} -X'
+	export MANPAGER='{{ index . "lessLocation" }} -is -R -X'
 {{- else -}}
 	# No less found!
 {{ end }}
