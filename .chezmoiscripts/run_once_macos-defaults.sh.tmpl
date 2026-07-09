@@ -132,7 +132,7 @@ set_finder_pref "StandardViewSettings:IconViewSettings:gridSpacing" "integer" "1
 logger -t chezmoi-macos-defaults "Updated com.apple.finder.plist icon view settings gridSpacing to 100"
 
 # Show the ~/Library folder
-if [[ "$(ls -ldO "$HOME/Library")" == *hidden* ]]; then
+if [[ "$(stat -f "%Sf" "$HOME/Library")" == *hidden* ]]; then
   if chflags nohidden "$HOME/Library"; then
     logger -t chezmoi-macos-defaults "Unhid ~/Library"
   else
@@ -141,7 +141,7 @@ if [[ "$(ls -ldO "$HOME/Library")" == *hidden* ]]; then
 fi
 
 # Show the /Volumes folder
-if [[ "$(ls -ldO /Volumes)" == *hidden* ]]; then
+if [[ "$(stat -f "%Sf" /Volumes)" == *hidden* ]]; then
   if sudo chflags nohidden /Volumes; then
     logger -t chezmoi-macos-defaults "Unhid /Volumes"
   else
