@@ -25,7 +25,7 @@ defaults write com.apple.dock autohide -bool true
 defaults write com.apple.dock show-recents -bool false
 
 # Use list view in all Finder windows by default
-# Four-letter codes for the view modes: `Nlsv` (List View), `icnv` (Icon View), `clmv` (Column View), `glyv` (Gallery View)
+# Four-letter codes for the other view modes: `icnv` (Icon View), `clmv` (Column View), `glyv` (Gallery View)
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
 
 # Finder: show path bar and status bar
@@ -50,14 +50,12 @@ defaults write com.apple.finder _FXSortFoldersFirst -bool true
 defaults write com.apple.finder _FXSortFoldersFirstOnDesktop -bool true
 
 # When performing a search, search the current folder by default
-# Search scope codes: `SCcf` (Search Current Folder), `SCsp` (Search Previous Scope), `SCev` (Search this Mac)
 defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 
 # Disable the warning when changing a file extension
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 
 # Set Documents as the default location for new Finder windows
-# Location codes: `PfLo` (Custom Location, requires NewWindowTargetPath), `PfDe` (Desktop), `PfHm` (Home), `PfDo` (Documents)
 defaults write com.apple.finder NewWindowTarget -string "PfLo"
 defaults write com.apple.finder NewWindowTargetPath -string "file://${HOME}/Documents/"
 
@@ -105,12 +103,12 @@ set_finder_pref "FK_StandardViewSettings:IconViewSettings:gridSpacing" "integer"
 set_finder_pref "StandardViewSettings:IconViewSettings:gridSpacing" "integer" "100"
 
 # Show the ~/Library folder
-if [[ "$(stat -f "%Sf" "$HOME/Library")" == *hidden* ]]; then
+if [[ "$(ls -ldO "$HOME/Library")" == *hidden* ]]; then
   chflags nohidden "$HOME/Library" || true
 fi
 
 # Show the /Volumes folder
-if [[ "$(stat -f "%Sf" /Volumes)" == *hidden* ]]; then
+if [[ "$(ls -ldO /Volumes)" == *hidden* ]]; then
   sudo chflags nohidden /Volumes || true
 fi
 
@@ -123,24 +121,6 @@ defaults write com.apple.dock expose-animation-duration -float 0.1
 # Always show scrollbars
 # Possible values: `WhenScrolling`, `Automatic` and `Always`
 defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
-
-# Disable the sound effects on boot
-macos_major_version=$(sw_vers -productVersion | cut -d. -f1)
-if [ "$macos_major_version" -ge 11 ]; then
-  sudo nvram StartupMute=%01 || true
-else
-  sudo nvram SystemAudioVolume=" " || true
-fi
-
-# Disable the over-the-top focus ring animation (requires logout/restart to apply system-wide)
-defaults write NSGlobalDomain NSUseAnimatedFocusRing -bool false
-
-# Disable smooth scrolling
-# (Uncomment if you're on an older Mac that messes up the animation)
-#defaults write NSGlobalDomain NSScrollAnimationEnabled -bool false
-
-# Increase window resize speed for Cocoa applications (requires logout/restart to apply system-wide)
-defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
 
 # Restart affected services
 killall Dock Finder SystemUIServer >/dev/null 2>&1 || true
