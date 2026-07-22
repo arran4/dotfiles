@@ -56,7 +56,6 @@
         {{- $paths = append $paths (joinPath .chezmoi.homeDir "/.local/share/flatpak/exports/bin") -}}
         {{- $paths = append $paths "/var/lib/flatpak/exports/bin" -}}
         {{- $paths = append $paths "/usr/games/bin" -}}
-        {{- $paths = append $paths "/opt/Bitwarden" -}}
         {{- $paths = append $paths "/opt/bin" -}}
         {{- $terminfosearch = list "/usr/share/terminfo" "/usr/lib/share/terminfo" "/usr/share/lib/terminfo" -}}
         {{- $termfallback = list "rxvt" "xterm" "linux" "vt100" -}}
@@ -341,10 +340,7 @@
   {{- $nmAppletLocation = lookPath "nm-applet" -}}
 {{- end -}}
 
-{{- $anytypeLocation := findExecutable "Anytype.AppImage" $paths -}}
-{{- if eq $anytypeLocation "" -}}
-  {{- $anytypeLocation = lookPath "Anytype.AppImage" -}}
-{{- end -}}
+{{- $anytypeLocation := "flatpak run io.anytype.anytype" -}}
 {{- $wofiLocation := findExecutable "wofi" $paths -}}
 {{- if eq $wofiLocation "" -}}
   {{- $wofiLocation = lookPath "wofi" -}}
@@ -592,11 +588,19 @@
         {{- writeToStdout "Can't find nm-applet \n" -}}
 {{- end -}}
 
-{{- if not (stat $anytypeLocation ) -}}
-        {{- writeToStdout "Can't find Anytype.AppImage \n" -}}
+{{- $flatpakLocation := lookPath "flatpak" -}}
+{{- if eq $flatpakLocation "" -}}
+        {{- writeToStdout "Can't find flatpak. Missing flatpak apps, run: flatpak install -y flathub app.authpass.AuthPass com.bitwarden.desktop com.dropbox.Client com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard net.werwolv.ImHex org.kde.drawy org.signal.Signal\n" -}}
 {{- else -}}
-        {{- writeToStdout (printf "Anytype installed at %s\n" $anytypeLocation) -}}
+        {{- $installedFlatpaks := output $flatpakLocation "list" "--app" "--columns=application" -}}
+        {{- $flatpakApps := list "app.authpass.AuthPass" "com.bitwarden.desktop" "com.dropbox.Client" "com.spotify.Client" "com.valvesoftware.Steam" "im.fluffychat.Fluffychat" "im.nheko.Nheko" "im.riot.Riot" "io.anytype.anytype" "io.ente.auth" "io.github.martinrotter.rssguard" "net.werwolv.ImHex" "org.kde.drawy" "org.signal.Signal" -}}
+        {{- range $app := $flatpakApps -}}
+                {{- if not (contains $app $installedFlatpaks) -}}
+                        {{- writeToStdout (printf "Flatpak app %s is not installed. Run: flatpak install -y flathub %s\n" $app $app) -}}
+                {{- end -}}
+        {{- end -}}
 {{- end -}}
+
 [git]
     autoCommit = {{ $autoGit }}
     autoPush = {{ $autoGit }}

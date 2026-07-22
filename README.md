@@ -46,6 +46,29 @@ Highlights include:
 
 Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 
+## Flatpak Apps
+
+I use the following flatpak applications in this environment:
+- AuthPass (`app.authpass.AuthPass`)
+- Bitwarden (`com.bitwarden.desktop`)
+- Dropbox (`com.dropbox.Client`)
+- Spotify (`com.spotify.Client`)
+- Steam (`com.valvesoftware.Steam`)
+- Fluffychat (`im.fluffychat.Fluffychat`)
+- Nheko (`im.nheko.Nheko`)
+- Element/Riot (`im.riot.Riot`)
+- Anytype (`io.anytype.anytype`)
+- Ente Auth (`io.ente.auth`)
+- RSS Guard (`io.github.martinrotter.rssguard`)
+- ImHex (`net.werwolv.ImHex`)
+- Drawy (`org.kde.drawy`)
+- Signal Desktop (`org.signal.Signal`)
+
+You can install them automatically with this one-liner:
+```sh
+flatpak install -y flathub app.authpass.AuthPass com.bitwarden.desktop com.dropbox.Client com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard net.werwolv.ImHex org.kde.drawy org.signal.Signal
+```
+
 ### Try it out
 
 1. Clone the repository and run `./install`.
