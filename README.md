@@ -48,12 +48,9 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 
 ## Dev Tools
 
-### Quick start
-
-To install the go linter:
-```sh
-go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-```
+| Tool | Installation Command |
+|---|---|
+| golangci-lint | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` |
 
 ## Flatpak Apps
 
