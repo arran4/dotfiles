@@ -242,6 +242,22 @@
 {{- if eq $golangciLintLocation "" -}}
   {{- $golangciLintLocation = lookPath "golangci-lint" -}}
 {{- end -}}
+{{- if and (eq $golangciLintLocation "") (ne $goLocation "") -}}
+  {{- $goBin := trim (output $goLocation "env" "GOBIN") -}}
+  {{- if eq $goBin "" -}}
+    {{- $goPath := trim (output $goLocation "env" "GOPATH") -}}
+    {{- if ne $goPath "" -}}
+      {{- $goBin = joinPath $goPath "bin" -}}
+    {{- else -}}
+      {{- $goBin = joinPath .chezmoi.homeDir "go/bin" -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if eq .chezmoi.os "windows" -}}
+    {{- $golangciLintLocation = findExecutable "golangci-lint.exe" (list $goBin) -}}
+  {{- else -}}
+    {{- $golangciLintLocation = findExecutable "golangci-lint" (list $goBin) -}}
+  {{- end -}}
+{{- end -}}
 {{- $ghLocation := "" -}}
 {{- if stat (joinPath .chezmoi.homeDir "/.local/bin/gh") -}}
   {{- $ghLocation = joinPath .chezmoi.homeDir "/.local/bin/gh" -}}
