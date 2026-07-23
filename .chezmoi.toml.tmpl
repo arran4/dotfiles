@@ -238,6 +238,26 @@
 {{- if eq $goLocation "" -}}
   {{- $goLocation = lookPath "go" -}}
 {{- end -}}
+{{- $golangciLintLocation := findExecutable "golangci-lint" $paths -}}
+{{- if eq $golangciLintLocation "" -}}
+  {{- $golangciLintLocation = lookPath "golangci-lint" -}}
+{{- end -}}
+{{- if and (eq $golangciLintLocation "") (ne $goLocation "") -}}
+  {{- $goBin := trim (output $goLocation "env" "GOBIN") -}}
+  {{- if eq $goBin "" -}}
+    {{- $goPath := trim (output $goLocation "env" "GOPATH") -}}
+    {{- if ne $goPath "" -}}
+      {{- $goBin = joinPath $goPath "bin" -}}
+    {{- else -}}
+      {{- $goBin = joinPath .chezmoi.homeDir "go/bin" -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if eq .chezmoi.os "windows" -}}
+    {{- $golangciLintLocation = findExecutable "golangci-lint.exe" (list $goBin) -}}
+  {{- else -}}
+    {{- $golangciLintLocation = findExecutable "golangci-lint" (list $goBin) -}}
+  {{- end -}}
+{{- end -}}
 {{- $ghLocation := "" -}}
 {{- if stat (joinPath .chezmoi.homeDir "/.local/bin/gh") -}}
   {{- $ghLocation = joinPath .chezmoi.homeDir "/.local/bin/gh" -}}
@@ -514,6 +534,12 @@
 {{- else -}}
         {{- $goVersion := trim (output $goLocation "version") -}}
         {{- writeToStdout (printf "Go installed at %s (%s)\n" $goLocation $goVersion) -}}
+        {{- if eq $golangciLintLocation "" -}}
+                {{- writeToStdout "Can't find golangci-lint. Suggestion: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest\n" -}}
+        {{- else -}}
+                {{- $golangciLintVersion := trim (output $golangciLintLocation "version") -}}
+                {{- writeToStdout (printf "golangci-lint installed at %s (%s)\n" $golangciLintLocation $golangciLintVersion) -}}
+        {{- end -}}
 {{- end -}}
 
 {{- if not (stat $gitTagIncLocation ) -}}
@@ -643,6 +669,7 @@
         btopLocation="{{$btopLocation}}"
         flutterLocation="{{$flutterLocation}}"
         goLocation="{{$goLocation}}"
+        golangciLintLocation="{{$golangciLintLocation}}"
         ghLocation="{{$ghLocation}}"
         ksshaskpassLocation="{{$ksshaskpassLocation}}"
         gitTagIncLocation="{{$gitTagIncLocation}}"

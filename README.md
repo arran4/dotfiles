@@ -46,6 +46,12 @@ Highlights include:
 
 Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 
+## Dev Tools
+
+| Tool | Installation Command |
+|---|---|
+| golangci-lint | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` |
+
 ## Flatpak Apps
 
 I use the following flatpak applications in this environment:
