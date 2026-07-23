@@ -9,13 +9,6 @@ porting them to chezmoi was I guess for my own interest sake.
 
 # Usage
 
-## Quick start
-
-To install the go linter:
-```sh
-go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-```
-
 I recommend you copy and paste the good stuff out into your own chezmoi config rather than just mine there is a lot of
 config here which is specific to me or specific to a particular situation I had been in in the past.
 
@@ -52,6 +45,15 @@ Highlights include:
   `gh-release.sh` when dependencies such as the GitHub CLI (`gh`) are absent.
 
 Feel free to copy individual pieces or adapt the whole setup to suit your needs.
+
+## Dev Tools
+
+### Quick start
+
+To install the go linter:
+```sh
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+```
 
 ## Flatpak Apps
 
