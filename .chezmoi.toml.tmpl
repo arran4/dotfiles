@@ -258,6 +258,16 @@
     {{- $golangciLintLocation = findExecutable "golangci-lint" (list $goBin) -}}
   {{- end -}}
 {{- end -}}
+{{- $glabLocation := "" -}}
+{{- if stat (joinPath .chezmoi.homeDir "/.local/bin/glab") -}}
+  {{- $glabLocation = joinPath .chezmoi.homeDir "/.local/bin/glab" -}}
+{{- else -}}
+  {{- $glabLocation = findExecutable "glab" $paths -}}
+  {{- if eq $glabLocation "" -}}
+    {{- $glabLocation = lookPath "glab" -}}
+  {{- end -}}
+{{- end -}}
+
 {{- $ghLocation := "" -}}
 {{- if stat (joinPath .chezmoi.homeDir "/.local/bin/gh") -}}
   {{- $ghLocation = joinPath .chezmoi.homeDir "/.local/bin/gh" -}}
@@ -446,7 +456,10 @@
 {{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (not (stat $gitCredentialManagerLocation )) -}}
-        {{- writeToStdout "Can't find GCM: https://github.com/GitCredentialManager/git-credential-manager/releases \n" -}}
+        {{- writeToStdout "Can't find GCM: https://github.com/git-ecosystem/git-credential-manager \n" -}}
+{{- else if (stat $gitCredentialManagerLocation ) -}}
+        {{- $gcmVersion := trim (output $gitCredentialManagerLocation "--version" ) -}}
+        {{- writeToStdout (printf "Git Credential Manager installed at %s (%s)\n" $gitCredentialManagerLocation $gcmVersion) -}}
 {{- end -}}
 
 {{- if not (stat $gitCredentialOAuthLocation ) -}}
@@ -516,8 +529,18 @@
         {{- writeToStdout "Can't find maven (mvn) \n" -}}
 {{- end -}}
 
+{{- if not (stat $glabLocation ) -}}
+        {{- writeToStdout "Can't find glab: https://gitlab.com/gitlab-org/cli#installation \n" -}}
+{{- else -}}
+        {{- $glabVersion := trim (output $glabLocation "--version" | regexFind "glab version [0-9]+\\.[0-9]+\\.[0-9]+") -}}
+        {{- writeToStdout (printf "glab installed at %s (%s)\n" $glabLocation $glabVersion) -}}
+{{- end -}}
+
 {{- if not (stat $ghLocation ) -}}
-        {{- writeToStdout "Can't find GitHub CLI (gh) \n" -}}
+        {{- writeToStdout "Can't find GitHub CLI (gh): https://cli.github.com/manual/installation \n" -}}
+{{- else -}}
+        {{- $ghVersion := trim (output $ghLocation "--version" | regexFind "^gh version [0-9]+\\.[0-9]+\\.[0-9]+") -}}
+        {{- writeToStdout (printf "GitHub CLI installed at %s (%s)\n" $ghLocation $ghVersion) -}}
 {{- end -}}
 
 {{- if eq $flutterLocation "" -}}
@@ -670,6 +693,7 @@
         flutterLocation="{{$flutterLocation}}"
         goLocation="{{$goLocation}}"
         golangciLintLocation="{{$golangciLintLocation}}"
+        glabLocation="{{$glabLocation}}"
         ghLocation="{{$ghLocation}}"
         ksshaskpassLocation="{{$ksshaskpassLocation}}"
         gitTagIncLocation="{{$gitTagIncLocation}}"
