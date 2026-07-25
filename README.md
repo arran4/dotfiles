@@ -54,16 +54,16 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 |---|---|
 | golangci-lint | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` |
 | gcm | See [Git Credential Manager](https://github.com/git-ecosystem/git-credential-manager) |
-| jules | `npm install -g @google/jules` |
-| opencode-ai | `npm install -g opencode-ai` |
-| claude-code | `npm install -g @anthropic-ai/claude-code` |
-| github-copilot-cli | `npm install -g @githubnext/github-copilot-cli` |
-| qwen | `bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source qwenchat \|\| true` |
-| junie | `curl -fsSL https://junie.jetbrains.com/install.sh \| bash` |
-| gemini-cli | `python3 -m pip install --no-cache-dir --break-system-packages gemini-cli` |
-| codex-cli | `python3 -m pip install --no-cache-dir --break-system-packages codex-cli` |
-| mini-swe-agent | `python3 -m pip install --no-cache-dir --break-system-packages mini-swe-agent` |
-| CLIProxyAPI | `go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI` |
+| jules | OS Package Manager (Avoid npm global install) |
+| opencode-ai | OS Package Manager (Avoid npm global install) |
+| claude-code | OS Package Manager (Avoid npm global install) |
+| github-copilot-cli | OS Package Manager (Avoid npm global install) |
+| qwen | OS Package Manager (Avoid manual script installs) |
+| junie | OS Package Manager (Avoid manual script installs) |
+| gemini-cli | OS Package Manager (Avoid pip global install) |
+| codex-cli | OS Package Manager (Avoid pip global install) |
+| mini-swe-agent | OS Package Manager (Avoid pip global install) |
+| CLIProxyAPI | `go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest && mv $HOME/go/bin/server $HOME/.local/bin/CLIProxyAPI` |
 
 ### Debian/Ubuntu
 
