@@ -54,6 +54,16 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 | gh | `(type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)) && sudo mkdir -p -m 755 /etc/apt/keyrings && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && sudo mkdir -p -m 755 /etc/apt/sources.list.d && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && sudo apt update && sudo apt install gh -y` |
 | glab | `sudo apt update && sudo apt install glab` |
 | gcm | See [Git Credential Manager](https://github.com/git-ecosystem/git-credential-manager) |
+| jules | `npm install -g @google/jules` |
+| opencode-ai | `npm install -g opencode-ai` |
+| claude-code | `npm install -g @anthropic-ai/claude-code` |
+| github-copilot-cli | `npm install -g @githubnext/github-copilot-cli` |
+| qwen | `bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source qwenchat \|\| true` |
+| junie | `curl -fsSL https://junie.jetbrains.com/install.sh \| bash` |
+| gemini-cli | `python3 -m pip install --no-cache-dir --break-system-packages gemini-cli` |
+| codex-cli | `python3 -m pip install --no-cache-dir --break-system-packages codex-cli` |
+| mini-swe-agent | `python3 -m pip install --no-cache-dir --break-system-packages mini-swe-agent` |
+| CLIProxyAPI | `go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI` |
 
 ## Flatpak Apps
 
