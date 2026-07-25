@@ -54,15 +54,6 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 |---|---|
 | golangci-lint | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` |
 | gcm | See [Git Credential Manager](https://github.com/git-ecosystem/git-credential-manager) |
-| jules | OS Package Manager (Avoid npm global install) |
-| opencode-ai | OS Package Manager (Avoid npm global install) |
-| claude-code | OS Package Manager (Avoid npm global install) |
-| github-copilot-cli | OS Package Manager (Avoid npm global install) |
-| qwen | OS Package Manager (Avoid manual script installs) |
-| junie | OS Package Manager (Avoid manual script installs) |
-| gemini-cli | OS Package Manager (Avoid pip global install) |
-| codex-cli | OS Package Manager (Avoid pip global install) |
-| mini-swe-agent | OS Package Manager (Avoid pip global install) |
 | CLIProxyAPI | `go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest && mv $HOME/go/bin/server $HOME/.local/bin/CLIProxyAPI` |
 
 ### Debian/Ubuntu
