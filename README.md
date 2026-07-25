@@ -48,12 +48,48 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 
 ## Dev Tools
 
+### Cross-Platform
+
 | Tool | Installation Command |
 |---|---|
 | golangci-lint | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` |
+| gcm | See [Git Credential Manager](https://github.com/git-ecosystem/git-credential-manager) |
+| CLIProxyAPI | `go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest && mv $HOME/go/bin/server $HOME/.local/bin/CLIProxyAPI` |
+
+### Debian/Ubuntu
+
+| Tool | Installation Command |
+|---|---|
 | gh | `(type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)) && sudo mkdir -p -m 755 /etc/apt/keyrings && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && sudo mkdir -p -m 755 /etc/apt/sources.list.d && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && sudo apt update && sudo apt install gh -y` |
 | glab | `sudo apt update && sudo apt install glab` |
-| gcm | See [Git Credential Manager](https://github.com/git-ecosystem/git-credential-manager) |
+
+### Gentoo
+
+| Tool | Installation Command |
+|---|---|
+| gh | `sudo emerge dev-vcs/gh` |
+| glab | `sudo emerge dev-vcs/glab` |
+
+### Arch
+
+| Tool | Installation Command |
+|---|---|
+| gh | `sudo pacman -S github-cli` |
+| glab | `sudo pacman -S glab` |
+
+### Mac OS X
+
+| Tool | Installation Command |
+|---|---|
+| gh | `brew install gh` |
+| glab | `brew install glab` |
+
+### Windows
+
+| Tool | Installation Command |
+|---|---|
+| gh | `winget install --id GitHub.cli` |
+| glab | `winget install --id GitLab.glab` |
 
 ## Flatpak Apps
 
