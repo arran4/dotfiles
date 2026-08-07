@@ -4,4 +4,8 @@ server_response = on
 # Use the server-provided last modification date, if available
 timestamping = on
 
+{{- if lookPath "wget" }}
+{{- if (output "wget" "--help") | contains "hsts-file" }}
 hsts-file=~/.cache/wget-hsts
+{{- end }}
+{{- end }}
