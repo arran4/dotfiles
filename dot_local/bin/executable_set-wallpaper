@@ -1,8 +1,12 @@
 #!/bin/sh
-set -e
+set -eu
+
+command -v swaybg >/dev/null 2>&1 || exit 0
 
 ws=$(hyprctl activeworkspace -j | awk -F'id":' '{print $2}' | cut -d',' -f1 | tr -d '[:space:]')
 img="$HOME/Pictures/wallpapers/${ws}.jpg"
 [ -f "$img" ] || img="$HOME/Pictures/wallpapers/default.jpg"
+[ -f "$img" ] || exit 0
 
-swaybg -m fill "$img" &
+pkill -x swaybg 2>/dev/null || true
+exec swaybg -m fill "$img"
