@@ -45,6 +45,11 @@ if [ -z "$BROWSER_CMD" ]; then
   exit 1
 fi
 
+if ! exists "go-playerctl"; then
+  echo "Error: go-playerctl is required." >&2
+  exit 1
+fi
+
 urlencode() {
   local LC_ALL=C
   local string="$1"
@@ -60,13 +65,8 @@ urlencode() {
   done
 }
 
-# Generate URL
-# We capture the output of playerctl. If it fails, the query will be empty.
-{{- $playerctlCmd := "playerctl" }}
-{{- if lookPath "go-playerctl" }}
-{{-   $playerctlCmd = "go-playerctl" }}
-{{- end }}
-QUERY=$({{ $playerctlCmd }} metadata --format '{{ "{{" }} artist {{ "}}" }} - {{ "{{" }} title {{ "}}" }}. Full song lyrics, meaning, context and analysis' -p spotify 2>/dev/null)
+# Generate URL from Spotify metadata using go-playerctl's Go-template format.
+QUERY=$(go-playerctl --player spotify --format '{{ "{{" }} .artist {{ "}}" }} - {{ "{{" }} .title {{ "}}" }}. Full song lyrics, meaning, context and analysis' metadata 2>/dev/null)
 METADATA=$(urlencode "$QUERY")
 URL="https://www.perplexity.ai/search?q=$METADATA"
 
