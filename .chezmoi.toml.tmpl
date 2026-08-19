@@ -10,6 +10,7 @@
 {{- $spellcheck := or (lookPath "hunspell" | not | not) (lookPath "aspell" | not | not) (lookPath "ispell" | not | not) -}}
 {{- $gitUserName := promptString "git user.name" (trim (output "sh" "-c" "git config --get user.name 2>/dev/null || getent passwd $(id -un) | cut -d ':' -f5 | cut -d ',' -f1 || getent passwd $(id -un) | cut -d ':' -f1")) -}}
 {{- $gitUserEmail := promptString "git user.email" (trim (output "sh" "-c" "git config --get user.email 2>/dev/null || true")) -}}
+{{- $gitCredentialGitlabArranNetAuOauthClientId := promptStringOnce . "gitCredentialGitlabArranNetAuOauthClientId" "gitlab.arran.net.au OAuth Client ID" "" -}}
 {{- $generatedTime := now | date "2006-01-02 15:04:05 -0700" -}}
 
 {{- $paths := list -}}
@@ -663,6 +664,7 @@
         isGnome={{ $isGnome }}
         gitUserName="{{ $gitUserName }}"
         gitUserEmail="{{ $gitUserEmail }}"
+        gitCredentialGitlabArranNetAuOauthClientId="{{ $gitCredentialGitlabArranNetAuOauthClientId }}"
         gitCredentialManagerLocation="{{ $gitCredentialManagerLocation }}"
         gitCredentialOAuthLocation="{{ $gitCredentialOAuthLocation }}"
         gitCredentialLibSecretLocation="{{ $gitCredentialLibSecretLocation }}"

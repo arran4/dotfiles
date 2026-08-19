@@ -1,3 +1,8 @@
 [user]
   name = {{ index . "gitUserName" }}
   email = {{ index . "gitUserEmail" }}
+
+{{- if ne (index . "gitCredentialGitlabArranNetAuOauthClientId") "" }}
+[credential "https://gitlab.arran.net.au"]
+  oauthClientId = {{ index . "gitCredentialGitlabArranNetAuOauthClientId" }}
+{{- end }}
