@@ -100,22 +100,14 @@
     "format": "<span style=\"italic\">{}</span>"
   },
 
-  "custom/playerctl": {
-    "format": " 󰐊 {}",
-    "return-type": "json",
-    "max-length": 40,
-    "exec": "playerctl -a metadata --format '{\"text\": \"{{artist}} - {{markup_escape(title)}}\", \"tooltip\": \"{{playerName}} : {{artist}} - {{markup_escape(title)}}\", \"alt\": \"{{status}}\", \"class\": \"{{status}}\"}' -F",
-    "on-click": "playerctl play-pause",
-    "on-click-right": "playerctl next",
-  },
-
   "custom/spotify": {
     "format": " {}",
     "return-type": "json",
     "max-length": 40,
-    "exec": "playerctl -p spotify metadata --format '{\"text\": \"{{artist}} - {{markup_escape(title)}}\", \"tooltip\": \"Spotify: {{artist}} - {{markup_escape(title)}}\", \"alt\": \"{{status}}\", \"class\": \"{{status}}\"}' -F",
-    "on-click": "playerctl play-pause",
-    "on-click-right": "playerctl next"
+    "exec": "go-playerctl --player spotify --format '{\"text\": \"{{ markup_escape .artist }} - {{ markup_escape .title }}\", \"tooltip\": \"Spotify: {{ markup_escape .artist }} - {{ markup_escape .title }}\", \"alt\": \"{{ .status }}\", \"class\": \"{{ .status }}\"}' metadata",
+    "interval": 1,
+    "on-click": "go-playerctl --player spotify play-pause",
+    "on-click-right": "go-playerctl --player spotify next"
   },
 
   "custom/weather": {
