@@ -35,7 +35,7 @@
 {{- $waybar := lookPath "waybar" -}}
 {{- $swaybg := lookPath "swaybg" -}}
 {{- $dbusUpdate := lookPath "dbus-update-activation-environment" -}}
-{{- $playerctl := lookPath "playerctl" -}}
+{{- $goPlayerctl := lookPath "go-playerctl" -}}
 {{- $wpctl := lookPath "wpctl" -}}
 {{- $nvidiaSmi := lookPath "nvidia-smi" -}}
 {{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") -}}
@@ -70,7 +70,7 @@ local mako = [=[{{$mako}}]=]
 local waybar = [=[{{$waybar}}]=]
 local swaybg = [=[{{$swaybg}}]=]
 local dbusUpdate = [=[{{$dbusUpdate}}]=]
-local playerctl = [=[{{$playerctl}}]=]
+local goPlayerctl = [=[{{$goPlayerctl}}]=]
 local wpctl = [=[{{$wpctl}}]=]
 local nvidiaSmi = [=[{{$nvidiaSmi}}]=]
 local polkitAgent = [=[{{$polkitAgent}}]=]
@@ -167,7 +167,6 @@ else
     bindExec("SUPER + L", lockcmd)
 end
 bindExec("SUPER + SPACE", launcher)
-
 if clipse ~= "" and terminal ~= "" then
     hl.bind("SUPER + V", hl.dsp.exec_cmd(terminal .. " -e " .. clipse, { float = true }))
 end
@@ -235,10 +234,10 @@ if wpctl ~= "" then
     hl.bind("XF86AudioMute", hl.dsp.exec_cmd(wpctl .. " set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
 end
 
-if playerctl ~= "" and playerctlPlayer ~= "" then
-    hl.bind("XF86AudioPlay", hl.dsp.exec_cmd(playerctl .. " --player=" .. playerctlPlayer .. " play-pause"), { locked = true })
-    hl.bind("XF86AudioPrev", hl.dsp.exec_cmd(playerctl .. " --player=" .. playerctlPlayer .. " previous"), { locked = true })
-    hl.bind("XF86AudioNext", hl.dsp.exec_cmd(playerctl .. " --player=" .. playerctlPlayer .. " next"), { locked = true })
+if goPlayerctl ~= "" and playerctlPlayer ~= "" then
+    hl.bind("XF86AudioPlay", hl.dsp.exec_cmd(goPlayerctl .. " --player=" .. playerctlPlayer .. " play-pause"), { locked = true })
+    hl.bind("XF86AudioPrev", hl.dsp.exec_cmd(goPlayerctl .. " --player=" .. playerctlPlayer .. " previous"), { locked = true })
+    hl.bind("XF86AudioNext", hl.dsp.exec_cmd(goPlayerctl .. " --player=" .. playerctlPlayer .. " next"), { locked = true })
 end
 
 hl.bind("ALT + mouse:272", hl.dsp.window.drag(), { mouse = true })
