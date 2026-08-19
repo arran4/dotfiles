@@ -1,0 +1,333 @@
+{{- $launcher := "" -}}
+{{- if ne .rofiLocation "" -}}
+  {{- $launcher = printf "%s -show combi -modes combi -combi-modes \"window,drun,run\"" .rofiLocation -}}
+{{- else if ne .wofiLocation "" -}}
+  {{- $launcher = printf "%s --show drun" .wofiLocation -}}
+{{- else if ne .dmenuRunLocation "" -}}
+  {{- $launcher = .dmenuRunLocation -}}
+{{- end -}}
+
+{{- $lockcmd := "" -}}
+{{- if ne .swaylockLocation "" -}}
+  {{- $lockcmd = printf "%s -f -c 000000" .swaylockLocation -}}
+{{- else if ne .xscreensaverCommandLocation "" -}}
+  {{- $lockcmd = printf "%s -lock" .xscreensaverCommandLocation -}}
+{{- else if ne .xscreensaverLocation "" -}}
+  {{- $lockcmd = .xscreensaverLocation -}}
+{{- end -}}
+
+{{- $terminal := "" -}}
+{{- if ne .terminatorLocation "" -}}
+  {{- $terminal = .terminatorLocation -}}
+{{- else if ne .konsoleLocation "" -}}
+  {{- $terminal = .konsoleLocation -}}
+{{- else if ne .alacrittyLocation "" -}}
+  {{- $terminal = .alacrittyLocation -}}
+{{- else if ne .urxvtLocation "" -}}
+  {{- $terminal = .urxvtLocation -}}
+{{- else if ne .xtermLocation "" -}}
+  {{- $terminal = .xtermLocation -}}
+{{- end -}}
+
+{{- $qs := lookPath "qs" -}}
+{{- $caelestia := lookPath "caelestia" -}}
+{{- $mako := lookPath "mako" -}}
+{{- $waybar := lookPath "waybar" -}}
+{{- $swaybg := lookPath "swaybg" -}}
+{{- $dbusUpdate := lookPath "dbus-update-activation-environment" -}}
+{{- $playerctl := lookPath "playerctl" -}}
+{{- $wpctl := lookPath "wpctl" -}}
+{{- $nvidiaSmi := lookPath "nvidia-smi" -}}
+{{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") -}}
+
+{{- $polkitAgent := lookPath "hyprpolkitagent" -}}
+{{- if eq $polkitAgent "" -}}
+  {{- range $candidate := list "/usr/lib64/libexec/hyprpolkitagent" "/usr/lib/libexec/hyprpolkitagent" "/usr/libexec/hyprpolkitagent" -}}
+    {{- if and (eq $polkitAgent "") (stat $candidate) -}}
+      {{- $polkitAgent = $candidate -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if eq $polkitAgent "" -}}
+  {{- $polkitAgent = lookPath "polkit-kde-authentication-agent-1" -}}
+{{- end -}}
+{{- if eq $polkitAgent "" -}}
+  {{- range $candidate := list "/usr/lib64/libexec/polkit-kde-authentication-agent-1" "/usr/lib/libexec/polkit-kde-authentication-agent-1" "/usr/libexec/polkit-kde-authentication-agent-1" -}}
+    {{- if and (eq $polkitAgent "") (stat $candidate) -}}
+      {{- $polkitAgent = $candidate -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+local terminal = [=[{{$terminal}}]=]
+local launcher = [=[{{$launcher}}]=]
+local lockcmd = [=[{{$lockcmd}}]=]
+local clipse = [=[{{.clipse}}]=]
+
+local qs = [=[{{$qs}}]=]
+local caelestia = [=[{{$caelestia}}]=]
+local mako = [=[{{$mako}}]=]
+local waybar = [=[{{$waybar}}]=]
+local swaybg = [=[{{$swaybg}}]=]
+local dbusUpdate = [=[{{$dbusUpdate}}]=]
+local playerctl = [=[{{$playerctl}}]=]
+local wpctl = [=[{{$wpctl}}]=]
+local nvidiaSmi = [=[{{$nvidiaSmi}}]=]
+local polkitAgent = [=[{{$polkitAgent}}]=]
+
+local wfRecorder = [=[{{.wfRecorderLocation}}]=]
+local slurp = [=[{{.slurpLocation}}]=]
+local grim = [=[{{.grimLocation}}]=]
+local wlCopy = [=[{{.wlCopyLocation}}]=]
+local hyprshot = [=[{{.hyprshotLocation}}]=]
+
+local anytype = [=[{{.anytypeLocation}}]=]
+local solaar = [=[{{.solaarLocation}}]=]
+local kded6 = [=[{{.kded6Location}}]=]
+local kdeconnectIndicator = [=[{{.kdeconnectIndicatorLocation}}]=]
+local nmApplet = [=[{{.nmAppletLocation}}]=]
+local swayidle = [=[{{.swayidleLocation}}]=]
+
+local playerctlPlayer = [=[{{$playerctlPlayer}}]=]
+local useQuickshell = qs ~= "" and caelestia ~= ""
+
+-- Prefer an output-agnostic default. Hyprland will select each monitor's
+-- preferred mode instead of assuming this host is always HDMI-A-1.
+hl.monitor({
+    output = "",
+    mode = "preferred",
+    position = "auto",
+    scale = 1,
+})
+
+hl.config({
+    general = {
+        gaps_in = 10,
+        gaps_out = 15,
+        border_size = 2,
+        col = {
+            active_border = "rgba(135affcc)",
+            inactive_border = "rgba(323232cc)",
+        },
+        layout = "master",
+    },
+    decoration = {
+        rounding = 8,
+    },
+    animations = {
+        enabled = true,
+    },
+    input = {
+        kb_layout = "us",
+        repeat_delay = 250,
+        repeat_rate = 30,
+    },
+})
+
+-- Current Hyprland Nvidia guidance. Avoid the older GBM_BACKEND and forced
+-- software-cursor workarounds unless a specific driver regression requires them.
+if nvidiaSmi ~= "" then
+    hl.env("LIBVA_DRIVER_NAME", "nvidia")
+    hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+end
+hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
+hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
+
+hl.gesture({
+    fingers = 3,
+    direction = "horizontal",
+    action = "workspace",
+})
+
+local function bindExec(key, command, options)
+    if command ~= "" then
+        hl.bind(key, hl.dsp.exec_cmd(command), options)
+    end
+end
+
+-- Terminal and launcher.
+bindExec("CTRL + SUPER + T", terminal)
+if terminal ~= "" then
+    hl.bind("SUPER + RETURN", hl.dsp.exec_cmd(terminal))
+    hl.bind("CTRL + RETURN", hl.dsp.exec_cmd(terminal, { float = true }))
+end
+
+bindExec("SUPER + Y", "hypr-cycle-layout")
+
+if useQuickshell then
+    -- Match the old mod-key-only Caelestia launcher without stealing SUPER
+    -- combinations: trigger when the modifier itself is released.
+    hl.bind("SUPER + SUPER_L", hl.dsp.global("caelestia:launcher"), { release = true })
+    hl.bind("CTRL + ALT + DELETE", hl.dsp.global("caelestia:session"))
+    hl.bind("CTRL + ALT + C", hl.dsp.global("caelestia:clearNotifs"), { locked = true })
+    hl.bind("SUPER + K", hl.dsp.global("caelestia:showall"))
+    hl.bind("SUPER + L", hl.dsp.global("caelestia:lock"))
+    hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd("caelestia shell -d"), { locked = true })
+else
+    bindExec("SUPER + L", lockcmd)
+end
+bindExec("SUPER + SPACE", launcher)
+
+if clipse ~= "" and terminal ~= "" then
+    hl.bind("SUPER + V", hl.dsp.exec_cmd(terminal .. " -e " .. clipse, { float = true }))
+end
+
+-- Windows.
+hl.bind("SUPER + SHIFT + Q", hl.dsp.window.close())
+hl.bind("SUPER + SHIFT + W", hl.dsp.window.close())
+hl.bind("SUPER + F", hl.dsp.window.fullscreen())
+
+-- Workspaces. 0 keeps the old "first empty workspace" behavior.
+hl.bind("SUPER + 0", hl.dsp.focus({ workspace = "empty" }))
+hl.bind("SUPER + SHIFT + 0", hl.dsp.window.move({ workspace = "empty" }))
+for i = 1, 9 do
+    hl.bind("SUPER + " .. i, hl.dsp.focus({ workspace = i }))
+    hl.bind("SUPER + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }))
+end
+
+hl.bind("SUPER + M", hl.dsp.workspace.toggle_special("music"))
+hl.bind("SUPER + GRAVE", hl.dsp.workspace.toggle_special("terminal"))
+hl.bind("SUPER + T", hl.dsp.workspace.toggle_special("terminal"))
+hl.bind("SUPER + D", hl.dsp.workspace.toggle_special("scratchpad"))
+hl.bind("SUPER + P", hl.dsp.workspace.toggle_special("anytype"))
+
+hl.bind("SUPER + CTRL + LEFT", hl.dsp.focus({ workspace = "-1" }))
+hl.bind("SUPER + CTRL + RIGHT", hl.dsp.focus({ workspace = "+1" }))
+hl.bind("SUPER + SHIFT + CTRL + LEFT", hl.dsp.window.move({ workspace = "-1" }))
+hl.bind("SUPER + SHIFT + CTRL + RIGHT", hl.dsp.window.move({ workspace = "+1" }))
+
+hl.bind("ALT + TAB", function()
+    hl.dispatch(hl.dsp.window.cycle_next({ next = true }))
+    hl.dispatch(hl.dsp.window.bring_to_top())
+end)
+hl.bind("SUPER + SHIFT + TAB", function()
+    hl.dispatch(hl.dsp.window.cycle_next({ next = false }))
+    hl.dispatch(hl.dsp.window.bring_to_top())
+end)
+
+-- Screenshots and recording.
+if wfRecorder ~= "" and slurp ~= "" then
+    bindExec("SUPER + SHIFT + R", wfRecorder .. " -g \"$(slurp)\"")
+    bindExec("SUPER + ALT + R", wfRecorder)
+    bindExec("SUPER + CTRL + R", wfRecorder .. " -g \"$(slurp -w)\"")
+end
+
+if hyprshot ~= "" then
+    bindExec("SUPER + PRINT", hyprshot .. " -m window -o \"$HOME/Pictures/Screenshots\"")
+    bindExec("SHIFT + PRINT", hyprshot .. " -m screen -o \"$HOME/Pictures/Screenshots\"")
+    bindExec("SUPER + SHIFT + PRINT", hyprshot .. " -m region -o \"$HOME/Pictures/Screenshots\"")
+    bindExec("SUPER + CTRL + PRINT", hyprshot .. " -m window -o \"$HOME/Pictures/Screenshots\"")
+elseif grim ~= "" and slurp ~= "" and wlCopy ~= "" then
+    bindExec("SUPER + PRINT", grim .. " -g \"$(slurp -w)\" - | tee \"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" | " .. wlCopy)
+    bindExec("SHIFT + PRINT", grim .. " - | tee \"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" | " .. wlCopy)
+    bindExec("SUPER + SHIFT + PRINT", grim .. " -g \"$(slurp)\" - | tee \"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" | " .. wlCopy)
+    bindExec("SUPER + CTRL + PRINT", grim .. " -g \"$(slurp -w)\" - | tee \"$HOME/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png\" | " .. wlCopy)
+end
+
+if swaybg ~= "" then
+    bindExec("SUPER + F5", "set-wallpaper")
+end
+
+-- Media keys.
+if wpctl ~= "" then
+    hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd(wpctl .. " set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 1%+"), { locked = true, repeating = true })
+    hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd(wpctl .. " set-volume @DEFAULT_AUDIO_SINK@ 1%-"), { locked = true, repeating = true })
+    hl.bind("XF86AudioMute", hl.dsp.exec_cmd(wpctl .. " set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
+end
+
+if playerctl ~= "" and playerctlPlayer ~= "" then
+    hl.bind("XF86AudioPlay", hl.dsp.exec_cmd(playerctl .. " --player=" .. playerctlPlayer .. " play-pause"), { locked = true })
+    hl.bind("XF86AudioPrev", hl.dsp.exec_cmd(playerctl .. " --player=" .. playerctlPlayer .. " previous"), { locked = true })
+    hl.bind("XF86AudioNext", hl.dsp.exec_cmd(playerctl .. " --player=" .. playerctlPlayer .. " next"), { locked = true })
+end
+
+hl.bind("ALT + mouse:272", hl.dsp.window.drag(), { mouse = true })
+hl.bind("ALT + mouse:273", hl.dsp.window.resize(), { mouse = true })
+
+-- Persistent workspaces.
+for _, workspace in ipairs({
+    "special:music",
+    "special:terminal",
+    "special:anytype",
+    "special:scratchpad",
+}) do
+    hl.workspace_rule({ workspace = workspace, persistent = true })
+end
+for i = 1, 9 do
+    hl.workspace_rule({ workspace = tostring(i), persistent = true })
+end
+
+-- Window placement.
+hl.window_rule({
+    name = "spotify-music-workspace",
+    match = { class = "^(Spotify|spotify|org.spotify.Client|com.spotify.Client)$" },
+    workspace = "special:music",
+})
+hl.window_rule({
+    name = "alacritty-terminal-workspace",
+    match = { class = "^Alacritty$" },
+    workspace = "special:terminal",
+})
+hl.window_rule({
+    name = "anytype-workspace",
+    match = { class = "^Anytype$" },
+    workspace = "special:anytype",
+})
+hl.window_rule({
+    name = "center-dialogs",
+    match = { class = "^(zenity|kdialog)$" },
+    center = true,
+})
+
+hl.on("hyprland.start", function()
+    if useQuickshell then
+        hl.exec_cmd("caelestia shell -d")
+    else
+        if mako ~= "" then
+            hl.exec_cmd(mako)
+        end
+        if waybar ~= "" then
+            hl.exec_cmd(waybar)
+        end
+    end
+
+    if swaybg ~= "" then
+        hl.exec_cmd("set-wallpaper")
+    end
+
+    if dbusUpdate ~= "" then
+        hl.exec_cmd(dbusUpdate .. " --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland")
+    end
+
+    if clipse ~= "" then
+        hl.exec_cmd(clipse .. " -listen")
+    end
+
+    if polkitAgent ~= "" then
+        hl.exec_cmd(polkitAgent)
+    end
+
+    if solaar ~= "" then
+        hl.exec_cmd(solaar .. " -w hide")
+    end
+    if kded6 ~= "" then
+        hl.exec_cmd(kded6)
+    end
+    if kdeconnectIndicator ~= "" then
+        hl.exec_cmd(kdeconnectIndicator)
+    end
+    if swayidle ~= "" and lockcmd ~= "" then
+        hl.exec_cmd(swayidle .. " timeout 300 '" .. lockcmd .. "'")
+    end
+    if nmApplet ~= "" then
+        hl.exec_cmd(nmApplet)
+    end
+
+    if terminal ~= "" then
+        hl.dispatch(hl.dsp.exec_cmd(terminal, { workspace = "special:terminal" }))
+    end
+
+    if anytype ~= "" then
+        -- Keep Anytype opt-in as before; its window rule is ready when launched.
+    end
+end)
