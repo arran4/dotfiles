@@ -639,14 +639,18 @@
 
 {{- $flatpakLocation := lookPath "flatpak" -}}
 {{- if eq $flatpakLocation "" -}}
-        {{- writeToStdout "Can't find flatpak. Missing flatpak apps, run: flatpak install -y flathub app.authpass.AuthPass com.bitwarden.desktop com.dropbox.Client com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard net.werwolv.ImHex org.kde.drawy org.signal.Signal\n" -}}
+        {{- writeToStdout "Can't find flatpak. Missing flatpak apps, run: flatpak install -y flathub app.authpass.AuthPass com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal\n" -}}
 {{- else -}}
         {{- $installedFlatpaks := output $flatpakLocation "list" "--app" "--columns=application" | splitList "\n" -}}
-        {{- $flatpakApps := list "app.authpass.AuthPass" "com.bitwarden.desktop" "com.dropbox.Client" "com.spotify.Client" "com.valvesoftware.Steam" "im.fluffychat.Fluffychat" "im.nheko.Nheko" "im.riot.Riot" "io.anytype.anytype" "io.ente.auth" "io.github.martinrotter.rssguard" "net.werwolv.ImHex" "org.kde.drawy" "org.signal.Signal" -}}
+        {{- $flatpakApps := list "app.authpass.AuthPass" "com.bitwarden.desktop" "com.dropbox.Client" "com.google.Chrome" "com.rustdesk.RustDesk" "com.spotify.Client" "com.valvesoftware.Steam" "im.fluffychat.Fluffychat" "im.nheko.Nheko" "im.riot.Riot" "io.anytype.anytype" "io.ente.auth" "io.github.martinrotter.rssguard" "io.github.picocrypt.Picocrypt" "net.werwolv.ImHex" "org.kde.drawy" "org.kde.marknote" "org.libreoffice.LibreOffice" "org.localsend.localsend_app" "org.mozilla.firefox" "org.mozilla.thunderbird" "org.signal.Signal" -}}
+        {{- $missingApps := list -}}
         {{- range $app := $flatpakApps -}}
                 {{- if not (has $app $installedFlatpaks) -}}
-                        {{- writeToStdout (printf "Flatpak app %s is not installed. Run: flatpak install -y flathub %s\n" $app $app) -}}
+                        {{- $missingApps = append $missingApps $app -}}
                 {{- end -}}
+        {{- end -}}
+        {{- if gt (len $missingApps) 0 -}}
+                {{- writeToStdout (printf "Missing flatpak apps, run: flatpak install -y flathub %s\n" (join " " $missingApps)) -}}
         {{- end -}}
 {{- end -}}
 
