@@ -283,6 +283,11 @@
   {{- $ksshaskpassLocation = lookPath "ksshaskpass" -}}
 {{- end -}}
 
+{{- $uprecordsLocation := findExecutable "uprecords" $paths -}}
+{{- if eq $uprecordsLocation "" -}}
+  {{- $uprecordsLocation = lookPath "uprecords" -}}
+{{- end -}}
+
 {{- $jqLocation := findExecutable "jq" $paths -}}
 {{- if eq $jqLocation "" -}}
   {{- $jqLocation = lookPath "jq" -}}
@@ -580,6 +585,10 @@
         {{- writeToStdout "Can't find dig \n" -}}
 {{- end -}}
 
+{{- if not (stat $uprecordsLocation ) -}}
+        {{- writeToStdout "Can't find uprecords \n" -}}
+{{- end -}}
+
 {{- if not (stat $jqLocation ) -}}
         {{- writeToStdout "Can't find jq \n" -}}
 {{- end -}}
@@ -704,6 +713,7 @@
         rarLocation="{{$rarLocation}}"
         sevenZipLocation="{{$sevenZipLocation}}"
         digLocation="{{$digLocation}}"
+        uprecordsLocation="{{$uprecordsLocation}}"
         jqLocation="{{$jqLocation}}"
         xinputLocation="{{$xinputLocation}}"
         grimLocation="{{$grimLocation}}"
