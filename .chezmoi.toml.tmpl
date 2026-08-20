@@ -586,7 +586,13 @@
 {{- end -}}
 
 {{- if not (stat $uprecordsLocation ) -}}
+
         {{- writeToStdout "Can't find uprecords \n" -}}
+
+{{- else -}}
+
+        {{- writeToStdout (printf "uprecords installed at %s\n" $uprecordsLocation) -}}
+
 {{- end -}}
 
 {{- if not (stat $jqLocation ) -}}
