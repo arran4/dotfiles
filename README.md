@@ -97,21 +97,29 @@ I use the following flatpak applications in this environment:
 - AuthPass (`app.authpass.AuthPass`)
 - Bitwarden (`com.bitwarden.desktop`)
 - Dropbox (`com.dropbox.Client`)
+- Google Chrome (`com.google.Chrome`)
+- RustDesk (`com.rustdesk.RustDesk`)
 - Spotify (`com.spotify.Client`)
 - Steam (`com.valvesoftware.Steam`)
-- Fluffychat (`im.fluffychat.Fluffychat`)
-- Nheko (`im.nheko.Nheko`)
-- Element/Riot (`im.riot.Riot`)
+- FluffyChat (`im.fluffychat.Fluffychat`)
+- nheko (`im.nheko.Nheko`)
+- Element (`im.riot.Riot`)
 - Anytype (`io.anytype.anytype`)
 - Ente Auth (`io.ente.auth`)
 - RSS Guard (`io.github.martinrotter.rssguard`)
+- Picocrypt (`io.github.picocrypt.Picocrypt`)
 - ImHex (`net.werwolv.ImHex`)
 - Drawy (`org.kde.drawy`)
+- Marknote (`org.kde.marknote`)
+- LibreOffice (`org.libreoffice.LibreOffice`)
+- LocalSend (`org.localsend.localsend_app`)
+- Firefox (`org.mozilla.firefox`)
+- Thunderbird (`org.mozilla.thunderbird`)
 - Signal Desktop (`org.signal.Signal`)
 
 You can install them automatically with this one-liner:
 ```sh
-flatpak install -y flathub app.authpass.AuthPass com.bitwarden.desktop com.dropbox.Client com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard net.werwolv.ImHex org.kde.drawy org.signal.Signal
+flatpak install -y flathub app.authpass.AuthPass com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
 ```
 
 ### Try it out
