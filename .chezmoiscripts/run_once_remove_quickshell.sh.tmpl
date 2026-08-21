@@ -1,6 +1,16 @@
 #!/bin/bash
-# Remove the old quickshell checkout installed via .chezmoiexternal.toml
+# Suggest removing the old quickshell checkout installed via .chezmoiexternal.toml
 # as Caelestia Shell is now managed by Portage.
+
+# Chezmoi interactive scripts need to read from /dev/tty
 if [ -d "$HOME/.config/quickshell" ]; then
-    rm -rf "$HOME/.config/quickshell"
+    # Force read from tty in case stdin is redirected by chezmoi
+    exec < /dev/tty
+    read -p "Caelestia Shell is now managed by Portage. Do you want to remove the old git checkout at ~/.config/quickshell? [y/N] " response
+    if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        rm -rf "$HOME/.config/quickshell"
+        echo "Removed ~/.config/quickshell."
+    else
+        echo "Skipping removal."
+    fi
 fi
