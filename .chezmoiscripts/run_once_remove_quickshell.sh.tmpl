@@ -1,0 +1,6 @@
+#!/bin/bash
+# Remove the old quickshell checkout installed via .chezmoiexternal.toml
+# as Caelestia Shell is now managed by Portage.
+if [ -d "$HOME/.config/quickshell" ]; then
+    rm -rf "$HOME/.config/quickshell"
+fi
