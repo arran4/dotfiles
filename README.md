@@ -60,7 +60,7 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 
 | Tool | Installation Command |
 |---|---|
-| gh | `(type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)) && sudo mkdir -p -m 755 /etc/apt/keyrings && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && sudo mkdir -p -m 755 /etc/apt/sources.list.d && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && sudo apt update && sudo apt install gh -y` |
+| gh | `(type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)) && sudo mkdir -p -m 755 /etc/apt/keyrings && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && sudo mkdir -p /etc/apt/sources.list.d && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && sudo apt update && sudo apt install gh -y` |
 | glab | `sudo apt update && sudo apt install glab` |
 
 ### Gentoo
@@ -108,6 +108,7 @@ I use the following flatpak applications in this environment:
 - Ente Auth (`io.ente.auth`)
 - RSS Guard (`io.github.martinrotter.rssguard`)
 - Picocrypt (`io.github.picocrypt.Picocrypt`)
+- Speech Note (`net.mkiol.SpeechNote`)
 - ImHex (`net.werwolv.ImHex`)
 - Drawy (`org.kde.drawy`)
 - Marknote (`org.kde.marknote`)
@@ -119,7 +120,7 @@ I use the following flatpak applications in this environment:
 
 You can install them automatically with this one-liner:
 ```sh
-flatpak install -y flathub app.authpass.AuthPass com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
+flatpak install -y flathub app.authpass.AuthPass com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
 ```
 
 ### Try it out
@@ -213,8 +214,7 @@ Host legacy.example.com
 ## Foot terminal emulator
 
 These dotfiles include a template for [foot](https://codeberg.org/dnkl/foot), a
-fast Wayland terminal. Install foot from your package manager and apply the
-configuration:
+fast Wayland terminal. Install foot from your package manager and apply the configuration:
 
 ```sh
 chezmoi apply
