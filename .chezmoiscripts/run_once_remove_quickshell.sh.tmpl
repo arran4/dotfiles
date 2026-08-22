@@ -5,14 +5,10 @@
 # Chezmoi interactive scripts need to read from /dev/tty
 if [ -d "$HOME/.config/quickshell" ]; then
     # Verify it is the git repository checkout we expect, not just some new directory
-    if [ ! -d "$HOME/.config/quickshell/.git" ]; then
-        echo "Found ~/.config/quickshell, but it doesn't appear to be the old chezmoi git checkout (no .git directory). Skipping removal."
-    else
+    if [ -d "$HOME/.config/quickshell/.git" ]; then
         # Check remote origin matches caelestia
         remote_url=$(cd "$HOME/.config/quickshell" && git config --get remote.origin.url || true)
-        if [[ "$remote_url" != *"caelestia-dots/shell"* ]]; then
-            echo "Found ~/.config/quickshell, but its git remote ($remote_url) does not match expected caelestia repository. Skipping removal."
-        else
+        if [[ "$remote_url" == *"caelestia-dots/shell"* ]]; then
             # Force read from tty in case stdin is redirected by chezmoi
             exec < /dev/tty
             read -p "Caelestia Shell is now managed by Portage. Do you want to remove the old git checkout at ~/.config/quickshell? [y/N] " response
