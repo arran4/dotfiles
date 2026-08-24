@@ -177,6 +177,9 @@ if not configDir or configDir == "" then
 end
 package.path = configDir .. "/hypr/?.lua;" .. configDir .. "/hypr/?/init.lua;" .. package.path
 
+-- Global Hyprland behavior shared by every machine profile.
+require("special_workspaces")
+
 -- ------------------------
 -- Monitors & Local Configuration
 -- ------------------------

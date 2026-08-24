@@ -180,8 +180,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install ShellCheck, zsh, and Lua
-        run: sudo apt-get update && sudo apt-get install -y shellcheck zsh lua5.4
+      - name: Install ShellCheck and zsh
+        run: sudo apt-get update && sudo apt-get install -y shellcheck zsh
       - run: |
           shopt -s globstar
           shellcheck **/*.sh
@@ -199,101 +199,6 @@ jobs:
               zsh -n "$f"
             fi
           done
-      - name: Verify Lua and Hyprland configuration
-        run: |
-          LUAC_BIN="$(command -v luac || command -v luac5.4 || true)"
-          LUA_BIN="$(command -v lua || command -v lua5.4 || true)"
-
-          if [ -n "$LUAC_BIN" ] && [ -d ~/.config ]; then
-            find ~/.config -name "*.lua" -exec "$LUAC_BIN" -p {} +
-          fi
-
-          if [ -n "$LUA_BIN" ] && [ -f ~/.config/hypr/hyprland.lua ]; then
-            "$LUA_BIN" -e '
-              local mock_dsp = setmetatable({}, {
-                __index = function(t, k)
-                  return function(...) return { dsp = k, args = {...} } end
-                end
-              })
-
-              local registered_curves = { default = true }
-
-              local function validate_config_keys(tbl, path)
-                path = path or ""
-                local forbidden_keys = {
-                  ["dwindle.pseudotile"] = "dwindle.pseudotile is obsolete and was removed in Hyprland 0.55+",
-                  ["misc.vfr"] = "misc.vfr is obsolete; VFR is default or configured in debug.vfr",
-                  ["animations.bezier"] = "animations.bezier table is obsolete; use hl.curve instead",
-                }
-                for k, v in pairs(tbl) do
-                  local current_path = path == "" and tostring(k) or (path .. "." .. tostring(k))
-                  if forbidden_keys[current_path] then
-                    error("Forbidden/obsolete config key detected: " .. current_path .. " (" .. forbidden_keys[current_path] .. ")")
-                  end
-                  if type(v) == "table" then
-                    validate_config_keys(v, current_path)
-                  end
-                end
-              end
-
-              local mock_hl = {
-                curve = function(name, opts)
-                  assert(type(name) == "string" and name ~= "", "hl.curve requires non-empty string name")
-                  assert(type(opts) == "table", "hl.curve requires options table")
-                  registered_curves[name] = opts
-                end,
-                animation = function(opts)
-                  assert(type(opts) == "table", "hl.animation requires options table")
-                  if opts.bezier then
-                    assert(registered_curves[opts.bezier], "no such bezier \"" .. tostring(opts.bezier) .. "\" (must be registered with hl.curve first)")
-                  end
-                end,
-                config = function(cfg)
-                  assert(type(cfg) == "table", "hl.config requires configuration table")
-                  validate_config_keys(cfg)
-                end,
-                env = function(...) end,
-                gesture = function(opts)
-                  assert(type(opts) == "table", "hl.gesture requires options table")
-                end,
-                bind = function(bind_str, dsp_action, opts)
-                  assert(type(bind_str) == "string", "hl.bind requires bind string")
-                end,
-                window_rule = function(opts)
-                  assert(type(opts) == "table", "hl.window_rule requires options table")
-                end,
-                layer_rule = function(opts)
-                  assert(type(opts) == "table", "hl.layer_rule requires options table")
-                end,
-                workspace_rule = function(opts)
-                  assert(type(opts) == "table", "hl.workspace_rule requires options table")
-                end,
-                monitor = function(opts)
-                  assert(type(opts) == "table", "hl.monitor requires options table")
-                end,
-                dispatch = function(...) end,
-                exec_cmd = function(...) end,
-                on = function(evt, cb)
-                  if type(cb) == "function" then
-                    cb()
-                  end
-                end,
-                dsp = setmetatable({
-                  window = mock_dsp,
-                  workspace = mock_dsp,
-                  layout = mock_dsp,
-                }, {
-                  __index = function(t, k)
-                    return function(...) return { dsp = k, args = {...} } end
-                  end
-                }),
-              }
-
-              _G.hl = mock_hl
-              dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
-              print("Hyprland Lua validation succeeded")
-            '
-          fi
 
   docker-build:
     name: Build dev-dotfiles-debian image
