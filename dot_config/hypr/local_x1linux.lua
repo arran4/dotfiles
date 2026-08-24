@@ -1,4 +1,4 @@
--- Monitor configuration for laptopx1
+-- Monitor configuration for x1linux
 hl.monitor({
   output = "eDP-1",
   mode = "preferred",
