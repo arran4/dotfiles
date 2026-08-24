@@ -180,15 +180,73 @@ package.path = configDir .. "/hypr/?.lua;" .. configDir .. "/hypr/?/init.lua;" .
 -- ------------------------
 -- Monitors & Local Configuration
 -- ------------------------
-local hasLocal, _ = pcall(require, "local")
-if not hasLocal then
-    -- Fallback default monitor configuration if local.lua is missing
-    hl.monitor({
-        output = "",
-        mode = "preferred",
-        position = "auto",
-        scale = 1,
-    })
+local function resolveHostname()
+  local tmplHost = [=[{{ .chezmoi.hostname }}]=]
+  if tmplHost and tmplHost ~= "" then
+    return tmplHost
+  end
+  local envHost = os.getenv("HOSTNAME") or os.getenv("HOST")
+  if envHost and envHost ~= "" then
+    return envHost
+  end
+  local f = io.open("/etc/hostname", "r")
+  if f then
+    local content = f:read("*l")
+    f:close()
+    if content and content ~= "" then
+      return content:match("^%s*(.-)%s*$")
+    end
+  end
+  return ""
+end
+
+local hostname = resolveHostname()
+local localCandidates = {}
+local seenCandidates = {}
+
+local function addCandidate(name)
+  if name and name ~= "" and not seenCandidates[name] then
+    seenCandidates[name] = true
+    table.insert(localCandidates, name)
+  end
+end
+
+-- 1. Explicit local.lua override if present
+addCandidate("local")
+
+-- 2. Hostname-specific configuration (e.g. local_desktop2, local_laptopx1)
+if hostname ~= "" then
+  addCandidate("local_" .. hostname)
+  local sanitized = hostname:lower():gsub("[^%w_]", "_")
+  addCandidate("local_" .. sanitized)
+  if hostname:lower():find("x1") or hostname:lower():find("laptop") then
+    addCandidate("local_laptopx1")
+  elseif hostname:lower():find("desktop") then
+    addCandidate("local_desktop2")
+  end
+end
+
+local loadedLocal = false
+for _, modName in ipairs(localCandidates) do
+  local ok, err = pcall(require, modName)
+  if ok then
+    loadedLocal = true
+    break
+  elseif not tostring(err):find("module '" .. modName .. "' not found") and not tostring(err):find("no field package.preload") then
+    io.stderr:write("Error loading " .. modName .. ": " .. tostring(err) .. "\n")
+    loadedLocal = true
+    break
+  end
+end
+
+if not loadedLocal then
+  -- Fallback default monitor configuration if local configuration is missing
+  hl.monitor({
+    output = "",
+    mode = "preferred",
+    position = "auto",
+    scale = 1,
+  })
 end
 
 -- ------------------------
