@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - 'dot_config/hypr/**'
+      - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
   push:
     branches:
       - main
     paths:
       - 'dot_config/hypr/**'
+      - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
   workflow_dispatch:
 
@@ -22,6 +24,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+
+      - name: Render dotfiles
+        run: |
+          yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source="$PWD" --apply
+
+      - name: Check Hyprland Lua syntax
+        run: |
+          find "$HOME/.config/hypr" -name '*.lua' -print0 | xargs -0 -r luac5.4 -p
+
       - name: Validate Hyprland Lua dispatcher API usage
         shell: python
         run: |
@@ -29,13 +42,12 @@ jobs:
           import re
           import sys
 
-          path = pathlib.Path('dot_config/hypr/hyprland.lua.tmpl')
-          source = path.read_text()
+          paths = [
+              pathlib.Path('dot_config/hypr/hyprland.lua.tmpl'),
+              pathlib.Path('dot_config/hypr/special_workspaces.lua'),
+          ]
+          sources = {path: path.read_text() for path in paths if path.exists()}
 
-          # Keep this allowlist intentionally strict. These are the dispatcher
-          # methods currently used by this config and documented by Hyprland's
-          # Lua API. Adding a different dispatcher requires explicitly reviewing
-          # its API shape rather than relying on the permissive runtime mock.
           allowed_top_level = {
               'exec_cmd',
               'focus',
@@ -59,48 +71,42 @@ jobs:
           }
 
           errors = []
-
-          # hl.dsp.layout is a function taking a layout-message string. It is
-          # not a namespace/table (e.g. hl.dsp.layout.toggle_split is invalid).
-          for match in re.finditer(r'hl\.dsp\.layout\.([A-Za-z_]\w*)', source):
-              errors.append(
-                  f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
-                  f'invalid nested layout dispatcher hl.dsp.layout.{match.group(1)}; '
-                  'use hl.dsp.layout("message")'
-              )
-
-          for namespace, allowed in (
-              ('window', allowed_window),
-              ('workspace', allowed_workspace),
-          ):
-              pattern = rf'hl\.dsp\.{namespace}\.([A-Za-z_]\w*)'
-              for match in re.finditer(pattern, source):
-                  method = match.group(1)
-                  if method not in allowed:
-                      errors.append(
-                          f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
-                          f'unknown/unreviewed dispatcher hl.dsp.{namespace}.{method}'
-                      )
-
-          # Check top-level names separately. Nested methods are intentionally
-          # represented by the window/workspace namespaces above.
-          for match in re.finditer(r'hl\.dsp\.([A-Za-z_]\w*)', source):
-              name = match.group(1)
-              if name not in allowed_top_level:
+          for path, source in sources.items():
+              for match in re.finditer(r'hl\.dsp\.layout\.([A-Za-z_]\w*)', source):
                   errors.append(
                       f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
-                      f'unknown/unreviewed top-level dispatcher hl.dsp.{name}'
+                      f'invalid nested layout dispatcher hl.dsp.layout.{match.group(1)}; '
+                      'use hl.dsp.layout("message")'
                   )
 
-          # Explicit regression checks for the two API migration mistakes that
-          # aborted registerBinds() before workspace/special-workspace bindings.
-          forbidden = {
-              'hl.dsp.window.toggle_floating': 'use hl.dsp.window.float({ action = "toggle" })',
-              'hl.dsp.layout.toggle_split': 'use hl.dsp.layout("togglesplit")',
-          }
-          for token, replacement in forbidden.items():
-              if token in source:
-                  errors.append(f'{path}: forbidden {token}; {replacement}')
+              for namespace, allowed in (
+                  ('window', allowed_window),
+                  ('workspace', allowed_workspace),
+              ):
+                  pattern = rf'hl\.dsp\.{namespace}\.([A-Za-z_]\w*)'
+                  for match in re.finditer(pattern, source):
+                      method = match.group(1)
+                      if method not in allowed:
+                          errors.append(
+                              f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                              f'unknown/unreviewed dispatcher hl.dsp.{namespace}.{method}'
+                          )
+
+              for match in re.finditer(r'hl\.dsp\.([A-Za-z_]\w*)', source):
+                  name = match.group(1)
+                  if name not in allowed_top_level:
+                      errors.append(
+                          f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                          f'unknown/unreviewed top-level dispatcher hl.dsp.{name}'
+                      )
+
+              forbidden = {
+                  'hl.dsp.window.toggle_floating': 'use hl.dsp.window.float({ action = "toggle" })',
+                  'hl.dsp.layout.toggle_split': 'use hl.dsp.layout("togglesplit")',
+              }
+              for token, replacement in forbidden.items():
+                  if token in source:
+                      errors.append(f'{path}: forbidden {token}; {replacement}')
 
           if errors:
               print('\n'.join(errors), file=sys.stderr)
@@ -108,13 +114,10 @@ jobs:
 
           print('Hyprland Lua dispatcher API usage is valid')
 
-      - name: Install Lua
-        run: sudo apt-get update && sudo apt-get install -y lua5.4
-
-      - name: Verify machine profiles load special workspace routing
+      - name: Verify special workspace routing is global
         run: |
-          grep -Fq 'require("special_workspaces")' dot_config/hypr/local_x1linux.lua
-          grep -Fq 'require("special_workspaces")' dot_config/hypr/local_desktop2.lua
+          grep -Fq 'require("special_workspaces")' dot_config/hypr/hyprland.lua.tmpl
+          ! grep -R -F 'require("special_workspaces")' dot_config/hypr/local_*.lua
 
       - name: Test special workspace routing
         run: |
@@ -190,4 +193,81 @@ jobs:
           assert(routes[#routes].workspace == "special:beeper")
 
           print("Hyprland special workspace routing tests passed")
+          LUA
+
+      - name: Execute rendered Hyprland config with API mock
+        run: |
+          lua5.4 - <<'LUA'
+          local mock_dsp = setmetatable({}, {
+            __index = function(_, key)
+              return function(...) return { dsp = key, args = {...} } end
+            end,
+          })
+
+          local registered_curves = { default = true }
+
+          local function validate_config_keys(tbl, path)
+            path = path or ""
+            local forbidden_keys = {
+              ["dwindle.pseudotile"] = "dwindle.pseudotile is obsolete",
+              ["misc.vfr"] = "misc.vfr is obsolete; use debug.vfr",
+              ["animations.bezier"] = "animations.bezier is obsolete; use hl.curve",
+            }
+            for key, value in pairs(tbl) do
+              local current = path == "" and tostring(key) or (path .. "." .. tostring(key))
+              if forbidden_keys[current] then
+                error("Forbidden/obsolete config key: " .. current)
+              end
+              if type(value) == "table" then
+                validate_config_keys(value, current)
+              end
+            end
+          end
+
+          _G.hl = {
+            monitor = function(opts) assert(type(opts) == "table") end,
+            config = function(opts)
+              assert(type(opts) == "table")
+              validate_config_keys(opts)
+            end,
+            env = function(...) end,
+            curve = function(name, opts)
+              assert(type(name) == "string" and name ~= "")
+              assert(type(opts) == "table")
+              registered_curves[name] = true
+            end,
+            animation = function(opts)
+              assert(type(opts) == "table")
+              if opts.bezier then
+                assert(registered_curves[opts.bezier], "unregistered curve " .. tostring(opts.bezier))
+              end
+            end,
+            gesture = function(opts) assert(type(opts) == "table") end,
+            bind = function(keys, action, opts)
+              assert(type(keys) == "string")
+              assert(action ~= nil)
+            end,
+            window_rule = function(opts) assert(type(opts) == "table") end,
+            layer_rule = function(opts) assert(type(opts) == "table") end,
+            workspace_rule = function(opts) assert(type(opts) == "table") end,
+            dispatch = function(...) end,
+            exec_cmd = function(...) end,
+            get_windows = function() return {} end,
+            on = function(event, callback)
+              assert(type(event) == "string")
+              assert(type(callback) == "function")
+            end,
+            dsp = setmetatable({
+              window = mock_dsp,
+              workspace = mock_dsp,
+              layout = function(...) return { dsp = "layout", args = {...} } end,
+            }, {
+              __index = function(_, key)
+                return function(...) return { dsp = key, args = {...} } end
+              end,
+            }),
+          }
+
+          dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
+          print("Rendered Hyprland config executed successfully")
           LUA
