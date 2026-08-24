@@ -1,0 +1,108 @@
+name: Hyprland Lua dispatcher API
+
+on:
+  pull_request:
+    paths:
+      - 'dot_config/hypr/**'
+      - '.github/workflows/hyprland-lua-dispatcher-api.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'dot_config/hypr/**'
+      - '.github/workflows/hyprland-lua-dispatcher-api.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-dispatchers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Hyprland Lua dispatcher API usage
+        shell: python
+        run: |
+          import pathlib
+          import re
+          import sys
+
+          path = pathlib.Path('dot_config/hypr/hyprland.lua.tmpl')
+          source = path.read_text()
+
+          # Keep this allowlist intentionally strict. These are the dispatcher
+          # methods currently used by this config and documented by Hyprland's
+          # Lua API. Adding a different dispatcher requires explicitly reviewing
+          # its API shape rather than relying on the permissive runtime mock.
+          allowed_top_level = {
+              'exec_cmd',
+              'focus',
+              'global',
+              'layout',
+              'window',
+              'workspace',
+          }
+          allowed_window = {
+              'alter_zorder',
+              'close',
+              'cycle_next',
+              'drag',
+              'float',
+              'fullscreen',
+              'move',
+              'resize',
+          }
+          allowed_workspace = {
+              'toggle_special',
+          }
+
+          errors = []
+
+          # hl.dsp.layout is a function taking a layout-message string. It is
+          # not a namespace/table (e.g. hl.dsp.layout.toggle_split is invalid).
+          for match in re.finditer(r'hl\.dsp\.layout\.([A-Za-z_]\w*)', source):
+              errors.append(
+                  f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                  f'invalid nested layout dispatcher hl.dsp.layout.{match.group(1)}; '
+                  'use hl.dsp.layout("message")'
+              )
+
+          for namespace, allowed in (
+              ('window', allowed_window),
+              ('workspace', allowed_workspace),
+          ):
+              pattern = rf'hl\.dsp\.{namespace}\.([A-Za-z_]\w*)'
+              for match in re.finditer(pattern, source):
+                  method = match.group(1)
+                  if method not in allowed:
+                      errors.append(
+                          f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                          f'unknown/unreviewed dispatcher hl.dsp.{namespace}.{method}'
+                      )
+
+          # Check top-level names separately. Nested methods are intentionally
+          # represented by the window/workspace namespaces above.
+          for match in re.finditer(r'hl\.dsp\.([A-Za-z_]\w*)', source):
+              name = match.group(1)
+              if name not in allowed_top_level:
+                  errors.append(
+                      f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                      f'unknown/unreviewed top-level dispatcher hl.dsp.{name}'
+                  )
+
+          # Explicit regression checks for the two API migration mistakes that
+          # aborted registerBinds() before workspace/special-workspace bindings.
+          forbidden = {
+              'hl.dsp.window.toggle_floating': 'use hl.dsp.window.float({ action = "toggle" })',
+              'hl.dsp.layout.toggle_split': 'use hl.dsp.layout("togglesplit")',
+          }
+          for token, replacement in forbidden.items():
+              if token in source:
+                  errors.append(f'{path}: forbidden {token}; {replacement}')
+
+          if errors:
+              print('\n'.join(errors), file=sys.stderr)
+              sys.exit(1)
+
+          print('Hyprland Lua dispatcher API usage is valid')
