@@ -477,6 +477,14 @@
 {{- if and (eq .chezmoi.os "linux") (eq $swayidleLocation "") -}}
         {{- writeToStdout "Can't find swayidle \n" -}}
 {{- end -}}
+{{- $cliphistLocation := findExecutable "cliphist" $paths -}}
+{{- if eq $cliphistLocation "" -}}
+  {{- $cliphistLocation = lookPath "cliphist" -}}
+{{- end -}}
+{{- $wlPasteLocation := findExecutable "wl-paste" $paths -}}
+{{- if eq $wlPasteLocation "" -}}
+  {{- $wlPasteLocation = lookPath "wl-paste" -}}
+{{- end -}}
 {{- $clipseLocation := findExecutable "clipse" $paths -}}
 {{- if eq $clipseLocation "" -}}
   {{- $clipseLocation = lookPath "clipse" -}}
@@ -792,6 +800,8 @@
         swayidleLocation="{{$swayidleLocation}}"
         xscreensaverCommandLocation="{{$xscreensaverCommandLocation}}"
         xscreensaverLocation="{{$xscreensaverLocation}}"
+        cliphistLocation="{{$cliphistLocation}}"
+        wlPasteLocation="{{$wlPasteLocation}}"
         clipse="{{$clipseLocation}}"
         androidSdkRoot="{{$androidSdkRoot}}"
         androidPathEntries = [{{range $each := $androidPathEntries}}"{{$each}}", {{end}}]
