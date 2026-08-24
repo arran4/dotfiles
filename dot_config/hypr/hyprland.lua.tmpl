@@ -34,7 +34,6 @@
 {{- end -}}
 
 {{- $clipse := .clipse -}}
-{{- $anytype := .anytypeLocation -}}
 {{- $solaar := .solaarLocation -}}
 {{- $kded6 := .kded6Location -}}
 {{- $kdeconnectIndicator := .kdeconnectIndicatorLocation -}}
@@ -177,8 +176,22 @@ if not configDir or configDir == "" then
 end
 package.path = configDir .. "/hypr/?.lua;" .. configDir .. "/hypr/?/init.lua;" .. package.path
 
--- Global Hyprland behavior shared by every machine profile.
-require("special_workspaces")
+-- Load special-workspace behavior like the local machine modules: keep it as a
+-- runtime module beside this config, but do not let a missing/broken module
+-- prevent the rest of Hyprland from loading.
+local specialWorkspacesOk, specialWorkspaces = pcall(require, "special_workspaces")
+if specialWorkspacesOk then
+    if type(specialWorkspaces) == "table" and type(specialWorkspaces.setup) == "function" then
+        local setupOk, setupErr = pcall(specialWorkspaces.setup, { terminal = terminal })
+        if not setupOk then
+            io.stderr:write("Error configuring special_workspaces: " .. tostring(setupErr) .. "\n")
+        end
+    else
+        io.stderr:write("Error loading special_workspaces: module does not export setup()\n")
+    end
+else
+    io.stderr:write("Error loading special_workspaces: " .. tostring(specialWorkspaces) .. "\n")
+end
 
 -- ------------------------
 -- Monitors & Local Configuration
@@ -472,13 +485,6 @@ local function registerBinds()
         hl.bind("SUPER + " .. i, hl.dsp.focus({ workspace = i }))
     end
 
-    hl.bind("SUPER + M", hl.dsp.workspace.toggle_special("music"))
-    hl.bind("SUPER + B", hl.dsp.workspace.toggle_special("beeper"))
-    hl.bind("SUPER + grave", hl.dsp.workspace.toggle_special("terminal"))
-    hl.bind("SUPER + T", hl.dsp.workspace.toggle_special("terminal"))
-    hl.bind("SUPER + D", hl.dsp.workspace.toggle_special("scratchpad"))
-    hl.bind("SUPER + P", hl.dsp.workspace.toggle_special("anytype"))
-
     hl.bind("SUPER + CTRL + Left", hl.dsp.focus({ workspace = "-1" }))
     hl.bind("SUPER + CTRL + Right", hl.dsp.focus({ workspace = "+1" }))
     hl.bind("SUPER + SHIFT + CTRL + Left", hl.dsp.window.move({ workspace = "-1" }))
@@ -548,11 +554,6 @@ registerBinds()
 -- Workspace rules
 -- ------------------------
 for _, workspace in ipairs({
-    "special:music",
-    "special:beeper",
-    "special:terminal",
-    "special:anytype",
-    "special:scratchpad",
     "1", "2", "3", "4", "5", "6", "7", "8", "9",
 }) do
     hl.workspace_rule({ workspace = workspace, persistent = true })
@@ -561,22 +562,6 @@ end
 -- ------------------------
 -- Window rules
 -- ------------------------
-hl.window_rule({
-    match = { class = "^(Spotify|spotify|org.spotify.Client|com.spotify.Client)$" },
-    workspace = "special:music",
-})
-hl.window_rule({
-    match = { class = "^(Beeper|beeper|com.beeper.Beeper|com.beeper.beeper)$" },
-    workspace = "special:beeper",
-})
-hl.window_rule({
-    match = { class = "^(Alacritty|foot|kitty|com.mitchellh.ghostty|ghostty|org.wezfurlong.wezterm|wezterm|terminator|konsole|xfce4-terminal|mate-terminal|lxterminal|URxvt|urxvt|rxvt-unicode|rxvt|XTerm|xterm)$" },
-    workspace = "special:terminal",
-})
-hl.window_rule({
-    match = { class = "^(Anytype)$" },
-    workspace = "special:anytype",
-})
 hl.window_rule({
     match = { class = "^(zenity|kdialog)$" },
     center = true,
@@ -622,9 +607,4 @@ hl.on("hyprland.start", function()
 {{- if ne $nmApplet "" }}
     hl.exec_cmd("nm-applet")
 {{- end }}
-    if terminal ~= "" then
-        hl.exec_cmd(terminal, { workspace = "special:terminal silent" })
-    end
-    hl.exec_cmd("flatpak run com.spotify.Client", { workspace = "special:music silent" })
-    hl.exec_cmd("flatpak run com.beeper.Beeper", { workspace = "special:beeper silent" })
 end)
