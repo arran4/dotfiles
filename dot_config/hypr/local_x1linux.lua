@@ -11,5 +11,3 @@ hl.monitor({
   position = "auto",
   scale = 1.5,
 })
-
-require("special_workspaces")
