@@ -486,7 +486,7 @@ local function registerBinds()
         hl.dispatch(hl.dsp.window.cycle_next())
         hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top" }))
     end)
-    hl.bind("SUPER + SHIFT + Tab", hl.dsp.window.cycle_next({ next = false }))
+    hl.bind("ALT + SHIFT + Tab", hl.dsp.window.cycle_next({ next = false }))
 
     -- Screen recording.
 {{- if and (ne .wfRecorderLocation "") (ne .slurpLocation "") }}
