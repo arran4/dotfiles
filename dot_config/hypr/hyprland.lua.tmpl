@@ -440,11 +440,11 @@ local function registerBinds()
     hl.bind("CTRL + SUPER + ALT + R", hl.dsp.exec_cmd("qs -c caelestia kill; caelestia shell -d"), { release = true })
 {{- end }}
 
-    -- Terminal launch.
+    -- Terminal launch. Meta+T toggles the terminal special workspace; this
+    -- direct launcher remains available when an additional terminal is wanted.
     if terminal ~= "" then
         hl.bind("CTRL + SUPER + T", hl.dsp.exec_cmd(terminal))
         hl.bind("SUPER + Return", hl.dsp.exec_cmd(terminal))
-        hl.bind("SUPER + SHIFT + Return", hl.dsp.exec_cmd(terminal, { float = true }))
     end
 
     hl.bind("SUPER + Y", hl.dsp.exec_cmd("hypr-cycle-layout"))
