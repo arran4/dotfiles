@@ -1,0 +1,96 @@
+name: Hyprland special workspace routing
+
+on:
+  pull_request:
+    paths:
+      - 'dot_config/hypr/special_workspaces.lua'
+      - 'dot_config/hypr/local_x1linux.lua'
+      - 'dot_config/hypr/local_desktop2.lua'
+      - '.github/workflows/hyprland-special-workspaces.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'dot_config/hypr/special_workspaces.lua'
+      - 'dot_config/hypr/local_x1linux.lua'
+      - 'dot_config/hypr/local_desktop2.lua'
+      - '.github/workflows/hyprland-special-workspaces.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Verify machine profiles load routing
+        run: |
+          grep -Fq 'require("special_workspaces")' dot_config/hypr/local_x1linux.lua
+          grep -Fq 'require("special_workspaces")' dot_config/hypr/local_desktop2.lua
+      - name: Test special workspace routing
+        run: |
+          lua5.4 - <<'LUA'
+          package.path = "dot_config/hypr/?.lua;" .. package.path
+
+          local routes = {}
+          local handlers = {}
+          local existing = {
+            { class = "BeeperTexts", title = "Beeper" },
+            { class = "org.kde.konsole", title = "shell" },
+            { class = "Spotify", title = "Spotify" },
+          }
+
+          _G.hl = {
+            on = function(event, callback)
+              handlers[event] = callback
+            end,
+            get_windows = function()
+              return existing
+            end,
+            dispatch = function(action)
+              table.insert(routes, action)
+            end,
+            dsp = {
+              window = {
+                move = function(options)
+                  return options
+                end,
+              },
+            },
+          }
+
+          local routing = require("special_workspaces")
+
+          assert(routing.workspace_for_window({ class = "Beeper" }) == "beeper")
+          assert(routing.workspace_for_window({ class = "BeeperTexts" }) == "beeper")
+          assert(routing.workspace_for_window({ class = "com.beeper.Beeper" }) == "beeper")
+          assert(routing.workspace_for_window({ class = "electron", title = "Beeper" }) == "beeper")
+          assert(routing.workspace_for_window({ class = "org.kde.konsole" }) == "terminal")
+          assert(routing.workspace_for_window({ class = "footclient" }) == "terminal")
+          assert(routing.workspace_for_window({ class = "gnome-terminal-server" }) == "terminal")
+          assert(routing.workspace_for_window({ class = "URxvt" }) == "terminal")
+          assert(routing.workspace_for_window({ class = "Spotify" }) == "music")
+          assert(routing.workspace_for_window({ class = "firefox", title = "Beeper - search" }) == nil)
+
+          assert(#routes == 3, "existing windows should be reconciled on load")
+          assert(routes[1].workspace == "special:beeper")
+          assert(routes[2].workspace == "special:terminal")
+          assert(routes[3].workspace == "special:music")
+          assert(routes[1].follow == false)
+          assert(routes[1].window == existing[1])
+
+          assert(type(handlers["window.open"]) == "function")
+          assert(type(handlers["window.class"]) == "function")
+
+          handlers["window.open"]({ class = "xterm", title = "shell" })
+          assert(routes[#routes].workspace == "special:terminal")
+
+          handlers["window.class"]({ class = "com.beeper.Beeper", title = "Beeper" })
+          assert(routes[#routes].workspace == "special:beeper")
+
+          print("Hyprland special workspace routing tests passed")
+          LUA
