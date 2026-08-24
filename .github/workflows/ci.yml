@@ -224,6 +224,7 @@ jobs:
                 gesture = function(...) end,
                 bind = function(...) end,
                 window_rule = function(...) end,
+                layer_rule = function(...) end,
                 workspace_rule = function(...) end,
                 dispatch = function(...) end,
                 exec_cmd = function(...) end,
