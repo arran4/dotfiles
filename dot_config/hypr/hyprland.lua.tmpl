@@ -170,15 +170,113 @@ local clipse = [=[{{$clipse}}]=]
 local cliphistCmd = [=[{{$cliphistCmd}}]=]
 local playerctlPlayer = [=[{{$playerctlPlayer}}]=]
 
--- Ensure hypr config directory is in Lua package path for module resolution
+-- Ensure hypr config directory is in Lua package path for local machine modules.
 local configDir = os.getenv("XDG_CONFIG_HOME")
 if not configDir or configDir == "" then
     configDir = (os.getenv("HOME") or "") .. "/.config"
 end
 package.path = configDir .. "/hypr/?.lua;" .. configDir .. "/hypr/?/init.lua;" .. package.path
 
--- Global Hyprland behavior shared by every machine profile.
-require("special_workspaces")
+-- ------------------------
+-- Special workspace routing
+-- ------------------------
+-- Keep this logic in the main generated config so runtime behavior never
+-- depends on a separately deployed Lua module.
+local specialWorkspaceClasses = {
+    music = {
+        ["spotify"] = true,
+        ["org.spotify.client"] = true,
+        ["com.spotify.client"] = true,
+    },
+    beeper = {
+        ["beeper"] = true,
+        ["beepertexts"] = true,
+        ["com.beeper.beeper"] = true,
+    },
+    terminal = {
+        ["alacritty"] = true,
+        ["foot"] = true,
+        ["footclient"] = true,
+        ["kitty"] = true,
+        ["com.mitchellh.ghostty"] = true,
+        ["ghostty"] = true,
+        ["org.wezfurlong.wezterm"] = true,
+        ["wezterm"] = true,
+        ["terminator"] = true,
+        ["konsole"] = true,
+        ["org.kde.konsole"] = true,
+        ["xfce4-terminal"] = true,
+        ["gnome-terminal"] = true,
+        ["gnome-terminal-server"] = true,
+        ["org.gnome.terminal"] = true,
+        ["org.gnome.console"] = true,
+        ["mate-terminal"] = true,
+        ["lxterminal"] = true,
+        ["urxvt"] = true,
+        ["rxvt-unicode"] = true,
+        ["rxvt"] = true,
+        ["xterm"] = true,
+    },
+}
+
+local function lowerString(value)
+    if type(value) ~= "string" then
+        return ""
+    end
+    return value:lower()
+end
+
+local function specialWorkspaceForWindow(window)
+    if window == nil then
+        return nil
+    end
+
+    local class = lowerString(window.class)
+    for workspace, classes in pairs(specialWorkspaceClasses) do
+        if classes[class] then
+            return workspace
+        end
+    end
+
+    -- Beeper is Electron-based and can briefly expose a generic class while
+    -- its final app id is still being set. Limit the title fallback to generic
+    -- Electron classes so unrelated browser pages are not captured.
+    if class == "" or class == "electron" then
+        local title = lowerString(window.title)
+        if title:find("beeper", 1, true) then
+            return "beeper"
+        end
+    end
+
+    return nil
+end
+
+local function routeSpecialWorkspaceWindow(window)
+    local workspace = specialWorkspaceForWindow(window)
+    if workspace == nil then
+        return
+    end
+
+    hl.dispatch(hl.dsp.window.move({
+        workspace = "special:" .. workspace,
+        follow = false,
+        window = window,
+    }))
+end
+
+hl.on("window.open", routeSpecialWorkspaceWindow)
+hl.on("window.class", routeSpecialWorkspaceWindow)
+
+-- A config reload does not re-run static workspace effects for existing
+-- windows. Reconcile them immediately so Meta+M/B/T works after an apply.
+if type(hl.get_windows) == "function" then
+    local windows = hl.get_windows()
+    if windows ~= nil then
+        for _, window in ipairs(windows) do
+            routeSpecialWorkspaceWindow(window)
+        end
+    end
+end
 
 -- ------------------------
 -- Monitors & Local Configuration
