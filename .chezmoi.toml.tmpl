@@ -10,6 +10,11 @@
 {{- $spellcheck := or (lookPath "hunspell" | not | not) (lookPath "aspell" | not | not) (lookPath "ispell" | not | not) -}}
 {{- $gitUserName := promptString "git user.name" (trim (output "sh" "-c" "git config --get user.name 2>/dev/null || getent passwd $(id -un) | cut -d ':' -f5 | cut -d ',' -f1 || getent passwd $(id -un) | cut -d ':' -f1")) -}}
 {{- $gitUserEmail := promptString "git user.email" (trim (output "sh" "-c" "git config --get user.email 2>/dev/null || true")) -}}
+{{- $computerProfileGuess := "desktop2" -}}
+{{- if or (hasPrefix "x1" .chezmoi.hostname) (hasSuffix "x1" .chezmoi.hostname) (contains "x1" .chezmoi.hostname) (contains "laptop" .chezmoi.hostname) -}}
+  {{- $computerProfileGuess = "laptopx1" -}}
+{{- end -}}
+{{- $computerProfile := promptString "computer profile (desktop2/laptopx1)" $computerProfileGuess -}}
 {{- $generatedTime := now | date "2006-01-02 15:04:05 -0700" -}}
 
 {{- $paths := list -}}
@@ -389,6 +394,26 @@
   {{- $dmenuRunLocation = lookPath "dmenu_run" -}}
 {{- end -}}
 
+{{- $ghosttyLocation := findExecutable "ghostty" $paths -}}
+{{- if eq $ghosttyLocation "" -}}
+  {{- $ghosttyLocation = lookPath "ghostty" -}}
+{{- end -}}
+{{- $footLocation := findExecutable "foot" $paths -}}
+{{- if eq $footLocation "" -}}
+  {{- $footLocation = lookPath "foot" -}}
+{{- end -}}
+{{- $kittyLocation := findExecutable "kitty" $paths -}}
+{{- if eq $kittyLocation "" -}}
+  {{- $kittyLocation = lookPath "kitty" -}}
+{{- end -}}
+{{- $alacrittyLocation := findExecutable "alacritty" $paths -}}
+{{- if eq $alacrittyLocation "" -}}
+  {{- $alacrittyLocation = lookPath "alacritty" -}}
+{{- end -}}
+{{- $weztermLocation := findExecutable "wezterm" $paths -}}
+{{- if eq $weztermLocation "" -}}
+  {{- $weztermLocation = lookPath "wezterm" -}}
+{{- end -}}
 {{- $terminatorLocation := findExecutable "terminator" $paths -}}
 {{- if eq $terminatorLocation "" -}}
   {{- $terminatorLocation = lookPath "terminator" -}}
@@ -397,9 +422,25 @@
 {{- if eq $konsoleLocation "" -}}
   {{- $konsoleLocation = lookPath "konsole" -}}
 {{- end -}}
-{{- $alacrittyLocation := findExecutable "alacritty" $paths -}}
-{{- if eq $alacrittyLocation "" -}}
-  {{- $alacrittyLocation = lookPath "alacritty" -}}
+{{- $xfce4TerminalLocation := findExecutable "xfce4-terminal" $paths -}}
+{{- if eq $xfce4TerminalLocation "" -}}
+  {{- $xfce4TerminalLocation = lookPath "xfce4-terminal" -}}
+{{- end -}}
+{{- $gnomeTerminalLocation := findExecutable "gnome-terminal" $paths -}}
+{{- if eq $gnomeTerminalLocation "" -}}
+  {{- $gnomeTerminalLocation = lookPath "gnome-terminal" -}}
+{{- end -}}
+{{- $mateTerminalLocation := findExecutable "mate-terminal" $paths -}}
+{{- if eq $mateTerminalLocation "" -}}
+  {{- $mateTerminalLocation = lookPath "mate-terminal" -}}
+{{- end -}}
+{{- $lxterminalLocation := findExecutable "lxterminal" $paths -}}
+{{- if eq $lxterminalLocation "" -}}
+  {{- $lxterminalLocation = lookPath "lxterminal" -}}
+{{- end -}}
+{{- $rxvtUnicodeLocation := findExecutable "rxvt-unicode" $paths -}}
+{{- if eq $rxvtUnicodeLocation "" -}}
+  {{- $rxvtUnicodeLocation = lookPath "rxvt-unicode" -}}
 {{- end -}}
 {{- $urxvtLocation := findExecutable "urxvt" $paths -}}
 {{- if eq $urxvtLocation "" -}}
@@ -410,8 +451,8 @@
   {{- $xtermLocation = lookPath "xterm" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "linux") (eq $terminatorLocation "") (eq $konsoleLocation "") (eq $alacrittyLocation "") (eq $urxvtLocation "") (eq $xtermLocation "") -}}
-        {{- writeToStdout "Can't find terminal (terminator/konsole/alacritty/urxvt/xterm) \n" -}}
+{{- if and (eq .chezmoi.os "linux") (eq $ghosttyLocation "") (eq $footLocation "") (eq $kittyLocation "") (eq $alacrittyLocation "") (eq $weztermLocation "") (eq $terminatorLocation "") (eq $konsoleLocation "") (eq $xfce4TerminalLocation "") (eq $gnomeTerminalLocation "") (eq $mateTerminalLocation "") (eq $lxterminalLocation "") (eq $urxvtLocation "") (eq $xtermLocation "") -}}
+        {{- writeToStdout "Can't find terminal (ghostty/foot/kitty/alacritty/wezterm/terminator/konsole/xfce4-terminal/gnome-terminal/mate-terminal/lxterminal/urxvt/xterm) \n" -}}
 {{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (eq $wofiLocation "") (eq $rofiLocation "") (eq $dmenuRunLocation "") -}}
@@ -439,6 +480,14 @@
 {{- end -}}
 {{- if and (eq .chezmoi.os "linux") (eq $swayidleLocation "") -}}
         {{- writeToStdout "Can't find swayidle \n" -}}
+{{- end -}}
+{{- $cliphistLocation := findExecutable "cliphist" $paths -}}
+{{- if eq $cliphistLocation "" -}}
+  {{- $cliphistLocation = lookPath "cliphist" -}}
+{{- end -}}
+{{- $wlPasteLocation := findExecutable "wl-paste" $paths -}}
+{{- if eq $wlPasteLocation "" -}}
+  {{- $wlPasteLocation = lookPath "wl-paste" -}}
 {{- end -}}
 {{- $clipseLocation := findExecutable "clipse" $paths -}}
 {{- if eq $clipseLocation "" -}}
@@ -654,10 +703,10 @@
 
 {{- $flatpakLocation := lookPath "flatpak" -}}
 {{- if eq $flatpakLocation "" -}}
-        {{- writeToStdout "Can't find flatpak. Missing flatpak apps, run: flatpak install -y flathub app.authpass.AuthPass com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal\n" -}}
+        {{- writeToStdout "Can't find flatpak. Missing flatpak apps, run: flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal\n" -}}
 {{- else -}}
         {{- $installedFlatpaks := output $flatpakLocation "list" "--app" "--columns=application" | splitList "\n" -}}
-        {{- $flatpakApps := list "app.authpass.AuthPass" "com.bitwarden.desktop" "com.dropbox.Client" "com.google.Chrome" "com.rustdesk.RustDesk" "com.spotify.Client" "com.valvesoftware.Steam" "im.fluffychat.Fluffychat" "im.nheko.Nheko" "im.riot.Riot" "io.anytype.anytype" "io.ente.auth" "io.github.martinrotter.rssguard" "io.github.picocrypt.Picocrypt" "net.werwolv.ImHex" "org.kde.drawy" "org.kde.marknote" "org.libreoffice.LibreOffice" "org.localsend.localsend_app" "org.mozilla.firefox" "org.mozilla.thunderbird" "org.signal.Signal" -}}
+        {{- $flatpakApps := list "app.authpass.AuthPass" "com.beeper.Beeper" "com.bitwarden.desktop" "com.dropbox.Client" "com.google.Chrome" "com.rustdesk.RustDesk" "com.spotify.Client" "com.valvesoftware.Steam" "im.fluffychat.Fluffychat" "im.nheko.Nheko" "im.riot.Riot" "io.anytype.anytype" "io.ente.auth" "io.github.martinrotter.rssguard" "io.github.picocrypt.Picocrypt" "net.werwolv.ImHex" "org.kde.drawy" "org.kde.marknote" "org.libreoffice.LibreOffice" "org.localsend.localsend_app" "org.mozilla.firefox" "org.mozilla.thunderbird" "org.signal.Signal" -}}
         {{- $missingApps := list -}}
         {{- range $app := $flatpakApps -}}
                 {{- if not (has $app $installedFlatpaks) -}}
@@ -738,15 +787,26 @@
         wofiLocation="{{$wofiLocation}}"
         rofiLocation="{{$rofiLocation}}"
         dmenuRunLocation="{{$dmenuRunLocation}}"
+        ghosttyLocation="{{$ghosttyLocation}}"
+        footLocation="{{$footLocation}}"
+        kittyLocation="{{$kittyLocation}}"
+        alacrittyLocation="{{$alacrittyLocation}}"
+        weztermLocation="{{$weztermLocation}}"
         terminatorLocation="{{$terminatorLocation}}"
         konsoleLocation="{{$konsoleLocation}}"
-        alacrittyLocation="{{$alacrittyLocation}}"
+        xfce4TerminalLocation="{{$xfce4TerminalLocation}}"
+        gnomeTerminalLocation="{{$gnomeTerminalLocation}}"
+        mateTerminalLocation="{{$mateTerminalLocation}}"
+        lxterminalLocation="{{$lxterminalLocation}}"
+        rxvtUnicodeLocation="{{$rxvtUnicodeLocation}}"
         urxvtLocation="{{$urxvtLocation}}"
         xtermLocation="{{$xtermLocation}}"
         swaylockLocation="{{$swaylockLocation}}"
         swayidleLocation="{{$swayidleLocation}}"
         xscreensaverCommandLocation="{{$xscreensaverCommandLocation}}"
         xscreensaverLocation="{{$xscreensaverLocation}}"
+        cliphistLocation="{{$cliphistLocation}}"
+        wlPasteLocation="{{$wlPasteLocation}}"
         clipse="{{$clipseLocation}}"
         androidSdkRoot="{{$androidSdkRoot}}"
         androidPathEntries = [{{range $each := $androidPathEntries}}"{{$each}}", {{end}}]
@@ -768,6 +828,7 @@
         termfallback = [{{range $each := $termfallback}}"{{$each}}", {{end}}]
         paths = [{{range $each := $paths}}"{{$each}}", {{end}}]
         hyprland_features = "quickshell"
+        computerProfile="{{$computerProfile}}"
 
 [merge]
 {{if stat $nvimLocation -}}
