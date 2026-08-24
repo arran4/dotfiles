@@ -176,9 +176,22 @@ if not configDir or configDir == "" then
 end
 package.path = configDir .. "/hypr/?.lua;" .. configDir .. "/hypr/?/init.lua;" .. package.path
 
--- Special-workspace behavior is kept in a separate chezmoi source template but
--- rendered inline so hyprland.lua has no runtime dependency on sibling files.
-{{ template "hypr/special_workspaces.lua" . }}
+-- Load special-workspace behavior like the local machine modules: keep it as a
+-- runtime module beside this config, but do not let a missing/broken module
+-- prevent the rest of Hyprland from loading.
+local specialWorkspacesOk, specialWorkspaces = pcall(require, "special_workspaces")
+if specialWorkspacesOk then
+    if type(specialWorkspaces) == "table" and type(specialWorkspaces.setup) == "function" then
+        local setupOk, setupErr = pcall(specialWorkspaces.setup, { terminal = terminal })
+        if not setupOk then
+            io.stderr:write("Error configuring special_workspaces: " .. tostring(setupErr) .. "\n")
+        end
+    else
+        io.stderr:write("Error loading special_workspaces: module does not export setup()\n")
+    end
+else
+    io.stderr:write("Error loading special_workspaces: " .. tostring(specialWorkspaces) .. "\n")
+end
 
 -- ------------------------
 -- Monitors & Local Configuration
