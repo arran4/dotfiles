@@ -42,8 +42,17 @@
 {{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") }}
 
 -- Terminal candidates passed from chezmoi in preference order:
--- Modern Wayland/GPU terminals -> desktop terminals -> urxvt -> xterm (final fallback).
+-- 1. rxvt-unicode (urxvt), 2. xterm, 3. konsole, followed by the rest.
 local candidateTerminals = {
+{{- if ne (index . "urxvtLocation" | default "") "" }}
+    { name = "urxvt", path = [=[{{.urxvtLocation}}]=] },
+{{- end }}
+{{- if ne (index . "xtermLocation" | default "") "" }}
+    { name = "xterm", path = [=[{{.xtermLocation}}]=] },
+{{- end }}
+{{- if ne (index . "konsoleLocation" | default "") "" }}
+    { name = "konsole", path = [=[{{.konsoleLocation}}]=] },
+{{- end }}
 {{- if ne (index . "ghosttyLocation" | default "") "" }}
     { name = "ghostty", path = [=[{{.ghosttyLocation}}]=] },
 {{- end }}
@@ -62,9 +71,6 @@ local candidateTerminals = {
 {{- if ne (index . "terminatorLocation" | default "") "" }}
     { name = "terminator", path = [=[{{.terminatorLocation}}]=] },
 {{- end }}
-{{- if ne (index . "konsoleLocation" | default "") "" }}
-    { name = "konsole", path = [=[{{.konsoleLocation}}]=] },
-{{- end }}
 {{- if ne (index . "xfce4TerminalLocation" | default "") "" }}
     { name = "xfce4-terminal", path = [=[{{.xfce4TerminalLocation}}]=] },
 {{- end }}
@@ -77,30 +83,24 @@ local candidateTerminals = {
 {{- if ne (index . "lxterminalLocation" | default "") "" }}
     { name = "lxterminal", path = [=[{{.lxterminalLocation}}]=] },
 {{- end }}
-{{- if ne (index . "urxvtLocation" | default "") "" }}
-    { name = "urxvt", path = [=[{{.urxvtLocation}}]=] },
-{{- end }}
-{{- if ne (index . "xtermLocation" | default "") "" }}
-    { name = "xterm", path = [=[{{.xtermLocation}}]=] },
-{{- end }}
 }
 
 -- Fallback terminal names for runtime PATH search in Lua:
--- urxvt and xterm are the final two fallbacks (urxvt preferred over xterm).
 local runtimeFallbackTerminals = {
+    "urxvt",
+    "rxvt-unicode",
+    "xterm",
+    "konsole",
     "ghostty",
     "foot",
     "kitty",
     "alacritty",
     "wezterm",
     "terminator",
-    "konsole",
     "xfce4-terminal",
     "gnome-terminal",
     "mate-terminal",
     "lxterminal",
-    "urxvt",
-    "xterm",
 }
 
 local function isExecutable(path)

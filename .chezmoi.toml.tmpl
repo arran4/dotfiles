@@ -438,9 +438,12 @@
 {{- if eq $lxterminalLocation "" -}}
   {{- $lxterminalLocation = lookPath "lxterminal" -}}
 {{- end -}}
-{{- $urxvtLocation := findExecutable "urxvt" $paths -}}
+{{- $urxvtLocation := findOneExecutable (list "urxvt" "rxvt-unicode") $paths -}}
 {{- if eq $urxvtLocation "" -}}
   {{- $urxvtLocation = lookPath "urxvt" -}}
+{{- end -}}
+{{- if eq $urxvtLocation "" -}}
+  {{- $urxvtLocation = lookPath "rxvt-unicode" -}}
 {{- end -}}
 {{- $xtermLocation := findExecutable "xterm" $paths -}}
 {{- if eq $xtermLocation "" -}}
