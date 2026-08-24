@@ -1,21 +1,9 @@
-URxvt*background: black
-URxvt*foreground: grey
-URxvt*colorBD: grey
-URxvt*colorIT: grey
-URxvt*shading: 30
+URxvt*reverseVideo: True
 URxvt*saveLines: 65535
-Rxvt*background: black
-Rxvt*foreground: grey
-Rxvt*colorBD: grey
-Rxvt*colorIT: grey
-Rxvt*shading: 30
+
+
+Rxvt*reverseVideo: True
 Rxvt*saveLines: 65535
 
-XTerm*background: black
 XTerm*reverseVideo: True
-XTerm*font: xft:monospace:size=10
-XTerm*foreground: grey
-XTerm*colorBD: grey
-XTerm*colorIT: grey
-XTerm*shading: 30
 XTerm*saveLines: 65535
