@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - 'dot_config/hypr/**'
-      - '.chezmoitemplates/hypr/**'
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
   push:
@@ -12,7 +11,6 @@ on:
       - main
     paths:
       - 'dot_config/hypr/**'
-      - '.chezmoitemplates/hypr/**'
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
   workflow_dispatch:
@@ -46,7 +44,7 @@ jobs:
 
           paths = [
               pathlib.Path('dot_config/hypr/hyprland.lua.tmpl'),
-              pathlib.Path('.chezmoitemplates/hypr/special_workspaces.lua'),
+              pathlib.Path('dot_config/hypr/special_workspaces.lua'),
           ]
           sources = {path: path.read_text() for path in paths if path.exists()}
 
@@ -116,16 +114,17 @@ jobs:
 
           print('Hyprland Lua dispatcher API usage is valid')
 
-      - name: Verify special workspace configuration is self-contained
+      - name: Verify special workspace module layout
         run: |
-          grep -Fq '{{ template "hypr/special_workspaces.lua" . }}' dot_config/hypr/hyprland.lua.tmpl
-          test ! -e dot_config/hypr/special_workspaces.lua
-          ! grep -R -F 'require("special_workspaces")' dot_config/hypr .chezmoitemplates/hypr
+          test -f dot_config/hypr/special_workspaces.lua
+          test -f "$HOME/.config/hypr/special_workspaces.lua"
+          grep -Fq 'pcall(require, "special_workspaces")' dot_config/hypr/hyprland.lua.tmpl
+          ! grep -Fq '{{ template "hypr/special_workspaces.lua" . }}' dot_config/hypr/hyprland.lua.tmpl
           ! grep -Fq 'special:anytype' dot_config/hypr/hyprland.lua.tmpl
-          ! grep -Fq 'special:anytype' .chezmoitemplates/hypr/special_workspaces.lua
-          grep -Fq 'special:kjules' .chezmoitemplates/hypr/special_workspaces.lua
+          ! grep -Fq 'special:anytype' dot_config/hypr/special_workspaces.lua
+          grep -Fq 'special:kjules' dot_config/hypr/special_workspaces.lua
 
-      - name: Test special workspace routing
+      - name: Test special workspace module
         run: |
           lua5.4 - <<'LUA'
           local routes = {}
@@ -141,7 +140,6 @@ jobs:
             { class = "org.kde.kjules", title = "kJules" },
           }
 
-          _G.terminal = "/usr/bin/xterm"
           _G.hl = {
             on = function(event, callback)
               handlers[event] = callback
@@ -178,7 +176,11 @@ jobs:
             },
           }
 
-          dofile(".chezmoitemplates/hypr/special_workspaces.lua")
+          local special = dofile("dot_config/hypr/special_workspaces.lua")
+          assert(type(special) == "table")
+          assert(type(special.setup) == "function")
+          assert(type(special.workspace_for_window) == "function")
+          special.setup({ terminal = "/usr/bin/xterm" })
 
           assert(#rules == 4, "music, Beeper, terminal and kJules static rules should be registered")
           assert(rules[1].workspace == "special:music")
@@ -209,7 +211,14 @@ jobs:
           assert(binds["SUPER + D"].special == "scratchpad")
           assert(binds["SUPER + P"].special == "kjules")
 
-          assert(#routes == 4, "existing routed windows should be reconciled on load")
+          assert(special.workspace_for_window({ class = "Beeper" }) == "beeper")
+          assert(special.workspace_for_window({ class = "org.kde.konsole" }) == "terminal")
+          assert(special.workspace_for_window({ class = "Spotify" }) == "music")
+          assert(special.workspace_for_window({ class = "org.kde.kjules" }) == "kjules")
+          assert(special.workspace_for_window({ class = "Anytype" }) == nil)
+          assert(special.workspace_for_window({ class = "firefox", title = "Beeper - search" }) == nil)
+
+          assert(#routes == 4, "existing routed windows should be reconciled on setup")
           assert(routes[1].workspace == "special:beeper")
           assert(routes[2].workspace == "special:terminal")
           assert(routes[3].workspace == "special:music")
@@ -243,16 +252,11 @@ jobs:
           assert(execs[2][1] == "flatpak run com.spotify.Client")
           assert(execs[3][1] == "flatpak run com.beeper.Beeper")
 
-          print("Hyprland special workspace routing tests passed")
+          print("Hyprland special workspace module tests passed")
           LUA
 
-      - name: Execute rendered Hyprland config without runtime workspace module
+      - name: Execute rendered Hyprland config with API mock
         run: |
-          rm -f "$HOME/.config/hypr/special_workspaces.lua"
-          ! grep -Fq 'require("special_workspaces")' "$HOME/.config/hypr/hyprland.lua"
-          grep -Fq 'special:kjules' "$HOME/.config/hypr/hyprland.lua"
-          ! grep -Fq 'special:anytype' "$HOME/.config/hypr/hyprland.lua"
-
           lua5.4 - <<'LUA'
           local mock_dsp = setmetatable({}, {
             __index = function(_, key)
@@ -325,5 +329,46 @@ jobs:
           }
 
           dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
-          print("Rendered Hyprland config executed successfully without special_workspaces.lua")
+          print("Rendered Hyprland config executed successfully with special_workspaces.lua")
+          LUA
+
+      - name: Verify missing special workspace module is non-fatal
+        run: |
+          mv "$HOME/.config/hypr/special_workspaces.lua" "$HOME/.config/hypr/special_workspaces.lua.disabled"
+
+          lua5.4 - <<'LUA'
+          local mock_dsp = setmetatable({}, {
+            __index = function(_, key)
+              return function(...) return { dsp = key, args = {...} } end
+            end,
+          })
+
+          _G.hl = {
+            monitor = function(...) end,
+            config = function(...) end,
+            env = function(...) end,
+            curve = function(...) end,
+            animation = function(...) end,
+            gesture = function(...) end,
+            bind = function(...) end,
+            window_rule = function(...) end,
+            layer_rule = function(...) end,
+            workspace_rule = function(...) end,
+            dispatch = function(...) end,
+            exec_cmd = function(...) end,
+            get_windows = function() return {} end,
+            on = function(...) end,
+            dsp = setmetatable({
+              window = mock_dsp,
+              workspace = mock_dsp,
+              layout = function(...) return { dsp = "layout", args = {...} } end,
+            }, {
+              __index = function(_, key)
+                return function(...) return { dsp = key, args = {...} } end
+              end,
+            }),
+          }
+
+          dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
+          print("Rendered Hyprland config survives a missing special_workspaces.lua")
           LUA
