@@ -42,8 +42,11 @@
 {{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") }}
 
 -- Terminal candidates passed from chezmoi in preference order:
--- 1. rxvt-unicode (urxvt), 2. xterm, 3. konsole, followed by the rest.
+-- 1. rxvt-unicode / urxvt, 2. xterm, 3. konsole, followed by the rest.
 local candidateTerminals = {
+{{- if ne (index . "rxvtUnicodeLocation" | default "") "" }}
+    { name = "rxvt-unicode", path = [=[{{.rxvtUnicodeLocation}}]=] },
+{{- end }}
 {{- if ne (index . "urxvtLocation" | default "") "" }}
     { name = "urxvt", path = [=[{{.urxvtLocation}}]=] },
 {{- end }}
@@ -87,8 +90,8 @@ local candidateTerminals = {
 
 -- Fallback terminal names for runtime PATH search in Lua:
 local runtimeFallbackTerminals = {
-    "urxvt",
     "rxvt-unicode",
+    "urxvt",
     "xterm",
     "konsole",
     "ghostty",
@@ -296,9 +299,15 @@ local function registerBinds()
     hl.bind("SUPER + mouse_down", hl.dsp.global("caelestia:launcherInterrupt"), { ignore_mods = true, non_consuming = true })
 
     hl.bind("CTRL + ALT + Delete", hl.dsp.global("caelestia:session"))
+    hl.bind("SUPER + Escape", hl.dsp.global("caelestia:session"))
     hl.bind("CTRL + ALT + C", hl.dsp.global("caelestia:clearNotifs"), { locked = true })
     hl.bind("SUPER + K", hl.dsp.global("caelestia:showall"))
     hl.bind("SUPER + L", hl.dsp.global("caelestia:lock"))
+
+    -- Cheatsheet / help (Meta + ?)
+    hl.bind("SUPER + slash", hl.dsp.global("caelestia:cheatsheet"))
+    hl.bind("SUPER + question", hl.dsp.global("caelestia:cheatsheet"))
+    hl.bind("SUPER + SHIFT + slash", hl.dsp.global("caelestia:cheatsheet"))
 
     hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd("caelestia shell -d"), { locked = true })
     hl.bind("SUPER + ALT + L", hl.dsp.global("caelestia:lock"), { locked = true })
@@ -337,10 +346,30 @@ local function registerBinds()
         hl.bind("SUPER + V", hl.dsp.exec_cmd(popupTerm .. " -e " .. string.format("%q", clipse), { float = true }))
     end
 
-    -- Windows.
+    -- Windows & Layout.
     hl.bind("SUPER + SHIFT + Q", hl.dsp.window.close())
     hl.bind("SUPER + SHIFT + W", hl.dsp.window.close())
     hl.bind("SUPER + F", hl.dsp.window.fullscreen())
+    hl.bind("SUPER + SHIFT + Space", hl.dsp.window.toggle_floating())
+    hl.bind("SUPER + ALT + Space", hl.dsp.window.toggle_floating())
+    hl.bind("SUPER + J", hl.dsp.layout.toggle_split())
+
+    -- Directional focus.
+    hl.bind("SUPER + Left", hl.dsp.focus({ direction = "left" }))
+    hl.bind("SUPER + Right", hl.dsp.focus({ direction = "right" }))
+    hl.bind("SUPER + Up", hl.dsp.focus({ direction = "up" }))
+    hl.bind("SUPER + Down", hl.dsp.focus({ direction = "down" }))
+    hl.bind("SUPER + H", hl.dsp.focus({ direction = "left" }))
+
+    -- Directional move.
+    hl.bind("SUPER + SHIFT + Left", hl.dsp.window.move({ direction = "left" }))
+    hl.bind("SUPER + SHIFT + Right", hl.dsp.window.move({ direction = "right" }))
+    hl.bind("SUPER + SHIFT + Up", hl.dsp.window.move({ direction = "up" }))
+    hl.bind("SUPER + SHIFT + Down", hl.dsp.window.move({ direction = "down" }))
+    hl.bind("SUPER + SHIFT + H", hl.dsp.window.move({ direction = "left" }))
+    hl.bind("SUPER + SHIFT + J", hl.dsp.window.move({ direction = "down" }))
+    hl.bind("SUPER + SHIFT + K", hl.dsp.window.move({ direction = "up" }))
+    hl.bind("SUPER + SHIFT + L", hl.dsp.window.move({ direction = "right" }))
 
     hl.bind("SUPER + 0", hl.dsp.focus({ workspace = "empty" }))
     for i = 1, 9 do
@@ -441,7 +470,7 @@ hl.window_rule({
     workspace = "special:beeper",
 })
 hl.window_rule({
-    match = { class = "^(Alacritty|foot|kitty|com.mitchellh.ghostty|ghostty|org.wezfurlong.wezterm|wezterm|terminator|konsole|xfce4-terminal|mate-terminal|lxterminal|URxvt|XTerm)$" },
+    match = { class = "^(Alacritty|foot|kitty|com.mitchellh.ghostty|ghostty|org.wezfurlong.wezterm|wezterm|terminator|konsole|xfce4-terminal|mate-terminal|lxterminal|URxvt|urxvt|rxvt-unicode|rxvt|XTerm|xterm)$" },
     workspace = "special:terminal",
 })
 hl.window_rule({

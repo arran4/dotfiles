@@ -438,12 +438,13 @@
 {{- if eq $lxterminalLocation "" -}}
   {{- $lxterminalLocation = lookPath "lxterminal" -}}
 {{- end -}}
-{{- $urxvtLocation := findOneExecutable (list "urxvt" "rxvt-unicode") $paths -}}
+{{- $rxvtUnicodeLocation := findExecutable "rxvt-unicode" $paths -}}
+{{- if eq $rxvtUnicodeLocation "" -}}
+  {{- $rxvtUnicodeLocation = lookPath "rxvt-unicode" -}}
+{{- end -}}
+{{- $urxvtLocation := findExecutable "urxvt" $paths -}}
 {{- if eq $urxvtLocation "" -}}
   {{- $urxvtLocation = lookPath "urxvt" -}}
-{{- end -}}
-{{- if eq $urxvtLocation "" -}}
-  {{- $urxvtLocation = lookPath "rxvt-unicode" -}}
 {{- end -}}
 {{- $xtermLocation := findExecutable "xterm" $paths -}}
 {{- if eq $xtermLocation "" -}}
@@ -797,6 +798,7 @@
         gnomeTerminalLocation="{{$gnomeTerminalLocation}}"
         mateTerminalLocation="{{$mateTerminalLocation}}"
         lxterminalLocation="{{$lxterminalLocation}}"
+        rxvtUnicodeLocation="{{$rxvtUnicodeLocation}}"
         urxvtLocation="{{$urxvtLocation}}"
         xtermLocation="{{$xtermLocation}}"
         swaylockLocation="{{$swaylockLocation}}"
