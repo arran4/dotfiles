@@ -38,6 +38,7 @@ jobs:
 
           local routes = {}
           local handlers = {}
+          local rules = {}
           local existing = {
             { class = "BeeperTexts", title = "Beeper" },
             { class = "org.kde.konsole", title = "shell" },
@@ -50,6 +51,9 @@ jobs:
             end,
             get_windows = function()
               return existing
+            end,
+            window_rule = function(rule)
+              table.insert(rules, rule)
             end,
             dispatch = function(action)
               table.insert(routes, action)
@@ -64,6 +68,14 @@ jobs:
           }
 
           local routing = require("special_workspaces")
+
+          assert(#rules == 3, "music, Beeper and terminal static rules should be registered")
+          assert(rules[1].workspace == "special:music")
+          assert(rules[2].workspace == "special:beeper")
+          assert(rules[3].workspace == "special:terminal")
+          assert(rules[2].match.class:find("BeeperTexts", 1, true))
+          assert(rules[3].match.class:find("org.kde.konsole", 1, true))
+          assert(rules[3].match.class:find("footclient", 1, true))
 
           assert(routing.workspace_for_window({ class = "Beeper" }) == "beeper")
           assert(routing.workspace_for_window({ class = "BeeperTexts" }) == "beeper")
