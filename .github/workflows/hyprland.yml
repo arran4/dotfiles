@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'dot_config/hypr/**'
+      - '.chezmoitemplates/hypr/**'
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
   push:
@@ -11,6 +12,7 @@ on:
       - main
     paths:
       - 'dot_config/hypr/**'
+      - '.chezmoitemplates/hypr/**'
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
   workflow_dispatch:
@@ -44,7 +46,7 @@ jobs:
 
           paths = [
               pathlib.Path('dot_config/hypr/hyprland.lua.tmpl'),
-              pathlib.Path('dot_config/hypr/special_workspaces.lua'),
+              pathlib.Path('.chezmoitemplates/hypr/special_workspaces.lua'),
           ]
           sources = {path: path.read_text() for path in paths if path.exists()}
 
@@ -114,25 +116,32 @@ jobs:
 
           print('Hyprland Lua dispatcher API usage is valid')
 
-      - name: Verify special workspace routing is global
+      - name: Verify special workspace configuration is self-contained
         run: |
-          grep -Fq 'require("special_workspaces")' dot_config/hypr/hyprland.lua.tmpl
-          ! grep -R -F 'require("special_workspaces")' dot_config/hypr/local_*.lua
+          grep -Fq '{{ template "hypr/special_workspaces.lua" . }}' dot_config/hypr/hyprland.lua.tmpl
+          test ! -e dot_config/hypr/special_workspaces.lua
+          ! grep -R -F 'require("special_workspaces")' dot_config/hypr .chezmoitemplates/hypr
+          ! grep -Fq 'special:anytype' dot_config/hypr/hyprland.lua.tmpl
+          ! grep -Fq 'special:anytype' .chezmoitemplates/hypr/special_workspaces.lua
+          grep -Fq 'special:kjules' .chezmoitemplates/hypr/special_workspaces.lua
 
       - name: Test special workspace routing
         run: |
           lua5.4 - <<'LUA'
-          package.path = "dot_config/hypr/?.lua;" .. package.path
-
           local routes = {}
           local handlers = {}
           local rules = {}
+          local workspace_rules = {}
+          local binds = {}
+          local execs = {}
           local existing = {
             { class = "BeeperTexts", title = "Beeper" },
             { class = "org.kde.konsole", title = "shell" },
             { class = "Spotify", title = "Spotify" },
+            { class = "org.kde.kjules", title = "kJules" },
           }
 
+          _G.terminal = "/usr/bin/xterm"
           _G.hl = {
             on = function(event, callback)
               handlers[event] = callback
@@ -143,6 +152,15 @@ jobs:
             window_rule = function(rule)
               table.insert(rules, rule)
             end,
+            workspace_rule = function(rule)
+              table.insert(workspace_rules, rule)
+            end,
+            bind = function(keys, action)
+              binds[keys] = action
+            end,
+            exec_cmd = function(...)
+              table.insert(execs, {...})
+            end,
             dispatch = function(action)
               table.insert(routes, action)
             end,
@@ -152,39 +170,56 @@ jobs:
                   return options
                 end,
               },
+              workspace = {
+                toggle_special = function(name)
+                  return { special = name }
+                end,
+              },
             },
           }
 
-          local routing = require("special_workspaces")
+          dofile(".chezmoitemplates/hypr/special_workspaces.lua")
 
-          assert(#rules == 3, "music, Beeper and terminal static rules should be registered")
+          assert(#rules == 4, "music, Beeper, terminal and kJules static rules should be registered")
           assert(rules[1].workspace == "special:music")
           assert(rules[2].workspace == "special:beeper")
           assert(rules[3].workspace == "special:terminal")
+          assert(rules[4].workspace == "special:kjules")
           assert(rules[2].match.class:find("BeeperTexts", 1, true))
           assert(rules[3].match.class:find("org.kde.konsole", 1, true))
           assert(rules[3].match.class:find("footclient", 1, true))
+          assert(rules[4].match.class:find("org.kde.kjules", 1, true))
 
-          assert(routing.workspace_for_window({ class = "Beeper" }) == "beeper")
-          assert(routing.workspace_for_window({ class = "BeeperTexts" }) == "beeper")
-          assert(routing.workspace_for_window({ class = "com.beeper.Beeper" }) == "beeper")
-          assert(routing.workspace_for_window({ class = "electron", title = "Beeper" }) == "beeper")
-          assert(routing.workspace_for_window({ class = "org.kde.konsole" }) == "terminal")
-          assert(routing.workspace_for_window({ class = "footclient" }) == "terminal")
-          assert(routing.workspace_for_window({ class = "gnome-terminal-server" }) == "terminal")
-          assert(routing.workspace_for_window({ class = "URxvt" }) == "terminal")
-          assert(routing.workspace_for_window({ class = "Spotify" }) == "music")
-          assert(routing.workspace_for_window({ class = "firefox", title = "Beeper - search" }) == nil)
+          assert(#workspace_rules == 5, "all five named special workspaces should be persistent")
+          local persistent = {}
+          for _, rule in ipairs(workspace_rules) do
+            persistent[rule.workspace] = true
+          end
+          assert(persistent["special:music"])
+          assert(persistent["special:beeper"])
+          assert(persistent["special:terminal"])
+          assert(persistent["special:scratchpad"])
+          assert(persistent["special:kjules"])
+          assert(not persistent["special:anytype"])
 
-          assert(#routes == 3, "existing windows should be reconciled on load")
+          assert(binds["SUPER + M"].special == "music")
+          assert(binds["SUPER + B"].special == "beeper")
+          assert(binds["SUPER + grave"].special == "terminal")
+          assert(binds["SUPER + T"].special == "terminal")
+          assert(binds["SUPER + D"].special == "scratchpad")
+          assert(binds["SUPER + P"].special == "kjules")
+
+          assert(#routes == 4, "existing routed windows should be reconciled on load")
           assert(routes[1].workspace == "special:beeper")
           assert(routes[2].workspace == "special:terminal")
           assert(routes[3].workspace == "special:music")
+          assert(routes[4].workspace == "special:kjules")
           assert(routes[1].follow == false)
           assert(routes[1].window == existing[1])
 
           assert(type(handlers["window.open"]) == "function")
           assert(type(handlers["window.class"]) == "function")
+          assert(type(handlers["hyprland.start"]) == "function")
 
           handlers["window.open"]({ class = "xterm", title = "shell" })
           assert(routes[#routes].workspace == "special:terminal")
@@ -192,11 +227,32 @@ jobs:
           handlers["window.class"]({ class = "com.beeper.Beeper", title = "Beeper" })
           assert(routes[#routes].workspace == "special:beeper")
 
+          handlers["window.open"]({ class = "kjules", title = "kJules" })
+          assert(routes[#routes].workspace == "special:kjules")
+
+          local before = #routes
+          handlers["window.open"]({ class = "Anytype", title = "Anytype" })
+          assert(#routes == before, "Anytype must no longer be captured by a special workspace")
+          handlers["window.open"]({ class = "firefox", title = "Beeper - search" })
+          assert(#routes == before, "ordinary browser windows mentioning Beeper must not be captured")
+
+          handlers["hyprland.start"]()
+          assert(#execs == 3, "only terminal, Spotify and Beeper should autostart from special workspace config")
+          assert(execs[1][1] == "/usr/bin/xterm")
+          assert(execs[1][2].workspace == "special:terminal silent")
+          assert(execs[2][1] == "flatpak run com.spotify.Client")
+          assert(execs[3][1] == "flatpak run com.beeper.Beeper")
+
           print("Hyprland special workspace routing tests passed")
           LUA
 
-      - name: Execute rendered Hyprland config with API mock
+      - name: Execute rendered Hyprland config without runtime workspace module
         run: |
+          rm -f "$HOME/.config/hypr/special_workspaces.lua"
+          ! grep -Fq 'require("special_workspaces")' "$HOME/.config/hypr/hyprland.lua"
+          grep -Fq 'special:kjules' "$HOME/.config/hypr/hyprland.lua"
+          ! grep -Fq 'special:anytype' "$HOME/.config/hypr/hyprland.lua"
+
           lua5.4 - <<'LUA'
           local mock_dsp = setmetatable({}, {
             __index = function(_, key)
@@ -269,5 +325,5 @@ jobs:
           }
 
           dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
-          print("Rendered Hyprland config executed successfully")
+          print("Rendered Hyprland config executed successfully without special_workspaces.lua")
           LUA
