@@ -35,6 +35,16 @@ jobs:
         run: |
           find "$HOME/.config/hypr" -name '*.lua' -print0 | xargs -0 -r luac5.4 -p
 
+      - name: Verify Hyprland config is self-contained
+        run: |
+          test ! -e dot_config/hypr/special_workspaces.lua
+          ! grep -Fq 'require("special_workspaces")' dot_config/hypr/hyprland.lua.tmpl
+          ! grep -Fq 'require("special_workspaces")' "$HOME/.config/hypr/hyprland.lua"
+          grep -Fq 'local specialWorkspaceClasses' dot_config/hypr/hyprland.lua.tmpl
+          grep -Fq 'local specialWorkspaceClasses' "$HOME/.config/hypr/hyprland.lua"
+          grep -Fq 'hl.on("window.open", routeSpecialWorkspaceWindow)' "$HOME/.config/hypr/hyprland.lua"
+          grep -Fq 'hl.on("window.class", routeSpecialWorkspaceWindow)' "$HOME/.config/hypr/hyprland.lua"
+
       - name: Validate Hyprland Lua dispatcher API usage
         shell: python
         run: |
@@ -42,11 +52,8 @@ jobs:
           import re
           import sys
 
-          paths = [
-              pathlib.Path('dot_config/hypr/hyprland.lua.tmpl'),
-              pathlib.Path('dot_config/hypr/special_workspaces.lua'),
-          ]
-          sources = {path: path.read_text() for path in paths if path.exists()}
+          path = pathlib.Path('dot_config/hypr/hyprland.lua.tmpl')
+          source = path.read_text()
 
           allowed_top_level = {
               'exec_cmd',
@@ -71,129 +78,48 @@ jobs:
           }
 
           errors = []
-          for path, source in sources.items():
-              for match in re.finditer(r'hl\.dsp\.layout\.([A-Za-z_]\w*)', source):
-                  errors.append(
-                      f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
-                      f'invalid nested layout dispatcher hl.dsp.layout.{match.group(1)}; '
-                      'use hl.dsp.layout("message")'
-                  )
 
-              for namespace, allowed in (
-                  ('window', allowed_window),
-                  ('workspace', allowed_workspace),
-              ):
-                  pattern = rf'hl\.dsp\.{namespace}\.([A-Za-z_]\w*)'
-                  for match in re.finditer(pattern, source):
-                      method = match.group(1)
-                      if method not in allowed:
-                          errors.append(
-                              f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
-                              f'unknown/unreviewed dispatcher hl.dsp.{namespace}.{method}'
-                          )
+          for match in re.finditer(r'hl\.dsp\.layout\.([A-Za-z_]\w*)', source):
+              errors.append(
+                  f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                  f'invalid nested layout dispatcher hl.dsp.layout.{match.group(1)}; '
+                  'use hl.dsp.layout("message")'
+              )
 
-              for match in re.finditer(r'hl\.dsp\.([A-Za-z_]\w*)', source):
-                  name = match.group(1)
-                  if name not in allowed_top_level:
+          for namespace, allowed in (
+              ('window', allowed_window),
+              ('workspace', allowed_workspace),
+          ):
+              pattern = rf'hl\.dsp\.{namespace}\.([A-Za-z_]\w*)'
+              for match in re.finditer(pattern, source):
+                  method = match.group(1)
+                  if method not in allowed:
                       errors.append(
                           f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
-                          f'unknown/unreviewed top-level dispatcher hl.dsp.{name}'
+                          f'unknown/unreviewed dispatcher hl.dsp.{namespace}.{method}'
                       )
 
-              forbidden = {
-                  'hl.dsp.window.toggle_floating': 'use hl.dsp.window.float({ action = "toggle" })',
-                  'hl.dsp.layout.toggle_split': 'use hl.dsp.layout("togglesplit")',
-              }
-              for token, replacement in forbidden.items():
-                  if token in source:
-                      errors.append(f'{path}: forbidden {token}; {replacement}')
+          for match in re.finditer(r'hl\.dsp\.([A-Za-z_]\w*)', source):
+              name = match.group(1)
+              if name not in allowed_top_level:
+                  errors.append(
+                      f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                      f'unknown/unreviewed top-level dispatcher hl.dsp.{name}'
+                  )
+
+          forbidden = {
+              'hl.dsp.window.toggle_floating': 'use hl.dsp.window.float({ action = "toggle" })',
+              'hl.dsp.layout.toggle_split': 'use hl.dsp.layout("togglesplit")',
+          }
+          for token, replacement in forbidden.items():
+              if token in source:
+                  errors.append(f'{path}: forbidden {token}; {replacement}')
 
           if errors:
               print('\n'.join(errors), file=sys.stderr)
               sys.exit(1)
 
           print('Hyprland Lua dispatcher API usage is valid')
-
-      - name: Verify special workspace routing is global
-        run: |
-          grep -Fq 'require("special_workspaces")' dot_config/hypr/hyprland.lua.tmpl
-          ! grep -R -F 'require("special_workspaces")' dot_config/hypr/local_*.lua
-
-      - name: Test special workspace routing
-        run: |
-          lua5.4 - <<'LUA'
-          package.path = "dot_config/hypr/?.lua;" .. package.path
-
-          local routes = {}
-          local handlers = {}
-          local rules = {}
-          local existing = {
-            { class = "BeeperTexts", title = "Beeper" },
-            { class = "org.kde.konsole", title = "shell" },
-            { class = "Spotify", title = "Spotify" },
-          }
-
-          _G.hl = {
-            on = function(event, callback)
-              handlers[event] = callback
-            end,
-            get_windows = function()
-              return existing
-            end,
-            window_rule = function(rule)
-              table.insert(rules, rule)
-            end,
-            dispatch = function(action)
-              table.insert(routes, action)
-            end,
-            dsp = {
-              window = {
-                move = function(options)
-                  return options
-                end,
-              },
-            },
-          }
-
-          local routing = require("special_workspaces")
-
-          assert(#rules == 3, "music, Beeper and terminal static rules should be registered")
-          assert(rules[1].workspace == "special:music")
-          assert(rules[2].workspace == "special:beeper")
-          assert(rules[3].workspace == "special:terminal")
-          assert(rules[2].match.class:find("BeeperTexts", 1, true))
-          assert(rules[3].match.class:find("org.kde.konsole", 1, true))
-          assert(rules[3].match.class:find("footclient", 1, true))
-
-          assert(routing.workspace_for_window({ class = "Beeper" }) == "beeper")
-          assert(routing.workspace_for_window({ class = "BeeperTexts" }) == "beeper")
-          assert(routing.workspace_for_window({ class = "com.beeper.Beeper" }) == "beeper")
-          assert(routing.workspace_for_window({ class = "electron", title = "Beeper" }) == "beeper")
-          assert(routing.workspace_for_window({ class = "org.kde.konsole" }) == "terminal")
-          assert(routing.workspace_for_window({ class = "footclient" }) == "terminal")
-          assert(routing.workspace_for_window({ class = "gnome-terminal-server" }) == "terminal")
-          assert(routing.workspace_for_window({ class = "URxvt" }) == "terminal")
-          assert(routing.workspace_for_window({ class = "Spotify" }) == "music")
-          assert(routing.workspace_for_window({ class = "firefox", title = "Beeper - search" }) == nil)
-
-          assert(#routes == 3, "existing windows should be reconciled on load")
-          assert(routes[1].workspace == "special:beeper")
-          assert(routes[2].workspace == "special:terminal")
-          assert(routes[3].workspace == "special:music")
-          assert(routes[1].follow == false)
-          assert(routes[1].window == existing[1])
-
-          assert(type(handlers["window.open"]) == "function")
-          assert(type(handlers["window.class"]) == "function")
-
-          handlers["window.open"]({ class = "xterm", title = "shell" })
-          assert(routes[#routes].workspace == "special:terminal")
-
-          handlers["window.class"]({ class = "com.beeper.Beeper", title = "Beeper" })
-          assert(routes[#routes].workspace == "special:beeper")
-
-          print("Hyprland special workspace routing tests passed")
-          LUA
 
       - name: Execute rendered Hyprland config with API mock
         run: |
@@ -205,6 +131,14 @@ jobs:
           })
 
           local registered_curves = { default = true }
+          local routes = {}
+          local handlers = {}
+          local rules = {}
+          local existing = {
+            { class = "BeeperTexts", title = "Beeper" },
+            { class = "org.kde.konsole", title = "shell" },
+            { class = "Spotify", title = "Spotify" },
+          }
 
           local function validate_config_keys(tbl, path)
             path = path or ""
@@ -247,15 +181,21 @@ jobs:
               assert(type(keys) == "string")
               assert(action ~= nil)
             end,
-            window_rule = function(opts) assert(type(opts) == "table") end,
+            window_rule = function(opts)
+              assert(type(opts) == "table")
+              table.insert(rules, opts)
+            end,
             layer_rule = function(opts) assert(type(opts) == "table") end,
             workspace_rule = function(opts) assert(type(opts) == "table") end,
-            dispatch = function(...) end,
+            dispatch = function(action)
+              table.insert(routes, action)
+            end,
             exec_cmd = function(...) end,
-            get_windows = function() return {} end,
+            get_windows = function() return existing end,
             on = function(event, callback)
               assert(type(event) == "string")
               assert(type(callback) == "function")
+              handlers[event] = callback
             end,
             dsp = setmetatable({
               window = mock_dsp,
@@ -269,5 +209,26 @@ jobs:
           }
 
           dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
+
+          assert(#routes == 3, "existing Spotify/Beeper/terminal windows should be reconciled")
+          assert(routes[1].workspace == "special:beeper")
+          assert(routes[2].workspace == "special:terminal")
+          assert(routes[3].workspace == "special:music")
+          assert(routes[1].follow == false)
+          assert(routes[1].window == existing[1])
+
+          assert(type(handlers["window.open"]) == "function")
+          assert(type(handlers["window.class"]) == "function")
+
+          handlers["window.open"]({ class = "footclient", title = "shell" })
+          assert(routes[#routes].workspace == "special:terminal")
+
+          handlers["window.class"]({ class = "electron", title = "Beeper" })
+          assert(routes[#routes].workspace == "special:beeper")
+
+          local before = #routes
+          handlers["window.open"]({ class = "firefox", title = "Beeper - search" })
+          assert(#routes == before, "ordinary browser windows must not be captured")
+
           print("Rendered Hyprland config executed successfully")
           LUA
