@@ -288,6 +288,7 @@ local function registerBinds()
     end
 
     hl.bind("SUPER + M", hl.dsp.workspace.toggle_special("music"))
+    hl.bind("SUPER + B", hl.dsp.workspace.toggle_special("beeper"))
     hl.bind("SUPER + grave", hl.dsp.workspace.toggle_special("terminal"))
     hl.bind("SUPER + T", hl.dsp.workspace.toggle_special("terminal"))
     hl.bind("SUPER + D", hl.dsp.workspace.toggle_special("scratchpad"))
@@ -359,6 +360,7 @@ registerBinds()
 -- ------------------------
 for _, workspace in ipairs({
     "special:music",
+    "special:beeper",
     "special:terminal",
     "special:anytype",
     "special:scratchpad",
@@ -373,6 +375,10 @@ end
 hl.window_rule({
     match = { class = "^(Spotify|spotify|org.spotify.Client|com.spotify.Client)$" },
     workspace = "special:music",
+})
+hl.window_rule({
+    match = { class = "^(Beeper|beeper|com.beeper.Beeper|com.beeper.beeper)$" },
+    workspace = "special:beeper",
 })
 hl.window_rule({
     match = { class = "^(Alacritty|foot|kitty|com.mitchellh.ghostty|ghostty|org.wezfurlong.wezterm|wezterm|terminator|konsole|xfce4-terminal|mate-terminal|lxterminal|URxvt|XTerm)$" },
@@ -420,4 +426,6 @@ hl.on("hyprland.start", function()
     if terminal ~= "" then
         hl.exec_cmd(terminal, { workspace = "special:terminal silent" })
     end
+    hl.exec_cmd("flatpak run com.spotify.Client", { workspace = "special:music silent" })
+    hl.exec_cmd("flatpak run com.beeper.Beeper", { workspace = "special:beeper silent" })
 end)
