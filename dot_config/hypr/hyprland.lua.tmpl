@@ -529,9 +529,13 @@ local function registerBinds()
     hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 1%+"), { repeating = true })
     hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-"), { locked = true })
     hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
+{{- if ne .hyprland_features "quickshell" }}
+    -- Caelestia owns playback transport keys in quickshell mode. Register the
+    -- playerctl fallback only when Caelestia is not providing those bindings.
     hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl --player=" .. playerctlPlayer .. " play-pause"), { locked = true })
     hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl --player=" .. playerctlPlayer .. " previous"), { locked = true })
     hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl --player=" .. playerctlPlayer .. " next"), { locked = true })
+{{- end }}
 
     -- Mouse bindings.
     hl.bind("ALT + mouse:272", hl.dsp.window.drag(), { mouse = true })
