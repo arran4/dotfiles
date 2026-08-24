@@ -3,8 +3,8 @@
 -- Static workspace window rules are useful for the common case, but they only
 -- apply when a window is created. They also use the initial class for static
 -- effects, which can miss Electron applications that publish their final class
--- later. This module also reconciles existing windows when the Lua config is
--- reloaded.
+-- later. This module therefore combines static rules, class-change handling,
+-- and reconciliation of already-open windows on config reload.
 
 local classRoutes = {
   music = {
@@ -42,6 +42,21 @@ local classRoutes = {
     ["xterm"] = true,
   },
 }
+
+-- Keep static rules for the normal window-open path. The event routing below
+-- supplements these rules for late class changes and existing windows.
+hl.window_rule({
+  match = { class = "^(Spotify|spotify|org.spotify.Client|com.spotify.Client)$" },
+  workspace = "special:music",
+})
+hl.window_rule({
+  match = { class = "^(Beeper|beeper|BeeperTexts|beepertexts|com.beeper.Beeper|com.beeper.beeper)$" },
+  workspace = "special:beeper",
+})
+hl.window_rule({
+  match = { class = "^(Alacritty|alacritty|foot|footclient|kitty|com.mitchellh.ghostty|ghostty|org.wezfurlong.wezterm|wezterm|terminator|konsole|org.kde.konsole|xfce4-terminal|gnome-terminal|gnome-terminal-server|org.gnome.terminal|org.gnome.console|mate-terminal|lxterminal|URxvt|urxvt|rxvt-unicode|rxvt|XTerm|xterm)$" },
+  workspace = "special:terminal",
+})
 
 local function lower(value)
   if type(value) ~= "string" then
