@@ -432,9 +432,6 @@ local function registerBinds()
     end
 
     hl.bind("SUPER + Y", hl.dsp.exec_cmd("hypr-cycle-layout"))
-    if launcher ~= "" then
-        hl.bind("SUPER + Space", hl.dsp.exec_cmd(launcher))
-    end
 
     if cliphistCmd ~= "" then
         hl.bind("SUPER + V", hl.dsp.exec_cmd(cliphistCmd))
