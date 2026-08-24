@@ -19,30 +19,133 @@
 {{- end -}}
 
 {{- $clipse := .clipse -}}
-
-{{- $terminal := "" -}}
-{{- if ne .terminatorLocation "" -}}
-  {{- $terminal = .terminatorLocation -}}
-{{- else if ne .konsoleLocation "" -}}
-  {{- $terminal = .konsoleLocation -}}
-{{- else if ne .alacrittyLocation "" -}}
-  {{- $terminal = .alacrittyLocation -}}
-{{- else if ne .urxvtLocation "" -}}
-  {{- $terminal = .urxvtLocation -}}
-{{- else if ne .xtermLocation "" -}}
-  {{- $terminal = .xtermLocation -}}
-{{- end -}}
-
-{{- $popupTerm := $terminal -}}
 {{- $anytype := .anytypeLocation -}}
 {{- $solaar := .solaarLocation -}}
 {{- $kded6 := .kded6Location -}}
 {{- $kdeconnectIndicator := .kdeconnectIndicatorLocation -}}
 {{- $nmApplet := .nmAppletLocation -}}
-{{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") -}}
+{{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") }}
 
-local terminal = [=[{{$terminal}}]=]
-local popupTerm = [=[{{$popupTerm}}]=]
+-- Terminal candidates passed from chezmoi in preference order:
+-- Modern Wayland/GPU terminals -> desktop terminals -> urxvt -> xterm (final fallback).
+local candidateTerminals = {
+{{- if ne (index . "ghosttyLocation" | default "") "" }}
+    { name = "ghostty", path = [=[{{.ghosttyLocation}}]=] },
+{{- end }}
+{{- if ne (index . "footLocation" | default "") "" }}
+    { name = "foot", path = [=[{{.footLocation}}]=] },
+{{- end }}
+{{- if ne (index . "kittyLocation" | default "") "" }}
+    { name = "kitty", path = [=[{{.kittyLocation}}]=] },
+{{- end }}
+{{- if ne (index . "alacrittyLocation" | default "") "" }}
+    { name = "alacritty", path = [=[{{.alacrittyLocation}}]=] },
+{{- end }}
+{{- if ne (index . "weztermLocation" | default "") "" }}
+    { name = "wezterm", path = [=[{{.weztermLocation}}]=] },
+{{- end }}
+{{- if ne (index . "terminatorLocation" | default "") "" }}
+    { name = "terminator", path = [=[{{.terminatorLocation}}]=] },
+{{- end }}
+{{- if ne (index . "konsoleLocation" | default "") "" }}
+    { name = "konsole", path = [=[{{.konsoleLocation}}]=] },
+{{- end }}
+{{- if ne (index . "xfce4TerminalLocation" | default "") "" }}
+    { name = "xfce4-terminal", path = [=[{{.xfce4TerminalLocation}}]=] },
+{{- end }}
+{{- if ne (index . "gnomeTerminalLocation" | default "") "" }}
+    { name = "gnome-terminal", path = [=[{{.gnomeTerminalLocation}}]=] },
+{{- end }}
+{{- if ne (index . "mateTerminalLocation" | default "") "" }}
+    { name = "mate-terminal", path = [=[{{.mateTerminalLocation}}]=] },
+{{- end }}
+{{- if ne (index . "lxterminalLocation" | default "") "" }}
+    { name = "lxterminal", path = [=[{{.lxterminalLocation}}]=] },
+{{- end }}
+{{- if ne (index . "urxvtLocation" | default "") "" }}
+    { name = "urxvt", path = [=[{{.urxvtLocation}}]=] },
+{{- end }}
+{{- if ne (index . "xtermLocation" | default "") "" }}
+    { name = "xterm", path = [=[{{.xtermLocation}}]=] },
+{{- end }}
+}
+
+-- Fallback terminal names for runtime PATH search in Lua:
+-- urxvt and xterm are the final two fallbacks (urxvt preferred over xterm).
+local runtimeFallbackTerminals = {
+    "ghostty",
+    "foot",
+    "kitty",
+    "alacritty",
+    "wezterm",
+    "terminator",
+    "konsole",
+    "xfce4-terminal",
+    "gnome-terminal",
+    "mate-terminal",
+    "lxterminal",
+    "urxvt",
+    "xterm",
+}
+
+local function isExecutable(path)
+    if not path or path == "" then
+        return false
+    end
+    local f = io.open(path, "r")
+    if f then
+        f:close()
+        return true
+    end
+    return false
+end
+
+local function findInPath(cmd)
+    if not cmd or cmd == "" then
+        return nil
+    end
+    if cmd:sub(1, 1) == "/" then
+        if isExecutable(cmd) then
+            return cmd
+        end
+        return nil
+    end
+    local pathEnv = os.getenv("PATH") or "/usr/local/bin:/usr/bin:/bin"
+    for dir in pathEnv:gmatch("[^:]+") do
+        local fullPath = dir .. "/" .. cmd
+        if isExecutable(fullPath) then
+            return fullPath
+        end
+    end
+    return nil
+end
+
+local function resolveTerminal()
+    for _, candidate in ipairs(candidateTerminals) do
+        if candidate.path and candidate.path ~= "" then
+            if candidate.path:sub(1, 1) == "/" then
+                if isExecutable(candidate.path) then
+                    return candidate.path
+                end
+            else
+                local found = findInPath(candidate.path)
+                if found then
+                    return found
+                end
+            end
+        end
+    end
+    for _, name in ipairs(runtimeFallbackTerminals) do
+        local found = findInPath(name)
+        if found then
+            return found
+        end
+    end
+    return ""
+end
+
+local terminal = resolveTerminal()
+local popupTerm = terminal
 local launcher = [=[{{$launcher}}]=]
 local lockcmd = [=[{{$lockcmd}}]=]
 local clipse = [=[{{$clipse}}]=]
@@ -57,6 +160,12 @@ hl.monitor({
     position = "0x0",
     scale = 1,
 })
+hl.monitor({
+    output = "",
+    mode = "preferred",
+    position = "auto",
+    scale = 1,
+})
 
 -- ------------------------
 -- General settings
@@ -66,14 +175,12 @@ hl.config({
         gaps_in = 10,
         gaps_out = 15,
         border_size = 2,
-        col = {
-            active_border = "rgba(135affcc)",
-            inactive_border = "rgba(323232cc)",
-        },
+        ["col.active_border"] = "rgba(135affcc)",
+        ["col.inactive_border"] = "rgba(323232cc)",
         layout = "master",
     },
     cursor = {
-        no_hardware_cursors = 1,
+        no_hardware_cursors = true,
     },
     decoration = {
         rounding = 8,
@@ -90,9 +197,10 @@ hl.config({
 
 hl.env("LIBVA_DRIVER_NAME", "nvidia")
 hl.env("XDG_SESSION_TYPE", "wayland")
-hl.env("GBM_BACKEND", "nvidia-drm")
 hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
-hl.env("XDG_CURRENT_DESKTOP", "hyprland")
+hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
+hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
+hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 
 hl.animation({ leaf = "windows", enabled = true, speed = 4, bezier = "default" })
 hl.animation({ leaf = "fade", enabled = true, speed = 3, bezier = "default" })
@@ -262,7 +370,7 @@ hl.window_rule({
     workspace = "special:music",
 })
 hl.window_rule({
-    match = { class = "^(Alacritty)$" },
+    match = { class = "^(Alacritty|foot|kitty|com.mitchellh.ghostty|ghostty|org.wezfurlong.wezterm|wezterm|terminator|konsole|xfce4-terminal|mate-terminal|lxterminal|URxvt|XTerm)$" },
     workspace = "special:terminal",
 })
 hl.window_rule({
@@ -285,7 +393,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("waybar")
 {{- end }}
     hl.exec_cmd("set-wallpaper")
-    hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=hyprland")
+    hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland")
     if clipse ~= "" then
         hl.exec_cmd(clipse .. " -listen")
     end

@@ -389,6 +389,26 @@
   {{- $dmenuRunLocation = lookPath "dmenu_run" -}}
 {{- end -}}
 
+{{- $ghosttyLocation := findExecutable "ghostty" $paths -}}
+{{- if eq $ghosttyLocation "" -}}
+  {{- $ghosttyLocation = lookPath "ghostty" -}}
+{{- end -}}
+{{- $footLocation := findExecutable "foot" $paths -}}
+{{- if eq $footLocation "" -}}
+  {{- $footLocation = lookPath "foot" -}}
+{{- end -}}
+{{- $kittyLocation := findExecutable "kitty" $paths -}}
+{{- if eq $kittyLocation "" -}}
+  {{- $kittyLocation = lookPath "kitty" -}}
+{{- end -}}
+{{- $alacrittyLocation := findExecutable "alacritty" $paths -}}
+{{- if eq $alacrittyLocation "" -}}
+  {{- $alacrittyLocation = lookPath "alacritty" -}}
+{{- end -}}
+{{- $weztermLocation := findExecutable "wezterm" $paths -}}
+{{- if eq $weztermLocation "" -}}
+  {{- $weztermLocation = lookPath "wezterm" -}}
+{{- end -}}
 {{- $terminatorLocation := findExecutable "terminator" $paths -}}
 {{- if eq $terminatorLocation "" -}}
   {{- $terminatorLocation = lookPath "terminator" -}}
@@ -397,9 +417,21 @@
 {{- if eq $konsoleLocation "" -}}
   {{- $konsoleLocation = lookPath "konsole" -}}
 {{- end -}}
-{{- $alacrittyLocation := findExecutable "alacritty" $paths -}}
-{{- if eq $alacrittyLocation "" -}}
-  {{- $alacrittyLocation = lookPath "alacritty" -}}
+{{- $xfce4TerminalLocation := findExecutable "xfce4-terminal" $paths -}}
+{{- if eq $xfce4TerminalLocation "" -}}
+  {{- $xfce4TerminalLocation = lookPath "xfce4-terminal" -}}
+{{- end -}}
+{{- $gnomeTerminalLocation := findExecutable "gnome-terminal" $paths -}}
+{{- if eq $gnomeTerminalLocation "" -}}
+  {{- $gnomeTerminalLocation = lookPath "gnome-terminal" -}}
+{{- end -}}
+{{- $mateTerminalLocation := findExecutable "mate-terminal" $paths -}}
+{{- if eq $mateTerminalLocation "" -}}
+  {{- $mateTerminalLocation = lookPath "mate-terminal" -}}
+{{- end -}}
+{{- $lxterminalLocation := findExecutable "lxterminal" $paths -}}
+{{- if eq $lxterminalLocation "" -}}
+  {{- $lxterminalLocation = lookPath "lxterminal" -}}
 {{- end -}}
 {{- $urxvtLocation := findExecutable "urxvt" $paths -}}
 {{- if eq $urxvtLocation "" -}}
@@ -410,8 +442,8 @@
   {{- $xtermLocation = lookPath "xterm" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "linux") (eq $terminatorLocation "") (eq $konsoleLocation "") (eq $alacrittyLocation "") (eq $urxvtLocation "") (eq $xtermLocation "") -}}
-        {{- writeToStdout "Can't find terminal (terminator/konsole/alacritty/urxvt/xterm) \n" -}}
+{{- if and (eq .chezmoi.os "linux") (eq $ghosttyLocation "") (eq $footLocation "") (eq $kittyLocation "") (eq $alacrittyLocation "") (eq $weztermLocation "") (eq $terminatorLocation "") (eq $konsoleLocation "") (eq $xfce4TerminalLocation "") (eq $gnomeTerminalLocation "") (eq $mateTerminalLocation "") (eq $lxterminalLocation "") (eq $urxvtLocation "") (eq $xtermLocation "") -}}
+        {{- writeToStdout "Can't find terminal (ghostty/foot/kitty/alacritty/wezterm/terminator/konsole/xfce4-terminal/gnome-terminal/mate-terminal/lxterminal/urxvt/xterm) \n" -}}
 {{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (eq $wofiLocation "") (eq $rofiLocation "") (eq $dmenuRunLocation "") -}}
@@ -738,9 +770,17 @@
         wofiLocation="{{$wofiLocation}}"
         rofiLocation="{{$rofiLocation}}"
         dmenuRunLocation="{{$dmenuRunLocation}}"
+        ghosttyLocation="{{$ghosttyLocation}}"
+        footLocation="{{$footLocation}}"
+        kittyLocation="{{$kittyLocation}}"
+        alacrittyLocation="{{$alacrittyLocation}}"
+        weztermLocation="{{$weztermLocation}}"
         terminatorLocation="{{$terminatorLocation}}"
         konsoleLocation="{{$konsoleLocation}}"
-        alacrittyLocation="{{$alacrittyLocation}}"
+        xfce4TerminalLocation="{{$xfce4TerminalLocation}}"
+        gnomeTerminalLocation="{{$gnomeTerminalLocation}}"
+        mateTerminalLocation="{{$mateTerminalLocation}}"
+        lxterminalLocation="{{$lxterminalLocation}}"
         urxvtLocation="{{$urxvtLocation}}"
         xtermLocation="{{$xtermLocation}}"
         swaylockLocation="{{$swaylockLocation}}"

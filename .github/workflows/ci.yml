@@ -180,8 +180,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install ShellCheck and zsh
-        run: sudo apt-get update && sudo apt-get install -y shellcheck zsh
+      - name: Install ShellCheck, zsh, and Lua
+        run: sudo apt-get update && sudo apt-get install -y shellcheck zsh lua5.4
       - run: |
           shopt -s globstar
           shellcheck **/*.sh
@@ -199,6 +199,54 @@ jobs:
               zsh -n "$f"
             fi
           done
+      - name: Verify Lua and Hyprland configuration
+        run: |
+          LUAC_BIN="$(command -v luac || command -v luac5.4 || true)"
+          LUA_BIN="$(command -v lua || command -v lua5.4 || true)"
+
+          if [ -n "$LUAC_BIN" ] && [ -d ~/.config ]; then
+            find ~/.config -name "*.lua" -exec "$LUAC_BIN" -p {} +
+          fi
+
+          if [ -n "$LUA_BIN" ] && [ -f ~/.config/hypr/hyprland.lua ]; then
+            "$LUA_BIN" -e '
+              local mock_dsp = setmetatable({}, {
+                __index = function(t, k)
+                  return function(...) return { dsp = k, args = {...} } end
+                end
+              })
+
+              local mock_hl = {
+                monitor = function(...) end,
+                config = function(...) end,
+                env = function(...) end,
+                animation = function(...) end,
+                gesture = function(...) end,
+                bind = function(...) end,
+                window_rule = function(...) end,
+                workspace_rule = function(...) end,
+                dispatch = function(...) end,
+                exec_cmd = function(...) end,
+                on = function(evt, cb)
+                  if type(cb) == "function" then
+                    cb()
+                  end
+                end,
+                dsp = setmetatable({
+                  window = mock_dsp,
+                  workspace = mock_dsp,
+                }, {
+                  __index = function(t, k)
+                    return function(...) return { dsp = k, args = {...} } end
+                  end
+                }),
+              }
+
+              _G.hl = mock_hl
+              dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
+              print("Hyprland Lua validation succeeded")
+            '
+          fi
 
   docker-build:
     name: Build dev-dotfiles-debian image
