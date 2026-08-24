@@ -10,6 +10,11 @@
 {{- $spellcheck := or (lookPath "hunspell" | not | not) (lookPath "aspell" | not | not) (lookPath "ispell" | not | not) -}}
 {{- $gitUserName := promptString "git user.name" (trim (output "sh" "-c" "git config --get user.name 2>/dev/null || getent passwd $(id -un) | cut -d ':' -f5 | cut -d ',' -f1 || getent passwd $(id -un) | cut -d ':' -f1")) -}}
 {{- $gitUserEmail := promptString "git user.email" (trim (output "sh" "-c" "git config --get user.email 2>/dev/null || true")) -}}
+{{- $computerProfileGuess := "desktop2" -}}
+{{- if or (hasPrefix "x1" .chezmoi.hostname) (hasSuffix "x1" .chezmoi.hostname) (contains "x1" .chezmoi.hostname) (contains "laptop" .chezmoi.hostname) -}}
+  {{- $computerProfileGuess = "laptopx1" -}}
+{{- end -}}
+{{- $computerProfile := promptString "computer profile (desktop2/laptopx1)" $computerProfileGuess -}}
 {{- $generatedTime := now | date "2006-01-02 15:04:05 -0700" -}}
 
 {{- $paths := list -}}
@@ -808,6 +813,7 @@
         termfallback = [{{range $each := $termfallback}}"{{$each}}", {{end}}]
         paths = [{{range $each := $paths}}"{{$each}}", {{end}}]
         hyprland_features = "quickshell"
+        computerProfile="{{$computerProfile}}"
 
 [merge]
 {{if stat $nvimLocation -}}

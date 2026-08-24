@@ -137,6 +137,7 @@
 {{ if ne .chezmoi.os "linux" }}
 /bin/executable_disable-touchpad.sh
 /.config/yakuakerc
+/.config/hypr/local.lua
 /.face.icon
 /.config/user-dirs.dirs
 /.config/htop
@@ -339,6 +340,7 @@
 .config/xsettingsd
 .config/yakuakerc
 .config/zoomus.conf
+.config/hypr/local.lua
 /Android
 /Anime
 /DawnCache

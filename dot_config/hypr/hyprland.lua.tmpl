@@ -151,21 +151,26 @@ local lockcmd = [=[{{$lockcmd}}]=]
 local clipse = [=[{{$clipse}}]=]
 local playerctlPlayer = [=[{{$playerctlPlayer}}]=]
 
+-- Ensure hypr config directory is in Lua package path for module resolution
+local configDir = os.getenv("XDG_CONFIG_HOME")
+if not configDir or configDir == "" then
+    configDir = (os.getenv("HOME") or "") .. "/.config"
+end
+package.path = configDir .. "/hypr/?.lua;" .. configDir .. "/hypr/?/init.lua;" .. package.path
+
 -- ------------------------
--- Monitors
+-- Monitors & Local Configuration
 -- ------------------------
-hl.monitor({
-    output = "HDMI-A-1",
-    mode = "3840x2160@60",
-    position = "0x0",
-    scale = 1,
-})
-hl.monitor({
-    output = "",
-    mode = "preferred",
-    position = "auto",
-    scale = 1,
-})
+local hasLocal, _ = pcall(require, "local")
+if not hasLocal then
+    -- Fallback default monitor configuration if local.lua is missing
+    hl.monitor({
+        output = "",
+        mode = "preferred",
+        position = "auto",
+        scale = 1,
+    })
+end
 
 -- ------------------------
 -- General settings
