@@ -180,70 +180,127 @@ package.path = configDir .. "/hypr/?.lua;" .. configDir .. "/hypr/?/init.lua;" .
 -- ------------------------
 -- Monitors & Local Configuration
 -- ------------------------
-local hasLocal, _ = pcall(require, "local")
-if not hasLocal then
-    -- Fallback default monitor configuration if local.lua is missing
-    hl.monitor({
-        output = "",
-        mode = "preferred",
-        position = "auto",
-        scale = 1,
-    })
+local function resolveHostname()
+  local tmplHost = [=[{{ .chezmoi.hostname }}]=]
+  if tmplHost and tmplHost ~= "" then
+    return tmplHost
+  end
+  local envHost = os.getenv("HOSTNAME") or os.getenv("HOST")
+  if envHost and envHost ~= "" then
+    return envHost
+  end
+  local f = io.open("/etc/hostname", "r")
+  if f then
+    local content = f:read("*l")
+    f:close()
+    if content and content ~= "" then
+      return content:match("^%s*(.-)%s*$")
+    end
+  end
+  return ""
+end
+
+local hostname = resolveHostname()
+local localCandidates = {}
+local seenCandidates = {}
+
+local function addCandidate(name)
+  if name and name ~= "" and not seenCandidates[name] then
+    seenCandidates[name] = true
+    table.insert(localCandidates, name)
+  end
+end
+
+-- 1. Explicit local.lua override if present
+addCandidate("local")
+
+-- 2. Hostname-specific configuration (e.g. local_desktop2, local_laptopx1)
+if hostname ~= "" then
+  addCandidate("local_" .. hostname)
+  local sanitized = hostname:lower():gsub("[^%w_]", "_")
+  addCandidate("local_" .. sanitized)
+  if hostname:lower():find("x1") or hostname:lower():find("laptop") then
+    addCandidate("local_laptopx1")
+  elseif hostname:lower():find("desktop") then
+    addCandidate("local_desktop2")
+  end
+end
+
+local loadedLocal = false
+for _, modName in ipairs(localCandidates) do
+  local ok, err = pcall(require, modName)
+  if ok then
+    loadedLocal = true
+    break
+  elseif not tostring(err):find("module '" .. modName .. "' not found") and not tostring(err):find("no field package.preload") then
+    io.stderr:write("Error loading " .. modName .. ": " .. tostring(err) .. "\n")
+    loadedLocal = true
+    break
+  end
+end
+
+if not loadedLocal then
+  -- Fallback default monitor configuration if local configuration is missing
+  hl.monitor({
+    output = "",
+    mode = "preferred",
+    position = "auto",
+    scale = 1,
+  })
 end
 
 -- ------------------------
 -- General settings & Caelestia aesthetics
 -- ------------------------
 hl.config({
-    general = {
-        gaps_in = 6,
-        gaps_out = 12,
-        border_size = 2,
-        ["col.active_border"] = "rgba(135affcc)",
-        ["col.inactive_border"] = "rgba(323232cc)",
-        layout = "dwindle",
+  general = {
+    gaps_in = 6,
+    gaps_out = 12,
+    border_size = 2,
+    col = {
+      active_border = "rgba(135affcc)",
+      inactive_border = "rgba(323232cc)",
     },
-    cursor = {
-        no_hardware_cursors = true,
+    layout = "dwindle",
+  },
+  cursor = {
+    no_hardware_cursors = true,
+  },
+  decoration = {
+    rounding = 10,
+    blur = {
+      enabled = true,
+      size = 6,
+      passes = 2,
+      new_optimizations = true,
+      ignore_opacity = true,
     },
-    decoration = {
-        rounding = 10,
-        blur = {
-            enabled = true,
-            size = 6,
-            passes = 2,
-            new_optimizations = true,
-        },
-        shadow = {
-            enabled = true,
-            range = 15,
-            render_power = 3,
-        },
+    shadow = {
+      enabled = true,
+      range = 15,
+      render_power = 3,
     },
-    animations = {
-        enabled = true,
-        bezier = {
-            { name = "easeOutQuint", p1 = 0.23, p2 = 1, p3 = 0.32, p4 = 1 },
-            { name = "easeInOutCubic", p1 = 0.65, p2 = 0.05, p3 = 0.36, p4 = 1 },
-            { name = "linear", p1 = 0, p2 = 0, p3 = 1, p4 = 1 },
-            { name = "almostLinear", p1 = 0.5, p2 = 0.5, p3 = 0.75, p4 = 1.0 },
-            { name = "quick", p1 = 0.15, p2 = 0, p3 = 0.1, p4 = 1 },
-        },
-    },
-    input = {
-        kb_layout = "us",
-        repeat_delay = 250,
-        repeat_rate = 30,
-    },
-    dwindle = {
-        pseudotile = true,
-        preserve_split = true,
-    },
-    misc = {
-        disable_hyprland_logo = true,
-        disable_splash_rendering = true,
-        vfr = true,
-    },
+  },
+  animations = {
+    enabled = true,
+  },
+  input = {
+    kb_layout = "us",
+    repeat_delay = 250,
+    repeat_rate = 30,
+  },
+  dwindle = {
+    preserve_split = true,
+    smart_split = false,
+    smart_resizing = true,
+  },
+  misc = {
+    disable_hyprland_logo = true,
+    disable_splash_rendering = true,
+  },
+  debug = {
+    vfr = true,
+  },
 })
 
 hl.env("LIBVA_DRIVER_NAME", "nvidia")
@@ -253,31 +310,71 @@ hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 
+-- ------------------------
+-- Animation Curves & Physics
+-- ------------------------
+-- Standard Caelestia curves
+hl.curve("specialWorkSwitch", { type = "bezier", points = { { 0.05, 0.7 }, { 0.1, 1 } } })
+hl.curve("emphasizedAccel", { type = "bezier", points = { { 0.3, 0 }, { 0.8, 0.15 } } })
+hl.curve("emphasizedDecel", { type = "bezier", points = { { 0.05, 0.7 }, { 0.1, 1 } } })
+hl.curve("standard", { type = "bezier", points = { { 0.2, 0 }, { 0, 1 } } })
+
+-- Custom easing curves
+hl.curve("easeOutQuint", { type = "bezier", points = { { 0.23, 1 }, { 0.32, 1 } } })
+hl.curve("easeInOutCubic", { type = "bezier", points = { { 0.65, 0.05 }, { 0.36, 1 } } })
+hl.curve("linear", { type = "bezier", points = { { 0, 0 }, { 1, 1 } } })
+hl.curve("almostLinear", { type = "bezier", points = { { 0.5, 0.5 }, { 0.75, 1.0 } } })
+hl.curve("quick", { type = "bezier", points = { { 0.15, 0 }, { 0.1, 1 } } })
+
+-- ------------------------
+-- Animations
+-- ------------------------
+hl.animation({ leaf = "layersIn", enabled = true, speed = 5, bezier = "emphasizedDecel", style = "slide" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 4, bezier = "emphasizedAccel", style = "slide" })
+hl.animation({ leaf = "fadeLayers", enabled = true, speed = 5, bezier = "standard" })
+
 hl.animation({ leaf = "windows", enabled = true, speed = 4.7, bezier = "easeOutQuint" })
 hl.animation({ leaf = "windowsIn", enabled = true, speed = 4.1, bezier = "easeOutQuint", style = "popin 87%" })
 hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.49, bezier = "linear", style = "popin 87%" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.73, bezier = "almostLinear" })
 hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.46, bezier = "almostLinear" })
 hl.animation({ leaf = "fade", enabled = true, speed = 3.03, bezier = "quick" })
+hl.animation({ leaf = "fadeDim", enabled = true, speed = 6, bezier = "standard" })
+hl.animation({ leaf = "border", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "workspaces", enabled = true, speed = 1.94, bezier = "almostLinear" })
-hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4, bezier = "easeOutQuint", style = "slidefade" })
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4, bezier = "specialWorkSwitch", style = "slidefadevert 15%" })
 
--- Caelestia Shell layer rules
-hl.layer_rule({
-    target = "blur",
-    match = { namespace = "^(caelestia.*|quickshell.*)$" },
-})
-hl.layer_rule({
-    target = "ignorezero",
-    match = { namespace = "^(caelestia.*|quickshell.*)$" },
+-- ------------------------
+-- Layer Rules
+-- ------------------------
+hl.layer_rule({ match = { namespace = "hyprpicker" }, animation = "fade" })
+hl.layer_rule({ match = { namespace = "logout_dialog" }, animation = "fade" })
+hl.layer_rule({ match = { namespace = "selection" }, animation = "fade" })
+hl.layer_rule({ match = { namespace = "wayfreeze" }, animation = "fade" })
+hl.layer_rule({ match = { namespace = "launcher" }, animation = "popin 80%", blur = true })
+hl.layer_rule({ match = { namespace = "caelestia-(border-exclusion|area-picker)" }, no_anim = true })
+hl.layer_rule({ match = { namespace = "caelestia-(drawers|background)" }, animation = "fade" })
+hl.layer_rule({ match = { namespace = "^(caelestia.*|quickshell.*)$" }, blur = true, ignore_alpha = 0 })
+
+-- ------------------------
+-- Gestures
+-- ------------------------
+hl.config({
+  gestures = {
+    workspace_swipe_distance = 700,
+    workspace_swipe_cancel_ratio = 0.15,
+    workspace_swipe_min_speed_to_force = 5,
+    workspace_swipe_direction_lock = true,
+    workspace_swipe_direction_lock_threshold = 10,
+    workspace_swipe_create_new = true,
+  },
 })
 
--- workspace_swipe was removed in Hyprland 0.55; this matches its old default
--- three-finger horizontal workspace swipe.
 hl.gesture({
-    fingers = 3,
-    direction = "horizontal",
-    action = "workspace",
+  fingers = 3,
+  direction = "horizontal",
+  action = "workspace",
 })
 
 -- ------------------------
@@ -310,7 +407,6 @@ local function registerBinds()
     hl.bind("SUPER + SHIFT + slash", hl.dsp.global("caelestia:cheatsheet"))
 
     hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd("caelestia shell -d"), { locked = true })
-    hl.bind("SUPER + ALT + L", hl.dsp.global("caelestia:lock"), { locked = true })
 
     hl.bind("XF86MonBrightnessUp", hl.dsp.global("caelestia:brightnessUp"), { locked = true })
     hl.bind("XF86MonBrightnessDown", hl.dsp.global("caelestia:brightnessDown"), { locked = true })
@@ -480,6 +576,14 @@ hl.window_rule({
 hl.window_rule({
     match = { class = "^(zenity|kdialog)$" },
     center = true,
+    float = true,
+})
+hl.window_rule({
+    match = { title = "Picture(-| )in(-| )[Pp]icture" },
+    move = "(monitor_w*0.98-window_w) (monitor_h*0.97-window_h)",
+    pin = true,
+    float = true,
+    keep_aspect_ratio = true,
 })
 
 -- ------------------------
