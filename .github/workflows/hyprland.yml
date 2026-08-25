@@ -209,7 +209,7 @@ jobs:
           assert(binds["SUPER + grave"].special == "terminal")
           assert(binds["SUPER + T"].special == "terminal")
           assert(binds["SUPER + D"].special == "scratchpad")
-          assert(binds["SUPER + P"].special == "kjules")
+          assert(binds["SUPER + J"].special == "kjules")
 
           assert(special.workspace_for_window({ class = "Beeper" }) == "beeper")
           assert(special.workspace_for_window({ class = "org.kde.konsole" }) == "terminal")
