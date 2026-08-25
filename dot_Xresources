@@ -11,8 +11,7 @@ URxvt*font: xft:JetBrains Mono:size=11,\
 ! urxvt can overestimate Xft cell width for some monospace fonts; tighten it slightly.
 URxvt*letterSpace: -1
 
-! Use compositor-backed alpha transparency rather than root-pixmap pseudo-transparency.
-! #002b36 is Solarized base03; 90% opacity keeps the terminal readable.
+! Keep urxvt usable as a fallback with native ARGB transparency.
 URxvt.depth: 32
 URxvt*background: [90]#002b36
 URxvt*foreground: #839496
@@ -34,9 +33,14 @@ URxvt.keysym.F11: perl:fullscreen:switch
 Rxvt*reverseVideo: True
 Rxvt*saveLines: 65535
 
-! xterm uses faceName when built with FreeType/Xft and falls back to the core font otherwise.
+! xterm is the preferred X terminal. Hyprland supplies window transparency so
+! the X resource colors can stay high-contrast and readable.
 XTerm*faceName: JetBrains Mono,Hack,Go Mono,B612 Mono,DejaVu Sans Mono,Liberation Mono,monospace
 XTerm*faceSize: 11
+XTerm*renderFont: true
 XTerm*font: fixed
-XTerm*reverseVideo: True
+XTerm*background: #002b36
+XTerm*foreground: #eee8d5
+XTerm*cursorColor: #93a1a1
+XTerm*selectToClipboard: true
 XTerm*saveLines: 65535
