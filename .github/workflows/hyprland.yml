@@ -211,6 +211,12 @@ jobs:
           assert(binds["SUPER + D"].special == "scratchpad")
           assert(binds["SUPER + J"].special == "kjules")
 
+          assert(type(binds["SUPER + SHIFT + J"]) == "function")
+          local pre_execs = #execs
+          binds["SUPER + SHIFT + J"]()
+          assert(#execs == pre_execs + 1)
+          assert(execs[#execs][1] == "kjules --new-session")
+
           assert(special.workspace_for_window({ class = "Beeper" }) == "beeper")
           assert(special.workspace_for_window({ class = "org.kde.konsole" }) == "terminal")
           assert(special.workspace_for_window({ class = "Spotify" }) == "music")

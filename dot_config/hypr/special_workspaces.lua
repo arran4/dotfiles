@@ -261,8 +261,9 @@ function M.setup(options)
   end
 
   -- Explicitly launch a new kjules session without involving special:kjules routing immediately.
+  -- This forwards the request to an already-running instance via DBus/IPC or starts a new one.
   hl.bind("SUPER + SHIFT + J", function()
-    hl.exec_cmd("kjules")
+    hl.exec_cmd("kjules --new-session")
   end)
 
   -- Static rules cover normal app window-open paths. On modern Hyprland the
