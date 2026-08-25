@@ -591,9 +591,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland")
 {{- $wlPaste := (index . "wlPasteLocation" | default "wl-paste") }}
 {{- if ne $cliphist "" }}
-    hl.exec_cmd("sh -c 'killall {{$wlPaste}}; {{$wlPaste}} --watch {{$cliphist}} store & {{$wlPaste}} --type image --watch {{$cliphist}} store &'")
+    hl.exec_cmd("sh -c 'killall {{$wlPaste}} || true; {{$wlPaste}} --watch {{$cliphist}} store & {{$wlPaste}} --type image --watch {{$cliphist}} store &'")
 {{- else }}
-    hl.exec_cmd("sh -c 'killall wl-paste; wl-paste --watch cliphist store & wl-paste --type image --watch cliphist store &'")
+    hl.exec_cmd("sh -c 'killall wl-paste || true; wl-paste --watch cliphist store & wl-paste --type image --watch cliphist store &'")
 {{- end }}
     if clipse ~= "" then
         hl.exec_cmd(clipse .. " -listen")
