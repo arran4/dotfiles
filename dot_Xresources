@@ -34,41 +34,43 @@ URxvt.keysym.F11: perl:fullscreen:switch
 Rxvt*reverseVideo: True
 Rxvt*saveLines: 65535
 
-! xterm is the preferred X terminal. Hack is the primary Xft font because its
-! terminal-oriented metrics render more consistently here; the remaining faces
-! are fallbacks. Hyprland supplies window transparency.
-XTerm*faceName: Hack,JetBrains Mono,DejaVu Sans Mono,Liberation Mono,monospace
+! xterm is the preferred X terminal. Use one primary Xft face and let fontconfig
+! supply fallback glyphs; listing several faceName entries makes later entries
+! manual overrides and can mix metrics. Keep xterm's native FreeType metrics.
+XTerm*faceName: Hack
 XTerm*faceSize: 11
 XTerm*renderFont: true
-XTerm*forceXftHeight: true
+XTerm*forceXftHeight: false
+XTerm*forceBoxChars: true
 XTerm*font: fixed
 
 ! xrdb is merged rather than replaced, so explicitly disable the old reverse
 ! video resource instead of relying on removing it from this file.
 XTerm*reverseVideo: False
-XTerm*background: #070b10
-XTerm*foreground: #c9d1d9
-XTerm*cursorColor: #8b949e
+XTerm*background: #05070a
+XTerm*foreground: #f0f6fc
+XTerm*cursorColor: #ffffff
 XTerm*selectToClipboard: true
+XTerm*boldColors: true
 XTerm*saveLines: 65535
 
-! Neutral dark ANSI palette, based around cool grays rather than cream tones.
-XTerm*color0:  #161b22
-XTerm*color1:  #ff7b72
-XTerm*color2:  #7ee787
-XTerm*color3:  #d29922
-XTerm*color4:  #58a6ff
-XTerm*color5:  #bc8cff
-XTerm*color6:  #39c5cf
-XTerm*color7:  #b1bac4
-XTerm*color8:  #484f58
-XTerm*color9:  #ffa198
-XTerm*color10: #56d364
-XTerm*color11: #e3b341
+! Strong dark ANSI palette with brighter, more saturated terminal colours.
+XTerm*color0:  #0d1117
+XTerm*color1:  #ff5f56
+XTerm*color2:  #63e67a
+XTerm*color3:  #f5c451
+XTerm*color4:  #4da3ff
+XTerm*color5:  #c678dd
+XTerm*color6:  #45d4dc
+XTerm*color7:  #d8dee9
+XTerm*color8:  #6e7681
+XTerm*color9:  #ff7b72
+XTerm*color10: #7ee787
+XTerm*color11: #ffd866
 XTerm*color12: #79c0ff
 XTerm*color13: #d2a8ff
-XTerm*color14: #56d4dd
-XTerm*color15: #f0f6fc
+XTerm*color14: #7de3ea
+XTerm*color15: #ffffff
 
 ! Preserve the clipboard and fullscreen shortcuts used by the urxvt setup.
 XTerm*VT100.translations: #override \
