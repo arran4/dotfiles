@@ -1,22 +1,42 @@
 ! Prefer modern scalable monospace fonts when Xft/fontconfig support is available.
 ! Missing Xft families are skipped; the final core font keeps urxvt usable without Xft.
-URxvt*font: xft:JetBrains Mono:size=10,\
-            xft:Hack:size=10,\
-            xft:Go Mono:size=10,\
-            xft:B612 Mono:size=10,\
-            xft:DejaVu Sans Mono:size=10,\
-            xft:Liberation Mono:size=10,\
-            xft:monospace:size=10,\
+URxvt*font: xft:JetBrains Mono:size=11,\
+            xft:Hack:size=11,\
+            xft:Go Mono:size=11,\
+            xft:B612 Mono:size=11,\
+            xft:DejaVu Sans Mono:size=11,\
+            xft:Liberation Mono:size=11,\
+            xft:monospace:size=11,\
             fixed
-URxvt*reverseVideo: True
+! urxvt can overestimate Xft cell width for some monospace fonts; tighten it slightly.
+URxvt*letterSpace: -1
+
+! Use compositor-backed alpha transparency rather than root-pixmap pseudo-transparency.
+! #002b36 is Solarized base03; 90% opacity keeps the terminal readable.
+URxvt.depth: 32
+URxvt*background: [90]#002b36
+URxvt*foreground: #839496
+
 URxvt*saveLines: 65535
+URxvt.secondaryScroll: False
+URxvt*scrollstyle: plain
+
+! Perl extensions: eval provides the clipboard actions; matcher handles clickable URLs.
+! tabbed is bundled with rxvt-unicode; fullscreen is managed in ~/.urxvt/ext/fullscreen.
+URxvt.perl-ext-common: default,eval,matcher,tabbed,fullscreen
+URxvt.url-launcher: /usr/bin/xdg-open
+URxvt.matcher.launcher: /usr/bin/xdg-open
+URxvt.matcher.button: 1
+URxvt.keysym.Control-Insert: eval:selection_to_clipboard
+URxvt.keysym.Shift-Insert: eval:paste_clipboard
+URxvt.keysym.F11: perl:fullscreen:switch
 
 Rxvt*reverseVideo: True
 Rxvt*saveLines: 65535
 
 ! xterm uses faceName when built with FreeType/Xft and falls back to the core font otherwise.
 XTerm*faceName: JetBrains Mono,Hack,Go Mono,B612 Mono,DejaVu Sans Mono,Liberation Mono,monospace
-XTerm*faceSize: 10
+XTerm*faceSize: 11
 XTerm*font: fixed
 XTerm*reverseVideo: True
 XTerm*saveLines: 65535
