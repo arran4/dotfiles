@@ -455,8 +455,9 @@ local function registerBinds()
     end
 
     -- Windows & Layout.
-    hl.bind("SUPER + SHIFT + Q", hl.dsp.window.close())
+    hl.bind("SUPER + SHIFT + Q", hl.dsp.window.signal({ signal = 15 }))
     hl.bind("SUPER + SHIFT + W", hl.dsp.window.close())
+    hl.bind("SUPER + CTRL + ALT + Escape", hl.dsp.window.kill())
     hl.bind("SUPER + F", hl.dsp.window.fullscreen())
     hl.bind("SUPER + SHIFT + Space", hl.dsp.window.float({ action = "toggle" }))
     hl.bind("SUPER + ALT + Space", hl.dsp.window.float({ action = "toggle" }))
