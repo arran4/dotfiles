@@ -63,8 +63,10 @@ jobs:
               'drag',
               'float',
               'fullscreen',
+              'kill',
               'move',
               'resize',
+              'signal',
           }
           allowed_workspace = {
               'toggle_special',
