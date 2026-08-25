@@ -41,16 +41,16 @@
 {{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") }}
 
 -- Terminal candidates passed from chezmoi in preference order:
--- 1. rxvt-unicode / urxvt, 2. xterm, 3. konsole, followed by the rest.
+-- 1. xterm, 2. rxvt-unicode / urxvt, 3. konsole, followed by the rest.
 local candidateTerminals = {
+{{- if ne (index . "xtermLocation" | default "") "" }}
+    { name = "xterm", path = [=[{{.xtermLocation}}]=] },
+{{- end }}
 {{- if ne (index . "rxvtUnicodeLocation" | default "") "" }}
     { name = "rxvt-unicode", path = [=[{{.rxvtUnicodeLocation}}]=] },
 {{- end }}
 {{- if ne (index . "urxvtLocation" | default "") "" }}
     { name = "urxvt", path = [=[{{.urxvtLocation}}]=] },
-{{- end }}
-{{- if ne (index . "xtermLocation" | default "") "" }}
-    { name = "xterm", path = [=[{{.xtermLocation}}]=] },
 {{- end }}
 {{- if ne (index . "konsoleLocation" | default "") "" }}
     { name = "konsole", path = [=[{{.konsoleLocation}}]=] },
@@ -89,9 +89,9 @@ local candidateTerminals = {
 
 -- Fallback terminal names for runtime PATH search in Lua:
 local runtimeFallbackTerminals = {
+    "xterm",
     "rxvt-unicode",
     "urxvt",
-    "xterm",
     "konsole",
     "ghostty",
     "foot",
@@ -354,7 +354,7 @@ hl.animation({ leaf = "windowsIn", enabled = true, speed = 4.1, bezier = "easeOu
 hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.49, bezier = "linear", style = "popin 87%" })
 hl.animation({ leaf = "windowsMove", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.73, bezier = "almostLinear" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.46, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.46, bezier = "linear" })
 hl.animation({ leaf = "fade", enabled = true, speed = 3.03, bezier = "quick" })
 hl.animation({ leaf = "fadeDim", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "border", enabled = true, speed = 6, bezier = "standard" })
@@ -561,6 +561,10 @@ end
 -- ------------------------
 -- Window rules
 -- ------------------------
+hl.window_rule({
+    match = { class = "^(XTerm|xterm)$" },
+    opacity = "0.90 override 0.90 override 1.0 override",
+})
 hl.window_rule({
     match = { class = "^(zenity|kdialog)$" },
     center = true,
