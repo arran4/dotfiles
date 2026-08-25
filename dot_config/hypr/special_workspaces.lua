@@ -11,7 +11,7 @@ local workspaces = {
   { name = "beeper", key = "SUPER + B" },
   { name = "terminal", key = "SUPER + grave" },
   { name = "scratchpad", key = "SUPER + D" },
-  { name = "kjules", key = "SUPER + P" },
+  { name = "kjules", key = "SUPER + J" },
 }
 
 local terminalClasses = {
@@ -259,6 +259,12 @@ function M.setup(options)
       hl.exec_cmd(terminal)
     end)
   end
+
+  -- Explicitly launch a new kjules session without involving special:kjules routing immediately.
+  -- This forwards the request to an already-running instance via DBus/IPC or starts a new one.
+  hl.bind("SUPER + SHIFT + J", function()
+    hl.exec_cmd("kjules --new-session")
+  end)
 
   -- Static rules cover normal app window-open paths. On modern Hyprland the
   -- terminal is intentionally excluded: only the terminal explicitly launched
