@@ -1,4 +1,4 @@
-{{- if eq .chezmoi.os "linux" }}
+{{ if eq .chezmoi.os "linux" -}}
 #!/bin/sh
 set -eu
 
@@ -7,4 +7,4 @@ set -eu
 if [ -n "${DISPLAY:-}" ] && command -v xrdb >/dev/null 2>&1 && xrdb -query >/dev/null 2>&1; then
   xrdb -merge "$HOME/.Xresources"
 fi
-{{- end }}
+{{ end -}}
