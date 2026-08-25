@@ -13,6 +13,7 @@ URxvt*letterSpace: -1
 
 ! Keep urxvt usable as a fallback with native ARGB transparency.
 URxvt.depth: 32
+URxvt*reverseVideo: False
 URxvt*background: [90]#002b36
 URxvt*foreground: #839496
 
@@ -33,17 +34,41 @@ URxvt.keysym.F11: perl:fullscreen:switch
 Rxvt*reverseVideo: True
 Rxvt*saveLines: 65535
 
-! xterm is the preferred X terminal. Hyprland supplies window transparency so
-! the X resource colors can stay high-contrast and readable.
-XTerm*faceName: JetBrains Mono,Hack,Go Mono,B612 Mono,DejaVu Sans Mono,Liberation Mono,monospace
+! xterm is the preferred X terminal. Hack is the primary Xft font because its
+! terminal-oriented metrics render more consistently here; the remaining faces
+! are fallbacks. Hyprland supplies window transparency.
+XTerm*faceName: Hack,JetBrains Mono,DejaVu Sans Mono,Liberation Mono,monospace
 XTerm*faceSize: 11
 XTerm*renderFont: true
+XTerm*forceXftHeight: true
 XTerm*font: fixed
-XTerm*background: #002b36
-XTerm*foreground: #eee8d5
-XTerm*cursorColor: #93a1a1
+
+! xrdb is merged rather than replaced, so explicitly disable the old reverse
+! video resource instead of relying on removing it from this file.
+XTerm*reverseVideo: False
+XTerm*background: #070b10
+XTerm*foreground: #c9d1d9
+XTerm*cursorColor: #8b949e
 XTerm*selectToClipboard: true
 XTerm*saveLines: 65535
+
+! Neutral dark ANSI palette, based around cool grays rather than cream tones.
+XTerm*color0:  #161b22
+XTerm*color1:  #ff7b72
+XTerm*color2:  #7ee787
+XTerm*color3:  #d29922
+XTerm*color4:  #58a6ff
+XTerm*color5:  #bc8cff
+XTerm*color6:  #39c5cf
+XTerm*color7:  #b1bac4
+XTerm*color8:  #484f58
+XTerm*color9:  #ffa198
+XTerm*color10: #56d364
+XTerm*color11: #e3b341
+XTerm*color12: #79c0ff
+XTerm*color13: #d2a8ff
+XTerm*color14: #56d4dd
+XTerm*color15: #f0f6fc
 
 ! Preserve the clipboard and fullscreen shortcuts used by the urxvt setup.
 XTerm*VT100.translations: #override \
