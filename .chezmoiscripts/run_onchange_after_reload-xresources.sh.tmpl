@@ -1,10 +1,10 @@
+{{ if eq .chezmoi.os "linux" -}}
 #!/bin/sh
 set -eu
 
-{{- if eq .chezmoi.os "linux" }}
 # dot_Xresources hash: {{ include "dot_Xresources" | sha256sum }}
 # Only touch the X resource database when this process can reach a live X display.
 if [ -n "${DISPLAY:-}" ] && command -v xrdb >/dev/null 2>&1 && xrdb -query >/dev/null 2>&1; then
   xrdb -merge "$HOME/.Xresources"
 fi
-{{- end }}
+{{ end -}}
