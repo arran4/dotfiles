@@ -44,3 +44,9 @@ XTerm*foreground: #eee8d5
 XTerm*cursorColor: #93a1a1
 XTerm*selectToClipboard: true
 XTerm*saveLines: 65535
+
+! Preserve the clipboard and fullscreen shortcuts used by the urxvt setup.
+XTerm*VT100.translations: #override \
+    Ctrl <Key>Insert: copy-selection(CLIPBOARD) \n\
+    Shift <Key>Insert: insert-selection(CLIPBOARD) \n\
+    <Key>F11: fullscreen(toggle)
