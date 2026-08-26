@@ -13,15 +13,21 @@ esac
 
 command -v gdbus >/dev/null 2>&1 || exit 0
 
-exec gdbus monitor --system \
-    --dest org.freedesktop.login1 \
-    --object-path /org/freedesktop/login1 |
-while IFS= read -r line; do
-    case "$line" in
-        *"PrepareForSleep (false,"*)
-            # Give NetworkManager and the wireless device a moment to settle.
-            sleep 2
-            caelestia-wifi-reconnect || true
-            ;;
-    esac
+# gdbus can lose its monitor connection across service/bus disruption. Keep
+# reopening it rather than silently losing resume handling for the session.
+while :; do
+    gdbus monitor --system \
+        --dest org.freedesktop.login1 \
+        --object-path /org/freedesktop/login1 |
+    while IFS= read -r line; do
+        case "$line" in
+            *"PrepareForSleep (false,"*)
+                # Give NetworkManager and the wireless device a moment to settle.
+                sleep 2
+                caelestia-wifi-reconnect || true
+                ;;
+        esac
+    done
+
+    sleep 5
 done
