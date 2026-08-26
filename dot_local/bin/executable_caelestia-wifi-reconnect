@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Best-effort NetworkManager reconnect for Caelestia resume paths.
+# Respect the user's saved NetworkManager autoconnect policy; do not create,
+# modify, or force-enable connection profiles here.
+
+command -v nmcli >/dev/null 2>&1 || exit 0
+
+nmcli networking on >/dev/null 2>&1 || true
+nmcli radio wifi on >/dev/null 2>&1 || true
+
+sleep 1
+
+nmcli -t -f DEVICE,TYPE,STATE device status 2>/dev/null |
+    while IFS=: read -r device type state; do
+        [ "$type" = "wifi" ] || continue
+        [ "$state" = "connected" ] && continue
+        [ -n "$device" ] || continue
+
+        nmcli device wifi rescan ifname "$device" >/dev/null 2>&1 || true
+        nmcli --wait 15 device connect "$device" >/dev/null 2>&1 || true
+    done
+
+exit 0
