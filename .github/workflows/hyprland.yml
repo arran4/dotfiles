@@ -298,12 +298,14 @@ jobs:
           mock_log="$mock_bin_dir/mock.log"
           cat << 'CCODE' > "$mock_bin_dir/mock_wl_paste.c"
           #include <stdio.h>
+          #include <stdlib.h>
           #include <unistd.h>
           #include <signal.h>
 
           volatile sig_atomic_t keep_running = 1;
 
           void handle_sigterm(int sig) {
+              (void)sig;
               keep_running = 0;
           }
 
@@ -313,8 +315,7 @@ jobs:
                   for (int i = 0; i < argc; i++) {
                       fprintf(f, "%s ", argv[i]);
                   }
-                  fprintf(f, "
-");
+                  fprintf(f, "\n");
                   fclose(f);
               }
 
@@ -328,7 +329,7 @@ jobs:
           CCODE
 
           export MOCK_LOG="$mock_log"
-          gcc "$mock_bin_dir/mock_wl_paste.c" -o "$wl_paste_mock"
+          gcc -Wall -Wextra -Werror "$mock_bin_dir/mock_wl_paste.c" -o "$wl_paste_mock"
           export PATH="$mock_bin_dir:$PATH"
 
           # Ensure background procs die when workflow exits
