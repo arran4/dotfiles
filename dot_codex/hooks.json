@@ -1,12 +1,37 @@
 {
-  "description": "Notify when Codex is waiting for user approval.",
+  "description": "Notify when Codex needs user attention or completes a turn.",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^request_user_input$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.local/bin/codex-notify question",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
     "PermissionRequest": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.local/bin/codex-notify",
+            "command": "$HOME/.local/bin/codex-notify approval",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.local/bin/codex-notify complete",
             "timeout": 5,
             "async": true
           }
