@@ -589,8 +589,7 @@ hl.on("hyprland.start", function()
 {{- end }}
     hl.exec_cmd("set-wallpaper")
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland")
-    hl.exec_cmd("wl-paste --watch cliphist store")
-    hl.exec_cmd("wl-paste --type image --watch cliphist store")
+    hl.exec_cmd("cliphist-daemon.sh")
     if clipse ~= "" then
         hl.exec_cmd(clipse .. " -listen")
     end

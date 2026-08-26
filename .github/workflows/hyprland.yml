@@ -6,6 +6,7 @@ on:
       - 'dot_config/hypr/**'
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
+      - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   push:
     branches:
       - main
@@ -13,6 +14,7 @@ on:
       - 'dot_config/hypr/**'
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
+      - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   workflow_dispatch:
 
 permissions:
@@ -144,7 +146,12 @@ jobs:
 
           _G.hl = {
             on = function(event, callback)
-              handlers[event] = callback
+              if handlers[event] then
+                local old = handlers[event]
+                handlers[event] = function(...) old(...); callback(...) end
+              else
+                handlers[event] = callback
+              end
             end,
             get_windows = function()
               return existing
@@ -253,19 +260,199 @@ jobs:
           handlers["window.open"]({ class = "firefox", title = "Beeper - search" })
           assert(#routes == before, "ordinary browser windows mentioning Beeper must not be captured")
 
+          local pre_hyprland_execs = #execs
           handlers["hyprland.start"]()
-          assert(#execs == 3, "only terminal, Spotify and Beeper should autostart from special workspace config")
-          assert(execs[1][1] == "/usr/bin/xterm")
-          assert(execs[1][2].workspace == "special:terminal silent")
-          assert(execs[2][1] == "flatpak run com.spotify.Client")
-          assert(execs[3][1] == "flatpak run com.beeper.Beeper")
+          local hyprland_execs = {}
+          for i = pre_hyprland_execs + 1, #execs do
+            table.insert(hyprland_execs, execs[i])
+          end
+          local autostart_count = 0
+          local has_term, has_spotify, has_beeper = false, false, false
+          for _, cmd in ipairs(hyprland_execs) do
+            if type(cmd[2]) == "table" and cmd[2].workspace then
+              autostart_count = autostart_count + 1
+              if cmd[1] == "/usr/bin/xterm" and cmd[2].workspace == "special:terminal silent" then has_term = true end
+              if cmd[1] == "flatpak run com.spotify.Client" and cmd[2].workspace == "special:music silent" then has_spotify = true end
+              if cmd[1] == "flatpak run com.beeper.Beeper" and cmd[2].workspace == "special:beeper silent" then has_beeper = true end
+            end
+          end
+          assert(autostart_count == 3, "only terminal, Spotify and Beeper should autostart from special workspace config")
+          assert(has_term and has_spotify and has_beeper, "missing expected autostart application")
 
           print("Hyprland special workspace module tests passed")
           LUA
 
+      - name: Test cliphist daemon script
+        run: |
+          # Test script with test doubles
+          export HYPRLAND_INSTANCE_SIGNATURE="test_instance_$$"
+          export XDG_RUNTIME_DIR="/tmp/test_xdg_runtime_$$"
+          mkdir -p "$XDG_RUNTIME_DIR"
+
+          mock_bin_dir="/tmp/test_mock_bin_$$"
+          mkdir -p "$mock_bin_dir"
+
+          # Create a real compiled executable for the wl-paste mock
+          # This ensures /proc/$pid/exe resolves to the mock binary, not bash
+          wl_paste_mock="$mock_bin_dir/wl-paste"
+          mock_log="$mock_bin_dir/mock.log"
+          cat << 'CCODE' > "$mock_bin_dir/mock_wl_paste.c"
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <unistd.h>
+          #include <signal.h>
+
+          volatile sig_atomic_t keep_running = 1;
+
+          void handle_sigterm(int sig) {
+              (void)sig;
+              keep_running = 0;
+          }
+
+          int main(int argc, char *argv[]) {
+              FILE *f = fopen(getenv("MOCK_LOG"), "a");
+              if (f) {
+                  for (int i = 0; i < argc; i++) {
+                      fprintf(f, "%s ", argv[i]);
+                  }
+                  fprintf(f, "\n");
+                  fclose(f);
+              }
+
+              signal(SIGTERM, handle_sigterm);
+
+              while (keep_running) {
+                  sleep(1);
+              }
+              return 0;
+          }
+          CCODE
+
+          export MOCK_LOG="$mock_log"
+          gcc -Wall -Wextra -Werror "$mock_bin_dir/mock_wl_paste.c" -o "$wl_paste_mock"
+          export PATH="$mock_bin_dir:$PATH"
+
+          # Ensure background procs die when workflow exits
+          # Collect PIDs explicitly
+          cleanup() {
+            local pids=""
+            if [ -d "$XDG_RUNTIME_DIR/wl-paste" ]; then
+                for pid_file in $(find "$XDG_RUNTIME_DIR/wl-paste" -name "*.pid"); do
+                    pids="$pids $(cat $pid_file)"
+                done
+            fi
+            for p in $pids; do
+                kill -9 $p 2>/dev/null || true
+            done
+            rm -rf "$XDG_RUNTIME_DIR" "$mock_bin_dir" rendered_cliphist.sh
+          }
+          trap cleanup EXIT
+
+          # Test rendering output
+          sed -e 's/{{ index . "wlPasteLocation" | default "wl-paste" }}/wl-paste/' \
+              -e 's/{{ index . "cliphistLocation" | default "cliphist" }}/cliphist/' \
+              dot_local/bin/executable_cliphist-daemon.sh.tmpl > rendered_cliphist.sh
+          chmod +x rendered_cliphist.sh
+
+          # Verify that it doesn't use killall
+          if grep -q killall rendered_cliphist.sh; then
+              echo "Error: helper uses killall"
+              exit 1
+          fi
+
+          if grep -q pkill rendered_cliphist.sh; then
+              echo "Error: helper uses pkill"
+              exit 1
+          fi
+
+          # Run twice concurrently to test race conditions and double spawn, bounded by timeout
+          timeout 5s bash -c './rendered_cliphist.sh & ./rendered_cliphist.sh & wait'
+
+          PID_DIR="${XDG_RUNTIME_DIR}/wl-paste/$HYPRLAND_INSTANCE_SIGNATURE"
+
+          # Wait to ensure they are up
+          sleep 0.5
+          pid1=$(cat "$PID_DIR/text.pid")
+          pid2=$(cat "$PID_DIR/image.pid")
+
+          if ps -p "$pid1" > /dev/null && ps -p "$pid2" > /dev/null; then
+              echo "PIDs are running."
+          else
+              echo "PIDs are NOT running."
+              exit 1
+          fi
+
+          # Check mock log for arguments
+          if ! grep -q "wl-paste --watch cliphist store" "$mock_log"; then
+              echo "Arguments for text watcher incorrect."
+              cat "$mock_log"
+              exit 1
+          fi
+
+          if ! grep -q "wl-paste --type image --watch cliphist store" "$mock_log"; then
+              echo "Arguments for image watcher incorrect."
+              cat "$mock_log"
+              exit 1
+          fi
+
+          # Run again to ensure it kills old ones
+          timeout 5s ./rendered_cliphist.sh
+          sleep 0.5
+          if ps -p "$pid1" > /dev/null || ps -p "$pid2" > /dev/null; then
+              echo "Old PIDs were NOT killed."
+              exit 1
+          else
+              echo "Old PIDs were killed successfully."
+          fi
+
+          # Test with wrong executable taking over PID
+          echo "Testing fake PID takeover"
+          pid3=$(cat "$PID_DIR/text.pid")
+          kill "$pid3"
+          sleep 0.5
+
+          # Spawn a fake process using sleep directly
+          sleep 10 &
+          fake_pid=$!
+          echo "$fake_pid" > "$PID_DIR/text.pid"
+
+          timeout 5s ./rendered_cliphist.sh
+          sleep 0.5
+
+          if ps -p "$fake_pid" > /dev/null; then
+              echo "Fake PID survived."
+          else
+              echo "Fake PID was killed! FAIL"
+              exit 1
+          fi
+          kill "$fake_pid"
+
+          # Test disjoint signatures
+          export HYPRLAND_INSTANCE_SIGNATURE="test_instance_2_$$"
+          timeout 5s ./rendered_cliphist.sh
+          sleep 0.5
+          PID_DIR2="${XDG_RUNTIME_DIR}/wl-paste/$HYPRLAND_INSTANCE_SIGNATURE"
+          pid4=$(cat "$PID_DIR2/text.pid")
+
+          # Restore original signature
+          export HYPRLAND_INSTANCE_SIGNATURE="test_instance_$$"
+          timeout 5s ./rendered_cliphist.sh
+          sleep 0.5
+
+          if ps -p "$pid4" > /dev/null; then
+             echo "Disjoint signature process survived"
+          else
+             echo "Disjoint signature process was killed"
+             exit 1
+          fi
+
       - name: Execute rendered Hyprland config with API mock
         run: |
           lua5.4 - <<'LUA'
+          local has_cliphist = false
+          local handlers = {}
+          local hyprland_execs = {}
+
           local mock_dsp = setmetatable({}, {
             __index = function(_, key)
               return function(...) return { dsp = key, args = {...} } end
@@ -319,11 +506,15 @@ jobs:
             layer_rule = function(opts) assert(type(opts) == "table") end,
             workspace_rule = function(opts) assert(type(opts) == "table") end,
             dispatch = function(...) end,
-            exec_cmd = function(...) end,
+            exec_cmd = function(...)
+              table.insert(hyprland_execs, {...})
+            end,
             get_windows = function() return {} end,
             on = function(event, callback)
               assert(type(event) == "string")
               assert(type(callback) == "function")
+              if not handlers[event] then handlers[event] = {} end
+              table.insert(handlers[event], callback)
             end,
             dsp = setmetatable({
               window = mock_dsp,
@@ -337,6 +528,18 @@ jobs:
           }
 
           dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
+
+          if handlers["hyprland.start"] then
+            for _, hook in ipairs(handlers["hyprland.start"]) do
+              hook()
+            end
+          end
+
+          for _, cmd in ipairs(hyprland_execs) do
+            if cmd[1] == "cliphist-daemon.sh" then has_cliphist = true end
+          end
+          assert(has_cliphist, "cliphist daemon must be launched by hyprland.start")
+
           print("Rendered Hyprland config executed successfully with special_workspaces.lua")
           LUA
 

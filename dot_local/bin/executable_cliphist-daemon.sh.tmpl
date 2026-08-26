@@ -1,0 +1,64 @@
+#!/bin/bash
+# Manages wl-paste watchers for cliphist per Hyprland instance
+
+wl_paste='{{ index . "wlPasteLocation" | default "wl-paste" }}'
+cliphist='{{ index . "cliphistLocation" | default "cliphist" }}'
+
+if [[ -z "$HYPRLAND_INSTANCE_SIGNATURE" ]]; then
+    # Fallback if not running inside Hyprland
+    HYPRLAND_INSTANCE_SIGNATURE="default"
+fi
+
+PID_DIR="${XDG_RUNTIME_DIR:-/tmp/dotfiles-$(id -u)}/wl-paste/$HYPRLAND_INSTANCE_SIGNATURE"
+mkdir -p "$PID_DIR"
+
+wl_paste_abs="$(command -v "$wl_paste" 2>/dev/null || echo "$wl_paste")"
+wl_paste_abs="$(readlink -f "$wl_paste_abs" 2>/dev/null || echo "$wl_paste_abs")"
+
+# Execute inside a subshell with flock to ensure atomic restarts per instance
+(
+    flock -x 200 || exit 1
+
+    kill_if_running() {
+        local pid_file="$1"
+        if [[ -f "$pid_file" ]]; then
+            local pid
+            pid=$(cat "$pid_file" 2>/dev/null)
+            if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+                # Verify it's actually our executable before killing
+                local exe_path
+                exe_path=$(readlink -f "/proc/$pid/exe" 2>/dev/null)
+                if [[ "$exe_path" == "$wl_paste_abs" ]]; then
+                    kill "$pid" 2>/dev/null || true
+                    # Wait briefly for process to die
+                    for _ in {1..10}; do
+                        if ! kill -0 "$pid" 2>/dev/null; then break; fi
+                        sleep 0.1
+                    done
+                    if kill -0 "$pid" 2>/dev/null; then
+                        kill -9 "$pid" 2>/dev/null || true
+                        sleep 0.1
+                        if kill -0 "$pid" 2>/dev/null; then
+                            return 1
+                        fi
+                    fi
+                fi
+            fi
+            rm -f "$pid_file"
+        fi
+        return 0
+    }
+
+    # Cleanup existing instances for this signature
+    kill_if_running "$PID_DIR/text.pid" || exit 1
+    kill_if_running "$PID_DIR/image.pid" || exit 1
+
+    # Start text watcher
+    "$wl_paste" --watch "$cliphist" store 200>&- &
+    echo $! > "$PID_DIR/text.pid"
+
+    # Start image watcher
+    "$wl_paste" --type image --watch "$cliphist" store 200>&- &
+    echo $! > "$PID_DIR/image.pid"
+
+) 200>"$PID_DIR/daemon.lock"
