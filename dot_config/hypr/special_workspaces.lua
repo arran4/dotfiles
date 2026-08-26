@@ -14,30 +14,36 @@ local workspaces = {
   { name = "kjules", key = "SUPER + J" },
 }
 
-local terminalClasses = {
-  ["alacritty"] = 1,
-  ["foot"] = 2,
-  ["footclient"] = 3,
-  ["kitty"] = 4,
-  ["com.mitchellh.ghostty"] = 5,
-  ["ghostty"] = 6,
-  ["org.wezfurlong.wezterm"] = 7,
-  ["wezterm"] = 8,
-  ["terminator"] = 9,
-  ["konsole"] = 10,
-  ["org.kde.konsole"] = 11,
-  ["xfce4-terminal"] = 12,
-  ["gnome-terminal"] = 13,
-  ["gnome-terminal-server"] = 14,
-  ["org.gnome.terminal"] = 15,
-  ["org.gnome.console"] = 16,
-  ["mate-terminal"] = 17,
-  ["lxterminal"] = 18,
-  ["urxvt"] = 19,
-  ["rxvt-unicode"] = 20,
-  ["rxvt"] = 21,
-  ["xterm"] = 22,
+local terminalPriority = {
+  "alacritty",
+  "foot",
+  "footclient",
+  "kitty",
+  "com.mitchellh.ghostty",
+  "ghostty",
+  "org.wezfurlong.wezterm",
+  "wezterm",
+  "terminator",
+  "konsole",
+  "org.kde.konsole",
+  "qterminal",
+  "xfce4-terminal",
+  "gnome-terminal",
+  "gnome-terminal-server",
+  "org.gnome.terminal",
+  "org.gnome.console",
+  "mate-terminal",
+  "lxterminal",
+  "urxvt",
+  "rxvt-unicode",
+  "rxvt",
+  "xterm",
 }
+
+local terminalClasses = {}
+for i, class in ipairs(terminalPriority) do
+  terminalClasses[class] = i
+end
 
 local classRoutes = {
   music = {
