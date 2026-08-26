@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -u
+
+title='Codex needs attention'
+message='Codex is waiting for approval.'
+
+if command -v notify-send >/dev/null 2>&1; then
+  notify-send --app-name=Codex --urgency=normal "$title" "$message" >/dev/null 2>&1 || true
+  exit 0
+fi
+
+if command -v kdialog >/dev/null 2>&1; then
+  kdialog --title "$title" --passivepopup "$message" 10 >/dev/null 2>&1 || true
+  exit 0
+fi
+
+if command -v osascript >/dev/null 2>&1; then
+  osascript -e 'display notification "Codex is waiting for approval." with title "Codex needs attention"' >/dev/null 2>&1 || true
+  exit 0
+fi
+
+if [ -w /dev/tty ]; then
+  printf '\a' > /dev/tty 2>/dev/null || true
+fi
+
+exit 0
