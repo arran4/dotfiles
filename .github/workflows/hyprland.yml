@@ -299,16 +299,15 @@ jobs:
           chmod +x "$wl_paste_mock"
           export PATH="$mock_bin_dir:$PATH"
 
+          # Ensure background procs die when workflow exits
+          trap 'jobs -p | xargs -r kill || true; rm -rf "$XDG_RUNTIME_DIR" "$mock_bin_dir" rendered_cliphist.sh' EXIT
+
           # Test rendering output
-          sed -e 's/{{ index . "wlPasteLocation" | default "wl-paste" }}/wl-paste/' \
-              -e 's/{{ index . "cliphistLocation" | default "cliphist" }}/cliphist/' \
-              dot_local/bin/executable_cliphist-daemon.sh.tmpl > rendered_cliphist.sh
+          sed -e 's/{{ index . "wlPasteLocation" | default "wl-paste" }}/wl-paste/'               -e 's/{{ index . "cliphistLocation" | default "cliphist" }}/cliphist/'               dot_local/bin/executable_cliphist-daemon.sh.tmpl > rendered_cliphist.sh
           chmod +x rendered_cliphist.sh
 
-          # Run twice concurrently to test race conditions and double spawn
-          ./rendered_cliphist.sh &
-          ./rendered_cliphist.sh &
-          wait
+          # Run twice concurrently to test race conditions and double spawn, bounded by timeout
+          timeout 5s bash -c './rendered_cliphist.sh & ./rendered_cliphist.sh & wait'
 
           PID_DIR="${XDG_RUNTIME_DIR}/wl-paste/$HYPRLAND_INSTANCE_SIGNATURE"
 
@@ -325,7 +324,7 @@ jobs:
           fi
 
           # Run again to ensure it kills old ones
-          ./rendered_cliphist.sh
+          timeout 5s ./rendered_cliphist.sh
           sleep 0.5
           if ps -p "$pid1" > /dev/null || ps -p "$pid2" > /dev/null; then
               echo "Old PIDs were NOT killed."
@@ -345,7 +344,7 @@ jobs:
           fake_pid=$!
           echo "$fake_pid" > "$PID_DIR/text.pid"
 
-          ./rendered_cliphist.sh
+          timeout 5s ./rendered_cliphist.sh
           sleep 0.5
 
           if ps -p "$fake_pid" > /dev/null; then
@@ -358,14 +357,14 @@ jobs:
 
           # Test disjoint signatures
           export HYPRLAND_INSTANCE_SIGNATURE="test_instance_2_$$"
-          ./rendered_cliphist.sh
+          timeout 5s ./rendered_cliphist.sh
           sleep 0.5
           PID_DIR2="${XDG_RUNTIME_DIR}/wl-paste/$HYPRLAND_INSTANCE_SIGNATURE"
           pid4=$(cat "$PID_DIR2/text.pid")
 
           # Restore original signature
           export HYPRLAND_INSTANCE_SIGNATURE="test_instance_$$"
-          ./rendered_cliphist.sh
+          timeout 5s ./rendered_cliphist.sh
           sleep 0.5
 
           if ps -p "$pid4" > /dev/null; then
@@ -374,8 +373,6 @@ jobs:
              echo "Disjoint signature process was killed"
              exit 1
           fi
-
-          rm -rf "$XDG_RUNTIME_DIR" "$mock_bin_dir" rendered_cliphist.sh
 
       - name: Execute rendered Hyprland config with API mock
         run: |
