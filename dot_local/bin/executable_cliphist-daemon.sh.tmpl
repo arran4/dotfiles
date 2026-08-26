@@ -1,0 +1,42 @@
+#!/bin/bash
+# Manages wl-paste watchers for cliphist per Hyprland instance
+
+wl_paste="{{index . "wlPasteLocation" | default "wl-paste"}}"
+cliphist="{{index . "cliphistLocation" | default "cliphist"}}"
+
+if [[ -z "$HYPRLAND_INSTANCE_SIGNATURE" ]]; then
+    # Fallback if not running inside Hyprland
+    HYPRLAND_INSTANCE_SIGNATURE="default"
+fi
+
+PID_DIR="${XDG_RUNTIME_DIR:-/tmp}/dotfiles/wl-paste/$HYPRLAND_INSTANCE_SIGNATURE"
+mkdir -p "$PID_DIR"
+
+kill_if_running() {
+    local pid_file="$1"
+    if [[ -f "$pid_file" ]]; then
+        local pid
+        pid=$(cat "$pid_file" 2>/dev/null)
+        if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+            # Verify it's actually our executable before killing
+            local comm
+            comm=$(ps -p "$pid" -o comm= 2>/dev/null)
+            if [[ "$comm" == "$(basename "$wl_paste")" ]]; then
+                kill "$pid" 2>/dev/null || true
+            fi
+        fi
+        rm -f "$pid_file"
+    fi
+}
+
+# Cleanup existing instances for this signature
+kill_if_running "$PID_DIR/text.pid"
+kill_if_running "$PID_DIR/image.pid"
+
+# Start text watcher
+"$wl_paste" --watch "$cliphist" store &
+echo $! > "$PID_DIR/text.pid"
+
+# Start image watcher
+"$wl_paste" --type image --watch "$cliphist" store &
+echo $! > "$PID_DIR/image.pid"
