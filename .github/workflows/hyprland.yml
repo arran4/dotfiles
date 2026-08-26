@@ -446,6 +446,56 @@ jobs:
              exit 1
           fi
 
+      - name: Verify hypr-cheatsheet template
+        run: |
+          if grep -q "caelestia:cheatsheet" dot_config/hypr/hyprland.lua.tmpl; then
+             echo "Error: caelestia:cheatsheet found in hyprland.lua.tmpl"
+             exit 1
+          fi
+
+          if ! grep -q "hypr-cheatsheet" dot_config/hypr/hyprland.lua.tmpl; then
+             echo "Error: hypr-cheatsheet binding not found in hyprland.lua.tmpl"
+             exit 1
+          fi
+
+          echo "Mocking chezmoi rendering for bash syntax check..."
+          # Test with rofi
+          cat << 'EOF' > rofi_mock.json
+          {
+            "rofiLocation": "/usr/bin/rofi"
+          }
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=rofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+
+          # Test with wofi
+          cat << 'EOF' > wofi_mock.json
+          {
+            "wofiLocation": "/usr/bin/wofi"
+          }
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=wofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+
+          # Test with dmenu
+          cat << 'EOF' > dmenu_mock.json
+          {
+            "dmenuRunLocation": "/usr/bin/dmenu_run"
+          }
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=dmenu_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+          if grep -q "dmenu_run" test_cheatsheet.sh; then echo "Error: dmenu_run was evaluated"; exit 1; fi
+
+          # Test with no launcher
+          cat << 'EOF' > no_launcher_mock.json
+          {}
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=no_launcher_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+
+          rm test_cheatsheet.sh *_mock.json
+
       - name: Execute rendered Hyprland config with API mock
         run: |
           lua5.4 - <<'LUA'

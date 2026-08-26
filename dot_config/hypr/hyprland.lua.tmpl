@@ -417,9 +417,8 @@ local function registerBinds()
     hl.bind("SUPER + L", hl.dsp.global("caelestia:lock"))
 
     -- Cheatsheet / help (Meta + ?)
-    hl.bind("SUPER + slash", hl.dsp.global("caelestia:cheatsheet"))
-    hl.bind("SUPER + question", hl.dsp.global("caelestia:cheatsheet"))
-    hl.bind("SUPER + SHIFT + slash", hl.dsp.global("caelestia:cheatsheet"))
+    hl.bind("SUPER + slash", hl.dsp.exec_cmd("hypr-cheatsheet"))
+    hl.bind("SUPER + SHIFT + slash", hl.dsp.exec_cmd("hypr-cheatsheet"))
 
     hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd("caelestia shell -d"), { locked = true })
 
