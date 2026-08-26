@@ -654,3 +654,7 @@ public_html
 .crack-attack/replay
 containers/
 LICENSE
+
+{{ if and (ne .chezmoi.hostname "x1linux") (ne .chezmoi.hostname "x1laptop") }}
+.config/caelestia/shell.json
+{{ end }}

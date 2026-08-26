@@ -607,7 +607,7 @@ hl.on("hyprland.start", function()
 {{- if ne $kdeconnectIndicator "" }}
     hl.exec_cmd("kdeconnect-indicator")
 {{- end }}
-{{- if ne .swayidleLocation "" }}
+{{- if and (ne .hyprland_features "quickshell") (ne .swayidleLocation "") }}
     hl.exec_cmd([=[{{.swayidleLocation}} timeout 300 'swaylock -f -c 000000']=])
 {{- end }}
 {{- if ne $nmApplet "" }}
