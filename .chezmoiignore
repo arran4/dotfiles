@@ -305,6 +305,7 @@ Vaults
 .config/pavucontrol-qt
 .config/phishingurlrc
 .config/pimdataexporterrc
+.config/pimpluginsrc
 .config/plasma-localerc
 .config/plasma-nm
 .config/plasma-org.kde.plasma.desktop-appletsrc
@@ -551,6 +552,7 @@ public_html
 .local/share/autocorrect
 .local/share/baloo
 .local/share/calligrasheets
+.local/share/calligrawords
 .local/share/choqok
 .local/share/com.arran4.flutter.googledatastoreui.flutter_google_datastore
 .local/share/contacts
