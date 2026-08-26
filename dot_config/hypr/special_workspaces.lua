@@ -57,6 +57,22 @@ local classRoutes = {
   },
 }
 
+local kwalletStartup = [[
+if command -v pam_kwallet_init >/dev/null 2>&1; then
+  exec pam_kwallet_init
+elif [ -x /usr/libexec/pam_kwallet_init ]; then
+  exec /usr/libexec/pam_kwallet_init
+elif [ -x /usr/lib/pam_kwallet_init ]; then
+  exec /usr/lib/pam_kwallet_init
+elif [ -x /usr/lib64/libexec/pam_kwallet_init ]; then
+  exec /usr/lib64/libexec/pam_kwallet_init
+elif [ -x /usr/lib64/pam_kwallet_init ]; then
+  exec /usr/lib64/pam_kwallet_init
+elif command -v kwalletd6 >/dev/null 2>&1; then
+  exec kwalletd6
+fi
+]]
+
 local function lower(value)
   if type(value) ~= "string" then
     return ""
@@ -307,10 +323,16 @@ function M.setup(options)
     end
   end
 
-  -- Startup for applications that are intentionally long-lived special
-  -- workspace residents. kJules is routed when launched, but is not forced to
-  -- autostart here.
+  -- Start session services and applications that are intentionally long-lived
+  -- special-workspace residents. kJules remains a blind Meta+J toggle for now;
+  -- once it is reliably single-instance it can use the show-or-create path too.
   hl.on("hyprland.start", function()
+    -- pam_kwallet_init is preferred because it consumes PAM-provided unlock
+    -- data when available. Fall back to the KWallet daemon if the PAM helper is
+    -- not installed. The common lib/libexec locations cover Gentoo and other
+    -- distributions where pam_kwallet_init is intentionally outside PATH.
+    hl.exec_cmd(kwalletStartup)
+
     if terminal ~= "" then
       if smartManagedWorkspaces then
         launchManagedApplication("terminal")
@@ -320,6 +342,10 @@ function M.setup(options)
     end
     hl.exec_cmd("flatpak run com.spotify.Client", { workspace = "special:music silent" })
     hl.exec_cmd("flatpak run com.beeper.Beeper", { workspace = "special:beeper silent" })
+    -- Let the existing kJules window rules route the initial window into
+    -- special:kjules rather than using a workspace exec rule. This avoids
+    -- changing Meta+J into a launcher before kJules is reliably single-instance.
+    hl.exec_cmd("kjules")
   end)
 end
 
