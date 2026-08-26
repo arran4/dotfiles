@@ -2,11 +2,18 @@
 set -euo pipefail
 
 # Fallback menu command if template variable is not set correctly or wofi/rofi not installed
-MENU_CMD="{{- if ne (index . `rofiLocation` | default ``) `` -}}{{ .rofiLocation }} -dmenu -i -p 'Cheatsheet'{{- else if ne (index . `wofiLocation` | default ``) `` -}}{{ .wofiLocation }} -S dmenu -i -p 'Cheatsheet'{{- else if ne (index . `dmenuRunLocation` | default ``) `` -}}dmenu -i -p 'Cheatsheet'{{- else -}}wofi -S dmenu -i -p 'Cheatsheet'{{- end -}}"
+{{- if ne (index . "rofiLocation" | default "") "" }}
+MENU_CMD=( "{{ .rofiLocation }}" "-dmenu" "-i" "-p" "Cheatsheet" )
+{{- else if ne (index . "wofiLocation" | default "") "" }}
+MENU_CMD=( "{{ .wofiLocation }}" "-S" "dmenu" "-i" "-p" "Cheatsheet" )
+{{- else if ne (index . "dmenuRunLocation" | default "") "" }}
+MENU_CMD=( "dmenu" "-i" "-p" "Cheatsheet" )
+{{- else }}
+MENU_CMD=( "wofi" "-S" "dmenu" "-i" "-p" "Cheatsheet" )
+{{- end }}
 
-# Ensure a menu command is set
-if [ -z "$MENU_CMD" ]; then
-    MENU_CMD="dmenu -i -p 'Cheatsheet'"
+if [ ${#MENU_CMD[@]} -eq 0 ]; then
+    MENU_CMD=( "dmenu" "-i" "-p" "Cheatsheet" )
 fi
 
 # Fetch and parse bindings
@@ -30,4 +37,4 @@ for b in data:
     arg = b.get("arg", "")
     out = f"{mod_str}+{key}" if mod_str else key
     print(f"{out:<25} -> {dispatcher} {arg}")
-' | sort | eval "$MENU_CMD" > /dev/null
+' | sort | "${MENU_CMD[@]}" > /dev/null

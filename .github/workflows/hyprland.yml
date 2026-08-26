@@ -459,9 +459,41 @@ jobs:
           fi
 
           echo "Mocking chezmoi rendering for bash syntax check..."
-          sed -E 's/\{\{-?.*?\}\}/mock_cmd/g' dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          # Test with rofi
+          cat << 'EOF' > rofi_mock.json
+          {
+            "rofiLocation": "/usr/bin/rofi"
+          }
+EOF
+          yes "" | ./bin/chezmoi execute-template --source=$PWD --data=rofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
           bash -n test_cheatsheet.sh
-          rm test_cheatsheet.sh
+
+          # Test with wofi
+          cat << 'EOF' > wofi_mock.json
+          {
+            "wofiLocation": "/usr/bin/wofi"
+          }
+EOF
+          yes "" | ./bin/chezmoi execute-template --source=$PWD --data=wofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+
+          # Test with dmenu
+          cat << 'EOF' > dmenu_mock.json
+          {
+            "dmenuRunLocation": "/usr/bin/dmenu"
+          }
+EOF
+          yes "" | ./bin/chezmoi execute-template --source=$PWD --data=dmenu_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+
+          # Test with no launcher
+          cat << 'EOF' > no_launcher_mock.json
+          {}
+EOF
+          yes "" | ./bin/chezmoi execute-template --source=$PWD --data=no_launcher_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+
+          rm test_cheatsheet.sh *_mock.json
 
       - name: Execute rendered Hyprland config with API mock
         run: |
