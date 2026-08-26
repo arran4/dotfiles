@@ -40,9 +40,10 @@
 {{- $nmApplet := .nmAppletLocation -}}
 {{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") }}
 
--- Terminal candidates passed from chezmoi in preference order:
--- 1. xterm, 2. rxvt-unicode / urxvt, 3. konsole, followed by the rest.
+-- Terminal candidates in preference order. qterminal is resolved from PATH first;
+-- remaining candidates are paths discovered by chezmoi.
 local candidateTerminals = {
+    { name = "qterminal", path = "qterminal" },
 {{- if ne (index . "xtermLocation" | default "") "" }}
     { name = "xterm", path = [=[{{.xtermLocation}}]=] },
 {{- end }}
@@ -89,6 +90,7 @@ local candidateTerminals = {
 
 -- Fallback terminal names for runtime PATH search in Lua:
 local runtimeFallbackTerminals = {
+    "qterminal",
     "xterm",
     "rxvt-unicode",
     "urxvt",
