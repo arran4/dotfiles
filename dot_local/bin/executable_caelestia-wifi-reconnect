@@ -1,8 +1,10 @@
 #!/bin/sh
 
 # Best-effort NetworkManager reconnect for Caelestia resume paths.
-# Respect the user's saved NetworkManager autoconnect policy; do not create,
-# modify, or force-enable connection profiles here.
+# Respect saved NetworkManager autoconnect policy: only activate Wi-Fi
+# profiles that are already marked connection.autoconnect=yes.
+
+export LC_ALL=C
 
 command -v nmcli >/dev/null 2>&1 || exit 0
 
@@ -11,6 +13,12 @@ nmcli radio wifi on >/dev/null 2>&1 || true
 
 sleep 1
 
+profiles="$({
+    nmcli -t -f UUID,TYPE,AUTOCONNECT,AUTOCONNECT-PRIORITY connection show 2>/dev/null || true
+} | awk -F: '($2 == "802-11-wireless" || $2 == "wifi") && $3 == "yes" { print ($4 + 0) ":" $1 }' | sort -t: -k1,1nr)"
+
+[ -n "$profiles" ] || exit 0
+
 nmcli -t -f DEVICE,TYPE,STATE device status 2>/dev/null |
     while IFS=: read -r device type state; do
         [ "$type" = "wifi" ] || continue
@@ -18,7 +26,14 @@ nmcli -t -f DEVICE,TYPE,STATE device status 2>/dev/null |
         [ -n "$device" ] || continue
 
         nmcli device wifi rescan ifname "$device" >/dev/null 2>&1 || true
-        nmcli --wait 15 device connect "$device" >/dev/null 2>&1 || true
+
+        printf '%s\n' "$profiles" |
+            while IFS=: read -r _priority uuid; do
+                [ -n "$uuid" ] || continue
+                if nmcli --wait 15 connection up uuid "$uuid" ifname "$device" >/dev/null 2>&1; then
+                    break
+                fi
+            done
     done
 
 exit 0
