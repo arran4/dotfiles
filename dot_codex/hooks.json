@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.local/bin/codex-notify question",
+            "command": "$HOME/.local/libexec/codex-notify question",
             "timeout": 5,
             "async": true
           }
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.local/bin/codex-notify approval",
+            "command": "$HOME/.local/libexec/codex-notify approval",
             "timeout": 5,
             "async": true
           }
@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.local/bin/codex-notify complete",
+            "command": "$HOME/.local/libexec/codex-notify complete",
             "timeout": 5,
             "async": true
           }
