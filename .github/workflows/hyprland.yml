@@ -446,6 +446,23 @@ jobs:
              exit 1
           fi
 
+      - name: Verify hypr-cheatsheet template
+        run: |
+          if grep -q "caelestia:cheatsheet" dot_config/hypr/hyprland.lua.tmpl; then
+             echo "Error: caelestia:cheatsheet found in hyprland.lua.tmpl"
+             exit 1
+          fi
+
+          if ! grep -q "hypr-cheatsheet" dot_config/hypr/hyprland.lua.tmpl; then
+             echo "Error: hypr-cheatsheet binding not found in hyprland.lua.tmpl"
+             exit 1
+          fi
+
+          echo "Mocking chezmoi rendering for bash syntax check..."
+          sed -E 's/\{\{-?.*?\}\}/mock_cmd/g' dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+          rm test_cheatsheet.sh
+
       - name: Execute rendered Hyprland config with API mock
         run: |
           lua5.4 - <<'LUA'
