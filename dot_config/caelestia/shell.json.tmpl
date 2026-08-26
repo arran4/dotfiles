@@ -1,0 +1,46 @@
+{{- if or (eq .chezmoi.hostname "x1linux") (eq .chezmoi.hostname "x1laptop") }}
+{
+  "general": {
+    "idle": {
+      "lockBeforeSleep": true,
+      "inhibitWhenAudio": true,
+      "inhibitWhenCharging": false,
+      "timeouts": [
+        {
+          "timeout": 180,
+          "idleAction": "lock",
+          "inhibitWhenCharging": true
+        },
+        {
+          "timeout": 300,
+          "idleAction": "dpms off",
+          "returnAction": "dpms on",
+          "inhibitWhenCharging": true
+        },
+        {
+          "timeout": 600,
+          "idleAction": ["suspendThenHibernate"],
+          "returnAction": ["caelestia-wifi-reconnect"],
+          "inhibitWhenCharging": true
+        },
+        {
+          "timeout": 900,
+          "idleAction": "lock"
+        },
+        {
+          "timeout": 3600,
+          "idleAction": "dpms off",
+          "returnAction": "dpms on"
+        },
+        {
+          "timeout": 28800,
+          "idleAction": ["suspend"],
+          "returnAction": ["caelestia-wifi-reconnect"]
+        }
+      ]
+    }
+  }
+}
+{{- else }}
+{}
+{{- end }}
