@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -u
+
+case "${1:-attention}" in
+  approval)
+    title='Codex needs approval'
+    message='Codex is waiting for approval.'
+    ;;
+  question)
+    title='Codex has a question'
+    message='Codex is waiting for your input.'
+    ;;
+  complete)
+    title='Codex finished'
+    message='Codex has completed the current turn.'
+    ;;
+  *)
+    title='Codex needs attention'
+    message='Codex is waiting for you.'
+    ;;
+esac
+
+if command -v notify-send >/dev/null 2>&1; then
+  notify-send --app-name=Codex --urgency=normal "$title" "$message" >/dev/null 2>&1 || true
+  exit 0
+fi
+
+if command -v kdialog >/dev/null 2>&1; then
+  kdialog --title "$title" --passivepopup "$message" 10 >/dev/null 2>&1 || true
+  exit 0
+fi
+
+if command -v osascript >/dev/null 2>&1; then
+  osascript \
+    -e 'on run argv' \
+    -e 'display notification (item 2 of argv) with title (item 1 of argv)' \
+    -e 'end run' \
+    "$title" "$message" >/dev/null 2>&1 || true
+  exit 0
+fi
+
+if [ -w /dev/tty ]; then
+  printf '\a' > /dev/tty 2>/dev/null || true
+fi
+
+exit 0
