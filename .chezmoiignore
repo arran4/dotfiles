@@ -305,7 +305,6 @@ Vaults
 .config/pavucontrol-qt
 .config/phishingurlrc
 .config/pimdataexporterrc
-.config/pimpluginsrc
 .config/plasma-localerc
 .config/plasma-nm
 .config/plasma-org.kde.plasma.desktop-appletsrc
@@ -552,7 +551,6 @@ public_html
 .local/share/autocorrect
 .local/share/baloo
 .local/share/calligrasheets
-.local/share/calligrawords
 .local/share/choqok
 .local/share/com.arran4.flutter.googledatastoreui.flutter_google_datastore
 .local/share/contacts
@@ -654,3 +652,11 @@ public_html
 .crack-attack/replay
 containers/
 LICENSE
+
+{{ if and (ne .chezmoi.hostname "x1linux") (ne .chezmoi.hostname "x1laptop") }}
+.config/caelestia/shell.json
+.local/bin/caelestia-wifi-reconnect
+.local/bin/caelestia-wifi-resume-monitor
+.local/share/systemd/user/caelestia-wifi-resume-monitor.service
+.local/share/systemd/user/default.target.wants/caelestia-wifi-resume-monitor.service
+{{ end }}
