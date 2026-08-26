@@ -354,7 +354,7 @@ hl.animation({ leaf = "windowsIn", enabled = true, speed = 4.1, bezier = "easeOu
 hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.49, bezier = "linear", style = "popin 87%" })
 hl.animation({ leaf = "windowsMove", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.73, bezier = "almostLinear" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.46, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.46, bezier = "linear" })
 hl.animation({ leaf = "fade", enabled = true, speed = 3.03, bezier = "quick" })
 hl.animation({ leaf = "fadeDim", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "border", enabled = true, speed = 6, bezier = "standard" })
@@ -603,7 +603,7 @@ hl.on("hyprland.start", function()
 {{- if ne $kdeconnectIndicator "" }}
     hl.exec_cmd("kdeconnect-indicator")
 {{- end }}
-{{- if ne .swayidleLocation "" }}
+{{- if and (ne .hyprland_features "quickshell") (ne .swayidleLocation "") }}
     hl.exec_cmd([=[{{.swayidleLocation}} timeout 300 'swaylock -f -c 000000']=])
 {{- end }}
 {{- if ne $nmApplet "" }}
