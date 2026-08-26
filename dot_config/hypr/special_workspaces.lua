@@ -59,16 +59,17 @@ local classRoutes = {
 
 local kwalletStartup = [[
 if command -v pam_kwallet_init >/dev/null 2>&1; then
-  exec pam_kwallet_init
+  pam_kwallet_init
 elif [ -x /usr/libexec/pam_kwallet_init ]; then
-  exec /usr/libexec/pam_kwallet_init
+  /usr/libexec/pam_kwallet_init
 elif [ -x /usr/lib/pam_kwallet_init ]; then
-  exec /usr/lib/pam_kwallet_init
+  /usr/lib/pam_kwallet_init
 elif [ -x /usr/lib64/libexec/pam_kwallet_init ]; then
-  exec /usr/lib64/libexec/pam_kwallet_init
+  /usr/lib64/libexec/pam_kwallet_init
 elif [ -x /usr/lib64/pam_kwallet_init ]; then
-  exec /usr/lib64/pam_kwallet_init
-elif command -v kwalletd6 >/dev/null 2>&1; then
+  /usr/lib64/pam_kwallet_init
+fi
+if command -v kwalletd6 >/dev/null 2>&1; then
   exec kwalletd6
 fi
 ]]
@@ -327,10 +328,10 @@ function M.setup(options)
   -- special-workspace residents. kJules remains a blind Meta+J toggle for now;
   -- once it is reliably single-instance it can use the show-or-create path too.
   hl.on("hyprland.start", function()
-    -- pam_kwallet_init is preferred because it consumes PAM-provided unlock
-    -- data when available. Fall back to the KWallet daemon if the PAM helper is
-    -- not installed. The common lib/libexec locations cover Gentoo and other
-    -- distributions where pam_kwallet_init is intentionally outside PATH.
+    -- pam_kwallet_init forwards PAM-provided unlock data when it exists; it
+    -- does not itself start the wallet daemon. Run the handoff first and then
+    -- ensure kwalletd6 is started. The common lib/libexec locations cover
+    -- Gentoo and other distributions where pam_kwallet_init is outside PATH.
     hl.exec_cmd(kwalletStartup)
 
     if terminal ~= "" then
