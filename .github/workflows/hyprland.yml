@@ -464,8 +464,8 @@ jobs:
           {
             "rofiLocation": "/usr/bin/rofi"
           }
-EOF
-          yes "" | ./bin/chezmoi execute-template --source=$PWD --data=rofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=rofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
           bash -n test_cheatsheet.sh
 
           # Test with wofi
@@ -473,24 +473,25 @@ EOF
           {
             "wofiLocation": "/usr/bin/wofi"
           }
-EOF
-          yes "" | ./bin/chezmoi execute-template --source=$PWD --data=wofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=wofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
           bash -n test_cheatsheet.sh
 
           # Test with dmenu
           cat << 'EOF' > dmenu_mock.json
           {
-            "dmenuRunLocation": "/usr/bin/dmenu"
+            "dmenuRunLocation": "/usr/bin/dmenu_run"
           }
-EOF
-          yes "" | ./bin/chezmoi execute-template --source=$PWD --data=dmenu_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=dmenu_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
           bash -n test_cheatsheet.sh
+          if grep -q "dmenu_run" test_cheatsheet.sh; then echo "Error: dmenu_run was evaluated"; exit 1; fi
 
           # Test with no launcher
           cat << 'EOF' > no_launcher_mock.json
           {}
-EOF
-          yes "" | ./bin/chezmoi execute-template --source=$PWD --data=no_launcher_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=no_launcher_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
           bash -n test_cheatsheet.sh
 
           rm test_cheatsheet.sh *_mock.json
