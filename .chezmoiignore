@@ -657,8 +657,4 @@ LICENSE
 
 {{ if and (ne .chezmoi.hostname "x1linux") (ne .chezmoi.hostname "x1laptop") }}
 .config/caelestia/shell.json
-.local/bin/caelestia-wifi-reconnect
-.local/bin/caelestia-wifi-resume-monitor
-.local/share/systemd/user/caelestia-wifi-resume-monitor.service
-.local/share/systemd/user/default.target.wants/caelestia-wifi-resume-monitor.service
 {{ end }}
