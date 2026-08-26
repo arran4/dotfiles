@@ -26,6 +26,7 @@ local terminalClasses = {
   ["terminator"] = true,
   ["konsole"] = true,
   ["org.kde.konsole"] = true,
+  ["qterminal"] = true,
   ["xfce4-terminal"] = true,
   ["gnome-terminal"] = true,
   ["gnome-terminal-server"] = true,
@@ -138,8 +139,9 @@ function M.setup(options)
     end
 
     -- A terminal is special only when it was explicitly requested as the
-    -- special terminal. Ordinary terminals (for example Meta+Shift+T) must
-    -- remain on the normal workspace instead of being captured by class.
+    -- special terminal. Ordinary terminals (for example Meta+T or
+    -- Meta+Shift+T) must remain on the normal workspace instead of being
+    -- captured by class.
     if smartManagedWorkspaces and workspace == "terminal" then
       if not pendingSpecialTerminal then
         return
@@ -260,17 +262,20 @@ function M.setup(options)
     hl.workspace_rule({ workspace = "special:" .. workspace.name, persistent = true })
   end
 
-  -- Keep the convenient second terminal shortcut, with show-or-create behavior
-  -- on modern Hyprland.
+  -- On modern Hyprland, Meta+T is the ordinary-terminal launcher. Keep the
+  -- legacy direct-toggle behavior for runtimes without the workspace query API
+  -- so the older compatibility path remains unchanged.
   if smartManagedWorkspaces then
-    hl.bind("SUPER + T", function()
-      toggleManagedWorkspace("terminal")
-    end)
+    if terminal ~= "" then
+      hl.bind("SUPER + T", function()
+        hl.exec_cmd(terminal)
+      end)
+    end
   else
     hl.bind("SUPER + T", hl.dsp.workspace.toggle_special("terminal"))
   end
 
-  -- Explicitly launch a new normal terminal without involving special:terminal.
+  -- Keep Meta+Shift+T as an explicit normal-terminal alias.
   if terminal ~= "" then
     hl.bind("SUPER + SHIFT + T", function()
       hl.exec_cmd(terminal)
@@ -296,7 +301,7 @@ function M.setup(options)
   })
   if not smartManagedWorkspaces then
     hl.window_rule({
-      match = { class = "^(Alacritty|alacritty|foot|footclient|kitty|com.mitchellh.ghostty|ghostty|org.wezfurlong.wezterm|wezterm|terminator|konsole|org.kde.konsole|xfce4-terminal|gnome-terminal|gnome-terminal-server|org.gnome.terminal|org.gnome.console|mate-terminal|lxterminal|URxvt|urxvt|rxvt-unicode|rxvt|XTerm|xterm)$" },
+      match = { class = "^(Alacritty|alacritty|foot|footclient|kitty|com.mitchellh.ghostty|ghostty|org.wezfurlong.wezterm|wezterm|terminator|konsole|org.kde.konsole|QTerminal|qterminal|xfce4-terminal|gnome-terminal|gnome-terminal-server|org.gnome.terminal|org.gnome.console|mate-terminal|lxterminal|URxvt|urxvt|rxvt-unicode|rxvt|XTerm|xterm)$" },
       workspace = "special:terminal",
     })
   end
