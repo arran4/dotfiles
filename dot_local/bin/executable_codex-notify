@@ -2,8 +2,24 @@
 
 set -u
 
-title='Codex needs attention'
-message='Codex is waiting for approval.'
+case "${1:-attention}" in
+  approval)
+    title='Codex needs approval'
+    message='Codex is waiting for approval.'
+    ;;
+  question)
+    title='Codex has a question'
+    message='Codex is waiting for your input.'
+    ;;
+  complete)
+    title='Codex finished'
+    message='Codex has completed the current turn.'
+    ;;
+  *)
+    title='Codex needs attention'
+    message='Codex is waiting for you.'
+    ;;
+esac
 
 if command -v notify-send >/dev/null 2>&1; then
   notify-send --app-name=Codex --urgency=normal "$title" "$message" >/dev/null 2>&1 || true
@@ -16,7 +32,11 @@ if command -v kdialog >/dev/null 2>&1; then
 fi
 
 if command -v osascript >/dev/null 2>&1; then
-  osascript -e 'display notification "Codex is waiting for approval." with title "Codex needs attention"' >/dev/null 2>&1 || true
+  osascript \
+    -e 'on run argv' \
+    -e 'display notification (item 2 of argv) with title (item 1 of argv)' \
+    -e 'end run' \
+    "$title" "$message" >/dev/null 2>&1 || true
   exit 0
 fi
 
