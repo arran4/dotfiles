@@ -291,20 +291,78 @@ jobs:
 
           mock_bin_dir="/tmp/test_mock_bin_$$"
           mkdir -p "$mock_bin_dir"
+
+          # Create a real compiled executable for the wl-paste mock
+          # This ensures /proc/$pid/exe resolves to the mock binary, not bash
           wl_paste_mock="$mock_bin_dir/wl-paste"
-          cat << 'MOCK' > "$wl_paste_mock"
-          #!/bin/bash
-          while true; do sleep 1; done
-          MOCK
-          chmod +x "$wl_paste_mock"
+          mock_log="$mock_bin_dir/mock.log"
+          cat << 'CCODE' > "$mock_bin_dir/mock_wl_paste.c"
+          #include <stdio.h>
+          #include <unistd.h>
+          #include <signal.h>
+
+          volatile sig_atomic_t keep_running = 1;
+
+          void handle_sigterm(int sig) {
+              keep_running = 0;
+          }
+
+          int main(int argc, char *argv[]) {
+              FILE *f = fopen(getenv("MOCK_LOG"), "a");
+              if (f) {
+                  for (int i = 0; i < argc; i++) {
+                      fprintf(f, "%s ", argv[i]);
+                  }
+                  fprintf(f, "
+");
+                  fclose(f);
+              }
+
+              signal(SIGTERM, handle_sigterm);
+
+              while (keep_running) {
+                  sleep(1);
+              }
+              return 0;
+          }
+          CCODE
+
+          export MOCK_LOG="$mock_log"
+          gcc "$mock_bin_dir/mock_wl_paste.c" -o "$wl_paste_mock"
           export PATH="$mock_bin_dir:$PATH"
 
           # Ensure background procs die when workflow exits
-          trap 'jobs -p | xargs -r kill || true; rm -rf "$XDG_RUNTIME_DIR" "$mock_bin_dir" rendered_cliphist.sh' EXIT
+          # Collect PIDs explicitly
+          cleanup() {
+            local pids=""
+            if [ -d "$XDG_RUNTIME_DIR/wl-paste" ]; then
+                for pid_file in $(find "$XDG_RUNTIME_DIR/wl-paste" -name "*.pid"); do
+                    pids="$pids $(cat $pid_file)"
+                done
+            fi
+            for p in $pids; do
+                kill -9 $p 2>/dev/null || true
+            done
+            rm -rf "$XDG_RUNTIME_DIR" "$mock_bin_dir" rendered_cliphist.sh
+          }
+          trap cleanup EXIT
 
           # Test rendering output
-          sed -e 's/{{ index . "wlPasteLocation" | default "wl-paste" }}/wl-paste/'               -e 's/{{ index . "cliphistLocation" | default "cliphist" }}/cliphist/'               dot_local/bin/executable_cliphist-daemon.sh.tmpl > rendered_cliphist.sh
+          sed -e 's/{{ index . "wlPasteLocation" | default "wl-paste" }}/wl-paste/' \
+              -e 's/{{ index . "cliphistLocation" | default "cliphist" }}/cliphist/' \
+              dot_local/bin/executable_cliphist-daemon.sh.tmpl > rendered_cliphist.sh
           chmod +x rendered_cliphist.sh
+
+          # Verify that it doesn't use killall
+          if grep -q killall rendered_cliphist.sh; then
+              echo "Error: helper uses killall"
+              exit 1
+          fi
+
+          if grep -q pkill rendered_cliphist.sh; then
+              echo "Error: helper uses pkill"
+              exit 1
+          fi
 
           # Run twice concurrently to test race conditions and double spawn, bounded by timeout
           timeout 5s bash -c './rendered_cliphist.sh & ./rendered_cliphist.sh & wait'
@@ -320,6 +378,19 @@ jobs:
               echo "PIDs are running."
           else
               echo "PIDs are NOT running."
+              exit 1
+          fi
+
+          # Check mock log for arguments
+          if ! grep -q "wl-paste --watch cliphist store" "$mock_log"; then
+              echo "Arguments for text watcher incorrect."
+              cat "$mock_log"
+              exit 1
+          fi
+
+          if ! grep -q "wl-paste --type image --watch cliphist store" "$mock_log"; then
+              echo "Arguments for image watcher incorrect."
+              cat "$mock_log"
               exit 1
           fi
 
@@ -339,8 +410,8 @@ jobs:
           kill "$pid3"
           sleep 0.5
 
-          # Spawn a fake process
-          bash -c 'while true; do sleep 1; done' &
+          # Spawn a fake process using sleep directly
+          sleep 10 &
           fake_pid=$!
           echo "$fake_pid" > "$PID_DIR/text.pid"
 
