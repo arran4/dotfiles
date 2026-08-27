@@ -115,8 +115,11 @@ assert(terminal.name == "xterm", "runtime foot fallback must still fall through 
 local footConfig = readFile("dot_config/foot/foot.ini.tmpl")
 assert(footConfig:find("[colors]", 1, true), "Foot config must use the compatible [colors] section")
 assert(not footConfig:find("[colors-dark]", 1, true), "Foot config must not use unsupported [colors-dark]")
-assert(footConfig:find("font=Hack:size=11", 1, true), "Foot should use the same Hack family as XTerm")
-assert(not footConfig:find("Noto Sans", 1, true), "Foot config must not fall back explicitly to proportional Noto Sans")
+local configuredFont = assert(
+  footConfig:match("\nfont=([^\r\n]+)"),
+  "Foot config must define a font"
+)
+assert(configuredFont == "Hack:size=11", "Foot should use the same Hack family as XTerm")
 
 local function newScenario(options)
   options = options or {}
