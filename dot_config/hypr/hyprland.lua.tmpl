@@ -40,10 +40,13 @@
 {{- $nmApplet := .nmAppletLocation -}}
 {{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") }}
 
--- Terminal candidates in preference order. qterminal is resolved from PATH first;
 -- Terminal catalogue in preference order. Contains both executable path (discovered
--- by chezmoi) and window class aliases for Hyprland window rules.
+-- by chezmoi) and window class aliases for Hyprland window rules. Foot is preferred
+-- when available; the existing order remains the fallback chain.
 local terminalCatalogue = {
+{{- if ne (index . "footLocation" | default "") "" }}
+    { name = "foot", path = [=[{{.footLocation}}]=], classes = { "foot", "footclient" } },
+{{- end }}
 {{- if ne (index . "qterminalLocation" | default "") "" }}
     { name = "qterminal", path = [=[{{.qterminalLocation}}]=], classes = { "qterminal" } },
 {{- end }}
@@ -61,9 +64,6 @@ local terminalCatalogue = {
 {{- end }}
 {{- if ne (index . "ghosttyLocation" | default "") "" }}
     { name = "ghostty", path = [=[{{.ghosttyLocation}}]=], classes = { "ghostty", "com.mitchellh.ghostty" } },
-{{- end }}
-{{- if ne (index . "footLocation" | default "") "" }}
-    { name = "foot", path = [=[{{.footLocation}}]=], classes = { "foot", "footclient" } },
 {{- end }}
 {{- if ne (index . "kittyLocation" | default "") "" }}
     { name = "kitty", path = [=[{{.kittyLocation}}]=], classes = { "kitty", "kitty-direct" } },
