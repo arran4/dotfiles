@@ -104,6 +104,7 @@ local function newScenario(options)
     execs = {},
     handlers = {},
     rules = {},
+    timers = {},
     workspaceWindows = options.workspaceWindows or {},
     windows = options.windows or {},
   }
@@ -113,7 +114,9 @@ local function newScenario(options)
     dispatch = function(action) table.insert(state.dispatches, action) end,
     exec_cmd = function(...) table.insert(state.execs, { ... }) end,
     on = function(event, callback) state.handlers[event] = callback end,
-    timer = function() end,
+    timer = function(callback, timerOptions)
+      table.insert(state.timers, { callback = callback, options = timerOptions })
+    end,
     window_rule = function(rule) table.insert(state.rules, rule) end,
     workspace_rule = function() end,
     dsp = {
@@ -153,6 +156,11 @@ local konsole = {
   classes = { "konsole", "org.kde.konsole" },
 }
 
+local foot = {
+  path = "/usr/bin/foot",
+  classes = { "foot", "footclient" },
+}
+
 do
   local _, special = newScenario({ terminal = konsole })
   assert(special.workspace_for_window({ class = "konsole" }) == "terminal")
@@ -163,9 +171,7 @@ do
 end
 
 do
-  local _, special = newScenario({
-    terminal = { path = "/usr/bin/foot", classes = { "foot", "footclient" } },
-  })
+  local _, special = newScenario({ terminal = foot })
   assert(special.workspace_for_window({ class = "foot" }) == "terminal")
   assert(special.workspace_for_window({ class = "footclient" }) == "terminal")
   assert(special.workspace_for_window({ class = "qterminal" }) == nil)
@@ -200,6 +206,75 @@ do
   state.binds["SUPER + grave"]()
   assert(#state.execs == 0, "an existing special terminal must not be relaunched")
   assert(#state.dispatches == 1 and state.dispatches[1].kind == "toggle")
+end
+
+do
+  for _, residentClass in ipairs({ "rxvt", "qterminal", "org.kde.konsole" }) do
+    local state = newScenario({
+      terminal = foot,
+      workspaceWindows = { { class = residentClass } },
+    })
+    state.binds["SUPER + grave"]()
+    assert(#state.execs == 0, string.format(
+      "%s in special:terminal must satisfy the terminal invariant when foot is preferred",
+      residentClass
+    ))
+    assert(#state.dispatches == 1 and state.dispatches[1].kind == "toggle")
+  end
+end
+
+do
+  local state = newScenario({
+    terminal = foot,
+    workspaceWindows = { { class = "firefox" } },
+  })
+  state.binds["SUPER + grave"]()
+  assert(#state.execs == 1 and state.execs[1][1] == foot.path,
+    "an unrelated special-workspace window must not satisfy the terminal invariant")
+end
+
+do
+  local state = newScenario({
+    terminal = foot,
+    workspaceWindows = { { class = "rxvt" } },
+  })
+  assert(type(state.handlers["window.close"]) == "function")
+  state.handlers["window.close"]({
+    class = "rxvt",
+    workspace = { name = "special:terminal" },
+  })
+  assert(#state.execs == 0, "replacement launch must wait for the workspace list to update")
+  assert(#state.timers == 1 and state.timers[1].options.timeout == 1)
+  state.workspaceWindows = {}
+  state.timers[1].callback()
+  assert(#state.execs == 1 and state.execs[1][1] == foot.path,
+    "closing the last supported terminal must launch the preferred terminal")
+  assert(state.execs[1][2].workspace == "special:terminal silent")
+end
+
+do
+  local state = newScenario({
+    terminal = foot,
+    workspaceWindows = { { class = "foot" }, { class = "rxvt" } },
+  })
+  state.handlers["window.close"]({
+    class = "foot",
+    workspace = { name = "special:terminal" },
+  })
+  state.workspaceWindows = { { class = "rxvt" } }
+  state.timers[1].callback()
+  assert(#state.execs == 0,
+    "closing the preferred terminal must not relaunch it while another supported terminal remains")
+end
+
+do
+  local state = newScenario({ terminal = foot })
+  state.handlers["window.close"]({
+    class = "rxvt",
+    workspace = { name = "1" },
+  })
+  assert(#state.timers == 0 and #state.execs == 0,
+    "closing a supported terminal outside special:terminal must not populate the special workspace")
 end
 
 do
@@ -243,7 +318,7 @@ end
 do
   local state = newScenario({
     modern = false,
-    terminal = { path = "/usr/bin/foot", classes = { "foot", "footclient" } },
+    terminal = foot,
   })
   local terminalRule
   for _, rule in ipairs(state.rules) do
@@ -252,6 +327,8 @@ do
     end
   end
   assert(terminalRule and terminalRule.match.class == "^(foot|footclient)$")
+  assert(state.handlers["window.close"] == nil,
+    "legacy runtimes without workspace state must not register invariant maintenance")
 end
 
 print("Hyprland terminal catalogue and special-workspace regression tests passed")
