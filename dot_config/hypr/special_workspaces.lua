@@ -56,6 +56,32 @@ local function lower(value)
   return value:lower()
 end
 
+local regexMetacharacters = {
+  ["\\"] = true,
+  ["|"] = true,
+  ["{"] = true,
+  ["}"] = true,
+  ["."] = true,
+  ["+"] = true,
+  ["*"] = true,
+  ["?"] = true,
+  ["("] = true,
+  [")"] = true,
+  ["["] = true,
+  ["]"] = true,
+  ["^"] = true,
+  ["$"] = true,
+}
+
+local function escapeRegexAlternative(value)
+  return (value:gsub(".", function(character)
+    if regexMetacharacters[character] then
+      return "\\" .. character
+    end
+    return character
+  end))
+end
+
 local function workspaceForWindow(window)
   if window == nil then
     return nil
@@ -105,14 +131,7 @@ function M.setup(options)
     for _, class in ipairs(terminal.classes) do
       terminalClasses[lower(class)] = true
 
-      -- Escape all standard regex metacharacters for safe interpolation
-      local escapedClass = class:gsub(".", function(c)
-        if c:match("[%^%$%(%)%%%.%[%]%*%+%-%?]") then
-          return "\\" .. c
-        end
-        return c
-      end)
-      table.insert(terminalRegexGroups, escapedClass)
+      table.insert(terminalRegexGroups, escapeRegexAlternative(class))
     end
   end
   classRoutes.terminal = terminalClasses
