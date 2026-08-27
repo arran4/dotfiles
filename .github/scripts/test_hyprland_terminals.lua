@@ -174,8 +174,8 @@ end
 
 do
   local state = newScenario({ terminal = konsole })
-  assert(type(state.binds["SUPER + T"]) == "function")
-  state.binds["SUPER + T"]()
+  assert(type(state.binds["SUPER + grave"]) == "function")
+  state.binds["SUPER + grave"]()
   assert(#state.execs == 1)
   assert(state.execs[1][1] == konsole.path)
   assert(state.execs[1][2].workspace == "special:terminal silent")
@@ -198,9 +198,11 @@ end
 
 do
   local state = newScenario({ terminal = konsole })
-  state.binds["SUPER + SHIFT + T"]()
+  assert(type(state.binds["SUPER + T"]) == "function")
+  state.binds["SUPER + T"]()
   assert(#state.execs == 1 and state.execs[1][1] == konsole.path)
   assert(state.execs[1][2] == nil, "normal terminal launch must not have workspace arguments")
+  assert(state.binds["SUPER + SHIFT + T"] == nil, "redundant Meta+Shift+T binding must not be registered")
   state.handlers["window.open"]({ class = "konsole" })
   assert(#state.dispatches == 0, "normal terminal window must remain outside special:terminal")
 end
