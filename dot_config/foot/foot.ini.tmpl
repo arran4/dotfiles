@@ -4,7 +4,10 @@
 
 [main]
 term=xterm-256color
-font=JetBrains Mono:size=11,Hack:size=11,Go Mono:size=11,B612 Mono:size=11,DejaVu Sans Mono:size=11,Liberation Mono:size=11,monospace:size=11
+# Match the XTerm configuration and use a font known to be installed by these
+# dotfiles. Avoid broad fontconfig fallbacks that can resolve to proportional
+# Noto Sans on systems where the requested family is unavailable.
+font=Hack:size=11
 pad=6x6
 selection-target=clipboard
 
@@ -14,7 +17,10 @@ lines=65535
 [url]
 launch=xdg-open ${url}
 
-[colors-dark]
+# Use the long-supported [colors] section rather than the newer light/dark
+# variants so this configuration also works with packaged Foot versions that
+# reject [colors-dark].
+[colors]
 background=05070a
 foreground=f0f6fc
 cursor=05070a ffffff
