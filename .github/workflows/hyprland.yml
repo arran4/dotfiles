@@ -189,7 +189,7 @@ jobs:
           assert(type(special) == "table")
           assert(type(special.setup) == "function")
           assert(type(special.workspace_for_window) == "function")
-          special.setup({ terminal = "/usr/bin/xterm" })
+          special.setup({ terminal = { path = "/usr/bin/xterm", classes = { "xterm", "org.kde.konsole", "footclient" } } })
 
           assert(#rules == 4, "music, Beeper, terminal and kJules static rules should be registered")
           assert(rules[1].workspace == "special:music")

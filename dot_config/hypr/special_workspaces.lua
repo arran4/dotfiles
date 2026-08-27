@@ -14,37 +14,6 @@ local workspaces = {
   { name = "kjules", key = "SUPER + J" },
 }
 
-local terminalPriority = {
-  "alacritty",
-  "foot",
-  "footclient",
-  "kitty",
-  "com.mitchellh.ghostty",
-  "ghostty",
-  "org.wezfurlong.wezterm",
-  "wezterm",
-  "terminator",
-  "konsole",
-  "org.kde.konsole",
-  "qterminal",
-  "xfce4-terminal",
-  "gnome-terminal",
-  "gnome-terminal-server",
-  "org.gnome.terminal",
-  "org.gnome.console",
-  "mate-terminal",
-  "lxterminal",
-  "urxvt",
-  "rxvt-unicode",
-  "rxvt",
-  "xterm",
-}
-
-local terminalClasses = {}
-for i, class in ipairs(terminalPriority) do
-  terminalClasses[class] = i
-end
-
 local classRoutes = {
   music = {
     ["spotify"] = true,
@@ -56,7 +25,7 @@ local classRoutes = {
     ["beepertexts"] = true,
     ["com.beeper.beeper"] = true,
   },
-  terminal = terminalClasses,
+  terminal = {}, -- Populated dynamically in setup
   kjules = {
     ["kjules"] = true,
     ["org.kde.kjules"] = true,
@@ -125,7 +94,23 @@ end
 
 function M.setup(options)
   options = options or {}
-  local terminal = options.terminal or ""
+  local terminal = options.terminal or { path = "", classes = {} }
+  if type(terminal) == "string" then
+    terminal = { path = terminal, classes = {} }
+  end
+
+  local terminalClasses = {}
+  local terminalRegexGroups = {}
+  if type(terminal.classes) == "table" then
+    for _, class in ipairs(terminal.classes) do
+      terminalClasses[lower(class)] = true
+
+      -- Escape literal dot characters for safe regex interpolation
+      local escapedClass = class:gsub("%.", "\\.")
+      table.insert(terminalRegexGroups, escapedClass)
+    end
+  end
+  classRoutes.terminal = terminalClasses
 
   -- Modern Hyprland exposes enough runtime state to make the application
   -- workspaces behave as show-or-create launchers instead of blind toggles.
@@ -174,7 +159,7 @@ function M.setup(options)
 
     local windows = hl.get_workspace_windows("special:terminal") or {}
     for _, window in ipairs(windows) do
-      if terminalClasses[lower(window.class)] then
+      if classRoutes.terminal[lower(window.class)] then
         return true
       end
     end
@@ -210,14 +195,14 @@ function M.setup(options)
 
   local function launchManagedApplication(name)
     if name == "terminal" then
-      if terminal == "" then
+      if terminal.path == "" then
         return
       end
       pendingSpecialTerminal = true
       expirePendingTerminal()
       -- The workspace exec rule is the normal path; pendingSpecialTerminal is
       -- a fallback for terminals that fork/daemonize and lose the spawning PID.
-      hl.exec_cmd(terminal, { workspace = "special:terminal silent" })
+      hl.exec_cmd(terminal.path, { workspace = "special:terminal silent" })
       return
     end
 
@@ -277,9 +262,9 @@ function M.setup(options)
   end
 
   -- Explicitly launch a new normal terminal without involving special:terminal.
-  if terminal ~= "" then
+  if terminal.path ~= "" then
     hl.bind("SUPER + SHIFT + T", function()
-      hl.exec_cmd(terminal)
+      hl.exec_cmd(terminal.path)
     end)
   end
 
@@ -301,10 +286,13 @@ function M.setup(options)
     workspace = "special:beeper",
   })
   if not smartManagedWorkspaces then
-    hl.window_rule({
-      match = { class = "^(Alacritty|alacritty|foot|footclient|kitty|com.mitchellh.ghostty|ghostty|org.wezfurlong.wezterm|wezterm|terminator|konsole|org.kde.konsole|xfce4-terminal|gnome-terminal|gnome-terminal-server|org.gnome.terminal|org.gnome.console|mate-terminal|lxterminal|URxvt|urxvt|rxvt-unicode|rxvt|XTerm|xterm)$" },
-      workspace = "special:terminal",
-    })
+    if #terminalRegexGroups > 0 then
+      local regex = "^(" .. table.concat(terminalRegexGroups, "|") .. ")$"
+      hl.window_rule({
+        match = { class = regex },
+        workspace = "special:terminal",
+      })
+    end
   end
   hl.window_rule({
     match = { class = "^(kJules|kjules|org.kde.kjules)$" },
@@ -340,11 +328,11 @@ function M.setup(options)
     -- Gentoo and other distributions where pam_kwallet_init is outside PATH.
     hl.exec_cmd(kwalletStartup)
 
-    if terminal ~= "" then
+    if terminal.path ~= "" then
       if smartManagedWorkspaces then
         launchManagedApplication("terminal")
       else
-        hl.exec_cmd(terminal, { workspace = "special:terminal silent" })
+        hl.exec_cmd(terminal.path, { workspace = "special:terminal silent" })
       end
     end
     hl.exec_cmd("flatpak run com.spotify.Client", { workspace = "special:music silent" })
