@@ -25,11 +25,45 @@ local classRoutes = {
     ["beepertexts"] = true,
     ["com.beeper.beeper"] = true,
   },
-  terminal = {}, -- Populated dynamically in setup
+  terminal = {}, -- Populated dynamically in setup with the preferred terminal only.
   kjules = {
     ["kjules"] = true,
     ["org.kde.kjules"] = true,
   },
+}
+
+-- Any supported terminal already resident in special:terminal satisfies the
+-- workspace invariant. Keep this catalogue-wide set separate from
+-- classRoutes.terminal: the latter deliberately contains only the preferred
+-- terminal so ordinary launches of another supported terminal are never
+-- captured just because a special-terminal launch is pending.
+--
+-- Keep these aliases in sync with terminalCatalogue in hyprland.lua.tmpl.
+local supportedTerminalClasses = {
+  ["foot"] = true,
+  ["footclient"] = true,
+  ["qterminal"] = true,
+  ["xterm"] = true,
+  ["rxvt-unicode"] = true,
+  ["rxvt"] = true,
+  ["urxvt"] = true,
+  ["konsole"] = true,
+  ["org.kde.konsole"] = true,
+  ["ghostty"] = true,
+  ["com.mitchellh.ghostty"] = true,
+  ["kitty"] = true,
+  ["kitty-direct"] = true,
+  ["alacritty"] = true,
+  ["wezterm"] = true,
+  ["org.wezfurlong.wezterm"] = true,
+  ["terminator"] = true,
+  ["xfce4-terminal"] = true,
+  ["gnome-terminal"] = true,
+  ["gnome-terminal-server"] = true,
+  ["org.gnome.terminal"] = true,
+  ["org.gnome.console"] = true,
+  ["mate-terminal"] = true,
+  ["lxterminal"] = true,
 }
 
 local kwalletStartup = [[
@@ -183,7 +217,7 @@ function M.setup(options)
 
     local windows = hl.get_workspace_windows("special:terminal") or {}
     for _, window in ipairs(windows) do
-      if classRoutes.terminal[lower(window.class)] then
+      if supportedTerminalClasses[lower(window.class)] then
         return true
       end
     end
@@ -324,6 +358,34 @@ function M.setup(options)
   -- mapping.
   hl.on("window.open", routeWindow)
   hl.on("window.class", routeWindow)
+
+  -- Maintain the terminal workspace invariant after its last supported
+  -- terminal closes. window.close can fire before the compositor's workspace
+  -- list is fully updated, so defer the occupancy check when timers are
+  -- available. Closing a supported terminal on a normal workspace must never
+  -- populate special:terminal.
+  if smartManagedWorkspaces then
+    hl.on("window.close", function(window)
+      if not supportedTerminalClasses[lower(window and window.class)] then
+        return
+      end
+      if specialName(window and window.workspace) ~= "terminal" then
+        return
+      end
+
+      local function ensureTerminalResident()
+        if not hasSpecialTerminal() then
+          launchManagedApplication("terminal")
+        end
+      end
+
+      if type(hl.timer) == "function" then
+        hl.timer(ensureTerminalResident, { timeout = 1, type = "oneshot" })
+      else
+        ensureTerminalResident()
+      end
+    end)
+  end
 
   -- Config reloads do not re-run static workspace effects for windows that are
   -- already open. Reconcile them immediately after an apply/reload. On modern
