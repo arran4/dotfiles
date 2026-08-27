@@ -92,8 +92,8 @@ local catalogueWithoutQterminal = loadTerminalLogic(renderedWithoutQterminalPath
 for _, candidate in ipairs(catalogueWithoutQterminal) do
   assert(candidate.name ~= "qterminal", "undiscovered qterminal must not be a candidate")
 end
-assert(catalogueWithoutQterminal[1].name == "foot",
-  "foot must remain first when qterminal was not discovered")
+assert(catalogueWithoutQterminal[1].name == "xterm",
+  "xterm must be first in the fixture where qterminal is absent and foot is not provided")
 
 local function newScenario(options)
   options = options or {}
