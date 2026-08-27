@@ -199,7 +199,7 @@ jobs:
           assert(rules[3].workspace == "special:terminal")
           assert(rules[4].workspace == "special:kjules")
           assert(rules[2].match.class:find("BeeperTexts", 1, true))
-          assert(rules[3].match.class:find("org.kde.konsole", 1, true))
+          assert(rules[3].match.class:find([=[org\.kde\.konsole]=], 1, true))
           assert(rules[3].match.class:find("footclient", 1, true))
           assert(rules[4].match.class:find("org.kde.kjules", 1, true))
 
