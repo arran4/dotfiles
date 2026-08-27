@@ -34,13 +34,13 @@ local function loadTerminalLogic(path, executablePaths)
 end
 
 local expectedOrder = {
+  "foot",
   "qterminal",
   "xterm",
   "rxvt-unicode",
   "urxvt",
   "konsole",
   "ghostty",
-  "foot",
   "kitty",
   "alacritty",
   "wezterm",
@@ -66,17 +66,22 @@ for index, expectedName in ipairs(expectedOrder) do
     tostring(catalogue[index].name)
   ))
 end
-assert(terminal.name == "qterminal", "qterminal must win when discovered and available")
+assert(terminal.name == "foot", "foot must win when discovered and available")
+
+_, terminal = loadTerminalLogic(renderedCataloguePath, {
+  ["/test/bin/qterminal"] = true,
+})
+assert(terminal.name == "qterminal", "qterminal must win when foot is unavailable")
 
 _, terminal = loadTerminalLogic(renderedCataloguePath, {
   ["/test/bin/xterm"] = true,
 })
-assert(terminal.name == "xterm", "xterm must win when qterminal is unavailable")
+assert(terminal.name == "xterm", "xterm must win when foot and qterminal are unavailable")
 
 _, terminal = loadTerminalLogic(renderedCataloguePath, {
   ["/test/bin/konsole"] = true,
 })
-assert(terminal.name == "konsole", "konsole must win after qterminal, xterm, rxvt-unicode, and urxvt")
+assert(terminal.name == "konsole", "konsole must win after foot, qterminal, xterm, rxvt-unicode, and urxvt")
 
 _, terminal = loadTerminalLogic(renderedCataloguePath, {})
 assert(terminal.path == "", "no available terminal must produce an empty path")
@@ -87,8 +92,8 @@ local catalogueWithoutQterminal = loadTerminalLogic(renderedWithoutQterminalPath
 for _, candidate in ipairs(catalogueWithoutQterminal) do
   assert(candidate.name ~= "qterminal", "undiscovered qterminal must not be a candidate")
 end
-assert(catalogueWithoutQterminal[1].name == "xterm",
-  "xterm must be first when qterminal was not discovered")
+assert(catalogueWithoutQterminal[1].name == "foot",
+  "foot must remain first when qterminal was not discovered")
 
 local function newScenario(options)
   options = options or {}
@@ -159,10 +164,11 @@ end
 
 do
   local _, special = newScenario({
-    terminal = { path = "/usr/bin/qterminal", classes = { "qterminal" } },
+    terminal = { path = "/usr/bin/foot", classes = { "foot", "footclient" } },
   })
-  assert(special.workspace_for_window({ class = "qterminal" }) == "terminal")
-  assert(special.workspace_for_window({ class = "konsole" }) == nil)
+  assert(special.workspace_for_window({ class = "foot" }) == "terminal")
+  assert(special.workspace_for_window({ class = "footclient" }) == "terminal")
+  assert(special.workspace_for_window({ class = "qterminal" }) == nil)
 end
 
 do
@@ -237,7 +243,7 @@ end
 do
   local state = newScenario({
     modern = false,
-    terminal = { path = "/usr/bin/qterminal", classes = { "qterminal" } },
+    terminal = { path = "/usr/bin/foot", classes = { "foot", "footclient" } },
   })
   local terminalRule
   for _, rule in ipairs(state.rules) do
@@ -245,7 +251,7 @@ do
       terminalRule = rule
     end
   end
-  assert(terminalRule and terminalRule.match.class == "^(qterminal)$")
+  assert(terminalRule and terminalRule.match.class == "^(foot|footclient)$")
 end
 
 print("Hyprland terminal catalogue and special-workspace regression tests passed")
