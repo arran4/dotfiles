@@ -153,9 +153,8 @@ function M.setup(options)
     end
 
     -- A terminal is special only when it was explicitly requested as the
-    -- special terminal. Ordinary terminal launches (for example
-    -- Meta+Shift+T) must remain on the normal workspace instead of being
-    -- captured by class.
+    -- special terminal. Ordinary terminal launches (for example Meta+T) must
+    -- remain on the normal workspace instead of being captured by class.
     if smartManagedWorkspaces and workspace == "terminal" then
       if not pendingSpecialTerminal then
         return
@@ -276,19 +275,9 @@ function M.setup(options)
     hl.workspace_rule({ workspace = "special:" .. workspace.name, persistent = true })
   end
 
-  -- Keep the convenient second terminal shortcut, with show-or-create behavior
-  -- on modern Hyprland.
-  if smartManagedWorkspaces then
-    hl.bind("SUPER + T", function()
-      toggleManagedWorkspace("terminal")
-    end)
-  else
-    hl.bind("SUPER + T", hl.dsp.workspace.toggle_special("terminal"))
-  end
-
-  -- Explicitly launch a new normal terminal without involving special:terminal.
+  -- Meta+T explicitly launches a new normal terminal outside special:terminal.
   if terminal.path ~= "" then
-    hl.bind("SUPER + SHIFT + T", function()
+    hl.bind("SUPER + T", function()
       hl.exec_cmd(terminal.path)
     end)
   end
