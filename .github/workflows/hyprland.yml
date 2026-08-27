@@ -593,6 +593,174 @@ jobs:
           print("Rendered Hyprland config executed successfully with special_workspaces.lua")
           LUA
 
+      - name: Verify terminal catalogue resolution architecture
+        run: |
+          # We generate a mock chezmoi output with specific test data
+          cat << 'JSON' > mock_data.json
+          {
+            "qterminalLocation": "",
+            "xtermLocation": ""
+          }
+          JSON
+
+          # Test 1: Fallback behaviour when nothing is populated
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=mock_data.json < dot_config/hypr/hyprland.lua.tmpl > mock_hypr.lua
+
+          lua5.4 - <<'LUA'
+          local function test_lua()
+            local mock_isExec = false
+            local env = {
+              os = { getenv = function() return "" end },
+              io = { open = function(p) return mock_isExec and {close=function()end} or nil end },
+              ipairs = ipairs,
+            }
+
+            local content
+            local f = io.open("mock_hypr.lua", "r")
+            content = f:read("*a")
+            f:close()
+
+            local logic = content:match("(local terminalCatalogue = {.-}\n\nlocal function isExecutable.-)local terminal = resolveTerminal%(%)")
+            local chunk = assert(load(logic .. " return resolveTerminal()", "test", "t", env))
+            local term = chunk()
+
+            assert(term.path == "", "Expected empty path fallback")
+            assert(type(term.classes) == "table" and #term.classes == 0, "Expected empty classes array fallback")
+          end
+          test_lua()
+          LUA
+
+          # Test 2: Preference Order (qterminal wins over xterm)
+          cat << 'JSON' > mock_data2.json
+          {
+            "qterminalLocation": "/usr/bin/qterminal",
+            "xtermLocation": "/usr/bin/xterm"
+          }
+          JSON
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=mock_data2.json < dot_config/hypr/hyprland.lua.tmpl > mock_hypr2.lua
+
+          lua5.4 - <<'LUA'
+          local content
+          local f = io.open("mock_hypr2.lua", "r")
+          content = f:read("*a")
+          f:close()
+          local logic = content:match("(local terminalCatalogue = {.-}\n\nlocal function isExecutable.-)local terminal = resolveTerminal%(%)")
+          local env = {
+            os = { getenv = function() return "" end },
+            io = { open = function(p) return {close=function()end} end }, -- Everything is executable
+            ipairs = ipairs,
+          }
+          local term = assert(load(logic .. " return resolveTerminal()", "test", "t", env))()
+          assert(term.name == "qterminal", "Expected qterminal to win preference order over xterm")
+          assert(term.path == "/usr/bin/qterminal", "Expected qterminal path")
+          LUA
+
+          # Test 3: Duplication regression checks
+          if grep -q "runtimeFallbackTerminals" dot_config/hypr/hyprland.lua.tmpl; then
+            echo "Failure: runtimeFallbackTerminals found"
+            exit 1
+          fi
+          if grep -q "terminalPriority" dot_config/hypr/special_workspaces.lua; then
+            echo "Failure: terminalPriority found"
+            exit 1
+          fi
+          if grep -q "Alacritty|alacritty|foot" dot_config/hypr/special_workspaces.lua; then
+            echo "Failure: Hardcoded regex found"
+            exit 1
+          fi
+
+          # Test 4: Artifact hygiene
+          if [ -f "patch.diff" ]; then
+            echo "Failure: patch.diff exists"
+            exit 1
+          fi
+
+          rm mock_hypr* mock_data*
+
+      - name: Verify terminal catalogue resolution architecture
+        run: |
+          # We generate a mock chezmoi output with specific test data
+          cat << 'JSON' > mock_data.json
+          {
+            "qterminalLocation": "",
+            "xtermLocation": ""
+          }
+          JSON
+
+          # Test 1: Fallback behaviour when nothing is populated
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=mock_data.json < dot_config/hypr/hyprland.lua.tmpl > mock_hypr.lua
+
+          lua5.4 - <<'LUA'
+          local function test_lua()
+            local mock_isExec = false
+            local env = {
+              os = { getenv = function() return "" end },
+              io = { open = function(p) return mock_isExec and {close=function()end} or nil end },
+              ipairs = ipairs,
+            }
+
+            local content
+            local f = io.open("mock_hypr.lua", "r")
+            content = f:read("*a")
+            f:close()
+
+            local logic = content:match("(local terminalCatalogue = {.-}\n\nlocal function isExecutable.-)local terminal = resolveTerminal%(%)")
+            local chunk = assert(load(logic .. " return resolveTerminal()", "test", "t", env))
+            local term = chunk()
+
+            assert(term.path == "", "Expected empty path fallback")
+            assert(type(term.classes) == "table" and #term.classes == 0, "Expected empty classes array fallback")
+          end
+          test_lua()
+          LUA
+
+          # Test 2: Preference Order (qterminal wins over xterm)
+          cat << 'JSON' > mock_data2.json
+          {
+            "qterminalLocation": "/usr/bin/qterminal",
+            "xtermLocation": "/usr/bin/xterm"
+          }
+          JSON
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=mock_data2.json < dot_config/hypr/hyprland.lua.tmpl > mock_hypr2.lua
+
+          lua5.4 - <<'LUA'
+          local content
+          local f = io.open("mock_hypr2.lua", "r")
+          content = f:read("*a")
+          f:close()
+          local logic = content:match("(local terminalCatalogue = {.-}\n\nlocal function isExecutable.-)local terminal = resolveTerminal%(%)")
+          local env = {
+            os = { getenv = function() return "" end },
+            io = { open = function(p) return {close=function()end} end }, -- Everything is executable
+            ipairs = ipairs,
+          }
+          local term = assert(load(logic .. " return resolveTerminal()", "test", "t", env))()
+          assert(term.name == "qterminal", "Expected qterminal to win preference order over xterm")
+          assert(term.path == "/usr/bin/qterminal", "Expected qterminal path")
+          LUA
+
+          # Test 3: Duplication regression checks
+          if grep -q "runtimeFallbackTerminals" dot_config/hypr/hyprland.lua.tmpl; then
+            echo "Failure: runtimeFallbackTerminals found"
+            exit 1
+          fi
+          if grep -q "terminalPriority" dot_config/hypr/special_workspaces.lua; then
+            echo "Failure: terminalPriority found"
+            exit 1
+          fi
+          if grep -q "Alacritty|alacritty|foot" dot_config/hypr/special_workspaces.lua; then
+            echo "Failure: Hardcoded regex found"
+            exit 1
+          fi
+
+          # Test 4: Artifact hygiene
+          if [ -f "patch.diff" ]; then
+            echo "Failure: patch.diff exists"
+            exit 1
+          fi
+
+          rm mock_hypr* mock_data*
+
       - name: Verify missing special workspace module is non-fatal
         run: |
           mv "$HOME/.config/hypr/special_workspaces.lua" "$HOME/.config/hypr/special_workspaces.lua.disabled"
