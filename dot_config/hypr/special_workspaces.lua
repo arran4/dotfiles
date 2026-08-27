@@ -275,11 +275,17 @@ function M.setup(options)
     hl.workspace_rule({ workspace = "special:" .. workspace.name, persistent = true })
   end
 
-  -- Meta+T explicitly launches a new normal terminal outside special:terminal.
-  if terminal.path ~= "" then
-    hl.bind("SUPER + T", function()
-      hl.exec_cmd(terminal.path)
-    end)
+  -- On modern Hyprland, Meta+T explicitly launches a new normal terminal
+  -- outside special:terminal. Keep the historical direct-toggle fallback on
+  -- runtimes too old to expose the workspace state needed for managed routing.
+  if smartManagedWorkspaces then
+    if terminal.path ~= "" then
+      hl.bind("SUPER + T", function()
+        hl.exec_cmd(terminal.path)
+      end)
+    end
+  else
+    hl.bind("SUPER + T", hl.dsp.workspace.toggle_special("terminal"))
   end
 
   -- Explicitly launch a new kjules session without involving special:kjules routing immediately.
