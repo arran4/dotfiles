@@ -23,7 +23,14 @@ local function loadTerminalLogic(path, executablePaths)
       end,
     },
     ipairs = ipairs,
-    os = { getenv = function() return "" end },
+    os = {
+      getenv = function(name)
+        if name == "PATH" then
+          return "/test/bin"
+        end
+        return ""
+      end,
+    },
   }
   return assert(load(
     logic .. " return terminalCatalogue, resolveTerminal()",
@@ -88,12 +95,28 @@ assert(terminal.path == "", "no available terminal must produce an empty path")
 assert(type(terminal.classes) == "table" and #terminal.classes == 0,
   "no available terminal must produce empty aliases")
 
-local catalogueWithoutQterminal = loadTerminalLogic(renderedWithoutQterminalPath, allExecutablePaths)
+local catalogueWithoutQterminal, runtimeFoot = loadTerminalLogic(renderedWithoutQterminalPath, {
+  ["/test/bin/foot"] = true,
+  ["/test/bin/xterm"] = true,
+})
 for _, candidate in ipairs(catalogueWithoutQterminal) do
   assert(candidate.name ~= "qterminal", "undiscovered qterminal must not be a candidate")
 end
-assert(catalogueWithoutQterminal[1].name == "xterm",
-  "xterm must be first in the fixture where qterminal is absent and foot is not provided")
+assert(catalogueWithoutQterminal[1].name == "foot",
+  "foot must remain the first candidate when footLocation was not persisted")
+assert(runtimeFoot.name == "foot" and runtimeFoot.path == "/test/bin/foot",
+  "foot must resolve from PATH when chezmoi footLocation data is empty or stale")
+
+_, terminal = loadTerminalLogic(renderedWithoutQterminalPath, {
+  ["/test/bin/xterm"] = true,
+})
+assert(terminal.name == "xterm", "runtime foot fallback must still fall through when foot is not installed")
+
+local footConfig = readFile("dot_config/foot/foot.ini.tmpl")
+assert(footConfig:find("[colors]", 1, true), "Foot config must use the compatible [colors] section")
+assert(not footConfig:find("[colors-dark]", 1, true), "Foot config must not use unsupported [colors-dark]")
+assert(footConfig:find("font=Hack:size=11", 1, true), "Foot should use the same Hack family as XTerm")
+assert(not footConfig:find("Noto Sans", 1, true), "Foot config must not fall back explicitly to proportional Noto Sans")
 
 local function newScenario(options)
   options = options or {}
