@@ -120,8 +120,8 @@ assert(terminal.name == "xterm",
   "runtime foot and qterminal fallbacks must still fall through when neither is installed")
 
 local footConfig = readFile("dot_config/foot/foot.ini.tmpl")
-assert(footConfig:find("[colors]", 1, true), "Foot config must use the compatible [colors] section")
-assert(not footConfig:find("[colors-dark]", 1, true), "Foot config must not use unsupported [colors-dark]")
+assert(footConfig:find("\n[colors]\n", 1, true), "Foot config must use the compatible [colors] section")
+assert(not footConfig:find("\n[colors-dark]\n", 1, true), "Foot config must not use unsupported [colors-dark]")
 local configuredFont = assert(
   footConfig:match("\nfont=([^\r\n]+)"),
   "Foot config must define a font"
