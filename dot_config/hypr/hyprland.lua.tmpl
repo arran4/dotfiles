@@ -39,14 +39,14 @@
 {{- $kdeconnectIndicator := .kdeconnectIndicatorLocation -}}
 {{- $nmApplet := .nmAppletLocation -}}
 {{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") }}
+{{- $footCommand := (index . "footLocation" | default "foot") -}}
 
--- Terminal catalogue in preference order. Contains both executable path (discovered
--- by chezmoi) and window class aliases for Hyprland window rules. Foot is preferred
--- when available; the existing order remains the fallback chain.
+-- Terminal catalogue in preference order. Contains executable paths discovered by
+-- chezmoi where available, plus window class aliases for Hyprland rules. Foot keeps
+-- a bare-command fallback so installing it after chezmoi init does not require
+-- regenerating chezmoi's persisted config data before Hyprland can select it.
 local terminalCatalogue = {
-{{- if ne (index . "footLocation" | default "") "" }}
-    { name = "foot", path = [=[{{.footLocation}}]=], classes = { "foot", "footclient" } },
-{{- end }}
+    { name = "foot", path = [=[{{$footCommand}}]=], classes = { "foot", "footclient" } },
 {{- if ne (index . "qterminalLocation" | default "") "" }}
     { name = "qterminal", path = [=[{{.qterminalLocation}}]=], classes = { "qterminal" } },
 {{- end }}
