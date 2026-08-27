@@ -40,16 +40,15 @@
 {{- $nmApplet := .nmAppletLocation -}}
 {{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") }}
 {{- $footCommand := (index . "footLocation" | default "foot") -}}
+{{- $qterminalCommand := (index . "qterminalLocation" | default "qterminal") -}}
 
 -- Terminal catalogue in preference order. Contains executable paths discovered by
--- chezmoi where available, plus window class aliases for Hyprland rules. Foot keeps
--- a bare-command fallback so installing it after chezmoi init does not require
--- regenerating chezmoi's persisted config data before Hyprland can select it.
+-- chezmoi where available, plus window class aliases for Hyprland rules. Foot and
+-- QTerminal keep bare-command fallbacks so installing either after chezmoi init
+-- does not require regenerating persisted config data before Hyprland can select it.
 local terminalCatalogue = {
     { name = "foot", path = [=[{{$footCommand}}]=], classes = { "foot", "footclient" } },
-{{- if ne (index . "qterminalLocation" | default "") "" }}
-    { name = "qterminal", path = [=[{{.qterminalLocation}}]=], classes = { "qterminal" } },
-{{- end }}
+    { name = "qterminal", path = [=[{{$qterminalCommand}}]=], classes = { "qterminal" } },
 {{- if ne (index . "xtermLocation" | default "") "" }}
     { name = "xterm", path = [=[{{.xtermLocation}}]=], classes = { "xterm", "XTerm" } },
 {{- end }}
