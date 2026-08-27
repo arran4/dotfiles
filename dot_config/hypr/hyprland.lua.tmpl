@@ -41,70 +41,54 @@
 {{- $playerctlPlayer := (index . "playerctlPlayer" | default "spotify") }}
 
 -- Terminal candidates in preference order. qterminal is resolved from PATH first;
--- remaining candidates are paths discovered by chezmoi.
-local candidateTerminals = {
-    { name = "qterminal", path = "qterminal" },
+-- Terminal catalogue in preference order. Contains both executable path (discovered
+-- by chezmoi) and window class aliases for Hyprland window rules.
+local terminalCatalogue = {
+{{- if ne (index . "qterminalLocation" | default "") "" }}
+    { name = "qterminal", path = [=[{{.qterminalLocation}}]=], classes = { "qterminal" } },
+{{- end }}
 {{- if ne (index . "xtermLocation" | default "") "" }}
-    { name = "xterm", path = [=[{{.xtermLocation}}]=] },
+    { name = "xterm", path = [=[{{.xtermLocation}}]=], classes = { "xterm", "XTerm" } },
 {{- end }}
 {{- if ne (index . "rxvtUnicodeLocation" | default "") "" }}
-    { name = "rxvt-unicode", path = [=[{{.rxvtUnicodeLocation}}]=] },
+    { name = "rxvt-unicode", path = [=[{{.rxvtUnicodeLocation}}]=], classes = { "rxvt-unicode", "rxvt" } },
 {{- end }}
 {{- if ne (index . "urxvtLocation" | default "") "" }}
-    { name = "urxvt", path = [=[{{.urxvtLocation}}]=] },
+    { name = "urxvt", path = [=[{{.urxvtLocation}}]=], classes = { "urxvt", "URxvt" } },
 {{- end }}
 {{- if ne (index . "konsoleLocation" | default "") "" }}
-    { name = "konsole", path = [=[{{.konsoleLocation}}]=] },
+    { name = "konsole", path = [=[{{.konsoleLocation}}]=], classes = { "konsole", "org.kde.konsole" } },
 {{- end }}
 {{- if ne (index . "ghosttyLocation" | default "") "" }}
-    { name = "ghostty", path = [=[{{.ghosttyLocation}}]=] },
+    { name = "ghostty", path = [=[{{.ghosttyLocation}}]=], classes = { "ghostty", "com.mitchellh.ghostty" } },
 {{- end }}
 {{- if ne (index . "footLocation" | default "") "" }}
-    { name = "foot", path = [=[{{.footLocation}}]=] },
+    { name = "foot", path = [=[{{.footLocation}}]=], classes = { "foot", "footclient" } },
 {{- end }}
 {{- if ne (index . "kittyLocation" | default "") "" }}
-    { name = "kitty", path = [=[{{.kittyLocation}}]=] },
+    { name = "kitty", path = [=[{{.kittyLocation}}]=], classes = { "kitty", "kitty-direct" } },
 {{- end }}
 {{- if ne (index . "alacrittyLocation" | default "") "" }}
-    { name = "alacritty", path = [=[{{.alacrittyLocation}}]=] },
+    { name = "alacritty", path = [=[{{.alacrittyLocation}}]=], classes = { "alacritty", "Alacritty" } },
 {{- end }}
 {{- if ne (index . "weztermLocation" | default "") "" }}
-    { name = "wezterm", path = [=[{{.weztermLocation}}]=] },
+    { name = "wezterm", path = [=[{{.weztermLocation}}]=], classes = { "wezterm", "org.wezfurlong.wezterm" } },
 {{- end }}
 {{- if ne (index . "terminatorLocation" | default "") "" }}
-    { name = "terminator", path = [=[{{.terminatorLocation}}]=] },
+    { name = "terminator", path = [=[{{.terminatorLocation}}]=], classes = { "terminator" } },
 {{- end }}
 {{- if ne (index . "xfce4TerminalLocation" | default "") "" }}
-    { name = "xfce4-terminal", path = [=[{{.xfce4TerminalLocation}}]=] },
+    { name = "xfce4-terminal", path = [=[{{.xfce4TerminalLocation}}]=], classes = { "xfce4-terminal" } },
 {{- end }}
 {{- if ne (index . "gnomeTerminalLocation" | default "") "" }}
-    { name = "gnome-terminal", path = [=[{{.gnomeTerminalLocation}}]=] },
+    { name = "gnome-terminal", path = [=[{{.gnomeTerminalLocation}}]=], classes = { "gnome-terminal", "gnome-terminal-server", "org.gnome.terminal", "org.gnome.console" } },
 {{- end }}
 {{- if ne (index . "mateTerminalLocation" | default "") "" }}
-    { name = "mate-terminal", path = [=[{{.mateTerminalLocation}}]=] },
+    { name = "mate-terminal", path = [=[{{.mateTerminalLocation}}]=], classes = { "mate-terminal" } },
 {{- end }}
 {{- if ne (index . "lxterminalLocation" | default "") "" }}
-    { name = "lxterminal", path = [=[{{.lxterminalLocation}}]=] },
+    { name = "lxterminal", path = [=[{{.lxterminalLocation}}]=], classes = { "lxterminal" } },
 {{- end }}
-}
-
--- Fallback terminal names for runtime PATH search in Lua:
-local runtimeFallbackTerminals = {
-    "qterminal",
-    "xterm",
-    "rxvt-unicode",
-    "urxvt",
-    "konsole",
-    "ghostty",
-    "foot",
-    "kitty",
-    "alacritty",
-    "wezterm",
-    "terminator",
-    "xfce4-terminal",
-    "gnome-terminal",
-    "mate-terminal",
-    "lxterminal",
 }
 
 local function isExecutable(path)
@@ -140,31 +124,26 @@ local function findInPath(cmd)
 end
 
 local function resolveTerminal()
-    for _, candidate in ipairs(candidateTerminals) do
+    for _, candidate in ipairs(terminalCatalogue) do
         if candidate.path and candidate.path ~= "" then
             if candidate.path:sub(1, 1) == "/" then
                 if isExecutable(candidate.path) then
-                    return candidate.path
+                    return candidate
                 end
             else
                 local found = findInPath(candidate.path)
                 if found then
-                    return found
+                    candidate.path = found
+                    return candidate
                 end
             end
         end
     end
-    for _, name in ipairs(runtimeFallbackTerminals) do
-        local found = findInPath(name)
-        if found then
-            return found
-        end
-    end
-    return ""
+    return { path = "", classes = {} }
 end
 
 local terminal = resolveTerminal()
-local popupTerm = terminal
+local popupTerm = terminal.path
 local launcher = [=[{{$launcher}}]=]
 local lockcmd = [=[{{$lockcmd}}]=]
 local clipse = [=[{{$clipse}}]=]
@@ -442,9 +421,9 @@ local function registerBinds()
 
     -- Terminal launch. Meta+T toggles the terminal special workspace; this
     -- direct launcher remains available when an additional terminal is wanted.
-    if terminal ~= "" then
-        hl.bind("CTRL + SUPER + T", hl.dsp.exec_cmd(terminal))
-        hl.bind("SUPER + Return", hl.dsp.exec_cmd(terminal))
+    if terminal.path ~= "" then
+        hl.bind("CTRL + SUPER + T", hl.dsp.exec_cmd(terminal.path))
+        hl.bind("SUPER + Return", hl.dsp.exec_cmd(terminal.path))
     end
 
     hl.bind("SUPER + Y", hl.dsp.exec_cmd("hypr-cycle-layout"))

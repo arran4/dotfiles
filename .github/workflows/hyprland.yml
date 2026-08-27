@@ -6,6 +6,7 @@ on:
       - 'dot_config/hypr/**'
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
+      - '.github/scripts/test_hyprland_terminals.lua'
       - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   push:
     branches:
@@ -14,6 +15,7 @@ on:
       - 'dot_config/hypr/**'
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
+      - '.github/scripts/test_hyprland_terminals.lua'
       - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   workflow_dispatch:
 
@@ -189,7 +191,7 @@ jobs:
           assert(type(special) == "table")
           assert(type(special.setup) == "function")
           assert(type(special.workspace_for_window) == "function")
-          special.setup({ terminal = "/usr/bin/xterm" })
+          special.setup({ terminal = { path = "/usr/bin/xterm", classes = { "xterm", "org.kde.konsole", "footclient" } } })
 
           assert(#rules == 4, "music, Beeper, terminal and kJules static rules should be registered")
           assert(rules[1].workspace == "special:music")
@@ -197,7 +199,7 @@ jobs:
           assert(rules[3].workspace == "special:terminal")
           assert(rules[4].workspace == "special:kjules")
           assert(rules[2].match.class:find("BeeperTexts", 1, true))
-          assert(rules[3].match.class:find("org.kde.konsole", 1, true))
+          assert(rules[3].match.class:find([=[org\.kde\.konsole]=], 1, true))
           assert(rules[3].match.class:find("footclient", 1, true))
           assert(rules[4].match.class:find("org.kde.kjules", 1, true))
 
@@ -592,6 +594,66 @@ jobs:
 
           print("Rendered Hyprland config executed successfully with special_workspaces.lua")
           LUA
+
+      - name: Verify terminal catalogue and special workspace behavior
+        run: |
+          test_dir="$(mktemp -d)"
+          trap 'rm -rf "$test_dir"' EXIT
+
+          cat > "$test_dir/all-terminals.json" <<'JSON'
+          {
+            "qterminalLocation": "/test/bin/qterminal",
+            "xtermLocation": "/test/bin/xterm",
+            "rxvtUnicodeLocation": "/test/bin/rxvt-unicode",
+            "urxvtLocation": "/test/bin/urxvt",
+            "konsoleLocation": "/test/bin/konsole",
+            "ghosttyLocation": "/test/bin/ghostty",
+            "footLocation": "/test/bin/foot",
+            "kittyLocation": "/test/bin/kitty",
+            "alacrittyLocation": "/test/bin/alacritty",
+            "weztermLocation": "/test/bin/wezterm",
+            "terminatorLocation": "/test/bin/terminator",
+            "xfce4TerminalLocation": "/test/bin/xfce4-terminal",
+            "gnomeTerminalLocation": "/test/bin/gnome-terminal",
+            "mateTerminalLocation": "/test/bin/mate-terminal",
+            "lxterminalLocation": "/test/bin/lxterminal"
+          }
+          JSON
+
+          cat > "$test_dir/no-qterminal.json" <<'JSON'
+          {
+            "qterminalLocation": "",
+            "xtermLocation": "/test/bin/xterm"
+          }
+          JSON
+
+          ./bin/chezmoi execute-template --source="$PWD" \
+            --override-data-file="$test_dir/all-terminals.json" \
+            < dot_config/hypr/hyprland.lua.tmpl \
+            > "$test_dir/all-terminals.lua"
+          ./bin/chezmoi execute-template --source="$PWD" \
+            --override-data-file="$test_dir/no-qterminal.json" \
+            < dot_config/hypr/hyprland.lua.tmpl \
+            > "$test_dir/no-qterminal.lua"
+
+          lua5.4 .github/scripts/test_hyprland_terminals.lua \
+            "$test_dir/all-terminals.lua" \
+            "$test_dir/no-qterminal.lua"
+
+          if rg -q "runtimeFallbackTerminals" dot_config/hypr/hyprland.lua.tmpl; then
+            echo "Failure: runtimeFallbackTerminals found"
+            exit 1
+          fi
+          if rg -q "terminalPriority" dot_config/hypr/special_workspaces.lua; then
+            echo "Failure: terminalPriority found"
+            exit 1
+          fi
+          if rg -q 'match = \{ class = "\^\([^"]*(qterminal|xterm|konsole|ghostty|foot|kitty|alacritty|wezterm)' \
+            dot_config/hypr/special_workspaces.lua; then
+            echo "Failure: manually maintained terminal-class regex found"
+            exit 1
+          fi
+          test ! -e patch.diff
 
       - name: Verify missing special workspace module is non-fatal
         run: |

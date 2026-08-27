@@ -417,6 +417,10 @@
 {{- if eq $konsoleLocation "" -}}
   {{- $konsoleLocation = lookPath "konsole" -}}
 {{- end -}}
+{{- $qterminalLocation := findExecutable "qterminal" $paths -}}
+{{- if eq $qterminalLocation "" -}}
+  {{- $qterminalLocation = lookPath "qterminal" -}}
+{{- end -}}
 {{- $xfce4TerminalLocation := findExecutable "xfce4-terminal" $paths -}}
 {{- if eq $xfce4TerminalLocation "" -}}
   {{- $xfce4TerminalLocation = lookPath "xfce4-terminal" -}}
@@ -446,8 +450,8 @@
   {{- $xtermLocation = lookPath "xterm" -}}
 {{- end -}}
 
-{{- if and (eq .chezmoi.os "linux") (eq $ghosttyLocation "") (eq $footLocation "") (eq $kittyLocation "") (eq $alacrittyLocation "") (eq $weztermLocation "") (eq $terminatorLocation "") (eq $konsoleLocation "") (eq $xfce4TerminalLocation "") (eq $gnomeTerminalLocation "") (eq $mateTerminalLocation "") (eq $lxterminalLocation "") (eq $urxvtLocation "") (eq $xtermLocation "") -}}
-        {{- writeToStdout "Can't find terminal (ghostty/foot/kitty/alacritty/wezterm/terminator/konsole/xfce4-terminal/gnome-terminal/mate-terminal/lxterminal/urxvt/xterm) \n" -}}
+{{- if and (eq .chezmoi.os "linux") (eq $ghosttyLocation "") (eq $footLocation "") (eq $kittyLocation "") (eq $alacrittyLocation "") (eq $weztermLocation "") (eq $terminatorLocation "") (eq $konsoleLocation "") (eq $qterminalLocation "") (eq $xfce4TerminalLocation "") (eq $gnomeTerminalLocation "") (eq $mateTerminalLocation "") (eq $lxterminalLocation "") (eq $urxvtLocation "") (eq $xtermLocation "") -}}
+        {{- writeToStdout "Can't find terminal (ghostty/foot/kitty/alacritty/wezterm/terminator/konsole/qterminal/xfce4-terminal/gnome-terminal/mate-terminal/lxterminal/urxvt/xterm) \n" -}}
 {{- end -}}
 
 {{- if and (eq .chezmoi.os "linux") (eq $wofiLocation "") (eq $rofiLocation "") (eq $dmenuRunLocation "") -}}
@@ -789,6 +793,7 @@
         weztermLocation="{{$weztermLocation}}"
         terminatorLocation="{{$terminatorLocation}}"
         konsoleLocation="{{$konsoleLocation}}"
+        qterminalLocation="{{$qterminalLocation}}"
         xfce4TerminalLocation="{{$xfce4TerminalLocation}}"
         gnomeTerminalLocation="{{$gnomeTerminalLocation}}"
         mateTerminalLocation="{{$mateTerminalLocation}}"
