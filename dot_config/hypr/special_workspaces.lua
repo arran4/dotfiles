@@ -153,7 +153,7 @@ function M.setup(options)
     end
 
     -- A terminal is special only when it was explicitly requested as the
-    -- special terminal. Ordinary terminals (for example Meta+T or
+    -- special terminal. Ordinary terminal launches (for example
     -- Meta+Shift+T) must remain on the normal workspace instead of being
     -- captured by class.
     if smartManagedWorkspaces and workspace == "terminal" then
