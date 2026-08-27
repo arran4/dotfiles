@@ -105,8 +105,13 @@ function M.setup(options)
     for _, class in ipairs(terminal.classes) do
       terminalClasses[lower(class)] = true
 
-      -- Escape literal dot characters for safe regex interpolation
-      local escapedClass = class:gsub("%.", "\\.")
+      -- Escape all standard regex metacharacters for safe interpolation
+      local escapedClass = class:gsub(".", function(c)
+        if c:match("[%^%$%(%)%%%.%[%]%*%+%-%?]") then
+          return "\\" .. c
+        end
+        return c
+      end)
       table.insert(terminalRegexGroups, escapedClass)
     end
   end

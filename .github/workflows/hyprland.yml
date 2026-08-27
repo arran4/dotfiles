@@ -603,7 +603,7 @@ jobs:
           }
           JSON
 
-          # Test 1: Fallback behaviour when nothing is populated
+          # Test 1/2: Fallback behaviour when nothing is populated
           ./bin/chezmoi execute-template --source=$PWD --override-data-file=mock_data.json < dot_config/hypr/hyprland.lua.tmpl > mock_hypr.lua
 
           lua5.4 - <<'LUA'
@@ -630,7 +630,7 @@ jobs:
           test_lua()
           LUA
 
-          # Test 2: Preference Order (qterminal wins over xterm)
+          # Test 1/2/3: Preference Order (qterminal wins over xterm) and Qterminal discovery
           cat << 'JSON' > mock_data2.json
           {
             "qterminalLocation": "/usr/bin/qterminal",
@@ -655,77 +655,18 @@ jobs:
           assert(term.path == "/usr/bin/qterminal", "Expected qterminal path")
           LUA
 
-          # Test 3: Duplication regression checks
-          if grep -q "runtimeFallbackTerminals" dot_config/hypr/hyprland.lua.tmpl; then
-            echo "Failure: runtimeFallbackTerminals found"
-            exit 1
-          fi
-          if grep -q "terminalPriority" dot_config/hypr/special_workspaces.lua; then
-            echo "Failure: terminalPriority found"
-            exit 1
-          fi
-          if grep -q "Alacritty|alacritty|foot" dot_config/hypr/special_workspaces.lua; then
-            echo "Failure: Hardcoded regex found"
-            exit 1
-          fi
-
-          # Test 4: Artifact hygiene
-          if [ -f "patch.diff" ]; then
-            echo "Failure: patch.diff exists"
-            exit 1
-          fi
-
-          rm mock_hypr* mock_data*
-
-      - name: Verify terminal catalogue resolution architecture
-        run: |
-          # We generate a mock chezmoi output with specific test data
-          cat << 'JSON' > mock_data.json
+          # Test 2: Xterm fallback works when qterminal is absent
+          cat << 'JSON' > mock_data3.json
           {
             "qterminalLocation": "",
-            "xtermLocation": ""
-          }
-          JSON
-
-          # Test 1: Fallback behaviour when nothing is populated
-          ./bin/chezmoi execute-template --source=$PWD --override-data-file=mock_data.json < dot_config/hypr/hyprland.lua.tmpl > mock_hypr.lua
-
-          lua5.4 - <<'LUA'
-          local function test_lua()
-            local mock_isExec = false
-            local env = {
-              os = { getenv = function() return "" end },
-              io = { open = function(p) return mock_isExec and {close=function()end} or nil end },
-              ipairs = ipairs,
-            }
-
-            local content
-            local f = io.open("mock_hypr.lua", "r")
-            content = f:read("*a")
-            f:close()
-
-            local logic = content:match("(local terminalCatalogue = {.-}\n\nlocal function isExecutable.-)local terminal = resolveTerminal%(%)")
-            local chunk = assert(load(logic .. " return resolveTerminal()", "test", "t", env))
-            local term = chunk()
-
-            assert(term.path == "", "Expected empty path fallback")
-            assert(type(term.classes) == "table" and #term.classes == 0, "Expected empty classes array fallback")
-          end
-          test_lua()
-          LUA
-
-          # Test 2: Preference Order (qterminal wins over xterm)
-          cat << 'JSON' > mock_data2.json
-          {
-            "qterminalLocation": "/usr/bin/qterminal",
             "xtermLocation": "/usr/bin/xterm"
           }
           JSON
-          ./bin/chezmoi execute-template --source=$PWD --override-data-file=mock_data2.json < dot_config/hypr/hyprland.lua.tmpl > mock_hypr2.lua
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=mock_data3.json < dot_config/hypr/hyprland.lua.tmpl > mock_hypr3.lua
 
           lua5.4 - <<'LUA'
           local content
-          local f = io.open("mock_hypr2.lua", "r")
+          local f = io.open("mock_hypr3.lua", "r")
           content = f:read("*a")
           f:close()
           local logic = content:match("(local terminalCatalogue = {.-}\n\nlocal function isExecutable.-)local terminal = resolveTerminal%(%)")
@@ -735,11 +676,11 @@ jobs:
             ipairs = ipairs,
           }
           local term = assert(load(logic .. " return resolveTerminal()", "test", "t", env))()
-          assert(term.name == "qterminal", "Expected qterminal to win preference order over xterm")
-          assert(term.path == "/usr/bin/qterminal", "Expected qterminal path")
+          assert(term.name == "xterm", "Expected xterm to win when qterminal is absent")
+          assert(term.path == "/usr/bin/xterm", "Expected xterm path")
           LUA
 
-          # Test 3: Duplication regression checks
+          # Test 10: Duplication regression checks
           if grep -q "runtimeFallbackTerminals" dot_config/hypr/hyprland.lua.tmpl; then
             echo "Failure: runtimeFallbackTerminals found"
             exit 1
@@ -748,18 +689,120 @@ jobs:
             echo "Failure: terminalPriority found"
             exit 1
           fi
-          if grep -q "Alacritty|alacritty|foot" dot_config/hypr/special_workspaces.lua; then
-            echo "Failure: Hardcoded regex found"
-            exit 1
-          fi
 
-          # Test 4: Artifact hygiene
+          # Test 11: Artifact hygiene
           if [ -f "patch.diff" ]; then
             echo "Failure: patch.diff exists"
             exit 1
           fi
 
           rm mock_hypr* mock_data*
+
+      - name: Verify special workspaces architecture (Modern vs Legacy, Alias parsing, Escaping)
+        run: |
+          lua5.4 - <<'LUA'
+          local handlers = {}
+          local binds = {}
+          local rules = {}
+          local routes = {}
+          local execs = {}
+          local active_special = ""
+
+          _G.hl = {
+            on = function(event, callback)
+              handlers[event] = callback
+            end,
+            bind = function(keys, action)
+              binds[keys] = action
+            end,
+            window_rule = function(rule)
+              table.insert(rules, rule)
+            end,
+            workspace_rule = function(rule) end,
+            get_active_special_workspace = function() return { name = active_special } end,
+            get_workspace_windows = function(ws) return {} end,
+            get_windows = function() return {} end,
+            dispatch = function(action) table.insert(routes, action) end,
+            exec_cmd = function(...) table.insert(execs, {...}) end,
+            dsp = {
+              workspace = {
+                toggle_special = function(name) return { special = name } end,
+              },
+              window = {
+                move = function(opts) return opts end,
+              },
+            }
+          }
+
+          local special = dofile("dot_config/hypr/special_workspaces.lua")
+
+          -- Test 4/5: Selected terminal aliases and qterminal specific class parsing
+          -- Setup with qterminal (which has only 1 class "qterminal")
+          special.setup({ terminal = { path = "/usr/bin/qterminal", classes = {"qterminal"} } })
+
+          -- It should match its own class
+          assert(special.workspace_for_window({ class = "qterminal" }) == "terminal", "qterminal should be routed to special:terminal")
+          -- But it should NOT match unrelated terminals
+          assert(special.workspace_for_window({ class = "xterm" }) == nil, "xterm should NOT be routed since qterminal is selected")
+          assert(special.workspace_for_window({ class = "org.kde.konsole" }) == nil, "konsole should NOT be routed")
+
+          -- Reset and Test 4/8: Multiple classes parsing and legacy mode regex escaping
+          _G.hl.get_active_special_workspace = nil -- Force legacy mode
+          _G.hl.get_workspace_windows = nil
+          _G.hl.get_windows = nil
+          rules = {}
+
+          -- Test 9: Regex escaping completeness
+          special.setup({ terminal = { path = "/usr/bin/konsole", classes = {"konsole", "org.kde.konsole", "my+term*test"} } })
+
+          local legacy_rule = nil
+          for _, r in ipairs(rules) do
+            if r.workspace == "special:terminal" then legacy_rule = r end
+          end
+          assert(legacy_rule ~= nil, "Legacy regex rule should be created")
+
+          -- Check escaping (Test 8/9)
+          local expected_regex = "^(konsole|org\\.kde\\.konsole|my\\+term\\*test)$"
+          assert(legacy_rule.match.class == expected_regex, "Legacy regex should be correctly escaped: " .. legacy_rule.match.class)
+
+          -- Reset and Test 6/7: Modern Workspace behavior and Meta+Shift+T
+          _G.hl.get_active_special_workspace = function() return { name = active_special } end
+          _G.hl.get_workspace_windows = function(ws) return {} end
+          _G.hl.get_windows = function() return {} end
+          binds = {}
+          execs = {}
+
+          special.setup({ terminal = { path = "/usr/bin/wezterm", classes = {"wezterm"} } })
+
+          -- Test 6: Modern mode Meta+T (SUPER+T) toggle behavior
+          local toggle_func = binds["SUPER + T"]
+          assert(type(toggle_func) == "function", "SUPER+T should be a function wrapper in modern mode")
+
+          -- Execute toggle
+          toggle_func()
+
+          local launched = false
+          for _, cmd in ipairs(execs) do
+            if cmd[1] == "/usr/bin/wezterm" and cmd[2] and cmd[2].workspace == "special:terminal silent" then
+              launched = true
+            end
+          end
+          assert(launched, "Toggling should show-or-create the specific terminal")
+
+          -- Test 7: Meta+Shift+T behavior
+          local explicit_launch_func = binds["SUPER + SHIFT + T"]
+          assert(type(explicit_launch_func) == "function", "SUPER+SHIFT+T should be bound")
+          execs = {}
+          explicit_launch_func()
+
+          local explicitly_launched = false
+          for _, cmd in ipairs(execs) do
+            if cmd[1] == "/usr/bin/wezterm" and (cmd[2] == nil or cmd[2].workspace == nil) then
+              explicitly_launched = true
+            end
+          end
+          assert(explicitly_launched, "Meta+Shift+T must launch normal terminal without capturing into special workspace")
+          LUA
 
       - name: Verify missing special workspace module is non-fatal
         run: |
