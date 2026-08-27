@@ -8,8 +8,7 @@
           {
             "type": "command",
             "command": "$HOME/.local/libexec/codex-notify question",
-            "timeout": 5,
-            "async": true
+            "timeout": 5
           }
         ]
       }
@@ -20,8 +19,7 @@
           {
             "type": "command",
             "command": "$HOME/.local/libexec/codex-notify approval",
-            "timeout": 5,
-            "async": true
+            "timeout": 5
           }
         ]
       }
@@ -32,8 +30,7 @@
           {
             "type": "command",
             "command": "$HOME/.local/libexec/codex-notify complete",
-            "timeout": 5,
-            "async": true
+            "timeout": 5
           }
         ]
       }
