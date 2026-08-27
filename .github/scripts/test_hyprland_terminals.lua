@@ -95,26 +95,33 @@ assert(terminal.path == "", "no available terminal must produce an empty path")
 assert(type(terminal.classes) == "table" and #terminal.classes == 0,
   "no available terminal must produce empty aliases")
 
-local catalogueWithoutQterminal, runtimeFoot = loadTerminalLogic(renderedWithoutQterminalPath, {
+local catalogueWithoutPersistedLocations, runtimeFoot = loadTerminalLogic(renderedWithoutQterminalPath, {
   ["/test/bin/foot"] = true,
   ["/test/bin/xterm"] = true,
 })
-for _, candidate in ipairs(catalogueWithoutQterminal) do
-  assert(candidate.name ~= "qterminal", "undiscovered qterminal must not be a candidate")
-end
-assert(catalogueWithoutQterminal[1].name == "foot",
+assert(catalogueWithoutPersistedLocations[1].name == "foot",
   "foot must remain the first candidate when footLocation was not persisted")
+assert(catalogueWithoutPersistedLocations[2].name == "qterminal",
+  "qterminal must remain the second candidate when qterminalLocation was not persisted")
 assert(runtimeFoot.name == "foot" and runtimeFoot.path == "/test/bin/foot",
   "foot must resolve from PATH when chezmoi footLocation data is empty or stale")
 
 _, terminal = loadTerminalLogic(renderedWithoutQterminalPath, {
+  ["/test/bin/qterminal"] = true,
   ["/test/bin/xterm"] = true,
 })
-assert(terminal.name == "xterm", "runtime foot fallback must still fall through when foot is not installed")
+assert(terminal.name == "qterminal" and terminal.path == "/test/bin/qterminal",
+  "qterminal must resolve from PATH when chezmoi qterminalLocation data is empty or stale")
+
+_, terminal = loadTerminalLogic(renderedWithoutQterminalPath, {
+  ["/test/bin/xterm"] = true,
+})
+assert(terminal.name == "xterm",
+  "runtime foot and qterminal fallbacks must still fall through when neither is installed")
 
 local footConfig = readFile("dot_config/foot/foot.ini.tmpl")
-assert(footConfig:find("[colors]", 1, true), "Foot config must use the compatible [colors] section")
-assert(not footConfig:find("[colors-dark]", 1, true), "Foot config must not use unsupported [colors-dark]")
+assert(footConfig:find("\n[colors]\n", 1, true), "Foot config must use the compatible [colors] section")
+assert(not footConfig:find("\n[colors-dark]\n", 1, true), "Foot config must not use unsupported [colors-dark]")
 local configuredFont = assert(
   footConfig:match("\nfont=([^\r\n]+)"),
   "Foot config must define a font"
