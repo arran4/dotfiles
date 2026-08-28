@@ -116,8 +116,16 @@ RUN set -euxo pipefail \
       sh \
   && codex --version
 
-RUN set -euxo pipefail \
-  && npm install -g @google/jules
+# Jules CLI is intentionally disabled. Its npm installer can preserve high
+# UID/GID values from its downloaded payload, which makes the resulting image
+# impossible to unpack with a normal rootless Podman subordinate-ID range.
+# If Jules is re-enabled, normalize the installed payload ownership as part of
+# the same layer so those archive owners are not published in the image.
+# RUN set -euxo pipefail \
+#   && npm install -g @google/jules \
+#   && chown -h root:root /usr/local/bin/jules \
+#   && chown -R root:root "$(npm root -g)/@google/jules" \
+#   && jules version
 
 RUN set -euxo pipefail \
   && npm install -g opencode-ai
