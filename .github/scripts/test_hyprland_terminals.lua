@@ -128,6 +128,28 @@ local configuredFont = assert(
 )
 assert(configuredFont == "Hack:size=11", "Foot should use the same Hack family as XTerm")
 
+local hyprlandTemplate = readFile("dot_config/hypr/hyprland.lua.tmpl")
+assert(hyprlandTemplate:find(
+  'hl.bind("SUPER + N", hl.dsp.global("caelestia:sidebar"))', 1, true
+), "Meta+N must open the Caelestia notification sidebar")
+assert(hyprlandTemplate:find(
+  'hl.bind("SUPER + SHIFT + N", hl.dsp.global("caelestia:clearNotifs"), { locked = true })', 1, true
+), "Meta+Shift+N must clear Caelestia notifications")
+assert(not hyprlandTemplate:find(
+  'hl.bind("SUPER + SHIFT + C", hl.dsp.global("caelestia:clearNotifs"), { locked = true })', 1, true
+), "Meta+Shift+C must not remain assigned to clear notifications")
+local _, sessionBindingCount = hyprlandTemplate:gsub("caelestia:session", "")
+assert(sessionBindingCount == 1, "Caelestia session menu must have only one binding")
+assert(hyprlandTemplate:find(
+  'hl.bind("SUPER + SHIFT + M", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })', 1, true
+), "Meta+Shift+M must toggle output mute")
+assert(hyprlandTemplate:find(
+  'local emojiPicker = findInPath("plasma-emojier")', 1, true
+), "emoji picker must be discovered from PATH without adding a hard dependency")
+assert(hyprlandTemplate:find(
+  'hl.bind("SUPER + Period", hl.dsp.exec_cmd(emojiPicker))', 1, true
+), "Meta+Period must launch plasma-emojier when available")
+
 local function newScenario(options)
   options = options or {}
   local state = {
