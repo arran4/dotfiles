@@ -501,7 +501,6 @@ jobs:
       - name: Execute rendered Hyprland config with API mock
         run: |
           lua5.4 - <<'LUA'
-          local has_cliphist = false
           local handlers = {}
           local hyprland_execs = {}
 
@@ -581,16 +580,27 @@ jobs:
 
           dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
 
-          if handlers["hyprland.start"] then
-            for _, hook in ipairs(handlers["hyprland.start"]) do
-              hook()
+          local expected_cliphist = os.getenv("HOME") .. "/.local/bin/cliphist-daemon.sh"
+          local function count_cliphist_execs()
+            local count = 0
+            for _, cmd in ipairs(hyprland_execs) do
+              if cmd[1] == expected_cliphist then count = count + 1 end
             end
+            return count
           end
 
-          for _, cmd in ipairs(hyprland_execs) do
-            if cmd[1] == "cliphist-daemon.sh" then has_cliphist = true end
+          assert(handlers["hyprland.start"], "hyprland.start handler must be registered")
+          assert(handlers["config.reloaded"], "config.reloaded handler must be registered")
+
+          for _, hook in ipairs(handlers["hyprland.start"]) do
+            hook()
           end
-          assert(has_cliphist, "cliphist daemon must be launched by hyprland.start")
+          assert(count_cliphist_execs() == 1, "cliphist daemon must be launched by absolute path on hyprland.start")
+
+          for _, hook in ipairs(handlers["config.reloaded"]) do
+            hook()
+          end
+          assert(count_cliphist_execs() == 2, "cliphist daemon must be restarted on config.reloaded")
 
           print("Rendered Hyprland config executed successfully with special_workspaces.lua")
           LUA
