@@ -144,6 +144,7 @@ end
 local terminal = resolveTerminal()
 local emojiPicker = findInPath("plasma-emojier")
 local caelestia = findInPath("caelestia")
+local cliphistDaemon = (os.getenv("HOME") or "") .. "/.local/bin/cliphist-daemon.sh"
 local popupTerm = terminal.path
 local launcher = [=[{{$launcher}}]=]
 local lockcmd = [=[{{$lockcmd}}]=]
@@ -307,7 +308,6 @@ hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
-hl.env("PATH", (os.getenv("HOME") or "") .. "/.local/bin:" .. (os.getenv("PATH") or "/usr/local/bin:/usr/bin:/bin"))
 
 -- ------------------------
 -- Animation Curves & Physics
@@ -438,7 +438,6 @@ local function registerBinds()
 {{- if eq .hyprland_features "quickshell" }}
     if caelestia then
         hl.bind("SUPER + V", hl.dsp.exec_cmd(caelestia .. " clipboard"))
-        hl.bind("SUPER + ALT + V", hl.dsp.exec_cmd(caelestia .. " clipboard -d"))
     elseif cliphistCmd ~= "" then
         hl.bind("SUPER + V", hl.dsp.exec_cmd(cliphistCmd))
     elseif popupTerm ~= "" and clipse ~= "" then
@@ -584,6 +583,12 @@ hl.window_rule({
 -- ------------------------
 -- Autostart
 -- ------------------------
+local function startCliphistDaemon()
+    hl.exec_cmd(cliphistDaemon)
+end
+
+hl.on("config.reloaded", startCliphistDaemon)
+
 hl.on("hyprland.start", function()
 {{- if eq .hyprland_features "quickshell" }}
     hl.exec_cmd("caelestia shell -d")
@@ -593,7 +598,7 @@ hl.on("hyprland.start", function()
 {{- end }}
     hl.exec_cmd("set-wallpaper")
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=Hyprland")
-    hl.exec_cmd("cliphist-daemon.sh")
+    startCliphistDaemon()
     if clipse ~= "" then
         hl.exec_cmd(clipse .. " -listen")
     end
