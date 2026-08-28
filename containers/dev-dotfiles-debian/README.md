@@ -41,11 +41,12 @@ The container is equipped with several AI-powered CLI tools and agents:
 - OpenAI Codex CLI (`codex`), installed with the official standalone installer
 - Google Antigravity CLI (`agy`), installed with the official installer
 - Mini SWE Agent (`mini-swe-agent`)
-- Jules (`@google/jules`)
 - OpenCode AI (`opencode-ai`)
 - Claude Code (`@anthropic-ai/claude-code`)
 - GitHub Copilot CLI (`@githubnext/github-copilot-cli`)
 - QwenChat (`qwenchat`)
+
+Jules CLI is intentionally not installed. Its npm installer can preserve high UID/GID values from its downloaded payload, which can make the published image impossible for normal rootless Podman subordinate-ID mappings to unpack. The Dockerfile retains a commented installation recipe that normalizes the Jules payload to `root:root` if it is re-enabled later.
 
 Codex is installed under `/opt/codex` with its executable exposed in `/usr/local/bin`. Its runtime `~/.codex` directory therefore remains separate and can safely be persisted as a container volume.
 
