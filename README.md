@@ -91,6 +91,63 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 | gh | `winget install --id GitHub.cli` |
 | glab | `winget install --id GitLab.glab` |
 
+## Containerised development environment
+
+The development image under [`containers/dev-dotfiles-debian`](containers/dev-dotfiles-debian/README.md) is published as
+`ghcr.io/arran4/dev-dotfiles-debian:latest`. It can be run with either Podman or Docker. For full-access AI agents,
+treat the outer container as the security boundary and mount only the repository the agent should be able to modify.
+Rootless Podman is preferred because its `keep-id` user namespace mode maps the invoking host user directly to the
+container's `user` account.
+
+### Podman (recommended)
+
+From the repository that the agent should be allowed to modify:
+
+```sh
+podman run --rm -it \
+  --userns=keep-id:uid=1000,gid=1000 \
+  --hostname agent-sandbox \
+  --workdir /workspace \
+  --mount type=bind,src="$PWD",dst=/workspace,rw \
+  --mount type=volume,src=dev-agent-codex,dst=/home/user/.codex \
+  --mount type=volume,src=dev-agent-agy,dst=/home/user/.gemini \
+  ghcr.io/arran4/dev-dotfiles-debian:latest
+```
+
+### Docker
+
+The same OCI image can be used with Docker. Prefer Docker's rootless mode when available. For a conventional Docker
+setup where the host account is UID/GID `1000`, matching the image defaults, the equivalent command is:
+
+```sh
+docker run --rm -it \
+  --hostname agent-sandbox \
+  --workdir /workspace \
+  --mount type=bind,src="$PWD",dst=/workspace,rw \
+  --mount type=volume,src=dev-agent-codex,dst=/home/user/.codex \
+  --mount type=volume,src=dev-agent-agy,dst=/home/user/.gemini \
+  ghcr.io/arran4/dev-dotfiles-debian:latest
+```
+
+Docker rootless mode maps files owned by the host user to container UID `0`, rather than providing Podman's
+`--userns=keep-id` behaviour. If that makes the bind-mounted repository unwritable, run the rootless Docker container
+with `--user 0:0 --env HOME=/home/user`. Do not use that workaround with a rootful Docker daemon, because it would run
+the agent as real container root and can leave root-owned files in the mounted repository.
+
+Once inside either container, the agents can be run with their own inner restrictions disabled:
+
+```sh
+codex --dangerously-bypass-approvals-and-sandbox
+```
+
+```sh
+agy --dangerously-skip-permissions
+```
+
+For container commands that differ only by engine name, Podman and Docker should be treated as alternatives. Do not
+blindly copy engine-specific flags between them: in particular, `--userns=keep-id` is a Podman feature. The detailed
+container README contains the security boundary and credential-handling guidance.
+
 ## Flatpak Apps
 
 I use the following flatpak applications in this environment:
