@@ -151,11 +151,10 @@ RUN set -euxo pipefail \
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
-# Antigravity installs per-user to ~/.local/bin. PATH is already configured,
-# so avoid modifying shell profiles during image construction.
+# Use Google's canonical installer invocation. It installs agy to ~/.local/bin,
+# which is already on PATH for the image user.
 RUN set -euxo pipefail \
-  && curl -fsSL https://antigravity.google/cli/install.sh \
-    | bash -s -- --skip-aliases --skip-path \
+  && curl -fsSL https://antigravity.google/cli/install.sh | bash \
   && agy --version
 
 RUN yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug "; \
