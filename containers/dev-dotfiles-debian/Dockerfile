@@ -8,8 +8,7 @@ LABEL org.opencontainers.image.description="Debian development container with do
 ARG USER_NAME=user
 ARG USER_UID=1000
 ARG USER_GID=1000
-ARG GEMINI_CLI_PACKAGE=gemini-cli
-ARG CODEX_CLI_PACKAGE=codex-cli
+ARG CODEX_RELEASE=latest
 ARG FLUTTER_CHANNEL=stable
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -104,9 +103,18 @@ RUN set -euxo pipefail \
 
 RUN set -euxo pipefail \
   && python3 -m pip install --no-cache-dir --break-system-packages \
-    "${GEMINI_CLI_PACKAGE}" \
-    "${CODEX_CLI_PACKAGE}" \
     "mini-swe-agent"
+
+# Install Codex as a standalone system image payload while keeping runtime
+# configuration and credentials in the invoking user's ~/.codex directory.
+RUN set -euxo pipefail \
+  && curl -fsSL https://chatgpt.com/codex/install.sh \
+    | CODEX_HOME=/opt/codex \
+      CODEX_INSTALL_DIR=/usr/local/bin \
+      CODEX_NON_INTERACTIVE=1 \
+      CODEX_RELEASE="${CODEX_RELEASE}" \
+      sh \
+  && codex --version
 
 RUN set -euxo pipefail \
   && npm install -g @google/jules
@@ -143,13 +151,22 @@ RUN set -euxo pipefail \
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
+# Antigravity installs per-user to ~/.local/bin. PATH is already configured,
+# so avoid modifying shell profiles during image construction.
+RUN set -euxo pipefail \
+  && curl -fsSL https://antigravity.google/cli/install.sh \
+    | bash -s -- --skip-aliases --skip-path \
+  && agy --version
+
 RUN yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug "; \
   rm -rf /tmp/dotfiles
 
 RUN set -euxo pipefail \
   && flutter --version \
   && go version \
-  && git --version
+  && git --version \
+  && codex --version \
+  && agy --version
 
 RUN set -euxo pipefail \
   && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
