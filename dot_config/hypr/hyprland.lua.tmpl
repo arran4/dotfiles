@@ -83,7 +83,7 @@ local terminalCatalogue = {
     { name = "gnome-terminal", path = [=[{{.gnomeTerminalLocation}}]=], classes = { "gnome-terminal", "gnome-terminal-server", "org.gnome.terminal", "org.gnome.console" } },
 {{- end }}
 {{- if ne (index . "mateTerminalLocation" | default "") "" }}
-    { name = "mate-terminal", path = [=[{{.mateTerminalLocation}}]=], classes = { "mate-terminal" } },
+    { name = "mate-terminal", path = [=[{{.mateTerminalLocation}}]=], classes = { "mate-terminal", "MATE-terminal" } },
 {{- end }}
 {{- if ne (index . "lxterminalLocation" | default "") "" }}
     { name = "lxterminal", path = [=[{{.lxterminalLocation}}]=], classes = { "lxterminal" } },
@@ -143,6 +143,7 @@ end
 
 local terminal = resolveTerminal()
 local emojiPicker = findInPath("plasma-emojier")
+local caelestia = findInPath("caelestia")
 local popupTerm = terminal.path
 local launcher = [=[{{$launcher}}]=]
 local lockcmd = [=[{{$lockcmd}}]=]
@@ -306,6 +307,7 @@ hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
+hl.env("PATH", (os.getenv("HOME") or "") .. "/.local/bin:" .. (os.getenv("PATH") or "/usr/local/bin:/usr/bin:/bin"))
 
 -- ------------------------
 -- Animation Curves & Physics
@@ -433,11 +435,22 @@ local function registerBinds()
         hl.bind("SUPER + Period", hl.dsp.exec_cmd(emojiPicker))
     end
 
+{{- if eq .hyprland_features "quickshell" }}
+    if caelestia then
+        hl.bind("SUPER + V", hl.dsp.exec_cmd(caelestia .. " clipboard"))
+        hl.bind("SUPER + ALT + V", hl.dsp.exec_cmd(caelestia .. " clipboard -d"))
+    elseif cliphistCmd ~= "" then
+        hl.bind("SUPER + V", hl.dsp.exec_cmd(cliphistCmd))
+    elseif popupTerm ~= "" and clipse ~= "" then
+        hl.bind("SUPER + V", hl.dsp.exec_cmd(popupTerm .. " -e " .. string.format("%q", clipse), { float = true }))
+    end
+{{- else }}
     if cliphistCmd ~= "" then
         hl.bind("SUPER + V", hl.dsp.exec_cmd(cliphistCmd))
     elseif popupTerm ~= "" and clipse ~= "" then
         hl.bind("SUPER + V", hl.dsp.exec_cmd(popupTerm .. " -e " .. string.format("%q", clipse), { float = true }))
     end
+{{- end }}
 
     -- Windows & Layout.
     hl.bind("SUPER + SHIFT + Q", hl.dsp.window.signal({ signal = 15 }))
