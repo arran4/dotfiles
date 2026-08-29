@@ -170,6 +170,20 @@ function M.setup(options)
     })
   end
 
+  -- Respect client/compositor floating intent. auto_group would otherwise pull
+  -- popup and transient windows (including browser extension/password-manager
+  -- windows) into the focused group and tile them. Modal dialogs should also
+  -- remain floating even when their client only supplies the modal hint.
+  hl.window_rule({
+    match = { float = true },
+    group = "barred",
+  })
+  hl.window_rule({
+    match = { modal = true },
+    float = true,
+    group = "barred",
+  })
+
   -- Group dispatchers are optional in older/mock Hyprland Lua runtimes. Resolve
   -- the namespace dynamically so loading the rest of this module remains safe.
   local groupDispatcher = type(hl.dsp) == "table" and hl.dsp["group"] or nil
