@@ -190,6 +190,17 @@ function M.setup(options)
   local groupDispatcher = type(hl.dsp) == "table" and hl.dsp["group"] or nil
   local submapDispatcher = type(hl.dsp) == "table" and hl.dsp["submap"] or nil
   local windowDispatcher = type(hl.dsp) == "table" and hl.dsp["window"] or nil
+
+  -- Keep fast tab switching available outside group-management mode. These were
+  -- the established bindings before grouping became explicit and are useful
+  -- often enough not to require entering the one-shot submap first.
+  if type(groupDispatcher) == "table"
+    and type(groupDispatcher.next) == "function"
+    and type(groupDispatcher.prev) == "function" then
+    hl.bind("SUPER + CTRL + Up", groupDispatcher.prev(), { repeating = true, desc = "Previous window in group" })
+    hl.bind("SUPER + CTRL + Down", groupDispatcher.next(), { repeating = true, desc = "Next window in group" })
+  end
+
   if type(groupDispatcher) == "table"
     and type(groupDispatcher.next) == "function"
     and type(groupDispatcher.prev) == "function"
