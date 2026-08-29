@@ -1,6 +1,0 @@
-[Unit]
-Description=Rotate Caelestia wallpaper and refresh dynamic scheme
-
-[Service]
-Type=oneshot
-ExecStart=%h/.local/bin/caelestia-wallpaper-rotate
