@@ -173,7 +173,8 @@ RUN set -euxo pipefail \
   && go version \
   && git --version \
   && codex --version \
-  && agy --version
+  && agy --version \
+  && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac'
 
 RUN set -euxo pipefail \
   && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
