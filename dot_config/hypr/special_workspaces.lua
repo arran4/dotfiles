@@ -154,6 +154,37 @@ end
 
 function M.setup(options)
   options = options or {}
+
+  -- Window groups provide application-tab-style switching without forcing
+  -- newly opened windows into the active group. Keep the groupbar visible so
+  -- the currently selected member and available tabs are obvious.
+  if type(hl.config) == "function" then
+    hl.config({
+      group = {
+        auto_group = false,
+        groupbar = {
+          enabled = true,
+          render_titles = true,
+        },
+      },
+    })
+  end
+
+  -- Group dispatchers are optional in older/mock Hyprland Lua runtimes. Resolve
+  -- the namespace dynamically so loading the rest of this module remains safe.
+  local groupDispatcher = type(hl.dsp) == "table" and hl.dsp["group"] or nil
+  if type(groupDispatcher) == "table"
+    and type(groupDispatcher.toggle) == "function"
+    and type(groupDispatcher.prev) == "function"
+    and type(groupDispatcher.next) == "function"
+    and type(groupDispatcher.move_window) == "function" then
+    hl.bind("SUPER + G", groupDispatcher.toggle())
+    hl.bind("SUPER + CTRL + Up", groupDispatcher.prev(), { repeating = true })
+    hl.bind("SUPER + CTRL + Down", groupDispatcher.next(), { repeating = true })
+    hl.bind("SUPER + CTRL + SHIFT + Up", groupDispatcher.move_window({ forward = false }), { repeating = true })
+    hl.bind("SUPER + CTRL + SHIFT + Down", groupDispatcher.move_window(), { repeating = true })
+  end
+
   local terminal = options.terminal or { path = "", classes = {} }
   if type(terminal) == "string" then
     terminal = { path = terminal, classes = {} }
