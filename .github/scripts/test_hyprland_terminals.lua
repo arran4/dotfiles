@@ -217,6 +217,24 @@ local foot = {
 }
 
 do
+  local state = newScenario({ terminal = foot })
+  local floatingRule
+  local modalRule
+  for _, rule in ipairs(state.rules) do
+    if rule.match and rule.match.float == true then
+      floatingRule = rule
+    end
+    if rule.match and rule.match.modal == true then
+      modalRule = rule
+    end
+  end
+  assert(floatingRule and floatingRule.group == "barred",
+    "floating windows must be barred from automatic groups")
+  assert(modalRule and modalRule.float == true and modalRule.group == "barred",
+    "modal windows must float and be barred from automatic groups")
+end
+
+do
   local _, special = newScenario({ terminal = konsole })
   assert(special.workspace_for_window({ class = "konsole" }) == "terminal")
   assert(special.workspace_for_window({ class = "org.kde.konsole" }) == "terminal")
