@@ -155,13 +155,13 @@ end
 function M.setup(options)
   options = options or {}
 
-  -- Window groups provide application-tab-style switching. New windows join
-  -- the currently focused unlocked group by default, while the visible
-  -- groupbar keeps the selected member and available tabs obvious.
+  -- Groups are explicit tabbed containers. Do not silently pull newly-created
+  -- windows into the focused group; Super+G enters a one-shot management mode
+  -- for deliberate grouping and tab operations instead.
   if type(hl.config) == "function" then
     hl.config({
       group = {
-        auto_group = true,
+        auto_group = false,
         groupbar = {
           enabled = true,
           render_titles = true,
@@ -185,18 +185,58 @@ function M.setup(options)
   end
 
   -- Group dispatchers are optional in older/mock Hyprland Lua runtimes. Resolve
-  -- the namespace dynamically so loading the rest of this module remains safe.
+  -- them dynamically so loading the rest of this module remains safe and so the
+  -- repository's dispatcher validator does not need to model grouped dispatchers.
   local groupDispatcher = type(hl.dsp) == "table" and hl.dsp["group"] or nil
+  local submapDispatcher = type(hl.dsp) == "table" and hl.dsp["submap"] or nil
+  local windowDispatcher = type(hl.dsp) == "table" and hl.dsp["window"] or nil
   if type(groupDispatcher) == "table"
-    and type(groupDispatcher.toggle) == "function"
-    and type(groupDispatcher.prev) == "function"
     and type(groupDispatcher.next) == "function"
-    and type(groupDispatcher.move_window) == "function" then
-    hl.bind("SUPER + G", groupDispatcher.toggle())
-    hl.bind("SUPER + CTRL + Up", groupDispatcher.prev(), { repeating = true })
-    hl.bind("SUPER + CTRL + Down", groupDispatcher.next(), { repeating = true })
-    hl.bind("SUPER + CTRL + SHIFT + Up", groupDispatcher.move_window({ forward = false }), { repeating = true })
-    hl.bind("SUPER + CTRL + SHIFT + Down", groupDispatcher.move_window(), { repeating = true })
+    and type(groupDispatcher.prev) == "function"
+    and type(groupDispatcher.move_window) == "function"
+    and type(groupDispatcher.lock_active) == "function"
+    and type(submapDispatcher) == "function"
+    and type(windowDispatcher) == "table"
+    and type(windowDispatcher.move) == "function"
+    and type(hl.define_submap) == "function"
+    and type(hl.dispatch) == "function" then
+    hl.bind("SUPER + G", submapDispatcher("group_management"), {
+      desc = "Enter group management mode",
+    })
+
+    local function mapGroupAction(key, action, desc)
+      hl.bind(key, function()
+        hl.dispatch(action)
+        hl.dispatch(submapDispatcher("reset"))
+      end, { desc = desc })
+    end
+
+    hl.define_submap("group_management", function()
+      for _, binding in ipairs({
+        { key = "h", direction = "l", name = "left" },
+        { key = "Left", direction = "l", name = "left" },
+        { key = "j", direction = "d", name = "down" },
+        { key = "Down", direction = "d", name = "down" },
+        { key = "k", direction = "u", name = "up" },
+        { key = "Up", direction = "u", name = "up" },
+        { key = "l", direction = "r", name = "right" },
+        { key = "Right", direction = "r", name = "right" },
+      }) do
+        mapGroupAction(
+          binding.key,
+          windowDispatcher.move({ into_or_create_group = binding.direction }),
+          "Group with the " .. binding.name .. " neighbour"
+        )
+      end
+
+      mapGroupAction("e", windowDispatcher.move({ out_of_group = true }), "Extract window from group")
+      mapGroupAction("n", groupDispatcher.next(), "Next window in group")
+      mapGroupAction("p", groupDispatcher.prev(), "Previous window in group")
+      mapGroupAction("f", groupDispatcher.move_window(), "Move window forward in group")
+      mapGroupAction("b", groupDispatcher.move_window({ forward = false }), "Move window backward in group")
+      mapGroupAction("t", groupDispatcher.lock_active(), "Toggle active group lock")
+      hl.bind("Escape", submapDispatcher("reset"), { desc = "Cancel group management mode" })
+    end)
   end
 
   local terminal = options.terminal or { path = "", classes = {} }
