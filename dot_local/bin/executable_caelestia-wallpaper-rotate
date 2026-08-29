@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+wallpaper_dir="${HOME}/Pictures/Wallpapers"
+
+if [ ! -d "$wallpaper_dir" ]; then
+  exit 0
+fi
+
+if ! find "$wallpaper_dir" -type f -print -quit | grep -q .; then
+  exit 0
+fi
+
+caelestia wallpaper -r
+caelestia scheme set -n dynamic
