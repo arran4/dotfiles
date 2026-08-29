@@ -1,5 +1,86 @@
 {{- if or (eq .chezmoi.hostname "x1linux") (eq .chezmoi.hostname "x1laptop") }}
 {
+  "background": {
+    "enabled": true,
+    "wallpaperEnabled": true
+  },
+  "bar": {
+    "persistent": false,
+    "workspaces": {
+      "activeIndicator": true,
+      "showWindows": true,
+      "specialWorkspaceIcons": [
+        {
+          "name": "music",
+          "icon": "music_note"
+        },
+        {
+          "name": "beeper",
+          "icon": "chat"
+        },
+        {
+          "name": "terminal",
+          "icon": "terminal"
+        },
+        {
+          "name": "scratchpad",
+          "icon": "edit_note"
+        },
+        {
+          "name": "kjules",
+          "icon": "smart_toy"
+        }
+      ],
+      "windowIcons": [
+        {
+          "regex": "(?i)^(spotify|org\\.spotify\\.client|com\\.spotify\\.client)$",
+          "icon": "music_note"
+        },
+        {
+          "regex": "(?i)^(beeper|beepertexts|com\\.beeper\\.beeper)$",
+          "icon": "chat"
+        },
+        {
+          "regex": "(?i)^(foot(client)?|qterminal|xterm|rxvt-unicode|rxvt|urxvt|konsole|org\\.kde\\.konsole|ghostty|com\\.mitchellh\\.ghostty|kitty(-direct)?|alacritty|wezterm|org\\.wezfurlong\\.wezterm|terminator|xfce4-terminal|gnome-terminal(-server)?|org\\.gnome\\.(terminal|console)|mate-terminal|lxterminal)$",
+          "icon": "terminal"
+        },
+        {
+          "regex": "(?i)^(kjules|org\\.kde\\.kjules)$",
+          "icon": "smart_toy"
+        }
+      ]
+    },
+    "statusIcons": [
+      {
+        "id": "lockStatus",
+        "enabled": true
+      },
+      {
+        "id": "audio",
+        "enabled": true
+      },
+      {
+        "id": "microphone",
+        "enabled": true
+      },
+      {
+        "id": "kbLayout",
+        "enabled": false
+      },
+      {
+        "id": "network",
+        "enabled": true
+      },
+      {
+        "id": "bluetooth",
+        "enabled": true
+      },
+      {
+        "id": "battery",
+        "enabled": true
+      }
+    ]
+  },
   "general": {
     "idle": {
       "lockBeforeSleep": true,
@@ -37,6 +118,12 @@
         }
       ]
     }
+  },
+  "paths": {
+    "wallpaperDir": "~/Pictures/Wallpapers"
+  },
+  "services": {
+    "smartScheme": true
   },
   "utilities": {
     "toasts": {
