@@ -1,0 +1,10 @@
+[Unit]
+Description=Rotate Caelestia wallpaper hourly
+
+[Timer]
+OnStartupSec=5min
+OnUnitActiveSec=1h
+Unit=caelestia-wallpaper-rotate.service
+
+[Install]
+WantedBy=timers.target
