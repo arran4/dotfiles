@@ -39,7 +39,7 @@ fi
 
 # Append configured PATH entries
 {{- $paths := default (list) (index $chezmoiData "paths") -}}
-{{- range $p := (index $ "paths") }}
+{{- range $p := $paths }}
   if [ -d "{{ $p }}" ]; then
   PATH="${PATH}:{{ $p }}"
   fi
