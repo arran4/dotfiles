@@ -154,6 +154,27 @@ end
 
 function M.setup(options)
   options = options or {}
+
+  -- Window groups provide application-tab-style switching without forcing
+  -- newly opened windows into the active group. Keep the groupbar visible so
+  -- the currently selected member and available tabs are obvious.
+  if type(hl.config) == "function" then
+    hl.config({
+      group = {
+        auto_group = false,
+        groupbar = {
+          enabled = true,
+          render_titles = true,
+        },
+      },
+    })
+  end
+  if type(hl.dsp) == "table" and type(hl.dsp.group) == "table" then
+    hl.bind("SUPER + G", hl.dsp.group.toggle())
+    hl.bind("SUPER + Tab", hl.dsp.group.next())
+    hl.bind("SUPER + SHIFT + Tab", hl.dsp.group.prev())
+  end
+
   local terminal = options.terminal or { path = "", classes = {} }
   if type(terminal) == "string" then
     terminal = { path = terminal, classes = {} }
