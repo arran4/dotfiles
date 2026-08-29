@@ -573,6 +573,10 @@ hl.window_rule({
     float = true,
 })
 hl.window_rule({
+    match = { class = "^(com\\.bitwarden\\.desktop|io\\.ente\\.auth)$" },
+    float = true,
+})
+hl.window_rule({
     match = { title = "Picture(-| )in(-| )[Pp]icture" },
     move = "(monitor_w*0.98-window_w) (monitor_h*0.97-window_h)",
     pin = true,
