@@ -166,6 +166,7 @@ local function newScenario(options)
 
   _G.hl = {
     bind = function(keys, action) state.binds[keys] = action end,
+    config = function() end,
     dispatch = function(action) table.insert(state.dispatches, action) end,
     exec_cmd = function(...) table.insert(state.execs, { ... }) end,
     on = function(event, callback) state.handlers[event] = callback end,
