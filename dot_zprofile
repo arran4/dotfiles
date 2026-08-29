@@ -1,8 +1,21 @@
 #!/bin/zsh
 
-# Source /etc/profile if it exists (for environment variables like PATH)
+# Source /etc/profile for login-shell environment variables, but preserve PATH
+# entries already established by the parent environment and .zshenv. Debian's
+# /etc/profile assigns PATH rather than extending it, which otherwise drops
+# container/user-specific entries such as ~/.local/bin and /opt/flutter/bin.
+_dotfiles_inherited_path="$PATH"
 if [ -f /etc/profile ]; then
   emulate sh -c '. /etc/profile'
+
+  # Keep the inherited order/precedence, then add any paths contributed by the
+  # system profile. Use a unique zsh array so nested login shells do not grow
+  # PATH with duplicate entries.
+  typeset -aU _dotfiles_merged_path
+  _dotfiles_merged_path=(${(s.:.)_dotfiles_inherited_path} ${(s.:.)PATH})
+  PATH="${(j.:.)_dotfiles_merged_path}"
+  export PATH
 fi
+unset _dotfiles_inherited_path _dotfiles_merged_path
 
 return # This prevents scripts which append their own installers from "working"
