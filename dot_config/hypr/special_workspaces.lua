@@ -171,8 +171,10 @@ function M.setup(options)
   end
   if type(hl.dsp) == "table" and type(hl.dsp.group) == "table" then
     hl.bind("SUPER + G", hl.dsp.group.toggle())
-    hl.bind("SUPER + Tab", hl.dsp.group.next())
-    hl.bind("SUPER + SHIFT + Tab", hl.dsp.group.prev())
+    hl.bind("SUPER + CTRL + Up", hl.dsp.group.prev(), { repeating = true })
+    hl.bind("SUPER + CTRL + Down", hl.dsp.group.next(), { repeating = true })
+    hl.bind("SUPER + CTRL + SHIFT + Up", hl.dsp.group.move_window({ forward = false }), { repeating = true })
+    hl.bind("SUPER + CTRL + SHIFT + Down", hl.dsp.group.move_window(), { repeating = true })
   end
 
   local terminal = options.terminal or { path = "", classes = {} }
