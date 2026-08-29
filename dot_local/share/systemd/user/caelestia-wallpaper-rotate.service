@@ -1,8 +1,0 @@
-[Unit]
-Description=Rotate Caelestia wallpaper and refresh dynamic scheme
-ConditionHost=|x1linux
-ConditionHost=|x1laptop
-
-[Service]
-Type=oneshot
-ExecStart=%h/.local/bin/caelestia-wallpaper-rotate
