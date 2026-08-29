@@ -155,13 +155,13 @@ end
 function M.setup(options)
   options = options or {}
 
-  -- Window groups provide application-tab-style switching without forcing
-  -- newly opened windows into the active group. Keep the groupbar visible so
-  -- the currently selected member and available tabs are obvious.
+  -- Window groups provide application-tab-style switching. New windows join
+  -- the currently focused unlocked group by default, while the visible
+  -- groupbar keeps the selected member and available tabs obvious.
   if type(hl.config) == "function" then
     hl.config({
       group = {
-        auto_group = false,
+        auto_group = true,
         groupbar = {
           enabled = true,
           render_titles = true,
