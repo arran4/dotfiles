@@ -169,12 +169,20 @@ function M.setup(options)
       },
     })
   end
-  if type(hl.dsp) == "table" and type(hl.dsp.group) == "table" then
-    hl.bind("SUPER + G", hl.dsp.group.toggle())
-    hl.bind("SUPER + CTRL + Up", hl.dsp.group.prev(), { repeating = true })
-    hl.bind("SUPER + CTRL + Down", hl.dsp.group.next(), { repeating = true })
-    hl.bind("SUPER + CTRL + SHIFT + Up", hl.dsp.group.move_window({ forward = false }), { repeating = true })
-    hl.bind("SUPER + CTRL + SHIFT + Down", hl.dsp.group.move_window(), { repeating = true })
+
+  -- Group dispatchers are optional in older/mock Hyprland Lua runtimes. Resolve
+  -- the namespace dynamically so loading the rest of this module remains safe.
+  local groupDispatcher = type(hl.dsp) == "table" and hl.dsp["group"] or nil
+  if type(groupDispatcher) == "table"
+    and type(groupDispatcher.toggle) == "function"
+    and type(groupDispatcher.prev) == "function"
+    and type(groupDispatcher.next) == "function"
+    and type(groupDispatcher.move_window) == "function" then
+    hl.bind("SUPER + G", groupDispatcher.toggle())
+    hl.bind("SUPER + CTRL + Up", groupDispatcher.prev(), { repeating = true })
+    hl.bind("SUPER + CTRL + Down", groupDispatcher.next(), { repeating = true })
+    hl.bind("SUPER + CTRL + SHIFT + Up", groupDispatcher.move_window({ forward = false }), { repeating = true })
+    hl.bind("SUPER + CTRL + SHIFT + Down", groupDispatcher.move_window(), { repeating = true })
   end
 
   local terminal = options.terminal or { path = "", classes = {} }
