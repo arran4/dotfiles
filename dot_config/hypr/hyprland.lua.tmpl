@@ -484,6 +484,9 @@ local function registerBinds()
     hl.bind("SUPER + CTRL + Right", hl.dsp.focus({ workspace = "+1" }))
     hl.bind("SUPER + SHIFT + CTRL + Left", hl.dsp.window.move({ workspace = "-1" }))
     hl.bind("SUPER + SHIFT + CTRL + Right", hl.dsp.window.move({ workspace = "+1" }))
+    -- Mouse-wheel equivalent of the keyboard workspace-move bindings.
+    hl.bind("SUPER + mouse_up", hl.dsp.window.move({ workspace = "-1" }))
+    hl.bind("SUPER + mouse_down", hl.dsp.window.move({ workspace = "+1" }))
 
     hl.bind("SUPER + SHIFT + 0", hl.dsp.window.move({ workspace = "empty" }))
     for i = 1, 9 do
