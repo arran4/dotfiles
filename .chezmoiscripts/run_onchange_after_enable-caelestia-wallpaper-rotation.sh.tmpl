@@ -1,0 +1,14 @@
+{{- if or (eq .chezmoi.hostname "x1linux") (eq .chezmoi.hostname "x1laptop") }}
+#!/bin/sh
+
+if command -v systemctl >/dev/null 2>&1; then
+  if systemctl --user daemon-reload >/dev/null 2>&1; then
+    systemctl --user enable --now caelestia-wallpaper-rotate.timer >/dev/null 2>&1 || true
+  fi
+fi
+
+exit 0
+{{- else }}
+#!/bin/sh
+exit 0
+{{- end }}
