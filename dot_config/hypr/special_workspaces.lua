@@ -29,6 +29,7 @@ local classRoutes = {
   kjules = {
     ["kjules"] = true,
     ["org.kde.kjules"] = true,
+    ["io.github.arran4.kjules"] = true,
   },
 }
 
@@ -371,6 +372,13 @@ function M.setup(options)
       -- Beeper can close its main window to the tray. Re-running the Flatpak
       -- asks the existing single-instance app to present a window again.
       hl.exec_cmd("flatpak run com.beeper.Beeper", { workspace = "special:beeper silent" })
+      return
+    end
+
+    if name == "kjules" then
+      -- kJules is single-instance via KDBusService::Unique. Re-running it
+      -- activates the existing instance, while a missing instance starts here.
+      hl.exec_cmd("kjules", { workspace = "special:kjules silent" })
     end
   end
 
@@ -384,7 +392,7 @@ function M.setup(options)
     -- If a mapped app window already exists, reclaim it into its special
     -- workspace before showing that workspace. If there is no mapped window,
     -- show the workspace and launch/activate the application afterwards. This
-    -- also covers Spotify/Beeper processes that are currently tray-only.
+    -- also covers single-instance processes that are currently tray-only.
     local hasWindow = routeExistingApplication(name)
     hl.dispatch(hl.dsp.workspace.toggle_special(name))
     if not hasWindow then
@@ -395,7 +403,8 @@ function M.setup(options)
   for _, workspace in ipairs(workspaces) do
     local action = hl.dsp.workspace.toggle_special(workspace.name)
     if smartManagedWorkspaces
-      and (workspace.name == "music" or workspace.name == "beeper" or workspace.name == "terminal") then
+      and (workspace.name == "music" or workspace.name == "beeper" or workspace.name == "terminal"
+        or workspace.name == "kjules") then
       action = function()
         toggleManagedWorkspace(workspace.name)
       end
@@ -418,8 +427,9 @@ function M.setup(options)
     hl.bind("SUPER + T", hl.dsp.workspace.toggle_special("terminal"))
   end
 
-  -- Explicitly launch a new kjules session without involving special:kjules routing immediately.
-  -- This forwards the request to an already-running instance via DBus/IPC or starts a new one.
+  -- kJules registers Meta+Shift+J with KGlobalAccel on KDE. Hyprland owns
+  -- global shortcuts itself, so invoke the compositor-friendly CLI equivalent.
+  -- KDBusService forwards this to an existing kJules instance or starts one.
   hl.bind("SUPER + SHIFT + J", function()
     hl.exec_cmd("kjules --new-session")
   end)
@@ -445,7 +455,7 @@ function M.setup(options)
     end
   end
   hl.window_rule({
-    match = { class = "^(kJules|kjules|org.kde.kjules)$" },
+    match = { class = "^(kJules|kjules|org.kde.kjules|io.github.arran4.kjules)$" },
     workspace = "special:kjules",
   })
 
@@ -497,8 +507,8 @@ function M.setup(options)
   end
 
   -- Start session services and applications that are intentionally long-lived
-  -- special-workspace residents. kJules remains a blind Meta+J toggle for now;
-  -- once it is reliably single-instance it can use the show-or-create path too.
+  -- special-workspace residents. kJules is now safe to activate repeatedly:
+  -- KDBusService forwards a second launch to the existing instance.
   hl.on("hyprland.start", function()
     -- pam_kwallet_init forwards PAM-provided unlock data when it exists; it
     -- does not itself start the wallet daemon. Run the handoff first and then
@@ -515,10 +525,11 @@ function M.setup(options)
     end
     hl.exec_cmd("flatpak run com.spotify.Client", { workspace = "special:music silent" })
     hl.exec_cmd("flatpak run com.beeper.Beeper", { workspace = "special:beeper silent" })
-    -- Let the existing kJules window rules route the initial window into
-    -- special:kjules rather than using a workspace exec rule. This avoids
-    -- changing Meta+J into a launcher before kJules is reliably single-instance.
-    hl.exec_cmd("kjules")
+    if smartManagedWorkspaces then
+      launchManagedApplication("kjules")
+    else
+      hl.exec_cmd("kjules")
+    end
   end)
 end
 
