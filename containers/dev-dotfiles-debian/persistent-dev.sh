@@ -12,7 +12,9 @@ Usage:
   persistent-dev.sh [--engine podman|docker] destroy NAME
 
 Creates or resumes an isolated development container backed only by named
-container volumes. No host directory or host credential files are mounted.
+container volumes. The container runs only while its primary shell is attached;
+the stopped container and its volumes remain available for the next invocation.
+No host directory or host credential files are mounted.
 
 Environment:
   CONTAINER_ENGINE     Override automatic podman/docker selection.
@@ -102,19 +104,34 @@ if [ "$ACTION" = destroy ]; then
   exit 0
 fi
 
+stop_container() {
+  "$ENGINE" stop -t 1 "$CONTAINER" >/dev/null 2>&1 || true
+}
+
+# The engine client is deliberately not exec'd. If the attachment disappears
+# (including an explicit Docker/Podman detach), the launcher gets control back
+# and stops the container. The durable state is the stopped container and its
+# named volumes, not a background process.
+trap 'stop_container' EXIT
+trap 'exit 129' HUP
+trap 'exit 143' TERM
+
 if "$ENGINE" container inspect "$CONTAINER" >/dev/null 2>&1; then
   running=$("$ENGINE" inspect -f '{{.State.Running}}' "$CONTAINER")
   if [ "$running" = true ]; then
-    echo "attaching a shell to $CONTAINER" >&2
-    exec "$ENGINE" exec -it "$CONTAINER" /usr/bin/zsh -l
+    echo "attaching to the primary shell in $CONTAINER" >&2
+    "$ENGINE" attach "$CONTAINER"
+    exit $?
   fi
-  echo "resuming $CONTAINER" >&2
-  exec "$ENGINE" start -ai "$CONTAINER"
+  echo "starting $CONTAINER for this attached shell" >&2
+  "$ENGINE" start -ai "$CONTAINER"
+  exit $?
 fi
 
-echo "creating $CONTAINER" >&2
+echo "creating $CONTAINER for this attached shell" >&2
 set -- run -it \
   --name "$CONTAINER" \
+  --restart=no \
   --workdir /workspace \
   --mount "type=volume,src=$WORKSPACE_VOLUME,dst=/workspace" \
   --mount "type=volume,src=$CODEX_VOLUME,dst=/home/user/.codex" \
@@ -126,7 +143,7 @@ if [ "$ENGINE" = podman ]; then
   set -- "$@" --userns=keep-id:uid=1000,gid=1000
 fi
 
-exec "$ENGINE" "$@" \
+"$ENGINE" "$@" \
   --entrypoint /bin/sh \
   "$IMAGE" \
   -c 'set -eu
