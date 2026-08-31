@@ -156,6 +156,8 @@ COPY --from=dotfiles . /tmp/dotfiles
 RUN set -euxo pipefail \
   && chown -R "${USER_UID}:${USER_GID}" /tmp/dotfiles
 
+COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
+
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
@@ -180,4 +182,4 @@ RUN set -euxo pipefail \
   && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
   && junie --version
 
-ENTRYPOINT ["/usr/bin/zsh", "-l"]
+ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
