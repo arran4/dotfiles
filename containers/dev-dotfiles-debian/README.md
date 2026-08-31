@@ -71,7 +71,7 @@ podman run --rm -it \
 
 ### Persistent, filesystem-disconnected sandbox
 
-For an agent sandbox that does not receive any host filesystem bind mounts, use `persistent-dev.sh`. Give each sandbox a stable name; the launcher uses it for the container and all of its named volumes:
+For an agent sandbox that does not receive any host filesystem bind mounts, use `persistent-dev.sh`. Give each sandbox a stable name; the launcher uses it for the stopped container and all of its named volumes:
 
 ```sh
 sh ./persistent-dev.sh goa4web
@@ -84,9 +84,11 @@ sh ./persistent-dev.sh --engine podman goa4web
 sh ./persistent-dev.sh --engine docker goa4web
 ```
 
-The first invocation creates `dev-agent-goa4web` without `--rm`. Its source tree lives in the `dev-agent-goa4web-workspace` volume rather than a host directory. Separate named volumes retain Codex, Antigravity, GitHub CLI and GitLab CLI state. The launcher does not bind the host's source tree, forge configuration, SSH directory, home directory, keyring or container-engine socket.
+The first invocation creates `dev-agent-goa4web` without `--rm` and explicitly with `--restart=no`. Its source tree lives in the `dev-agent-goa4web-workspace` volume rather than a host directory. Separate named volumes retain Codex, Antigravity, GitHub CLI and GitLab CLI state. The launcher does not bind the host's source tree, forge configuration, SSH directory, home directory, keyring or container-engine socket.
 
-On later invocations, the launcher attaches a new shell if the named container is still running or uses `start -ai` if it stopped. This makes an ordinary shell exit, terminal loss, host reboot or agent crash resumable at the filesystem/session-state level without creating a new sandbox.
+The container is **not** intended to run persistently. Its main process is the attached login `zsh`. While that shell is attached, the container runs; exiting the shell stops it. The launcher also stops the container when its engine attachment returns, so deliberately detaching the client does not leave a background development container running. It has no restart policy, so a Docker/Podman daemon or host restart does not bring it up automatically.
+
+On a later invocation, the launcher uses `start -ai` to start that same stopped container and attach to its primary shell. If it finds the container already running (for example after an unusual interrupted client), it attaches to that same primary shell rather than starting another shell with `exec`. The durable state is therefore the stopped container filesystem plus its named volumes, not a continuously running sandbox.
 
 Authenticate and check out repositories from inside the container:
 
@@ -112,7 +114,7 @@ sh ./persistent-dev.sh destroy goa4web
 
 A plain `podman rm` or `docker rm` does not remove the named volumes, so an accidentally removed container does not by itself discard the checked-out repository or CLI/agent state.
 
-GNU Readline is not required for this flow. The image uses `zsh`, whose interactive line editor is ZLE. The retained named container preserves its writable filesystem across stop/start; the explicitly named state volumes preserve the important project and CLI/agent state even if the container object is later recreated.
+GNU Readline is not required for this flow. The image uses `zsh`, whose interactive line editor is ZLE. The stopped named container preserves changes made outside the mounted state directories across later `start -ai` invocations; the explicitly named volumes preserve the project and CLI/agent state even if the container object is later recreated.
 
 Then run either agent inside the container:
 
