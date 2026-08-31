@@ -206,7 +206,7 @@ function M.setup(options)
     and type(groupDispatcher.next) == "function"
     and type(groupDispatcher.prev) == "function"
     and type(groupDispatcher.move_window) == "function"
-    and type(groupDispatcher.lock_active) == "function"
+    and type(groupDispatcher.toggle) == "function"
     and type(submapDispatcher) == "function"
     and type(windowDispatcher) == "table"
     and type(windowDispatcher.move) == "function"
@@ -246,7 +246,7 @@ function M.setup(options)
       mapGroupAction("p", groupDispatcher.prev(), "Previous window in group")
       mapGroupAction("f", groupDispatcher.move_window(), "Move window forward in group")
       mapGroupAction("b", groupDispatcher.move_window({ forward = false }), "Move window backward in group")
-      mapGroupAction("t", groupDispatcher.lock_active(), "Toggle active group lock")
+      mapGroupAction("t", groupDispatcher.toggle(), "Toggle window group")
       hl.bind("Escape", submapDispatcher("reset"), { desc = "Cancel group management mode" })
     end)
   end
