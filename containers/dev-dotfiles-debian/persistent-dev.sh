@@ -90,23 +90,29 @@ GLAB_VOLUME="$PREFIX-glab"
 
 if [ "$ACTION" = destroy ]; then
   "$ENGINE" rm -f "$CONTAINER" >/dev/null 2>&1 || true
-  "$ENGINE" volume rm \
+  for volume in \
     "$WORKSPACE_VOLUME" \
     "$CODEX_VOLUME" \
     "$AGY_VOLUME" \
     "$GH_VOLUME" \
-    "$GLAB_VOLUME" >/dev/null 2>&1 || true
+    "$GLAB_VOLUME"
+  do
+    "$ENGINE" volume rm "$volume" >/dev/null 2>&1 || true
+  done
   exit 0
 fi
 
 if "$ENGINE" container inspect "$CONTAINER" >/dev/null 2>&1; then
   running=$("$ENGINE" inspect -f '{{.State.Running}}' "$CONTAINER")
   if [ "$running" = true ]; then
+    echo "attaching a shell to $CONTAINER" >&2
     exec "$ENGINE" exec -it "$CONTAINER" /usr/bin/zsh -l
   fi
+  echo "resuming $CONTAINER" >&2
   exec "$ENGINE" start -ai "$CONTAINER"
 fi
 
+echo "creating $CONTAINER" >&2
 set -- run -it \
   --name "$CONTAINER" \
   --hostname "$CONTAINER" \
