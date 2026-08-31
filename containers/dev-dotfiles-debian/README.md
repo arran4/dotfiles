@@ -71,26 +71,65 @@ podman run --rm -it \
 
 ### Persistent, filesystem-disconnected sandbox
 
-For an agent sandbox that does not receive any host filesystem bind mounts, use `persistent-dev.sh`. Give each sandbox a stable name; the launcher uses it for the stopped container and all of its named volumes:
+A persistent sandbox does not need this repository, a launcher script, or an existing source checkout on the host. It only needs Docker or Podman and the published image. Give the container and volumes a stable name such as `goa4web`.
+
+#### Podman
+
+Create and attach the sandbox for the first time:
 
 ```sh
-sh ./persistent-dev.sh goa4web
+podman run -it \
+  --name dev-agent-goa4web \
+  --restart=no \
+  --detach-keys="" \
+  --userns=keep-id:uid=1000,gid=1000 \
+  --env DEV_VOLUME_INIT=1 \
+  --workdir /workspace \
+  --mount type=volume,src=dev-agent-goa4web-workspace,dst=/workspace \
+  --mount type=volume,src=dev-agent-goa4web-codex,dst=/home/user/.codex \
+  --mount type=volume,src=dev-agent-goa4web-agy,dst=/home/user/.gemini \
+  --mount type=volume,src=dev-agent-goa4web-gh,dst=/home/user/.config/gh \
+  --mount type=volume,src=dev-agent-goa4web-glab,dst=/home/user/.config/glab-cli \
+  ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
-Podman is selected when available, otherwise Docker is used. It can also be selected explicitly:
+The empty `--detach-keys` disables Podman's interactive detach sequence for this container. Exiting the login shell therefore stops the container rather than leaving it running in the background.
+
+Resume the same stopped container later:
 
 ```sh
-sh ./persistent-dev.sh --engine podman goa4web
-sh ./persistent-dev.sh --engine docker goa4web
+podman start -ai --detach-keys="" dev-agent-goa4web
 ```
 
-The first invocation creates `dev-agent-goa4web` without `--rm` and explicitly with `--restart=no`. Its source tree lives in the `dev-agent-goa4web-workspace` volume rather than a host directory. Separate named volumes retain Codex, Antigravity, GitHub CLI and GitLab CLI state. The launcher does not bind the host's source tree, forge configuration, SSH directory, home directory, keyring or container-engine socket.
+#### Docker
 
-The container is **not** intended to run persistently. Its main process is the attached login `zsh`. While that shell is attached, the container runs; exiting the shell stops it. The launcher also stops the container when its engine attachment returns, so deliberately detaching the client does not leave a background development container running. It has no restart policy, so a Docker/Podman daemon or host restart does not bring it up automatically.
+Create and attach the Docker equivalent:
 
-On a later invocation, the launcher uses `start -ai` to start that same stopped container and attach to its primary shell. If it finds the container already running (for example after an unusual interrupted client), it attaches to that same primary shell rather than starting another shell with `exec`. The durable state is therefore the stopped container filesystem plus its named volumes, not a continuously running sandbox.
+```sh
+docker run -it \
+  --name dev-agent-goa4web \
+  --restart=no \
+  --env DEV_VOLUME_INIT=1 \
+  --workdir /workspace \
+  --mount type=volume,src=dev-agent-goa4web-workspace,dst=/workspace \
+  --mount type=volume,src=dev-agent-goa4web-codex,dst=/home/user/.codex \
+  --mount type=volume,src=dev-agent-goa4web-agy,dst=/home/user/.gemini \
+  --mount type=volume,src=dev-agent-goa4web-gh,dst=/home/user/.config/gh \
+  --mount type=volume,src=dev-agent-goa4web-glab,dst=/home/user/.config/glab-cli \
+  ghcr.io/arran4/dev-dotfiles-debian:latest
+```
 
-Authenticate and check out repositories from inside the container:
+Resume it later with:
+
+```sh
+docker start -ai dev-agent-goa4web
+```
+
+The image entrypoint handles the one engine-dependent detail that should not have to live in a host script. When `DEV_VOLUME_INIT=1` is set, it fixes ownership of only the named-volume mount-point roots and then `exec`s the normal login `zsh`. It does not recursively change the checked-out repository. Volume initialisation is opt-in so the existing bind-mounted workflow can never change ownership of a host checkout or host credential directory.
+
+The login `zsh` is the container's primary process. In ordinary attached use, exiting it stops the container; the stopped container object and all named volumes remain. `--restart=no` prevents a daemon or host restart from automatically starting the sandbox. Docker and Podman also support deliberately detaching from an interactive container; doing so intentionally leaves its shell running, so this workflow is intended to be ended with `exit`, not detach.
+
+Authenticate and check out repositories from inside the sandbox:
 
 ```sh
 gh auth login
@@ -104,17 +143,23 @@ glab auth login
 glab repo clone GROUP/PROJECT
 ```
 
-Multiple repositories can live under `/workspace`; the sandbox name is an isolation name and does not have to match a repository. Network access remains enabled so `gh`, `glab`, `git` and the agents can reach their services; "disconnected" here means disconnected from the host filesystem.
+Multiple repositories can live under `/workspace`; the sandbox name is an isolation name and does not have to match a repository. Network access remains enabled so `gh`, `glab`, `git` and the agents can reach their services. "Disconnected" here means disconnected from the host filesystem.
 
-To intentionally terminate the sandbox and remove its container plus all volumes managed by the launcher:
+Removing the container does not remove its named volumes, so an accidentally removed container does not itself discard the checked-out repository or CLI/agent state. To intentionally destroy the complete `goa4web` sandbox, remove the container and then its volumes:
 
 ```sh
-sh ./persistent-dev.sh destroy goa4web
+podman rm -f dev-agent-goa4web
+podman volume rm \
+  dev-agent-goa4web-workspace \
+  dev-agent-goa4web-codex \
+  dev-agent-goa4web-agy \
+  dev-agent-goa4web-gh \
+  dev-agent-goa4web-glab
 ```
 
-A plain `podman rm` or `docker rm` does not remove the named volumes, so an accidentally removed container does not by itself discard the checked-out repository or CLI/agent state.
+Use the same commands with `docker` instead of `podman` for a Docker sandbox.
 
-GNU Readline is not required for this flow. The image uses `zsh`, whose interactive line editor is ZLE. The stopped named container preserves changes made outside the mounted state directories across later `start -ai` invocations; the explicitly named volumes preserve the project and CLI/agent state even if the container object is later recreated.
+GNU Readline is not required for this flow. The image uses `zsh`, whose interactive line editor is ZLE. The stopped named container preserves its writable container filesystem across later `start -ai` invocations, while the named volumes preserve the project and CLI/agent state independently of the container object.
 
 Then run either agent inside the container:
 
