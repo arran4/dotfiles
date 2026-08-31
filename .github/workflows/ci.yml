@@ -216,6 +216,9 @@ jobs:
           file: containers/dev-dotfiles-debian/Dockerfile
           push: false
           tags: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian:ci-${{ github.run_id }}
+          build-args: |
+            DOTFILES_RELEASE=ci-${{ github.run_id }}
+            DOTFILES_COMMIT=${{ github.sha }}
 
   docker-release:
     name: Docker release
@@ -260,6 +263,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
+          build-args: |
+            DOTFILES_RELEASE=${{ steps.meta.outputs.version }}
+            DOTFILES_COMMIT=${{ github.sha }}
 
   package-dotfiles:
     name: Package Dotfiles
