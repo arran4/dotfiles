@@ -268,7 +268,7 @@ do
   -- Test claiming it when already mapped on another workspace
   local state3 = newScenario({ terminal = konsole, windows = { { class = "which_browser", workspace = { name = "1" } } } })
   state3.binds["SUPER + W"]()
-  assert(#state3.dispatches == 2) -- one for move, one for toggle
+  assert(#state3.dispatches == 3) -- one for setup routeWindow, one for move, one for toggle
   assert(#state3.execs == 0, "which_browser should not be executed if an existing window is claimed")
 end
 
