@@ -242,6 +242,34 @@ do
   assert(special.workspace_for_window({ class = "xterm" }) == nil)
   assert(special.workspace_for_window({ class = "foot" }) == nil)
   assert(special.workspace_for_window({ class = "qterminal" }) == nil)
+  assert(special.workspace_for_window({ class = "which_browser" }) == "which_browser")
+  assert(special.workspace_for_window({ class = "com.arran4.whichbrowser.which_browser" }) == "which_browser")
+end
+
+do
+  local state = newScenario({ terminal = konsole })
+  assert(type(state.binds["SUPER + W"]) == "function")
+  state.binds["SUPER + W"]()
+  assert(#state.execs == 1)
+  assert(state.execs[1][1] == "which_browser")
+  assert(state.execs[1][2].workspace == "special:which_browser silent")
+  state.handlers["window.open"]({ class = "which_browser" })
+  assert(#state.dispatches == 2, "toggle and pending routing were expected for which_browser")
+  assert(state.dispatches[2].kind == "move")
+  assert(state.dispatches[2].arguments.workspace == "special:which_browser")
+  assert(state.dispatches[2].arguments.follow == false)
+
+  -- Test hiding it when active
+  local state2 = newScenario({ terminal = konsole, activeSpecial = "special:which_browser" })
+  state2.binds["SUPER + W"]()
+  assert(#state2.dispatches == 1 and state2.dispatches[1].kind == "toggle")
+  assert(#state2.execs == 0)
+
+  -- Test claiming it when already mapped on another workspace
+  local state3 = newScenario({ terminal = konsole, windows = { { class = "which_browser", workspace = { name = "1" } } } })
+  state3.binds["SUPER + W"]()
+  assert(#state3.dispatches == 3) -- one for setup routeWindow, one for move, one for toggle
+  assert(#state3.execs == 0, "which_browser should not be executed if an existing window is claimed")
 end
 
 do

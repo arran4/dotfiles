@@ -193,17 +193,19 @@ jobs:
           assert(type(special.workspace_for_window) == "function")
           special.setup({ terminal = { path = "/usr/bin/xterm", classes = { "xterm", "org.kde.konsole", "footclient" } } })
 
-          assert(#rules == 4, "music, Beeper, terminal and kJules static rules should be registered")
+          assert(#rules == 5, "music, Beeper, terminal, kJules and which_browser static rules should be registered")
           assert(rules[1].workspace == "special:music")
           assert(rules[2].workspace == "special:beeper")
           assert(rules[3].workspace == "special:terminal")
           assert(rules[4].workspace == "special:kjules")
+          assert(rules[5].workspace == "special:which_browser")
           assert(rules[2].match.class:find("BeeperTexts", 1, true))
           assert(rules[3].match.class:find([=[org\.kde\.konsole]=], 1, true))
           assert(rules[3].match.class:find("footclient", 1, true))
           assert(rules[4].match.class:find("org.kde.kjules", 1, true))
+          assert(rules[5].match.class:find("com\\.arran4\\.whichbrowser\\.which_browser", 1, true))
 
-          assert(#workspace_rules == 5, "all five named special workspaces should be persistent")
+          assert(#workspace_rules == 6, "all six named special workspaces should be persistent")
           local persistent = {}
           for _, rule in ipairs(workspace_rules) do
             persistent[rule.workspace] = true
@@ -213,6 +215,7 @@ jobs:
           assert(persistent["special:terminal"])
           assert(persistent["special:scratchpad"])
           assert(persistent["special:kjules"])
+          assert(persistent["special:which_browser"])
           assert(not persistent["special:anytype"])
 
           assert(binds["SUPER + M"].special == "music")
@@ -255,6 +258,9 @@ jobs:
 
           handlers["window.open"]({ class = "kjules", title = "kJules" })
           assert(routes[#routes].workspace == "special:kjules")
+
+          handlers["window.open"]({ class = "com.arran4.whichbrowser.which_browser", title = "Which Browser?" })
+          assert(routes[#routes].workspace == "special:which_browser")
 
           local before = #routes
           handlers["window.open"]({ class = "Anytype", title = "Anytype" })
