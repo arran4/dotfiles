@@ -11,10 +11,10 @@ if [ "${DEV_VOLUME_INIT:-0}" = "1" ]; then
 
   for path in \
     /workspace \
-    /home/user/.codex \
-    /home/user/.gemini \
-    /home/user/.config/gh \
-    /home/user/.config/glab-cli
+    "$HOME/.codex" \
+    "$HOME/.gemini" \
+    "$HOME/.config/gh" \
+    "$HOME/.config/glab-cli"
   do
     if [ -e "$path" ]; then
       sudo chown "$uid:$gid" "$path"
