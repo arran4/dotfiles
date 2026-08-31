@@ -10,6 +10,8 @@ ARG USER_UID=1000
 ARG USER_GID=1000
 ARG CODEX_RELEASE=latest
 ARG FLUTTER_CHANNEL=stable
+ARG DOTFILES_RELEASE=unknown
+ARG DOTFILES_COMMIT=unknown
 
 ENV DEBIAN_FRONTEND=noninteractive \
   TZ=Etc/UTC \
@@ -142,6 +144,7 @@ RUN set -euxo pipefail \
   && agy --version \
   && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac' \
   && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
-  && junie --version
+  && junie --version \
+  && echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})" > /etc/motd
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]

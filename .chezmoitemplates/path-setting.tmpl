@@ -1,5 +1,11 @@
 # PATH environment settings
 # Always include the user's local bin directory
+if [ -d "$HOME/.local/bin" ] ; then
+  case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) PATH="$HOME/.local/bin:$PATH" ;;
+  esac
+fi
 {{- $chezmoi := default (dict) .chezmoi -}}
 {{- $chezmoiData := default (dict) (index $chezmoi "data") -}}
 
