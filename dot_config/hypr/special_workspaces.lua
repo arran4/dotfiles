@@ -388,8 +388,6 @@ function M.setup(options)
     end
 
     if name == "which_browser" then
-      -- Which Browser implements Linux single-instance behaviour using unix_single_instance.
-      -- Re-running it when it is tray-only will focus/activate the main window.
       hl.exec_cmd("which_browser", { workspace = "special:which_browser silent" })
     end
   end
