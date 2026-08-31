@@ -248,8 +248,8 @@ end
 
 do
   local state = newScenario({ terminal = konsole })
-  assert(type(state.binds["SUPER + W"]) == "function")
-  state.binds["SUPER + W"]()
+  assert(type(state.binds["SUPER + SHIFT + underscore"]) == "function")
+  state.binds["SUPER + SHIFT + underscore"]()
   assert(#state.execs == 1)
   assert(state.execs[1][1] == "which_browser")
   assert(state.execs[1][2].workspace == "special:which_browser silent")
@@ -261,13 +261,13 @@ do
 
   -- Test hiding it when active
   local state2 = newScenario({ terminal = konsole, activeSpecial = "special:which_browser" })
-  state2.binds["SUPER + W"]()
+  state2.binds["SUPER + SHIFT + underscore"]()
   assert(#state2.dispatches == 1 and state2.dispatches[1].kind == "toggle")
   assert(#state2.execs == 0)
 
   -- Test claiming it when already mapped on another workspace
   local state3 = newScenario({ terminal = konsole, windows = { { class = "which_browser", workspace = { name = "1" } } } })
-  state3.binds["SUPER + W"]()
+  state3.binds["SUPER + SHIFT + underscore"]()
   assert(#state3.dispatches == 3) -- one for setup routeWindow, one for move, one for toggle
   assert(#state3.execs == 0, "which_browser should not be executed if an existing window is claimed")
 end
