@@ -13,7 +13,9 @@ ARG FLUTTER_CHANNEL=stable
 
 ENV DEBIAN_FRONTEND=noninteractive \
   TZ=Etc/UTC \
-  SHELL=/usr/bin/zsh
+  SHELL=/usr/bin/zsh \
+  LANG=en_US.UTF-8 \
+  LC_ALL=en_US.UTF-8
 
 RUN set -euxo pipefail \
   && apt-get update \
@@ -80,41 +82,31 @@ RUN set -euxo pipefail \
   && curl -sL "$GLAB_LATEST_URL" -o glab.deb \
   && dpkg -i glab.deb \
   && rm glab.deb \
-  && rm -rf /var/lib/apt/lists/*
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN set -euxo pipefail \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends locales \
   && sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
-  && locale-gen
-
-# Make UTF-8 the default for every process
-ENV LANG=en_US.UTF-8 \
-    LC_ALL=en_US.UTF-8
-
-RUN set -euxo pipefail \
+  && locale-gen \
+  && rm -rf /var/lib/apt/lists/* \
   && groupadd --gid "${USER_GID}" "${USER_NAME}" \
   && useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --shell /usr/bin/zsh "${USER_NAME}" \
   && mkdir -p /etc/sudoers.d \
   && echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME} \
-  && chmod 0440 /etc/sudoers.d/${USER_NAME}
-
-RUN set -euxo pipefail \
-  && python3 -m pip install --no-cache-dir --break-system-packages \
-    "mini-swe-agent"
-
-# Install Codex as a standalone system image payload while keeping runtime
-# configuration and credentials in the invoking user's ~/.codex directory.
-RUN set -euxo pipefail \
+  && chmod 0440 /etc/sudoers.d/${USER_NAME} \
+  && python3 -m pip install --no-cache-dir --break-system-packages "mini-swe-agent" \
   && curl -fsSL https://chatgpt.com/codex/install.sh \
     | CODEX_HOME=/opt/codex \
       CODEX_INSTALL_DIR=/usr/local/bin \
       CODEX_NON_INTERACTIVE=1 \
       CODEX_RELEASE="${CODEX_RELEASE}" \
       sh \
-  && codex --version
+  && codex --version \
+  && npm install -g opencode-ai \
+  && npm install -g @anthropic-ai/claude-code \
+  && npm install -g @githubnext/github-copilot-cli \
+  && { bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source qwenchat || true; } \
+  && go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
+  && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI \
+  && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
+  && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
+  && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
 
 # Jules CLI is intentionally disabled. Its npm installer can preserve high
 # UID/GID values from its downloaded payload, which makes the resulting image
@@ -127,34 +119,9 @@ RUN set -euxo pipefail \
 #   && chown -R root:root "$(npm root -g)/@google/jules" \
 #   && jules version
 
-RUN set -euxo pipefail \
-  && npm install -g opencode-ai
-
-RUN set -euxo pipefail \
-  && npm install -g @anthropic-ai/claude-code
-
-RUN set -euxo pipefail \
-  && npm install -g @githubnext/github-copilot-cli
-
-RUN set -euxo pipefail \
-  && bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source qwenchat || true
-
-RUN set -euxo pipefail \
-  && go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
-  && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI
-
-RUN set -euxo pipefail \
-  && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin
-
-RUN set -euxo pipefail \
-  && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
-  && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
-
 ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
 
-COPY --from=dotfiles . /tmp/dotfiles
-RUN set -euxo pipefail \
-  && chown -R "${USER_UID}:${USER_GID}" /tmp/dotfiles
+COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
 
@@ -165,20 +132,15 @@ WORKDIR /home/${USER_NAME}
 # which is already on PATH for the image user.
 RUN set -euxo pipefail \
   && curl -fsSL https://antigravity.google/cli/install.sh | bash \
-  && agy --version
-
-RUN yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug "; \
-  rm -rf /tmp/dotfiles
-
-RUN set -euxo pipefail \
+  && agy --version \
+  && { yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug " || true; } \
+  && rm -rf /tmp/dotfiles \
   && flutter --version \
   && go version \
   && git --version \
   && codex --version \
   && agy --version \
-  && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac'
-
-RUN set -euxo pipefail \
+  && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac' \
   && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
   && junie --version
 
