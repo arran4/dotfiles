@@ -12,6 +12,7 @@ local workspaces = {
   { name = "terminal", key = "SUPER + grave" },
   { name = "scratchpad", key = "SUPER + D" },
   { name = "kjules", key = "SUPER + J" },
+  { name = "which_browser", key = "SUPER + W" },
 }
 
 local classRoutes = {
@@ -30,6 +31,10 @@ local classRoutes = {
     ["kjules"] = true,
     ["org.kde.kjules"] = true,
     ["io.github.arran4.kjules"] = true,
+  },
+  which_browser = {
+    ["which_browser"] = true,
+    ["com.arran4.whichbrowser.which_browser"] = true,
   },
 }
 
@@ -379,6 +384,13 @@ function M.setup(options)
       -- kJules is single-instance via KDBusService::Unique. Re-running it
       -- activates the existing instance, while a missing instance starts here.
       hl.exec_cmd("kjules", { workspace = "special:kjules silent" })
+      return
+    end
+
+    if name == "which_browser" then
+      -- Which Browser implements Linux single-instance behaviour using unix_single_instance.
+      -- Re-running it when it is tray-only will focus/activate the main window.
+      hl.exec_cmd("which_browser", { workspace = "special:which_browser silent" })
     end
   end
 
@@ -404,7 +416,7 @@ function M.setup(options)
     local action = hl.dsp.workspace.toggle_special(workspace.name)
     if smartManagedWorkspaces
       and (workspace.name == "music" or workspace.name == "beeper" or workspace.name == "terminal"
-        or workspace.name == "kjules") then
+        or workspace.name == "kjules" or workspace.name == "which_browser") then
       action = function()
         toggleManagedWorkspace(workspace.name)
       end
@@ -457,6 +469,10 @@ function M.setup(options)
   hl.window_rule({
     match = { class = "^(kJules|kjules|org.kde.kjules|io.github.arran4.kjules)$" },
     workspace = "special:kjules",
+  })
+  hl.window_rule({
+    match = { class = "^(which_browser|com\\.arran4\\.whichbrowser\\.which_browser)$" },
+    workspace = "special:which_browser",
   })
 
   -- Fully initialized windows are the normal path. Listen for class changes
@@ -527,8 +543,10 @@ function M.setup(options)
     hl.exec_cmd("flatpak run com.beeper.Beeper", { workspace = "special:beeper silent" })
     if smartManagedWorkspaces then
       launchManagedApplication("kjules")
+      launchManagedApplication("which_browser")
     else
-      hl.exec_cmd("kjules")
+      hl.exec_cmd("kjules", { workspace = "special:kjules silent" })
+      hl.exec_cmd("which_browser", { workspace = "special:which_browser silent" })
     end
   end)
 end
