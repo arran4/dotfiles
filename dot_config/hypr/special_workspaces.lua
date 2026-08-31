@@ -12,7 +12,7 @@ local workspaces = {
   { name = "terminal", key = "SUPER + grave" },
   { name = "scratchpad", key = "SUPER + D" },
   { name = "kjules", key = "SUPER + J" },
-  { name = "which_browser", key = "SUPER + W" },
+  { name = "which_browser", key = "SUPER + SHIFT + underscore" },
 }
 
 local classRoutes = {
