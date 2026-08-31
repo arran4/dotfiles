@@ -28,7 +28,7 @@ local function windowDispatcher()
 end
 
 local function shrinkForCarry(window, dispatcher)
-  if window == nil or window.floating == true then
+  if window == nil then
     return
   end
 
