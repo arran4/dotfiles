@@ -115,7 +115,6 @@ fi
 echo "creating $CONTAINER" >&2
 set -- run -it \
   --name "$CONTAINER" \
-  --hostname "$CONTAINER" \
   --workdir /workspace \
   --mount "type=volume,src=$WORKSPACE_VOLUME,dst=/workspace" \
   --mount "type=volume,src=$CODEX_VOLUME,dst=/home/user/.codex" \
