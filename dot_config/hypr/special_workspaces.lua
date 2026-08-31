@@ -541,10 +541,8 @@ function M.setup(options)
     hl.exec_cmd("flatpak run com.beeper.Beeper", { workspace = "special:beeper silent" })
     if smartManagedWorkspaces then
       launchManagedApplication("kjules")
-      launchManagedApplication("which_browser")
     else
-      hl.exec_cmd("kjules", { workspace = "special:kjules silent" })
-      hl.exec_cmd("which_browser", { workspace = "special:which_browser silent" })
+      hl.exec_cmd("kjules")
     end
   end)
 end

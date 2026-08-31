@@ -215,6 +215,7 @@ jobs:
           assert(persistent["special:terminal"])
           assert(persistent["special:scratchpad"])
           assert(persistent["special:kjules"])
+          assert(persistent["special:which_browser"])
           assert(not persistent["special:anytype"])
 
           assert(binds["SUPER + M"].special == "music")
@@ -274,19 +275,17 @@ jobs:
             table.insert(hyprland_execs, execs[i])
           end
           local autostart_count = 0
-          local has_term, has_spotify, has_beeper, has_kjules, has_whichbrowser = false, false, false, false, false
+          local has_term, has_spotify, has_beeper = false, false, false
           for _, cmd in ipairs(hyprland_execs) do
             if type(cmd[2]) == "table" and cmd[2].workspace then
               autostart_count = autostart_count + 1
               if cmd[1] == "/usr/bin/xterm" and cmd[2].workspace == "special:terminal silent" then has_term = true end
               if cmd[1] == "flatpak run com.spotify.Client" and cmd[2].workspace == "special:music silent" then has_spotify = true end
               if cmd[1] == "flatpak run com.beeper.Beeper" and cmd[2].workspace == "special:beeper silent" then has_beeper = true end
-              if cmd[1] == "kjules" and cmd[2].workspace == "special:kjules silent" then has_kjules = true end
-              if cmd[1] == "which_browser" and cmd[2].workspace == "special:which_browser silent" then has_whichbrowser = true end
             end
           end
-          assert(autostart_count == 5, "terminal, Spotify, Beeper, kjules and which_browser should autostart from special workspace config. Found " .. autostart_count)
-          assert(has_term and has_spotify and has_beeper and has_kjules and has_whichbrowser, "missing expected autostart application")
+          assert(autostart_count == 3, "only terminal, Spotify and Beeper should autostart from special workspace config")
+          assert(has_term and has_spotify and has_beeper, "missing expected autostart application")
 
           print("Hyprland special workspace module tests passed")
           LUA
