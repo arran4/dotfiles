@@ -69,6 +69,51 @@ podman run --rm -it \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
+### Persistent, filesystem-disconnected sandbox
+
+For an agent sandbox that does not receive any host filesystem bind mounts, use `persistent-dev.sh`. Give each sandbox a stable name; the launcher uses it for the container and all of its named volumes:
+
+```sh
+sh ./persistent-dev.sh goa4web
+```
+
+Podman is selected when available, otherwise Docker is used. It can also be selected explicitly:
+
+```sh
+sh ./persistent-dev.sh --engine podman goa4web
+sh ./persistent-dev.sh --engine docker goa4web
+```
+
+The first invocation creates `dev-agent-goa4web` without `--rm`. Its source tree lives in the `dev-agent-goa4web-workspace` volume rather than a host directory. Separate named volumes retain Codex, Antigravity, GitHub CLI and GitLab CLI state. The launcher does not bind the host's source tree, forge configuration, SSH directory, home directory, keyring or container-engine socket.
+
+On later invocations, the launcher attaches a new shell if the named container is still running or uses `start -ai` if it stopped. This makes an ordinary shell exit, terminal loss, host reboot or agent crash resumable at the filesystem/session-state level without creating a new sandbox.
+
+Authenticate and check out repositories from inside the container:
+
+```sh
+gh auth login
+gh repo clone arran4/goa4web
+```
+
+or:
+
+```sh
+glab auth login
+glab repo clone GROUP/PROJECT
+```
+
+Multiple repositories can live under `/workspace`; the sandbox name is an isolation name and does not have to match a repository. Network access remains enabled so `gh`, `glab`, `git` and the agents can reach their services; "disconnected" here means disconnected from the host filesystem.
+
+To intentionally terminate the sandbox and remove its container plus all volumes managed by the launcher:
+
+```sh
+sh ./persistent-dev.sh destroy goa4web
+```
+
+A plain `podman rm` or `docker rm` does not remove the named volumes, so an accidentally removed container does not by itself discard the checked-out repository or CLI/agent state.
+
+GNU Readline is not required for this flow. The image uses `zsh`, whose interactive line editor is ZLE. The retained named container preserves its writable filesystem across stop/start; the explicitly named state volumes preserve the important project and CLI/agent state even if the container object is later recreated.
+
 Then run either agent inside the container:
 
 ```sh
