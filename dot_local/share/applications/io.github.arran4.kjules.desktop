@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=kJules
+Comment=A powerful KDE native desktop client for tracking and managing Jules tasks and sessions
+Exec=/bin/sh -c "exec \"$HOME/.config/hypr/launch-scaled-app\" kjules"
+Icon=io.github.arran4.kjules
+Type=Application
+Categories=Development;
+Terminal=false
+X-KDE-StartupNotify=true
