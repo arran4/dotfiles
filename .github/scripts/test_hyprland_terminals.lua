@@ -110,7 +110,7 @@ _, terminal = loadTerminalLogic(renderedWithoutQterminalPath, {
   ["/test/bin/qterminal"] = true,
   ["/test/bin/xterm"] = true,
 })
-assert(terminal.name == "qterminal" and terminal.path == "/usr/bin/qterminal",
+assert(terminal.name == "qterminal" and terminal.path == "/test/bin/qterminal",
   "qterminal must resolve from PATH when chezmoi qterminalLocation data is empty or stale")
 
 _, terminal = loadTerminalLogic(renderedWithoutQterminalPath, {
