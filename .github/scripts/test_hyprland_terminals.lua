@@ -135,6 +135,15 @@ assert(hyprlandTemplate:find(
 assert(hyprlandTemplate:find(
   'hl.bind("SUPER + SHIFT + N", hl.dsp.global("caelestia:clearNotifs"), { locked = true })', 1, true
 ), "Meta+Shift+N must clear Caelestia notifications")
+assert(hyprlandTemplate:find(
+  'hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("caelestia shell picker openFreeze"))', 1, true
+), "Meta+Shift+S must invoke the Caelestia freeze picker through IPC")
+assert(hyprlandTemplate:find(
+  'hl.bind("SUPER + SHIFT + ALT + S", hl.dsp.exec_cmd("caelestia shell picker open"))', 1, true
+), "Meta+Shift+Alt+S must invoke the Caelestia picker through IPC")
+assert(not hyprlandTemplate:find(
+  'hl.bind("SUPER + SHIFT + S", hl.dsp.global("caelestia:screenshotFreeze"))', 1, true
+), "Meta+Shift+S must not depend on the Caelestia global-shortcut bridge")
 assert(not hyprlandTemplate:find(
   'hl.bind("SUPER + SHIFT + C", hl.dsp.global("caelestia:clearNotifs"), { locked = true })', 1, true
 ), "Meta+Shift+C must not remain assigned to clear notifications")
