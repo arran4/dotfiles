@@ -1,0 +1,30 @@
+#!/bin/sh
+set -eu
+
+app=kjules
+self=$(readlink -f "$0")
+real=""
+old_ifs=$IFS
+IFS=:
+for dir in $PATH; do
+    [ -n "$dir" ] || dir=.
+    candidate="$dir/$app"
+    [ -x "$candidate" ] || continue
+    resolved=$(readlink -f "$candidate" 2>/dev/null || printf '%s\n' "$candidate")
+    if [ "$resolved" != "$self" ]; then
+        real=$candidate
+        break
+    fi
+done
+IFS=$old_ifs
+
+if [ -z "$real" ]; then
+    echo "$app: real executable not found in PATH" >&2
+    exit 127
+fi
+
+if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+    exec env QT_SCALE_FACTOR="${KJULES_QT_SCALE_FACTOR:-1.25}" "$real" "$@"
+fi
+
+exec "$real" "$@"
