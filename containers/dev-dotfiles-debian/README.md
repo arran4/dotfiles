@@ -58,6 +58,7 @@ From the repository that the agent should be allowed to modify:
 
 ```sh
 podman run --rm -it \
+  --pull=always \
   --userns=keep-id:uid=1000,gid=1000 \
   --hostname agent-sandbox \
   --workdir /workspace \
@@ -79,6 +80,7 @@ Create and attach the sandbox for the first time:
 
 ```sh
 podman run -it \
+  --pull=always \
   --name dev-agent-goa4web \
   --restart=no \
   --detach-keys="" \
@@ -107,6 +109,7 @@ Create and attach the Docker equivalent:
 
 ```sh
 docker run -it \
+  --pull=always \
   --name dev-agent-goa4web \
   --restart=no \
   --env DEV_VOLUME_INIT=1 \
