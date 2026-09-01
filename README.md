@@ -105,6 +105,7 @@ From the repository that the agent should be allowed to modify:
 
 ```sh
 podman run --rm -it \
+  --pull=always \
   --userns=keep-id:uid=1000,gid=1000 \
   --hostname agent-sandbox \
   --workdir /workspace \
@@ -123,6 +124,7 @@ setup where the host account is UID/GID `1000`, matching the image defaults, the
 
 ```sh
 docker run --rm -it \
+  --pull=always \
   --hostname agent-sandbox \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
