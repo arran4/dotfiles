@@ -11,3 +11,5 @@ hl.monitor({
   position = "auto",
   scale = 1,
 })
+
+require("app_scaling").setup()
