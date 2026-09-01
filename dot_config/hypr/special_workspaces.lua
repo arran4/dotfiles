@@ -157,6 +157,7 @@ local function specialName(workspace)
   end
   return name
 end
+
 function M.setup(options)
   options = options or {}
 
