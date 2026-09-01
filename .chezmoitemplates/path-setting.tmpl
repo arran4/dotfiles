@@ -6,8 +6,8 @@ if [ -d "$HOME/.local/bin" ] ; then
     *) PATH="$HOME/.local/bin:$PATH" ;;
   esac
 fi
-{{- $chezmoi := default (dict) .chezmoi -}}
-{{- $chezmoiData := default (dict) (index $chezmoi "data") -}}
+{{ $chezmoi := default (dict) .chezmoi }}
+{{ $chezmoiData := default (dict) (index $chezmoi "data") }}
 
 # Detect common Android SDK installs and expose required tools on the PATH
 {{- $androidSdkRoot := (index $chezmoiData "androidSdkRoot") -}}
