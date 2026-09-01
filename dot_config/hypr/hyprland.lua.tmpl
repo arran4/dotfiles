@@ -159,6 +159,34 @@ if not configDir or configDir == "" then
 end
 package.path = configDir .. "/hypr/?.lua;" .. configDir .. "/hypr/?/init.lua;" .. package.path
 
+-- Keep relative workspace moves in a temporary floating state while Super is
+-- held. If the helper is missing or broken, retain the ordinary move behavior.
+local windowRelocation = nil
+do
+  local ok, module = pcall(require, "window_relocation")
+  if ok and type(module) == "table" and type(module.move) == "function" and type(module.finish) == "function" then
+    windowRelocation = module
+  elseif not ok then
+    io.stderr:write("Error loading window_relocation: " .. tostring(module) .. "\n")
+  else
+    io.stderr:write("Error loading window_relocation: module does not export move() and finish()\n")
+  end
+end
+
+local function relocateWindow(workspace)
+  if windowRelocation ~= nil then
+    return windowRelocation.move(workspace)
+  end
+  return hl.dispatch(hl.dsp.window.move({ workspace = workspace }))
+end
+
+local function finishWindowRelocation()
+  if windowRelocation ~= nil then
+    return windowRelocation.finish()
+  end
+  return false
+end
+
 -- Load special-workspace behavior like the local machine modules: keep it as a
 -- runtime module beside this config, but do not let a missing/broken module
 -- prevent the rest of Hyprland from loading.
@@ -380,11 +408,24 @@ hl.gesture({
 -- Keybindings
 -- ------------------------
 local function registerBinds()
+    -- A relative window move stays "picked up" until Super is released. The
+    -- exact-modifier release variants cover either release order for Ctrl/Shift.
+    hl.bind("SUPER + SUPER_L", function()
+        if finishWindowRelocation() then
+            return
+        end
+{{- if eq .hyprland_features "quickshell" }}
+        hl.dispatch(hl.dsp.global("caelestia:launcher"))
+{{- end }}
+    end, { release = true })
+    hl.bind("SUPER + CTRL + SUPER_L", function() finishWindowRelocation() end, { release = true })
+    hl.bind("SUPER + SHIFT + SUPER_L", function() finishWindowRelocation() end, { release = true })
+    hl.bind("SUPER + SHIFT + CTRL + SUPER_L", function() finishWindowRelocation() end, { release = true })
+
 {{- if eq .hyprland_features "quickshell" }}
     -- Quickshell / Caelestia keybinds.
     -- Hyprland >= 0.55.3 changed catchall dispatch ordering. A release bind
     -- plus no keyboard catchall keeps the Super-only launcher usable.
-    hl.bind("SUPER + SUPER_L", hl.dsp.global("caelestia:launcher"), { release = true })
     hl.bind("SUPER + mouse:272", hl.dsp.global("caelestia:launcherInterrupt"), { ignore_mods = true, non_consuming = true })
     hl.bind("SUPER + mouse:273", hl.dsp.global("caelestia:launcherInterrupt"), { ignore_mods = true, non_consuming = true })
     hl.bind("SUPER + mouse:274", hl.dsp.global("caelestia:launcherInterrupt"), { ignore_mods = true, non_consuming = true })
@@ -482,11 +523,11 @@ local function registerBinds()
 
     hl.bind("SUPER + CTRL + Left", hl.dsp.focus({ workspace = "-1" }))
     hl.bind("SUPER + CTRL + Right", hl.dsp.focus({ workspace = "+1" }))
-    hl.bind("SUPER + SHIFT + CTRL + Left", hl.dsp.window.move({ workspace = "-1" }))
-    hl.bind("SUPER + SHIFT + CTRL + Right", hl.dsp.window.move({ workspace = "+1" }))
+    hl.bind("SUPER + SHIFT + CTRL + Left", function() relocateWindow("-1") end)
+    hl.bind("SUPER + SHIFT + CTRL + Right", function() relocateWindow("+1") end)
     -- Mouse-wheel equivalent of the keyboard workspace-move bindings.
-    hl.bind("SUPER + mouse_up", hl.dsp.window.move({ workspace = "-1" }))
-    hl.bind("SUPER + mouse_down", hl.dsp.window.move({ workspace = "+1" }))
+    hl.bind("SUPER + mouse_up", function() relocateWindow("-1") end)
+    hl.bind("SUPER + mouse_down", function() relocateWindow("+1") end)
 
     hl.bind("SUPER + SHIFT + 0", hl.dsp.window.move({ workspace = "empty" }))
     for i = 1, 9 do
