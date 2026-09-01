@@ -151,6 +151,7 @@ local lockcmd = [=[{{$lockcmd}}]=]
 local clipse = [=[{{$clipse}}]=]
 local cliphistCmd = [=[{{$cliphistCmd}}]=]
 local playerctlPlayer = [=[{{$playerctlPlayer}}]=]
+local anytype = [=[{{.anytypeLocation}}]=]
 
 -- Ensure hypr config directory is in Lua package path for module resolution
 local configDir = os.getenv("XDG_CONFIG_HOME")
@@ -471,6 +472,10 @@ local function registerBinds()
     end
 
     hl.bind("SUPER + Y", hl.dsp.exec_cmd("hypr-cycle-layout"))
+
+    if anytype ~= "" then
+        hl.bind("SUPER + A", hl.dsp.exec_cmd(anytype))
+    end
 
     if emojiPicker then
         hl.bind("SUPER + Period", hl.dsp.exec_cmd(emojiPicker))
