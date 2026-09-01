@@ -549,10 +549,12 @@ local function registerBinds()
 
     -- Screenshots.
 {{- if eq .hyprland_features "quickshell" }}
-    -- Use Caelestia's native screenshot flow and upstream default bindings.
+    -- Use Caelestia's native screenshot flow. Drive the picker through its
+    -- documented IPC API instead of the compositor global-shortcut bridge so
+    -- the bindings keep working when that bridge is unavailable or wedged.
     hl.bind("Print", hl.dsp.exec_cmd("caelestia screenshot"), { locked = true })
-    hl.bind("SUPER + SHIFT + S", hl.dsp.global("caelestia:screenshotFreeze"))
-    hl.bind("SUPER + SHIFT + ALT + S", hl.dsp.global("caelestia:screenshot"))
+    hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("caelestia shell picker openFreeze"))
+    hl.bind("SUPER + SHIFT + ALT + S", hl.dsp.exec_cmd("caelestia shell picker open"))
 {{- else if and (ne .grimLocation "") (ne .slurpLocation "") (ne .wlCopyLocation "") (ne .hyprpickerLocation "") }}
   {{- if ne .hyprshotLocation "" }}
     hl.bind("SUPER + Print", hl.dsp.exec_cmd([=[hyprshot -m window -o "$HOME/Pictures/Screenshots"]=]))
