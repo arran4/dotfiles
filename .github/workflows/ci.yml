@@ -67,6 +67,7 @@ jobs:
       run_pr_meta_checks: ${{ steps.route.outputs.run_pr_meta_checks }}
       run_cleanup: ${{ steps.route.outputs.run_cleanup }}
       run_release: ${{ steps.route.outputs.run_release }}
+      run_docker_build: ${{ steps.route.outputs.run_docker_build }}
       is_monthly: ${{ steps.route.outputs.is_monthly }}
       is_nightly: ${{ steps.route.outputs.is_nightly }}
     steps:
@@ -79,6 +80,7 @@ jobs:
           run_pr_meta_checks=false
           run_cleanup=false
           run_release=false
+          run_docker_build=false
           is_monthly=false
           is_nightly=false
 
@@ -94,6 +96,8 @@ jobs:
                 run_cleanup=true
               else
                 run_pr_meta_checks=true
+                # Run docker build on PRs modifying relevant files
+                run_docker_build=true
                 if [[ "${{ github.event.pull_request.head.repo.full_name || '' }}" != "${{ github.repository }}" ]]; then
                   run_code_checks=true
                 fi
@@ -104,6 +108,9 @@ jobs:
               ;;
             workflow_dispatch)
               run_code_checks=true
+              if [[ "${{ inputs.mode }}" == "build" ]]; then
+                run_docker_build=true
+              fi
               if [[ "${{ inputs.mode }}" == release-* ]]; then
                 run_release=true
               fi
@@ -129,6 +136,10 @@ jobs:
           echo "run_pr_meta_checks=$run_pr_meta_checks" >> "$GITHUB_OUTPUT"
           echo "run_cleanup=$run_cleanup" >> "$GITHUB_OUTPUT"
           echo "run_release=$run_release" >> "$GITHUB_OUTPUT"
+          if [[ "$run_release" == "true" ]]; then
+            run_docker_build=true
+          fi
+          echo "run_docker_build=$run_docker_build" >> "$GITHUB_OUTPUT"
           echo "is_monthly=$is_monthly" >> "$GITHUB_OUTPUT"
           echo "is_nightly=$is_nightly" >> "$GITHUB_OUTPUT"
 
@@ -203,7 +214,7 @@ jobs:
   docker-build:
     name: Build dev-dotfiles-debian image
     needs: [route, discover]
-    if: ${{ needs.discover.outputs.has_docker == 'true' && needs.route.outputs.run_release == 'true' }}
+    if: ${{ needs.discover.outputs.has_docker == 'true' && needs.route.outputs.run_docker_build == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
