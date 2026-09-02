@@ -11,7 +11,7 @@ local workspaces = {
   { name = "beeper", key = "SUPER + B" },
   { name = "terminal", key = "SUPER + grave" },
   { name = "scratchpad", key = "SUPER + D" },
-  { name = "kmagmux", key = "SUPER + K" },
+  { name = "kmagmux", key = "SUPER + I" },
   { name = "kjules", key = "SUPER + J" },
   { name = "which_browser", key = "SUPER + SHIFT + underscore" },
 }

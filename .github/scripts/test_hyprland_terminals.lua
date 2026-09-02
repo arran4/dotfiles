@@ -250,8 +250,8 @@ end
 
 do
   local state = newScenario({ terminal = konsole })
-  assert(type(state.binds["SUPER + K"]) == "function")
-  state.binds["SUPER + K"]()
+  assert(type(state.binds["SUPER + I"]) == "function")
+  state.binds["SUPER + I"]()
   assert(#state.execs == 1)
   assert(state.execs[1][1] == "kmagmux --show")
   assert(state.execs[1][2].workspace == "special:kmagmux silent")
@@ -263,13 +263,13 @@ do
 
   -- Test hiding it when active
   local state2 = newScenario({ terminal = konsole, activeSpecial = "special:kmagmux" })
-  state2.binds["SUPER + K"]()
+  state2.binds["SUPER + I"]()
   assert(#state2.dispatches == 1 and state2.dispatches[1].kind == "toggle")
   assert(#state2.execs == 0)
 
   -- Test claiming it when already mapped on another workspace
   local state3 = newScenario({ terminal = konsole, windows = { { class = "kmagmux", workspace = { name = "1" } } } })
-  state3.binds["SUPER + K"]()
+  state3.binds["SUPER + I"]()
   assert(#state3.dispatches == 3) -- one for setup routeWindow, one for move, one for toggle
   assert(#state3.execs == 0, "kmagmux should not be executed if an existing window is claimed")
 end
