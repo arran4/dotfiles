@@ -1,6 +1,6 @@
 # Hyprland keyboard shortcuts
 
-This is the readable summary of the Hyprland shortcuts configured by this repository.
+This is the human-readable summary of the Hyprland shortcuts configured by this repository.
 
 The source of truth remains:
 
@@ -13,9 +13,9 @@ The source of truth remains:
 ## Notation
 
 - **Super** means the Meta/Windows key.
-- Shortcuts marked **Caelestia** are only registered when `hyprland_features = "quickshell"`.
-- Shortcuts marked **fallback** are used when the Caelestia/Quickshell profile is not active.
-- Some launch shortcuts only exist when the corresponding executable was found by chezmoi/runtime detection.
+- **Caelestia** bindings are only registered when `hyprland_features = "quickshell"`.
+- **Fallback** bindings are used when the Caelestia/Quickshell profile is not active.
+- Some launch shortcuts only exist when the corresponding executable is available.
 
 ## Launchers, applications, and special workspaces
 
@@ -25,17 +25,17 @@ The source of truth remains:
 | `Super+Return` | Open a terminal | Uses the preferred detected terminal. |
 | `Ctrl+Super+T` | Open an additional terminal | Direct terminal launcher. |
 | `Super+T` | Open a normal terminal | On modern Hyprland; deliberately outside the special terminal workspace. |
-| `Super+`` ` `` | Toggle/open the special terminal workspace | The grave/backtick key. |
+| `Super+grave` | Toggle/open the special terminal workspace | `grave` is the backtick key. |
 | `Super+M` | Toggle/open Spotify special workspace | Routes/launches Spotify. |
 | `Super+B` | Toggle/open Beeper special workspace | Routes/launches Beeper. |
-| `Super+D` | Toggle the scratchpad special workspace | No application is automatically launched. |
+| `Super+D` | Toggle the scratchpad special workspace | Does not automatically launch an application. |
 | `Super+I` | Toggle/open KMagMux special workspace | Routes/activates KMagMux. |
 | `Super+J` | Toggle/open kJules special workspace | Routes/activates kJules. |
 | `Super+Shift+J` | Start a new kJules session | Runs `kjules --new-session`. |
 | `Super+Shift+_` | Toggle/open which_browser special workspace | Config key name is `underscore`. |
 | `Super+A` | Open Anytype | Only when Anytype is configured. |
 | `Super+.` | Open the Plasma emoji picker | Only when `plasma-emojier` is available. |
-| `Super+V` | Open clipboard history | Prefers Caelestia clipboard in the Caelestia profile; otherwise uses cliphist/clipse fallbacks. |
+| `Super+V` | Open clipboard history | Prefers Caelestia clipboard; otherwise cliphist/clipse fallbacks. |
 | `Super+Y` | Cycle Hyprland layout | Runs `hypr-cycle-layout`. |
 | `Super+F5` | Set/change wallpaper | Runs `set-wallpaper`. |
 
@@ -112,7 +112,7 @@ Relative workspace moves use the window-relocation helper when available: the mo
 | `Super+Ctrl+Down` | Next window/tab in the current group. |
 | `Super+G` | Enter one-shot group-management mode. |
 
-After pressing `Super+G`, use one of the following keys. The action exits group-management mode afterwards unless it is cancelled.
+After pressing `Super+G`, use one of these keys. The action exits group-management mode afterwards unless cancelled.
 
 | Key in group-management mode | Action |
 | --- | --- |
@@ -140,7 +140,7 @@ After pressing `Super+G`, use one of the following keys. The action exits group-
 
 ### Non-Caelestia fallback
 
-These require the configured screenshot tools. The same logical bindings are used whether the implementation is `hyprshot` or the `grim`/`slurp` fallback.
+These require the configured screenshot tools. The same logical bindings are used with either `hyprshot` or the `grim`/`slurp` fallback.
 
 | Shortcut | Action |
 | --- | --- |
@@ -172,14 +172,14 @@ These bindings are present when `wf-recorder` and `slurp` are configured.
 | `Ctrl+Super+Space` | Play/pause media. | Caelestia only. |
 | `Ctrl+Super+=` | Next media item. | Caelestia only. |
 | `Ctrl+Super+-` | Previous media item. | Caelestia only. |
-| `XF86AudioPlay` / `XF86AudioPause` | Play/pause media. | Caelestia handles these in the Caelestia profile; `playerctl` is the fallback. |
+| `XF86AudioPlay` / `XF86AudioPause` | Play/pause media. | Caelestia handles these in that profile; `playerctl` is the fallback. |
 | `XF86AudioNext` | Next media item. | Caelestia or `playerctl` fallback. |
 | `XF86AudioPrev` | Previous media item. | Caelestia or `playerctl` fallback. |
 | `XF86AudioStop` | Stop media. | Caelestia only. |
 
 ## Mouse bindings related to keyboard modifiers
 
-These are not keyboard shortcuts, but are included because they share the same Super-based interaction model.
+These are not keyboard shortcuts, but they share the same Super-based interaction model.
 
 | Input | Action |
 | --- | --- |
@@ -196,4 +196,4 @@ These are not keyboard shortcuts, but are included because they share the same S
 hyprctl binds -j
 ```
 
-That runtime view is useful for checking what is active on the current host. This Markdown file is intended to explain the shortcuts and their purpose, including conditional bindings that may not be active on every machine.
+That runtime view shows what is active on the current host. This Markdown file explains the shortcuts and their purpose, including conditional bindings that may not be active on every machine.
