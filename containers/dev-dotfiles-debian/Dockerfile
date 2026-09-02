@@ -145,6 +145,6 @@ RUN set -euxo pipefail \
   && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac' \
   && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
   && junie --version \
-  && echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})" > /etc/motd
+  && echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})" | sudo tee /etc/motd > /dev/null
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
