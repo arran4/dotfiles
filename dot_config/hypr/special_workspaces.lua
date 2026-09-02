@@ -11,6 +11,7 @@ local workspaces = {
   { name = "beeper", key = "SUPER + B" },
   { name = "terminal", key = "SUPER + grave" },
   { name = "scratchpad", key = "SUPER + D" },
+  { name = "kmagmux", key = "SUPER + I" },
   { name = "kjules", key = "SUPER + J" },
   { name = "which_browser", key = "SUPER + SHIFT + underscore" },
 }
@@ -27,6 +28,10 @@ local classRoutes = {
     ["com.beeper.beeper"] = true,
   },
   terminal = {}, -- Populated dynamically in setup with the preferred terminal only.
+  kmagmux = {
+    ["kmagmux"] = true,
+    ["org.kde.kmagmux"] = true,
+  },
   kjules = {
     ["kjules"] = true,
     ["org.kde.kjules"] = true,
@@ -380,6 +385,13 @@ function M.setup(options)
       return
     end
 
+    if name == "kmagmux" then
+      -- KMagMux has an explicit single-instance activation command so a
+      -- tray-hidden primary can reliably map and focus its main window.
+      hl.exec_cmd("kmagmux --show", { workspace = "special:kmagmux silent" })
+      return
+    end
+
     if name == "kjules" then
       -- kJules is single-instance via KDBusService::Unique. Re-running it
       -- activates the existing instance, while a missing instance starts here.
@@ -414,7 +426,7 @@ function M.setup(options)
     local action = hl.dsp.workspace.toggle_special(workspace.name)
     if smartManagedWorkspaces
       and (workspace.name == "music" or workspace.name == "beeper" or workspace.name == "terminal"
-        or workspace.name == "kjules" or workspace.name == "which_browser") then
+        or workspace.name == "kmagmux" or workspace.name == "kjules" or workspace.name == "which_browser") then
       action = function()
         toggleManagedWorkspace(workspace.name)
       end
@@ -464,6 +476,10 @@ function M.setup(options)
       })
     end
   end
+  hl.window_rule({
+    match = { class = "^(KMagMux|kmagmux|org\\.kde\\.kmagmux)$" },
+    workspace = "special:kmagmux",
+  })
   hl.window_rule({
     match = { class = "^(kJules|kjules|org.kde.kjules|io.github.arran4.kjules)$" },
     workspace = "special:kjules",
