@@ -36,7 +36,6 @@ The source of truth remains:
 | `Super+A` | Open Anytype | Only when Anytype is configured. |
 | `Super+.` | Open the Plasma emoji picker | Only when `plasma-emojier` is available. |
 | `Super+V` | Open clipboard history | Prefers Caelestia clipboard; otherwise cliphist/clipse fallbacks. |
-| `Super+Y` | Cycle Hyprland layout | Runs `hypr-cycle-layout`. |
 | `Super+F5` | Set/change wallpaper | Runs `set-wallpaper`. |
 
 ## Caelestia / shell controls
@@ -68,6 +67,8 @@ Without the Caelestia profile, `Super+L` invokes the configured lock command ins
 | `Super+F` | Toggle fullscreen. |
 | `Super+Shift+Space` | Toggle floating. |
 | `Super+Alt+Space` | Toggle floating. |
+| `Super+Y` | Toggle the current Dwindle split between vertical and horizontal. |
+| `Super+Shift+Y` | Cycle the whole Hyprland tiling layout between Dwindle and Master. |
 | `Alt+Tab` | Cycle to the next window and raise it. |
 | `Alt+Shift+Tab` | Cycle to the previous window. |
 
