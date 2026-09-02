@@ -471,7 +471,9 @@ local function registerBinds()
         hl.bind("SUPER + Return", hl.dsp.exec_cmd(terminal.path))
     end
 
-    hl.bind("SUPER + Y", hl.dsp.exec_cmd("hypr-cycle-layout"))
+    -- Dwindle split orientation and whole-layout selection are separate controls.
+    hl.bind("SUPER + Y", hl.dsp.layout("togglesplit"))
+    hl.bind("SUPER + SHIFT + Y", hl.dsp.exec_cmd("hypr-cycle-layout"))
 
     if anytype ~= "" then
         hl.bind("SUPER + A", hl.dsp.exec_cmd(anytype))
