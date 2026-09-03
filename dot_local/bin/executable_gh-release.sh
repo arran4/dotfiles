@@ -7,13 +7,12 @@ if ! gh repo set-default --view > /dev/null 2>&1; then
   exit 1
 fi
 
-prerelease_flag=""
 git_tag_inc_args=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     test|alpha|beta|rc)
-      prerelease_flag="--prerelease"
+      # Handled by GitHub Actions
       ;;
   esac
   if [ -z "$git_tag_inc_args" ]; then
@@ -48,41 +47,6 @@ if ! git push --tags; then
   fi
 fi
 
-discussion_arg=""
-repo_info=$(gh repo view --json owner,name,hasDiscussionsEnabled --jq '.owner.login + " " + .name + " " + (.hasDiscussionsEnabled|tostring)' || echo "")
-
-if [ -n "$repo_info" ]; then
-  owner=${repo_info%% *}
-  rest=${repo_info#* }
-  name=${rest%% *}
-  enabled=${rest#* }
-
-  if [ "$enabled" = "true" ]; then
-    # shellcheck disable=SC2016
-    categories=$(gh api graphql -F owner="$owner" -F name="$name" -f query='
-      query($owner: String!, $name: String!) {
-        repository(owner: $owner, name: $name) {
-          discussionCategories(first: 10) {
-            nodes {
-              name
-            }
-          }
-        }
-      }' --jq '.data.repository.discussionCategories.nodes[].name')
-
-    if echo "$categories" | grep -q "^Announcements$"; then
-      discussion_arg="--discussion-category Announcements"
-    elif echo "$categories" | grep -q "^General$"; then
-      discussion_arg="--discussion-category General"
-    fi
-  fi
-fi
-
-if [ -n "$prerelease_flag" ]; then
-  # shellcheck disable=SC2086
-  gh release create "$version" --generate-notes "$prerelease_flag" $discussion_arg
-else
-  # shellcheck disable=SC2086
-  gh release create "$version" --generate-notes $discussion_arg
-fi
+# Script now solely computes the tag and pushes it.
+# GitHub Actions CI is the sole owner of GitHub Release creation.
 

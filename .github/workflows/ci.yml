@@ -1,5 +1,7 @@
 # Agent rules for generation:
-# https://arran4.com/post/2026/006-Github-CI-and-Deploy/
+# https://arran4.github.io/blog/post/2026/042-simplified-github-ci-release-safe/
+# Release safety details:
+# https://arran4.github.io/blog/post/2026/041-release-safe-single-owner-github-ci/
 name: CI/CD
 
 on:
@@ -87,7 +89,7 @@ jobs:
           case "${{ github.event_name }}" in
             push)
               run_code_checks=true
-              if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+              if [[ "${{ github.ref }}" == refs/tags/v* || "${{ github.ref }}" == refs/tags/test-* ]]; then
                 run_release=true
               fi
               ;;
@@ -104,7 +106,7 @@ jobs:
               fi
               ;;
             release)
-              run_release=true
+              run_release=false
               ;;
             workflow_dispatch)
               run_code_checks=true
@@ -299,10 +301,10 @@ jobs:
           path: dotfiles.zip
           retention-days: 1
 
-  publish-draft:
-    name: Publish draft release assets
+  publish-release:
+    name: Publish GitHub release
     needs: [package-dotfiles, docker-release]
-    if: ${{ needs.route.outputs.run_release == 'true' }}
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Collect artifacts
@@ -310,26 +312,11 @@ jobs:
         with:
           path: dist-release
           pattern: dotfiles-*
-      - name: Publish draft GitHub release
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          draft: true
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-test') || contains(github.ref, 'test-') }}
           files: dist-release/dotfiles-archive/dotfiles.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  promote-release:
-    name: Promote draft to published
-    needs: [publish-draft]
-    if: ${{ github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-')) }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Promote release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/v* ]]; then
-            gh release edit "${{ github.ref_name }}" --draft=false
-          else
-            echo "Promotion step placeholder (gh api patch release draft=false)"
-          fi
