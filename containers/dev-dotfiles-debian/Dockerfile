@@ -181,8 +181,8 @@ RUN set -euxo pipefail \
      command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
      command -v mini >/dev/null || { echo "mini missing"; false; }; \
      python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
-     opencode --version >/dev/null || true; \
-     qwen --version >/dev/null || true; \
+     opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
+     qwen --version >/dev/null || { echo "qwen version check failed"; false; }; \
      echo "Smoke tests passed."'
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
