@@ -151,11 +151,11 @@ RUN set -euxo pipefail \
     echo "Installed AI Agents & Tools:"; \
     echo "- Codex: $(codex --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Antigravity: $(agy --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- Mini SWE Agent: $(mini-swe-agent --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- OpenCode AI: $(opencode-ai --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Mini SWE Agent: $(python3 -c 'import importlib.metadata; print(importlib.metadata.version(\"mini-swe-agent\"))' 2>/dev/null || echo 'Unknown')"; \
+    echo "- OpenCode AI: $(opencode --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Claude Code: $(claude --version 2>/dev/null || echo 'Unknown')"; \
     echo "- GitHub Copilot CLI: $(github-copilot-cli --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- QwenChat: $(qwenchat --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- QwenChat: $(qwen --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Flutter: $(flutter --version 2>/dev/null | head -n 1 || echo 'Unknown')"; \
     echo "- Go: $(go version 2>/dev/null || echo 'Unknown')"; \
     echo "- Git: $(git --version 2>/dev/null || echo 'Unknown')"; \
@@ -164,12 +164,25 @@ RUN set -euxo pipefail \
   && { \
     echo "codex --dangerously-bypass-approvals-and-sandbox"; \
     echo "agy --dangerously-skip-permissions"; \
-    echo "mini-swe-agent"; \
-    echo "opencode-ai"; \
+    echo "mini --yolo"; \
+    echo "opencode"; \
     echo "claude"; \
     echo "github-copilot-cli"; \
-    echo "qwenchat"; \
+    echo "qwen"; \
   } > /home/${USER_NAME}/.bash_history \
-  && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history
+  && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history \
+  && /usr/bin/zsh -l -c 'set -e; \
+     echo "Running smoke tests..."; \
+     command -v codex >/dev/null || { echo "codex missing"; false; }; \
+     command -v agy >/dev/null || { echo "agy missing"; false; }; \
+     command -v opencode >/dev/null || { echo "opencode missing"; false; }; \
+     command -v claude >/dev/null || { echo "claude missing"; false; }; \
+     command -v github-copilot-cli >/dev/null || { echo "github-copilot-cli missing"; false; }; \
+     command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
+     command -v mini >/dev/null || { echo "mini missing"; false; }; \
+     python3 -c "import importlib.metadata; importlib.metadata.version(\"mini-swe-agent\")" || { echo "mini-swe-agent version check failed"; false; }; \
+     opencode --version >/dev/null || true; \
+     qwen --version >/dev/null || true; \
+     echo "Smoke tests passed."'
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
