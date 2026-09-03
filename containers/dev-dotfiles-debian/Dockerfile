@@ -151,7 +151,7 @@ RUN set -euxo pipefail \
     echo "Installed AI Agents & Tools:"; \
     echo "- Codex: $(codex --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Antigravity: $(agy --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- Mini SWE Agent: $(python3 -c 'import importlib.metadata; print(importlib.metadata.version(\"mini-swe-agent\"))' 2>/dev/null || echo 'Unknown')"; \
+    echo "- Mini SWE Agent: $(python3 -m pip show mini-swe-agent 2>/dev/null | grep ^Version: | awk '{print $2}' || echo 'Unknown')"; \
     echo "- OpenCode AI: $(opencode --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Claude Code: $(claude --version 2>/dev/null || echo 'Unknown')"; \
     echo "- GitHub Copilot CLI: $(github-copilot-cli --version 2>/dev/null || echo 'Unknown')"; \
@@ -180,7 +180,7 @@ RUN set -euxo pipefail \
      command -v github-copilot-cli >/dev/null || { echo "github-copilot-cli missing"; false; }; \
      command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
      command -v mini >/dev/null || { echo "mini missing"; false; }; \
-     python3 -c "import importlib.metadata; importlib.metadata.version(\"mini-swe-agent\")" || { echo "mini-swe-agent version check failed"; false; }; \
+     python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
      opencode --version >/dev/null || true; \
      qwen --version >/dev/null || true; \
      echo "Smoke tests passed."'
