@@ -152,7 +152,8 @@ RUN set -euxo pipefail \
     echo "Installed AI Agents & Tools:"; \
     echo "- Codex: $(codex --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Antigravity: $(agy --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- Mini SWE Agent: $(ver=\$(python3 -m pip show mini-swe-agent 2>/dev/null | grep ^Version: | awk '{print $2}'); test -n \"\$ver\" && echo \"\$ver\" || echo 'Unknown')"; \
+    MINI_SWE_VERSION=$(python3 -m pip show mini-swe-agent 2>/dev/null | awk '/^Version:/{print $2; exit}'); \
+    echo "- Mini SWE Agent: ${MINI_SWE_VERSION:-Unknown}"; \
     echo "- OpenCode AI: $(opencode --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Claude Code: $(claude --version 2>/dev/null || echo 'Unknown')"; \
     echo "- GitHub Copilot CLI: $(github-copilot-cli --version 2>/dev/null || echo 'Unknown')"; \
