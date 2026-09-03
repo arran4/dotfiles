@@ -103,7 +103,7 @@ RUN set -euxo pipefail \
   && npm install -g opencode-ai \
   && npm install -g @anthropic-ai/claude-code \
   && npm install -g @githubnext/github-copilot-cli \
-  && { bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source qwenchat || true; } \
+  && bash -c "QWEN_INSTALL_ROOT=/usr/local bash -c \"\$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source qwenchat" \
   && go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
   && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
@@ -145,6 +145,45 @@ RUN set -euxo pipefail \
   && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac' \
   && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
   && junie --version \
-  && echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})" | sudo tee /etc/motd > /dev/null
+  && { \
+    echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})"; \
+    echo ""; \
+    echo "Installed AI Agents & Tools:"; \
+    echo "- Codex: $(codex --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Antigravity: $(agy --version 2>/dev/null || echo 'Unknown')"; \
+    MINI_SWE_VERSION=$(python3 -m pip show mini-swe-agent 2>/dev/null | awk '/^Version:/{print $2; exit}'); \
+    echo "- Mini SWE Agent: ${MINI_SWE_VERSION:-Unknown}"; \
+    echo "- OpenCode AI: $(opencode --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Claude Code: $(claude --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- GitHub Copilot CLI: $(github-copilot-cli --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- QwenChat: $(jq -r '.version // empty' /usr/local/lib/qwen-code/manifest.json 2>/dev/null || npm list -g @qwen-code/qwen-code | grep @qwen-code/qwen-code@ | sed 's/.*@//' 2>/dev/null || echo 'Unknown')"; \
+    echo "- Flutter: $(flutter --version 2>/dev/null | head -n 1 || echo 'Unknown')"; \
+    echo "- Go: $(go version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Git: $(git --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Junie: $(junie --version 2>/dev/null || echo 'Unknown')"; \
+  } | sudo tee /etc/motd > /dev/null \
+  && { \
+    echo "codex --dangerously-bypass-approvals-and-sandbox"; \
+    echo "agy --dangerously-skip-permissions"; \
+    echo "mini --yolo"; \
+    echo "opencode"; \
+    echo "claude"; \
+    echo "github-copilot-cli"; \
+    echo "qwen"; \
+  } > /home/${USER_NAME}/.bash_history \
+  && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history \
+  && /usr/bin/zsh -l -c 'set -e; \
+     echo "Running smoke tests..."; \
+     command -v codex >/dev/null || { echo "codex missing"; false; }; \
+     command -v agy >/dev/null || { echo "agy missing"; false; }; \
+     command -v opencode >/dev/null || { echo "opencode missing"; false; }; \
+     command -v claude >/dev/null || { echo "claude missing"; false; }; \
+     command -v github-copilot-cli >/dev/null || { echo "github-copilot-cli missing"; false; }; \
+     command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
+     command -v mini >/dev/null || { echo "mini missing"; false; }; \
+     python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
+     opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
+
+     echo "Smoke tests passed."'
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
