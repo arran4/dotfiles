@@ -145,6 +145,31 @@ RUN set -euxo pipefail \
   && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac' \
   && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
   && junie --version \
-  && echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})" | sudo tee /etc/motd > /dev/null
+  && { \
+    echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})"; \
+    echo ""; \
+    echo "Installed AI Agents & Tools:"; \
+    echo "- Codex: $(codex --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Antigravity: $(agy --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Mini SWE Agent: $(mini-swe-agent --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- OpenCode AI: $(opencode-ai --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Claude Code: $(claude --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- GitHub Copilot CLI: $(github-copilot-cli --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- QwenChat: $(qwenchat --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Flutter: $(flutter --version 2>/dev/null | head -n 1 || echo 'Unknown')"; \
+    echo "- Go: $(go version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Git: $(git --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Junie: $(junie --version 2>/dev/null || echo 'Unknown')"; \
+  } | sudo tee /etc/motd > /dev/null \
+  && { \
+    echo "codex --dangerously-bypass-approvals-and-sandbox"; \
+    echo "agy --dangerously-skip-permissions"; \
+    echo "mini-swe-agent"; \
+    echo "opencode-ai"; \
+    echo "claude"; \
+    echo "github-copilot-cli"; \
+    echo "qwenchat"; \
+  } > /home/${USER_NAME}/.bash_history \
+  && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]

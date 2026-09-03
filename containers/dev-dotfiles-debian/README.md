@@ -57,14 +57,15 @@ Use the container itself as the security boundary and run the agent without its 
 From the repository that the agent should be allowed to modify:
 
 ```sh
-podman run --rm -it \
+podman run -it \
   --pull=always \
+  --name "dev-agent-$(basename "$PWD")" \
   --userns=keep-id:uid=1000,gid=1000 \
-  --hostname agent-sandbox \
+  --hostname "agent-$(basename "$PWD")" \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
-  --mount type=volume,src=dev-agent-codex,dst=/home/user/.codex \
-  --mount type=volume,src=dev-agent-agy,dst=/home/user/.gemini \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")-codex",dst=/home/user/.codex \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")-agy",dst=/home/user/.gemini \
   --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
   --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
   ghcr.io/arran4/dev-dotfiles-debian:latest
@@ -72,7 +73,7 @@ podman run --rm -it \
 
 ### Persistent, filesystem-disconnected sandbox
 
-A persistent sandbox does not need this repository, a launcher script, or an existing source checkout on the host. It only needs Docker or Podman and the published image. Give the container and volumes a stable name such as `goa4web`.
+A persistent sandbox does not need this repository, a launcher script, or an existing source checkout on the host. It only needs Docker or Podman and the published image. Give the container and volumes a stable name based on the current directory.
 
 #### Podman
 
@@ -81,17 +82,18 @@ Create and attach the sandbox for the first time:
 ```sh
 podman run -it \
   --pull=always \
-  --name dev-agent-goa4web \
+  --name "dev-agent-$(basename "$PWD")" \
   --restart=no \
   --detach-keys="" \
   --userns=keep-id:uid=1000,gid=1000 \
+  --hostname "agent-$(basename "$PWD")" \
   --env DEV_VOLUME_INIT=1 \
   --workdir /workspace \
-  --mount type=volume,src=dev-agent-goa4web-workspace,dst=/workspace \
-  --mount type=volume,src=dev-agent-goa4web-codex,dst=/home/user/.codex \
-  --mount type=volume,src=dev-agent-goa4web-agy,dst=/home/user/.gemini \
-  --mount type=volume,src=dev-agent-goa4web-gh,dst=/home/user/.config/gh \
-  --mount type=volume,src=dev-agent-goa4web-glab,dst=/home/user/.config/glab-cli \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-workspace,dst=/workspace \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-codex,dst=/home/user/.codex \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-agy,dst=/home/user/.gemini \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-gh,dst=/home/user/.config/gh \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-glab,dst=/home/user/.config/glab-cli \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
@@ -100,7 +102,7 @@ The empty `--detach-keys` disables Podman's interactive detach sequence for this
 Resume the same stopped container later:
 
 ```sh
-podman start -ai --detach-keys="" dev-agent-goa4web
+podman start -ai --detach-keys="" "dev-agent-$(basename "$PWD")"
 ```
 
 #### Docker
@@ -110,22 +112,23 @@ Create and attach the Docker equivalent:
 ```sh
 docker run -it \
   --pull=always \
-  --name dev-agent-goa4web \
+  --name "dev-agent-$(basename "$PWD")" \
   --restart=no \
+  --hostname "agent-$(basename "$PWD")" \
   --env DEV_VOLUME_INIT=1 \
   --workdir /workspace \
-  --mount type=volume,src=dev-agent-goa4web-workspace,dst=/workspace \
-  --mount type=volume,src=dev-agent-goa4web-codex,dst=/home/user/.codex \
-  --mount type=volume,src=dev-agent-goa4web-agy,dst=/home/user/.gemini \
-  --mount type=volume,src=dev-agent-goa4web-gh,dst=/home/user/.config/gh \
-  --mount type=volume,src=dev-agent-goa4web-glab,dst=/home/user/.config/glab-cli \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-workspace,dst=/workspace \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-codex,dst=/home/user/.codex \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-agy,dst=/home/user/.gemini \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-gh,dst=/home/user/.config/gh \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")"-glab,dst=/home/user/.config/glab-cli \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
 Resume it later with:
 
 ```sh
-docker start -ai dev-agent-goa4web
+docker start -ai "dev-agent-$(basename "$PWD")"
 ```
 
 The image entrypoint handles the one engine-dependent detail that should not have to live in a host script. When `DEV_VOLUME_INIT=1` is set, it fixes ownership of only the named-volume mount-point roots and then `exec`s the normal login `zsh`. It does not recursively change the checked-out repository. Volume initialisation is opt-in so the existing bind-mounted workflow can never change ownership of a host checkout or host credential directory.
@@ -151,13 +154,13 @@ Multiple repositories can live under `/workspace`; the sandbox name is an isolat
 Removing the container does not remove its named volumes, so an accidentally removed container does not itself discard the checked-out repository or CLI/agent state. To intentionally destroy the complete `goa4web` sandbox, remove the container and then its volumes:
 
 ```sh
-podman rm -f dev-agent-goa4web
+podman rm -f "dev-agent-$(basename "$PWD")"
 podman volume rm \
-  dev-agent-goa4web-workspace \
-  dev-agent-goa4web-codex \
-  dev-agent-goa4web-agy \
-  dev-agent-goa4web-gh \
-  dev-agent-goa4web-glab
+  "dev-agent-$(basename "$PWD")"-workspace \
+  "dev-agent-$(basename "$PWD")"-codex \
+  "dev-agent-$(basename "$PWD")"-agy \
+  "dev-agent-$(basename "$PWD")"-gh \
+  "dev-agent-$(basename "$PWD")"-glab
 ```
 
 Use the same commands with `docker` instead of `podman` for a Docker sandbox.
