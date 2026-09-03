@@ -114,7 +114,7 @@ jobs:
                 run_docker_build=true
               fi
               if [[ "${{ inputs.mode }}" == release-* ]]; then
-                run_release=true
+                run_release=false # The release-* mode computes and pushes the tag, which triggers a separate push run
               fi
               if [[ "${{ inputs.mode }}" == "monthly-maintenance" ]]; then
                 is_monthly=true
@@ -303,7 +303,7 @@ jobs:
 
   publish-release:
     name: Publish GitHub release
-    needs: [package-dotfiles, docker-release]
+    needs: [route, package-dotfiles, docker-release]
     if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -320,3 +320,38 @@ jobs:
           files: dist-release/dotfiles-archive/dotfiles.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  manual-release-tag:
+    name: Prepare manual release tag
+    needs: route
+    if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+      - name: Compute and push tag
+        run: |
+          # If we have an override, we just use it.
+          if [[ -n "${{ inputs.release_version_override }}" ]]; then
+            tag="v${{ inputs.release_version_override }}"
+            # Remove leading v if it was duplicated
+            tag="${tag/vv/v}"
+            git tag "$tag"
+            git push origin "$tag"
+            exit 0
+          fi
+
+          # Otherwise extract what type of release from the mode
+          mode="${{ inputs.mode }}"
+          rel_type="${mode#release-}"
+
+          echo "Running dot_local/bin/executable_gh-release.sh with argument: $rel_type"
+          # The script automatically generates the version and pushes the tag (without creating the release now)
+          ./dot_local/bin/executable_gh-release.sh "$rel_type"

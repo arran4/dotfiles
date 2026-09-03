@@ -38,10 +38,10 @@ fi
 
 git-tag-inc "$@"
 
-if ! git push --tags; then
-  echo "Retrying git push --tags after failure" >&2
-  if ! git push --tags; then
-    echo "Second git push --tags attempt failed; removing tag $version" >&2
+if ! git push origin "$version"; then
+  echo "Retrying git push origin "$version" after failure" >&2
+  if ! git push origin "$version"; then
+    echo "Second git push origin "$version" attempt failed; removing tag $version" >&2
     git tag -d "$version"
     exit 1
   fi
