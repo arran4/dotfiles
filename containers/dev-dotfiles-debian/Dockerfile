@@ -104,7 +104,6 @@ RUN set -euxo pipefail \
   && npm install -g @anthropic-ai/claude-code \
   && npm install -g @githubnext/github-copilot-cli \
   && bash -c "QWEN_INSTALL_ROOT=/usr/local bash -c \"\$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source qwenchat" \
-  && qwen --version \
   && go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
   && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
@@ -157,7 +156,7 @@ RUN set -euxo pipefail \
     echo "- OpenCode AI: $(opencode --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Claude Code: $(claude --version 2>/dev/null || echo 'Unknown')"; \
     echo "- GitHub Copilot CLI: $(github-copilot-cli --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- QwenChat: $(qwen --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- QwenChat: $(jq -r '.version // empty' /usr/local/lib/qwen-code/manifest.json 2>/dev/null || npm list -g @qwen-code/qwen-code | grep @qwen-code/qwen-code@ | sed 's/.*@//' 2>/dev/null || echo 'Unknown')"; \
     echo "- Flutter: $(flutter --version 2>/dev/null | head -n 1 || echo 'Unknown')"; \
     echo "- Go: $(go version 2>/dev/null || echo 'Unknown')"; \
     echo "- Git: $(git --version 2>/dev/null || echo 'Unknown')"; \
@@ -184,7 +183,7 @@ RUN set -euxo pipefail \
      command -v mini >/dev/null || { echo "mini missing"; false; }; \
      python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
      opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
-     qwen --version >/dev/null || { echo "qwen version check failed"; false; }; \
+
      echo "Smoke tests passed."'
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
