@@ -1,12 +1,6 @@
 #!/bin/sh
 set -eux
 
-if ! gh repo set-default --view > /dev/null 2>&1; then
-  echo "X No default remote repository has been set." >&2
-  echo "please run \`gh repo set-default\` to select a default remote repository." >&2
-  exit 1
-fi
-
 git_tag_inc_args=""
 
 while [ "$#" -gt 0 ]; do
@@ -35,7 +29,6 @@ if [ "${version}" = "" ]; then
   echo failed to generate version
   exit 1
 fi
-
 git-tag-inc "$@"
 
 if ! git push origin "$version"; then
@@ -49,4 +42,3 @@ fi
 
 # Script now solely computes the tag and pushes it.
 # GitHub Actions CI is the sole owner of GitHub Release creation.
-
