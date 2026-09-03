@@ -103,7 +103,8 @@ RUN set -euxo pipefail \
   && npm install -g opencode-ai \
   && npm install -g @anthropic-ai/claude-code \
   && npm install -g @githubnext/github-copilot-cli \
-  && { bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source qwenchat || true; } \
+  && bash -c "QWEN_INSTALL_ROOT=/usr/local bash -c \"\$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source qwenchat" \
+  && qwen --version \
   && go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
   && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
@@ -151,7 +152,7 @@ RUN set -euxo pipefail \
     echo "Installed AI Agents & Tools:"; \
     echo "- Codex: $(codex --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Antigravity: $(agy --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- Mini SWE Agent: $(python3 -m pip show mini-swe-agent 2>/dev/null | grep ^Version: | awk '{print $2}' || echo 'Unknown')"; \
+    echo "- Mini SWE Agent: $(ver=\$(python3 -m pip show mini-swe-agent 2>/dev/null | grep ^Version: | awk '{print $2}'); test -n \"\$ver\" && echo \"\$ver\" || echo 'Unknown')"; \
     echo "- OpenCode AI: $(opencode --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Claude Code: $(claude --version 2>/dev/null || echo 'Unknown')"; \
     echo "- GitHub Copilot CLI: $(github-copilot-cli --version 2>/dev/null || echo 'Unknown')"; \
