@@ -57,15 +57,16 @@ Use the container itself as the security boundary and run the agent without its 
 From the repository that the agent should be allowed to modify:
 
 ```sh
+SANDBOX_NAME=${SANDBOX_NAME:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9-')}
 podman run --rm -it \
   --pull=always \
-  --name "dev-agent-$(basename "$PWD")" \
+  --name "dev-agent-${SANDBOX_NAME}" \
   --userns=keep-id:uid=1000,gid=1000 \
-  --hostname "agent-$(basename "$PWD")" \
+  --hostname "agent-${SANDBOX_NAME}" \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
-  --mount type=volume,src="dev-agent-$(basename "$PWD")-codex",dst=/home/user/.codex \
-  --mount type=volume,src="dev-agent-$(basename "$PWD")-agy",dst=/home/user/.gemini \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
   --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
   --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
   ghcr.io/arran4/dev-dotfiles-debian:latest
@@ -73,14 +74,14 @@ podman run --rm -it \
 
 ### Persistent, filesystem-disconnected sandbox
 
-A persistent sandbox does not need this repository, a launcher script, or an existing source checkout on the host. It only needs Docker or Podman and the published image. Give the container and volumes a stable name based on the current directory.
+A persistent sandbox does not need this repository, a launcher script, or an existing source checkout on the host. It only needs Docker or Podman and the published image. Give the container and volumes a stable name based on the current directory. You can override this naming explicitly by setting the `SANDBOX_NAME` variable (e.g., `SANDBOX_NAME=my-project podman run ...`).
 
 #### Podman
 
 Create and attach the sandbox for the first time:
 
 ```sh
-SANDBOX_NAME=${1:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9_-')}
+SANDBOX_NAME=${SANDBOX_NAME:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9-')}
 podman run -it \
   --pull=always \
   --name "dev-agent-${SANDBOX_NAME}" \
@@ -103,6 +104,7 @@ The empty `--detach-keys` disables Podman's interactive detach sequence for this
 Resume the same stopped container later:
 
 ```sh
+SANDBOX_NAME=${SANDBOX_NAME:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9-')}
 podman start -ai --detach-keys="" "dev-agent-${SANDBOX_NAME}"
 ```
 
@@ -111,7 +113,7 @@ podman start -ai --detach-keys="" "dev-agent-${SANDBOX_NAME}"
 Create and attach the Docker equivalent:
 
 ```sh
-SANDBOX_NAME=${1:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9_-')}
+SANDBOX_NAME=${SANDBOX_NAME:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9-')}
 docker run -it \
   --pull=always \
   --name "dev-agent-${SANDBOX_NAME}" \
@@ -130,6 +132,7 @@ docker run -it \
 Resume it later with:
 
 ```sh
+SANDBOX_NAME=${SANDBOX_NAME:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9-')}
 docker start -ai "dev-agent-${SANDBOX_NAME}"
 ```
 
@@ -156,6 +159,7 @@ Multiple repositories can live under `/workspace`; the sandbox name is an isolat
 Removing the container does not remove its named volumes, so an accidentally removed container does not itself discard the checked-out repository or CLI/agent state. To intentionally destroy the complete `goa4web` sandbox, remove the container and then its volumes:
 
 ```sh
+SANDBOX_NAME=${SANDBOX_NAME:-$(basename "$PWD" | tr -cd 'a-zA-Z0-9-')}
 podman rm -f "dev-agent-${SANDBOX_NAME}"
 podman volume rm \
   "dev-agent-${SANDBOX_NAME}-workspace" \
