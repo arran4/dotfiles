@@ -277,6 +277,20 @@ if not loadedLocal then
   })
 end
 
+{{- $bibataModernClassicInstalled := false -}}
+{{- if eq .chezmoi.os "linux" -}}
+  {{- range $cursorRoot := list
+    (joinPath .chezmoi.homeDir ".local/share/icons")
+    (joinPath .chezmoi.homeDir ".icons")
+    "/usr/local/share/icons"
+    "/usr/share/icons"
+  -}}
+    {{- if stat (joinPath $cursorRoot "Bibata-Modern-Classic/cursors") -}}
+      {{- $bibataModernClassicInstalled = true -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 -- ------------------------
 -- General settings & Caelestia aesthetics
 -- ------------------------
@@ -293,6 +307,9 @@ hl.config({
   },
   cursor = {
     no_hardware_cursors = true,
+{{- if $bibataModernClassicInstalled }}
+    enable_hyprcursor = false,
+{{- end }}
   },
   decoration = {
     rounding = 10,
@@ -337,6 +354,10 @@ hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
+{{- if $bibataModernClassicInstalled }}
+hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
+hl.env("XCURSOR_SIZE", "24")
+{{- end }}
 
 -- ------------------------
 -- Animation Curves & Physics
