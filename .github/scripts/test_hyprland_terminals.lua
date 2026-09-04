@@ -279,7 +279,7 @@ do
   assert(type(state.binds["SUPER + SHIFT + underscore"]) == "function")
   state.binds["SUPER + SHIFT + underscore"]()
   assert(#state.execs == 1)
-  assert(state.execs[1][1] == "which_browser")
+  assert(state.execs[1][1] == "which_browser --show")
   assert(state.execs[1][2].workspace == "special:which_browser silent")
   state.handlers["window.open"]({ class = "which_browser" })
   assert(#state.dispatches == 2, "toggle and pending routing were expected for which_browser")
