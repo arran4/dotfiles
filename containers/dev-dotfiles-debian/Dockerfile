@@ -38,10 +38,15 @@ RUN set -euxo pipefail \
   jq \
   gh \
   git \
+  git-credential-oauth \
   openssh-client \
   sudo \
   zsh \
+  fish \
   vim \
+  neovim \
+  less \
+  git-delta \
   kdiff3 \
   diffutils \
   ripgrep \
@@ -49,6 +54,7 @@ RUN set -euxo pipefail \
   fzf \
   tmux \
   htop \
+  btop \
   tree \
   build-essential \
   clang \
@@ -74,8 +80,12 @@ RUN set -euxo pipefail \
   python3-venv \
   golang \
   default-jdk \
+  maven \
   nodejs \
   unzip \
+  7zip \
+  bind9-dnsutils \
+  uptimed \
   hugo \
   xz-utils \
   ca-certificates \
@@ -130,12 +140,15 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/de
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
+# Tools that influence rendered dotfiles (for example delta, nvim, less,
+# git-credential-oauth and atuin) are installed above before this apply step.
+# This ensures chezmoi renders the same integrations the image will actually use.
 # Use Google's canonical installer invocation. It installs agy to ~/.local/bin,
 # which is already on PATH for the image user.
 RUN set -euxo pipefail \
   && curl -fsSL https://antigravity.google/cli/install.sh | bash \
   && agy --version \
-  && { yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug " || true; } \
+  && yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug " \
   && rm -rf /tmp/dotfiles \
   && flutter --version \
   && go version \
@@ -181,8 +194,23 @@ RUN set -euxo pipefail \
      command -v github-copilot-cli >/dev/null || { echo "github-copilot-cli missing"; false; }; \
      command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
      command -v mini >/dev/null || { echo "mini missing"; false; }; \
+     command -v less >/dev/null || { echo "less missing"; false; }; \
+     command -v delta >/dev/null || { echo "delta missing"; false; }; \
+     command -v nvim >/dev/null || { echo "nvim missing"; false; }; \
+     command -v atuin >/dev/null || { echo "atuin missing"; false; }; \
+     command -v fish >/dev/null || { echo "fish missing"; false; }; \
+     command -v btop >/dev/null || { echo "btop missing"; false; }; \
+     command -v mvn >/dev/null || { echo "mvn missing"; false; }; \
+     command -v dig >/dev/null || { echo "dig missing"; false; }; \
+     command -v 7z >/dev/null || { echo "7z missing"; false; }; \
+     command -v uprecords >/dev/null || { echo "uprecords missing"; false; }; \
+     command -v git-credential-oauth >/dev/null || { echo "git-credential-oauth missing"; false; }; \
      python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
      opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
+     test "${LESS:-}" = "-R" || { echo "LESS is not configured for ANSI passthrough"; false; }; \
+     test "$(git config --global --get core.pager)" = "$(command -v delta)" || { echo "git core.pager is not delta"; false; }; \
+     git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
+     grep -q "atuin" "$HOME/.zshrc" || { echo "atuin shell integration was not rendered"; false; }; \
 
      echo "Smoke tests passed."'
 
