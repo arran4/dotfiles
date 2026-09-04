@@ -115,8 +115,8 @@ RUN set -euxo pipefail \
   && npm install -g @anthropic-ai/claude-code \
   && npm install -g @githubnext/github-copilot-cli \
   && npm install -g @qwen-code/qwen-code \
-  && go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
-  && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI \
+  && GOBIN=/usr/local/bin go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
+  && mv /usr/local/bin/server /usr/local/bin/CLIProxyAPI \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
@@ -214,7 +214,6 @@ RUN set -euxo pipefail \
      test "$(git config --global --get core.pager)" = "$(command -v delta)" || { echo "git core.pager is not delta"; false; }; \
      git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
      grep -q "atuin" "$HOME/.zshrc" || { echo "atuin shell integration was not rendered"; false; }; \
-
      echo "Smoke tests passed."'
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
