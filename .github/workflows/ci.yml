@@ -337,7 +337,7 @@ jobs:
           git config user.email "actions@github.com"
       - uses: arran4/git-tag-inc-action@v1
         with:
-          install: true
+          mode: install
       - name: Compute and push tag
         run: |
           # If we have an override, we validate and use it.
@@ -353,7 +353,7 @@ jobs:
             fi
 
             # Reject already existing tags
-            if git ls-remote --exit-tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
               echo "Tag $tag already exists!" >&2
 
               exit 1
