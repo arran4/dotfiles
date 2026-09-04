@@ -211,7 +211,9 @@ RUN set -euxo pipefail \
      python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
      opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
      test "${LESS:-}" = "-R" || { echo "LESS is not configured for ANSI passthrough"; false; }; \
-     test "$(git config --global --get core.pager)" = "$(command -v delta)" || { echo "git core.pager is not delta"; false; }; \
+     pager="$(git config --global --get core.pager)"; \
+     delta_path="$(command -v delta)"; \
+     test "$(readlink -f "$pager")" = "$(readlink -f "$delta_path")" || { echo "git core.pager is not delta: $pager != $delta_path"; false; }; \
      git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
      grep -q "atuin" "$HOME/.zshrc" || { echo "atuin shell integration was not rendered"; false; }; \
      echo "Smoke tests passed."'
