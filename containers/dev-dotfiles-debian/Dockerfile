@@ -43,7 +43,6 @@ RUN set -euxo pipefail \
   sudo \
   zsh \
   fish \
-  atuin \
   vim \
   neovim \
   less \
@@ -141,8 +140,8 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/de
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
 
-# Tools that influence rendered dotfiles (for example delta, nvim, less,
-# git-credential-oauth and atuin) are installed above before this apply step.
+# Tools that influence rendered dotfiles (for example delta, nvim, less and
+# git-credential-oauth) are installed above before this apply step.
 # This ensures chezmoi renders the same integrations the image will actually use.
 # Use Google's canonical installer invocation. It installs agy to ~/.local/bin,
 # which is already on PATH for the image user.
@@ -200,7 +199,6 @@ RUN set -euxo pipefail \
      command -v less >/dev/null || { echo "less missing"; false; }; \
      command -v delta >/dev/null || { echo "delta missing"; false; }; \
      command -v nvim >/dev/null || { echo "nvim missing"; false; }; \
-     command -v atuin >/dev/null || { echo "atuin missing"; false; }; \
      command -v fish >/dev/null || { echo "fish missing"; false; }; \
      command -v btop >/dev/null || { echo "btop missing"; false; }; \
      command -v mvn >/dev/null || { echo "mvn missing"; false; }; \
@@ -215,7 +213,6 @@ RUN set -euxo pipefail \
      delta_path="$(command -v delta)"; \
      test "$(readlink -f "$pager")" = "$(readlink -f "$delta_path")" || { echo "git core.pager is not delta: $pager != $delta_path"; false; }; \
      git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
-     grep -q "atuin" "$HOME/.zshrc" || { echo "atuin shell integration was not rendered"; false; }; \
      echo "Smoke tests passed."'
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
