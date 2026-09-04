@@ -148,7 +148,9 @@ WORKDIR /home/${USER_NAME}
 RUN set -euxo pipefail \
   && curl -fsSL https://antigravity.google/cli/install.sh | bash \
   && agy --version \
+  && set +o pipefail \
   && yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug " \
+  && set -o pipefail \
   && rm -rf /tmp/dotfiles \
   && flutter --version \
   && go version \
