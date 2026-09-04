@@ -43,6 +43,7 @@ RUN set -euxo pipefail \
   sudo \
   zsh \
   fish \
+  atuin \
   vim \
   neovim \
   less \
