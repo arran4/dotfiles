@@ -22,19 +22,23 @@ This is intentional for agent use: Codex or Antigravity can be given unrestricte
 The environment comes pre-installed with a wide array of tools to support various development workflows:
 
 ### Core Development Tools & Utilities
-- **Version Control & Forges:** `git`, GitHub CLI (`gh`), GitLab CLI (`glab`)
-- **Shell & Terminal:** `zsh`, `tmux`, `fzf`, `htop`, `tree`
-- **Editors & Diff:** `vim`, `kdiff3`, `diffutils`
+- **Version Control & Forges:** `git`, GitHub CLI (`gh`), GitLab CLI (`glab`), `git-credential-oauth`
+- **Shell & Terminal:** `zsh`, `fish`, `tmux`, `fzf`, `htop`, `btop`, `tree`, `atuin`
+- **Editors, Pager & Diff:** `vim`, `neovim`, `less`, `git-delta`, `kdiff3`, `diffutils`
 - **Search & Navigation:** `ripgrep`, `fd-find`
 - **Build & C/C++:** `build-essential`, `clang`, `clang-format`, `cmake`, `ninja-build`, `make`, `autoconf`, `automake`, `libtool`, `pkg-config`, `gdb`, `lldb`
-- **Web & Misc:** `curl`, `wget`, `jq`, `unzip`, `hugo`, `sqlite3`
+- **Web & Misc:** `curl`, `wget`, `jq`, `unzip`, `7z`, `dig`, `uprecords`, `hugo`, `sqlite3`
 
 ### Languages & Frameworks
 - **Python:** `python3`, `python3-pip`, `python3-venv`
 - **Go:** `golang`
-- **Java:** `default-jdk`
+- **Java:** `default-jdk`, `maven`
 - **Node.js:** `nodejs`, `npm`
 - **Flutter:** Installed from the `stable` channel to `/opt/flutter`
+
+The Debian-packaged tools that affect capability-dependent dotfile rendering are installed before `chezmoi init --apply`. In particular, the image is rendered with Delta available as the Git/chezmoi diff pager, Neovim available as the preferred editor, `less` available as the ANSI-safe fallback, `git-credential-oauth` available for headless OAuth fallback, and Atuin available when shell integration is generated. The Docker build smoke tests verify both the executables and those rendered configuration choices.
+
+`difftastic` and `zellij` are referenced or detected by the wider dotfiles but are not installed here because the image follows Debian's package set rather than adding ad-hoc upstream installers for optional tools. Desktop-only Hyprland/KDE tools are likewise outside this headless development image.
 
 ### AI Assistants & Agents
 The container is equipped with several AI-powered CLI tools and agents:
