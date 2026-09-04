@@ -32,6 +32,7 @@ RUN set -euxo pipefail \
   && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
   && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
   && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+  && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   jq \
@@ -74,7 +75,6 @@ RUN set -euxo pipefail \
   golang \
   default-jdk \
   nodejs \
-  npm \
   unzip \
   hugo \
   xz-utils \
@@ -103,7 +103,7 @@ RUN set -euxo pipefail \
   && npm install -g opencode-ai \
   && npm install -g @anthropic-ai/claude-code \
   && npm install -g @githubnext/github-copilot-cli \
-  && bash -c "QWEN_INSTALL_ROOT=/usr/local bash -c \"\$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source qwenchat" \
+  && npm install -g @qwen-code/qwen-code \
   && go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
   && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
