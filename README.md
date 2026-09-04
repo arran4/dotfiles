@@ -106,12 +106,13 @@ From the repository that the agent should be allowed to modify:
 ```sh
 podman run --rm -it \
   --pull=always \
+  --name "dev-agent-$(basename "$PWD")" \
   --userns=keep-id:uid=1000,gid=1000 \
-  --hostname agent-sandbox \
+  --hostname "agent-$(basename "$PWD")" \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
-  --mount type=volume,src=dev-agent-codex,dst=/home/user/.codex \
-  --mount type=volume,src=dev-agent-agy,dst=/home/user/.gemini \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")-codex",dst=/home/user/.codex \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")-agy",dst=/home/user/.gemini \
   --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
   --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
   ghcr.io/arran4/dev-dotfiles-debian:latest
@@ -125,11 +126,12 @@ setup where the host account is UID/GID `1000`, matching the image defaults, the
 ```sh
 docker run --rm -it \
   --pull=always \
-  --hostname agent-sandbox \
+  --name "dev-agent-$(basename "$PWD")" \
+  --hostname "agent-$(basename "$PWD")" \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
-  --mount type=volume,src=dev-agent-codex,dst=/home/user/.codex \
-  --mount type=volume,src=dev-agent-agy,dst=/home/user/.gemini \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")-codex",dst=/home/user/.codex \
+  --mount type=volume,src="dev-agent-$(basename "$PWD")-agy",dst=/home/user/.gemini \
   --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
   --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
   ghcr.io/arran4/dev-dotfiles-debian:latest
