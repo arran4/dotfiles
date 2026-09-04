@@ -111,7 +111,9 @@ podman run --rm -it \
   --pull=always \
   --name "dev-agent-${SANDBOX_NAME}" \
   --userns=keep-id:uid=1000,gid=1000 \
-  --hostname agent-sandbox \
+  --hostname "agent-sandbox-${SANDBOX_NAME}" \
+  --env DEV_AGY_VOLUME_INIT=1 \
+  --env GEMINI_API_KEY \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
@@ -133,7 +135,9 @@ SANDBOX_NAME=${SANDBOX_NAME:-default-project}
 docker run --rm -it \
   --pull=always \
   --name "dev-agent-${SANDBOX_NAME}" \
-  --hostname agent-sandbox \
+  --hostname "agent-sandbox-${SANDBOX_NAME}" \
+  --env DEV_AGY_VOLUME_INIT=1 \
+  --env GEMINI_API_KEY \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
@@ -147,6 +151,11 @@ Docker rootless mode maps files owned by the host user to container UID `0`, rat
 `--userns=keep-id` behaviour. If that makes the bind-mounted repository unwritable, run the rootless Docker container
 with `--user 0:0 --env HOME=/home/user`. Do not use that workaround with a rootful Docker daemon, because it would run
 the agent as real container root and can leave root-owned files in the mounted repository.
+
+If `GEMINI_API_KEY` is set on the host, the bare `--env GEMINI_API_KEY` option passes it into the container without
+embedding its value in the command. The entrypoint records Antigravity's required `modelProvider: "gemini"` setting in
+the per-sandbox `dev-agent-${SANDBOX_NAME}-agy` volume, so the provider choice and other `~/.gemini` state survive
+container recreation. Unset `GEMINI_API_KEY` on the host to stop using that API-key authentication path.
 
 Once inside either container, the agents can be run with their own inner restrictions disabled:
 

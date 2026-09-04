@@ -68,7 +68,9 @@ podman run --rm -it \
   --pull=always \
   --name "dev-agent-${SANDBOX_NAME}" \
   --userns=keep-id:uid=1000,gid=1000 \
-  --hostname "agent-${SANDBOX_NAME}" \
+  --hostname "agent-sandbox-${SANDBOX_NAME}" \
+  --env DEV_AGY_VOLUME_INIT=1 \
+  --env GEMINI_API_KEY \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
@@ -77,6 +79,8 @@ podman run --rm -it \
   --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
+
+The `dev-agent-${SANDBOX_NAME}-agy` volume keeps Antigravity settings and state across disposable container instances. If `GEMINI_API_KEY` is set in the host environment, the bare `--env GEMINI_API_KEY` option passes it through and the entrypoint persists Antigravity's required `modelProvider: "gemini"` setting in that volume. `DEV_AGY_VOLUME_INIT=1` only fixes ownership of the `~/.gemini` volume; it does not chown the bind-mounted checkout or host forge credential directories.
 
 ### Persistent, filesystem-disconnected sandbox
 
@@ -96,8 +100,9 @@ podman run -it \
   --restart=no \
   --detach-keys="" \
   --userns=keep-id:uid=1000,gid=1000 \
-  --hostname "agent-${SANDBOX_NAME}" \
+  --hostname "agent-sandbox-${SANDBOX_NAME}" \
   --env DEV_VOLUME_INIT=1 \
+  --env GEMINI_API_KEY \
   --workdir /workspace \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-workspace",dst=/workspace \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
@@ -130,8 +135,9 @@ docker run -it \
   --pull=always \
   --name "dev-agent-${SANDBOX_NAME}" \
   --restart=no \
-  --hostname "agent-${SANDBOX_NAME}" \
+  --hostname "agent-sandbox-${SANDBOX_NAME}" \
   --env DEV_VOLUME_INIT=1 \
+  --env GEMINI_API_KEY \
   --workdir /workspace \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-workspace",dst=/workspace \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
@@ -150,7 +156,7 @@ SANDBOX_NAME=${SANDBOX_NAME:-default-project}
 docker start -ai "dev-agent-${SANDBOX_NAME}"
 ```
 
-The image entrypoint handles the one engine-dependent detail that should not have to live in a host script. When `DEV_VOLUME_INIT=1` is set, it fixes ownership of only the named-volume mount-point roots and then `exec`s the normal login `zsh`. It does not recursively change the checked-out repository. Volume initialisation is opt-in so the existing bind-mounted workflow can never change ownership of a host checkout or host credential directory.
+The image entrypoint handles the engine-dependent named-volume ownership detail. `DEV_VOLUME_INIT=1` fixes only the persistent sandbox's named mount-point roots before it `exec`s the normal login `zsh`. The bind-mounted workflow instead uses `DEV_AGY_VOLUME_INIT=1`, which fixes only `~/.gemini`, so the entrypoint never chowns the host checkout or host credential directories.
 
 The login `zsh` is the container's primary process. In ordinary attached use, exiting it stops the container; the stopped container object and all named volumes remain. `--restart=no` prevents a daemon or host restart from automatically starting the sandbox. Docker and Podman also support deliberately detaching from an interactive container; doing so intentionally leaves its shell running, so this workflow is intended to be ended with `exit`, not detach.
 
@@ -201,7 +207,7 @@ agy --dangerously-skip-permissions
 
 This gives the agent unrestricted access to the container and the mounted repository, including passwordless `sudo`, while keeping the rest of the host filesystem outside its namespace.
 
-The named volumes retain agent configuration and session state without exposing the host's normal `~/.codex` or `~/.gemini` directories. For API-key authentication, explicitly pass only the credential required by the selected agent, for example `--env OPENAI_API_KEY` or `--env GEMINI_API_KEY`. Antigravity's Google-account authentication uses the operating-system keyring; do not bind the host D-Bus or desktop keyring into an unrestricted agent container merely to reuse host credentials.
+The named volumes retain agent configuration and session state without exposing the host's normal `~/.codex` or `~/.gemini` directories. Antigravity's supported headless API-key path is inherited from the host with `--env GEMINI_API_KEY`; the entrypoint sets `modelProvider` to `gemini` in the persisted `~/.gemini/antigravity-cli/settings.json` while that key is present and removes only its managed provider value when the key is no longer supplied. Google-account OAuth on a normal host is stored in the operating-system keyring, so it is intentionally not copied into the container; do not bind the host D-Bus or desktop keyring into an unrestricted agent container merely to reuse that session.
 
 ### Docker
 
