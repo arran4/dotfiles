@@ -212,13 +212,14 @@
 [interactive "delta"]
   diffFilter = delta --color-only
 
+# Keep explicit HTTPS GitHub and GitLab remotes on HTTPS so their HTTP
+# credential helpers remain authoritative. Only shorthand and git:// aliases
+# below should be rewritten.
 [url "git@github.com:github"]
-  insteadOf = "https://github.com/github"
   insteadOf = "github:github"
   insteadOf = "git://github.com/github"
 
 [url "git@github.com:"]
-  pushInsteadOf = "https://github.com/"
   pushInsteadOf = "github:"
   pushInsteadOf = "git://github.com/"
 
