@@ -104,15 +104,18 @@ container's `user` account.
 From the repository that the agent should be allowed to modify:
 
 ```sh
+RAW_NAME=$(basename "$PWD")
+SANDBOX_NAME=$(echo "$RAW_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
+SANDBOX_NAME=${SANDBOX_NAME:-default-project}
 podman run --rm -it \
   --pull=always \
-  --name "dev-agent-$(basename "$PWD")" \
+  --name "dev-agent-${SANDBOX_NAME}" \
   --userns=keep-id:uid=1000,gid=1000 \
-  --hostname "agent-$(basename "$PWD")" \
+  --hostname agent-sandbox \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
-  --mount type=volume,src="dev-agent-$(basename "$PWD")-codex",dst=/home/user/.codex \
-  --mount type=volume,src="dev-agent-$(basename "$PWD")-agy",dst=/home/user/.gemini \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
   --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
   --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
   ghcr.io/arran4/dev-dotfiles-debian:latest
@@ -124,14 +127,17 @@ The same OCI image can be used with Docker. Prefer Docker's rootless mode when a
 setup where the host account is UID/GID `1000`, matching the image defaults, the equivalent command is:
 
 ```sh
+RAW_NAME=$(basename "$PWD")
+SANDBOX_NAME=$(echo "$RAW_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
+SANDBOX_NAME=${SANDBOX_NAME:-default-project}
 docker run --rm -it \
   --pull=always \
-  --name "dev-agent-$(basename "$PWD")" \
-  --hostname "agent-$(basename "$PWD")" \
+  --name "dev-agent-${SANDBOX_NAME}" \
+  --hostname agent-sandbox \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
-  --mount type=volume,src="dev-agent-$(basename "$PWD")-codex",dst=/home/user/.codex \
-  --mount type=volume,src="dev-agent-$(basename "$PWD")-agy",dst=/home/user/.gemini \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
   --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
   --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
   ghcr.io/arran4/dev-dotfiles-debian:latest
