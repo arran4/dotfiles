@@ -3,6 +3,10 @@
 {{- $mergeTool := "" -}}
 {{- $editTool := "" -}}
 {{- $pagerTool := index . "gitPagerLocation" -}}
+{{- $lessTool := index . "lessLocation" -}}
+{{- if and (ne $lessTool "") (or (eq $pagerTool "") (eq $pagerTool (index . "neovimLocation")) (eq $pagerTool (index . "vimLocation"))) -}}
+  {{- $pagerTool = $lessTool -}}
+{{- end -}}
 
 [user]
   useConfigOnly = true
