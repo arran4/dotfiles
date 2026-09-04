@@ -212,27 +212,38 @@
 [interactive "delta"]
   diffFilter = delta --color-only
 
-# Keep explicit HTTPS GitHub and GitLab remotes on HTTPS so their HTTP
-# credential helpers remain authoritative. Only shorthand and git:// aliases
-# below should be rewritten.
-[url "git@github.com:github"]
-  insteadOf = "github:github"
-  insteadOf = "git://github.com/github"
-
-[url "git@github.com:"]
-  pushInsteadOf = "github:"
-  pushInsteadOf = "git://github.com/"
-
-[url "git://github.com/"]
+# Keep GitHub, Gist and GitLab remotes on HTTPS. Shorthand, git:// and SSH
+# spellings are normalized to HTTPS so HTTP credential helpers stay authoritative.
+[url "https://github.com/"]
   insteadOf = "github:"
+  insteadOf = "git://github.com/"
+  insteadOf = "git@github.com:"
+  insteadOf = "ssh://git@github.com/"
+  insteadOf = "git+ssh://git@github.com/"
+  insteadOf = "ssh+git://git@github.com/"
 
-[url "git@gist.github.com:"]
-  insteadOf = "gst:"
-  pushInsteadOf = "gist:"
-  pushInsteadOf = "git://gist.github.com/"
-
-[url "git://gist.github.com/"]
+[url "https://gist.github.com/"]
   insteadOf = "gist:"
+  insteadOf = "gst:"
+  insteadOf = "git://gist.github.com/"
+  insteadOf = "git@gist.github.com:"
+  insteadOf = "ssh://git@gist.github.com/"
+  insteadOf = "git+ssh://git@gist.github.com/"
+  insteadOf = "ssh+git://git@gist.github.com/"
+
+[url "https://gitlab.com/"]
+  insteadOf = "git://gitlab.com/"
+  insteadOf = "git@gitlab.com:"
+  insteadOf = "ssh://git@gitlab.com/"
+  insteadOf = "git+ssh://git@gitlab.com/"
+  insteadOf = "ssh+git://git@gitlab.com/"
+
+[url "https://gitlab.arran.net.au/"]
+  insteadOf = "git://gitlab.arran.net.au/"
+  insteadOf = "git@gitlab.arran.net.au:"
+  insteadOf = "ssh://git@gitlab.arran.net.au/"
+  insteadOf = "git+ssh://git@gitlab.arran.net.au/"
+  insteadOf = "ssh+git://git@gitlab.arran.net.au/"
 
 [http]
   cookiefile = ~/.cache/git/cookies
