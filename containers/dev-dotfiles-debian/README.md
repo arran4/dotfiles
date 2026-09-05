@@ -73,8 +73,8 @@ podman run --rm -it \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
-  --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
-  --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
+  --env DEV_BOOTSTRAP_GH_TOKEN="$(gh auth token 2>/dev/null || true)" \
+  --env DEV_BOOTSTRAP_GLAB_TOKEN="$(glab auth token 2>/dev/null || true)" \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
@@ -104,6 +104,8 @@ podman run -it \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-gh",dst=/home/user/.config/gh \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-glab",dst=/home/user/.config/glab-cli \
+  --env DEV_BOOTSTRAP_GH_TOKEN="$(gh auth token 2>/dev/null || true)" \
+  --env DEV_BOOTSTRAP_GLAB_TOKEN="$(glab auth token 2>/dev/null || true)" \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
@@ -138,6 +140,8 @@ docker run -it \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-gh",dst=/home/user/.config/gh \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-glab",dst=/home/user/.config/glab-cli \
+  --env DEV_BOOTSTRAP_GH_TOKEN="$(gh auth token 2>/dev/null || true)" \
+  --env DEV_BOOTSTRAP_GLAB_TOKEN="$(glab auth token 2>/dev/null || true)" \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
@@ -154,17 +158,15 @@ The image entrypoint handles the one engine-dependent detail that should not hav
 
 The login `zsh` is the container's primary process. In ordinary attached use, exiting it stops the container; the stopped container object and all named volumes remain. `--restart=no` prevents a daemon or host restart from automatically starting the sandbox. Docker and Podman also support deliberately detaching from an interactive container; doing so intentionally leaves its shell running, so this workflow is intended to be ended with `exit`, not detach.
 
-Authenticate and check out repositories from inside the sandbox:
+Check out repositories from inside the sandbox:
 
 ```sh
-gh auth login
 gh repo clone arran4/goa4web
 ```
 
 or:
 
 ```sh
-glab auth login
 glab repo clone GROUP/PROJECT
 ```
 

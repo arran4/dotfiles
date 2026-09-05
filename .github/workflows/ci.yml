@@ -236,9 +236,38 @@ jobs:
           file: containers/dev-dotfiles-debian/Dockerfile
           push: false
           tags: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian:ci-${{ github.run_id }}
+          load: true
           build-args: |
             DOTFILES_RELEASE=ci-${{ github.run_id }}
             DOTFILES_COMMIT=${{ github.sha }}
+      - name: Test Docker image bootstrap logic
+        run: |
+          set -euo pipefail
+          IMAGE="ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian:ci-${{ github.run_id }}"
+
+          echo "Testing Git credential helper ordering..."
+          # Git config returns empty strings as empty lines. We want to ensure 'helper =' clears it.
+          # The generated config should have an empty line followed by '!gh auth'
+          docker run --rm "$IMAGE" /usr/bin/zsh -l -c 'git config --global --get-all credential.https://github.com.helper' | head -n 1 | grep -E '^$'
+          docker run --rm "$IMAGE" /usr/bin/zsh -l -c 'git config --global --get-all credential.https://github.com.helper' | grep 'gh auth git-credential'
+
+          echo "Testing fresh named volume initialization..."
+          docker volume create test-gh-vol
+          docker run --rm -e DEV_BOOTSTRAP_GH_TOKEN=fake_token_123 -v test-gh-vol:/home/user/.config/gh "$IMAGE" bash -c "grep fake_token_123 /home/user/.config/gh/hosts.yml"
+
+          echo "Testing already-initialized volume is not overwritten..."
+          docker run --rm -e DEV_BOOTSTRAP_GH_TOKEN=new_token_456 -v test-gh-vol:/home/user/.config/gh "$IMAGE" bash -c "grep fake_token_123 /home/user/.config/gh/hosts.yml && ! grep new_token_456 /home/user/.config/gh/hosts.yml"
+
+          echo "Testing ownership/modes are usable by normal user..."
+          docker run --rm -v test-gh-vol:/home/user/.config/gh "$IMAGE" bash -c "touch /home/user/.config/gh/testfile && rm /home/user/.config/gh/testfile"
+
+          echo "Testing host bind path is not chowned..."
+          mkdir -p test-bind-dir
+          touch test-bind-dir/testfile
+          chmod 777 test-bind-dir/testfile
+          ORIG_OWNER="$(stat -c %U test-bind-dir/testfile)"
+          docker run --rm -v "${PWD}/test-bind-dir:/workspace" "$IMAGE" true
+          [ "$(stat -c %U test-bind-dir/testfile)" = "$ORIG_OWNER" ]
 
   docker-release:
     name: Docker release

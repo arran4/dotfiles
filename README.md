@@ -116,8 +116,8 @@ podman run --rm -it \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
-  --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
-  --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
+  --env DEV_BOOTSTRAP_GH_TOKEN="$(gh auth token 2>/dev/null || true)" \
+  --env DEV_BOOTSTRAP_GLAB_TOKEN="$(glab auth token 2>/dev/null || true)" \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
@@ -138,8 +138,8 @@ docker run --rm -it \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
-  --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
-  --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
+  --env DEV_BOOTSTRAP_GH_TOKEN="$(gh auth token 2>/dev/null || true)" \
+  --env DEV_BOOTSTRAP_GLAB_TOKEN="$(glab auth token 2>/dev/null || true)" \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
