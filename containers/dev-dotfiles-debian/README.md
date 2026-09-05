@@ -69,14 +69,17 @@ podman run --rm -it \
   --name "dev-agent-${SANDBOX_NAME}" \
   --userns=keep-id:uid=1000,gid=1000 \
   --hostname "agent-${SANDBOX_NAME}" \
+  --env DEV_FORGE_VOLUME_INIT=1 \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
-  --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
-  --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-gh",dst=/home/user/.config/gh \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-glab",dst=/home/user/.config/glab-cli \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
+
+The GitHub and GitLab CLI configuration is deliberately not bind-mounted from the host. Each sandbox gets its own named `gh` and `glab` volumes, so authentication and CLI state persist across disposable container runs without either modifying or depending on the host CLI configuration. Authenticate inside a new sandbox with `gh auth login` and/or `glab auth login`.
 
 ### Persistent, filesystem-disconnected sandbox
 
@@ -150,7 +153,7 @@ SANDBOX_NAME=${SANDBOX_NAME:-default-project}
 docker start -ai "dev-agent-${SANDBOX_NAME}"
 ```
 
-The image entrypoint handles the one engine-dependent detail that should not have to live in a host script. When `DEV_VOLUME_INIT=1` is set, it fixes ownership of only the named-volume mount-point roots and then `exec`s the normal login `zsh`. It does not recursively change the checked-out repository. Volume initialisation is opt-in so the existing bind-mounted workflow can never change ownership of a host checkout or host credential directory.
+The image entrypoint handles the one engine-dependent detail that should not have to live in a host script. When `DEV_VOLUME_INIT=1` is set, it fixes ownership of only the named-volume mount-point roots and then `exec`s the normal login `zsh`. For the bind-mounted checkout workflow, `DEV_FORGE_VOLUME_INIT=1` fixes only the `gh` and `glab` named-volume roots and deliberately leaves `/workspace` alone. Neither mode recursively changes the checked-out repository.
 
 The login `zsh` is the container's primary process. In ordinary attached use, exiting it stops the container; the stopped container object and all named volumes remain. `--restart=no` prevents a daemon or host restart from automatically starting the sandbox. Docker and Podman also support deliberately detaching from an interactive container; doing so intentionally leaves its shell running, so this workflow is intended to be ended with `exit`, not detach.
 
