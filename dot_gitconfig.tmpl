@@ -44,19 +44,6 @@
 [rerere]
   enabled = 1
 
-[credential "https://github.com"]
-  useHttpPath = true
-{{ if ne (index . "ghLocation") "" }}
-  helper =
-  helper = !{{ index . "ghLocation" }} auth git-credential
-{{ end }}
-
-[credential "https://gist.github.com"]
-{{ if ne (index . "ghLocation") "" }}
-  helper =
-  helper = !{{ index . "ghLocation" }} auth git-credential
-{{ end }}
-
 [credential]
 {{ if ne (index . "gitCredentialOAuthLocation") "" }}
   {{ if ne (index . "gitCredentialLibSecretLocation") "" }}
@@ -75,6 +62,19 @@
   helper = {{ index $ "gitCredentialManagerLocation" }}
 {{ else }}
   helper = manager
+{{ end }}
+
+[credential "https://github.com"]
+  useHttpPath = true
+{{ if ne (index . "ghLocation") "" }}
+  helper =
+  helper = !{{ index . "ghLocation" }} auth git-credential
+{{ end }}
+
+[credential "https://gist.github.com"]
+{{ if ne (index . "ghLocation") "" }}
+  helper =
+  helper = !{{ index . "ghLocation" }} auth git-credential
 {{ end }}
 
 [credential "https://dev.azure.com"]
