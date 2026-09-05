@@ -89,7 +89,7 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 | Tool | Installation Command |
 |---|---|
 | gh | `winget install --id GitHub.cli` |
-| glab | `winget install --id GitLab.glab` |
+| glab | `winget install GitLab.glab` |
 
 ## Containerised development environment
 
@@ -112,12 +112,13 @@ podman run --rm -it \
   --name "dev-agent-${SANDBOX_NAME}" \
   --userns=keep-id:uid=1000,gid=1000 \
   --hostname agent-sandbox \
+  --env DEV_FORGE_VOLUME_INIT=1 \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
-  --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
-  --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-gh",dst=/home/user/.config/gh \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-glab",dst=/home/user/.config/glab-cli \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
 
@@ -134,14 +135,19 @@ docker run --rm -it \
   --pull=always \
   --name "dev-agent-${SANDBOX_NAME}" \
   --hostname agent-sandbox \
+  --env DEV_FORGE_VOLUME_INIT=1 \
   --workdir /workspace \
   --mount type=bind,src="$PWD",dst=/workspace,rw \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
   --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
-  --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
-  --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-gh",dst=/home/user/.config/gh \
+  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-glab",dst=/home/user/.config/glab-cli \
   ghcr.io/arran4/dev-dotfiles-debian:latest
 ```
+
+The `gh` and `glab` configuration directories are isolated from the host and persisted in per-sandbox named volumes.
+Authenticate once inside a new sandbox with `gh auth login` and/or `glab auth login`; later disposable container runs
+with the same `SANDBOX_NAME` reuse that CLI state without resetting or modifying the host clients.
 
 Docker rootless mode maps files owned by the host user to container UID `0`, rather than providing Podman's
 `--userns=keep-id` behaviour. If that makes the bind-mounted repository unwritable, run the rootless Docker container
@@ -173,7 +179,7 @@ I use the following flatpak applications in this environment:
 - RustDesk (`com.rustdesk.RustDesk`)
 - Spotify (`com.spotify.Client`)
 - Steam (`com.valvesoftware.Steam`)
-- FluffyChat (`im.fluffychat.Fluffychat`)
+- FluffyChat (`im.fluffychat.FluffyChat`)
 - nheko (`im.nheko.Nheko`)
 - Element (`im.riot.Riot`)
 - Anytype (`io.anytype.anytype`)
@@ -192,7 +198,7 @@ I use the following flatpak applications in this environment:
 
 You can install them automatically with this one-liner:
 ```sh
-flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
+flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.FluffyChat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
 ```
 
 ### Try it out
