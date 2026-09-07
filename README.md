@@ -154,7 +154,7 @@ I use the following flatpak applications in this environment:
 - RustDesk (`com.rustdesk.RustDesk`)
 - Spotify (`com.spotify.Client`)
 - Steam (`com.valvesoftware.Steam`)
-- FluffyChat (`im.fluffychat.FluffyChat`)
+- FluffyChat (`im.fluffychat.Fluffychat`)
 - nheko (`im.nheko.Nheko`)
 - Element (`im.riot.Riot`)
 - Anytype (`io.anytype.anytype`)
@@ -173,7 +173,7 @@ I use the following flatpak applications in this environment:
 
 You can install them automatically with this one-liner:
 ```sh
-flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.FluffyChat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
+flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
 ```
 
 ### Try it out
@@ -189,32 +189,9 @@ flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden
 Use ejson to store secrets such as a GitLab OAuth client ID. Create an encrypted
 file named `private_gitlab_oauth.ejson`:
 
-1. Install [ejson](https://github.com/Shopify/ejson).
-2. Generate a keypair and save the secret key:
-
-   ```sh
-   ejson keygen -w
-   ```
-
-   Note the printed public key and keep the private key in the output path.
-3. Create `private_gitlab_oauth.ejson` containing your public key and OAuth client ID:
-
-   ```json
-   {
-     "_public_key": "<public key>",
-     "gitlab_oauth_client_id": "<your client ID>"
-   }
-   ```
-
-4. Encrypt the file:
-
-   ```sh
-   ejson encrypt private_gitlab_oauth.ejson
-   ```
-
-Store the private key where `ejson` can read it when applying your dotfiles.
-Feel free to change the JSON keys to suit whichever credentials you need to
-encrypt.
+1. Install ejson and generate a keypair.
+2. Store the private key where `ejson` expects it.
+3. Add the public key and encrypted secrets to your ejson file.
 
 ## Git template files
 
@@ -267,7 +244,8 @@ Host legacy.example.com
 ## Foot terminal emulator
 
 These dotfiles include a template for [foot](https://codeberg.org/dnkl/foot), a
-fast Wayland terminal. Install foot from your package manager and apply the configuration:
+fast Wayland terminal. Install foot from your package manager and apply the
+configuration:
 
 ```sh
 chezmoi apply
