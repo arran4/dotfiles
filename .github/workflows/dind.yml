@@ -1,0 +1,38 @@
+name: Docker-in-Docker smoke test
+
+on:
+  pull_request:
+    paths:
+      - 'containers/dev-dotfiles-debian/**'
+      - '.github/workflows/dind.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dind-smoke:
+    name: Run nested Docker daemon
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-contexts: dotfiles=.
+          file: containers/dev-dotfiles-debian/Dockerfile
+          load: true
+          push: false
+          tags: dev-dotfiles-dind:${{ github.sha }}
+          build-args: |
+            DOTFILES_RELEASE=dind-ci
+            DOTFILES_COMMIT=${{ github.sha }}
+      - name: Build and run a container using the nested daemon
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --privileged \
+            --env DEV_DIND=1 \
+            "dev-dotfiles-dind:${{ github.sha }}" \
+            -c 'set -euo pipefail; tmp=$(mktemp -d); printf "%s\n" "package main" "func main() {}" > "$tmp/main.go"; CGO_ENABLED=0 go build -o "$tmp/smoke" "$tmp/main.go"; printf "%s\n" "FROM scratch" "COPY smoke /smoke" "ENTRYPOINT [\"/smoke\"]" > "$tmp/Dockerfile"; docker build --pull=false -t dev-dind-smoke "$tmp"; docker run --rm dev-dind-smoke; rm -rf "$tmp"'
