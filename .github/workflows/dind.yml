@@ -7,6 +7,10 @@ on:
       - '.github/workflows/dind.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -34,5 +38,6 @@ jobs:
           set -euo pipefail
           docker run --rm --privileged \
             --env DEV_DIND=1 \
+            --mount type=volume,dst=/var/lib/docker \
             "dev-dotfiles-dind:${{ github.sha }}" \
             -c 'set -euo pipefail; tmp=$(mktemp -d); printf "%s\n" "package main" "func main() {}" > "$tmp/main.go"; CGO_ENABLED=0 go build -o "$tmp/smoke" "$tmp/main.go"; printf "%s\n" "FROM scratch" "COPY smoke /smoke" "ENTRYPOINT [\"/smoke\"]" > "$tmp/Dockerfile"; docker build --pull=false -t dev-dind-smoke "$tmp"; docker run --rm dev-dind-smoke; rm -rf "$tmp"'
