@@ -59,13 +59,13 @@ if [ "${DEV_DIND:-0}" = "1" ]; then
   sudo dockerd \
     --host=unix:///var/run/docker.sock \
     --group "$(id -gn)" \
-    >"$dind_log" 2>&1 &
-  dockerd_pid=$!
+    2>&1 | tee "$dind_log" >/dev/null &
+  dockerd_log_pid=$!
 
   attempts=0
   while ! docker info >/dev/null 2>&1; do
     attempts=$((attempts + 1))
-    if ! kill -0 "$dockerd_pid" 2>/dev/null || [ "$attempts" -ge 60 ]; then
+    if ! kill -0 "$dockerd_log_pid" 2>/dev/null || [ "$attempts" -ge 60 ]; then
       echo "nested Docker daemon failed to become ready" >&2
       cat "$dind_log" >&2 || true
       exit 1
