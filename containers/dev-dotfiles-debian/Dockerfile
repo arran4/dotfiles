@@ -82,6 +82,10 @@ RUN set -euxo pipefail \
   default-jdk \
   maven \
   nodejs \
+  docker.io \
+  docker-cli \
+  docker-buildx \
+  docker-compose \
   unzip \
   7zip \
   bind9-dnsutils \
@@ -155,9 +159,12 @@ RUN set -euxo pipefail \
   && flutter --version \
   && go version \
   && git --version \
+  && docker --version \
+  && docker buildx version \
+  && docker compose version \
   && codex --version \
   && agy --version \
-  && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac' \
+  && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; command -v docker; command -v dockerd; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac' \
   && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
   && junie --version \
   && { \
@@ -175,6 +182,7 @@ RUN set -euxo pipefail \
     echo "- Flutter: $(flutter --version 2>/dev/null | head -n 1 || echo 'Unknown')"; \
     echo "- Go: $(go version 2>/dev/null || echo 'Unknown')"; \
     echo "- Git: $(git --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- Docker: $(docker --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Junie: $(junie --version 2>/dev/null || echo 'Unknown')"; \
   } | sudo tee /etc/motd > /dev/null \
   && { \
@@ -206,6 +214,10 @@ RUN set -euxo pipefail \
      command -v 7z >/dev/null || { echo "7z missing"; false; }; \
      command -v uprecords >/dev/null || { echo "uprecords missing"; false; }; \
      command -v git-credential-oauth >/dev/null || { echo "git-credential-oauth missing"; false; }; \
+     command -v docker >/dev/null || { echo "docker missing"; false; }; \
+     command -v dockerd >/dev/null || { echo "dockerd missing"; false; }; \
+     docker buildx version >/dev/null || { echo "docker buildx unavailable"; false; }; \
+     docker compose version >/dev/null || { echo "docker compose unavailable"; false; }; \
      python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
      opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
      test "${LESS:-}" = "-R" || { echo "LESS is not configured for ANSI passthrough"; false; }; \
