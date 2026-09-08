@@ -58,56 +58,24 @@ Codex is installed under `/opt/codex` with its executable exposed in `/usr/local
 
 Use the container itself as the security boundary and run the agent without its inner command sandbox or approval prompts. Rootless Podman is preferred because container root remains inside an unprivileged user namespace on the host.
 
-From the repository that the agent should be allowed to modify:
+From the repository that the agent should be allowed to modify. The command derives the project name internally and uses it in both the container name and hostname, so a shell prompt immediately identifies the active project:
 
 ```sh
-RAW_NAME=${SANDBOX_NAME:-$(basename "$PWD")}
-SANDBOX_NAME=$(echo "$RAW_NAME" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
-SANDBOX_NAME=${SANDBOX_NAME:-default-project}
-podman run --rm -it \
-  --pull=always \
-  --name "dev-agent-${SANDBOX_NAME}" \
-  --userns=keep-id:uid=1000,gid=1000 \
-  --hostname "agent-${SANDBOX_NAME}" \
-  --env DEV_FORGE_VOLUME_INIT=1 \
-  --workdir /workspace \
-  --mount type=bind,src="$PWD",dst=/workspace,rw \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-gh",dst=/home/user/.config/gh \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-glab",dst=/home/user/.config/glab-cli \
-  ghcr.io/arran4/dev-dotfiles-debian:latest
+sh -c 'workspace=$(pwd -P); raw=${SANDBOX_NAME:-$(basename "$workspace")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec podman run --rm -it --pull=always --name "dev-agent-${name}" --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" --env DEV_FORGE_VOLUME_INIT=1 --workdir /workspace --mount type=bind,src="$workspace",dst=/workspace,rw --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
 ```
 
 The GitHub and GitLab CLI configuration is deliberately not bind-mounted from the host. Each sandbox gets its own named `gh` and `glab` volumes, so authentication and CLI state persist across disposable container runs without either modifying or depending on the host CLI configuration. Authenticate inside a new sandbox with `gh auth login` and/or `glab auth login`.
 
 ### Persistent, filesystem-disconnected sandbox
 
-A persistent sandbox does not need this repository, a launcher script, or an existing source checkout on the host. It only needs Docker or Podman and the published image. Give the container and volumes a stable name based on the current directory. You can override this naming explicitly by exporting the `SANDBOX_NAME` variable (e.g., `export SANDBOX_NAME=my-project`).
+A persistent sandbox does not need this repository, a launcher script, or an existing source checkout on the host. It only needs Docker or Podman and the published image. Give the container and volumes a stable name based on the current directory. The copy/paste commands are deliberately single-line `sh -c` invocations so their temporary variables do not depend on the caller's shell assignment or export rules. To override the derived name portably, prefix a command with `env SANDBOX_NAME=my-project`.
 
 #### Podman
 
 Create and attach the sandbox for the first time:
 
 ```sh
-RAW_NAME=${SANDBOX_NAME:-$(basename "$PWD")}
-SANDBOX_NAME=$(echo "$RAW_NAME" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
-SANDBOX_NAME=${SANDBOX_NAME:-default-project}
-podman run -it \
-  --pull=always \
-  --name "dev-agent-${SANDBOX_NAME}" \
-  --restart=no \
-  --detach-keys="" \
-  --userns=keep-id:uid=1000,gid=1000 \
-  --hostname "agent-${SANDBOX_NAME}" \
-  --env DEV_VOLUME_INIT=1 \
-  --workdir /workspace \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-workspace",dst=/workspace \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-gh",dst=/home/user/.config/gh \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-glab",dst=/home/user/.config/glab-cli \
-  ghcr.io/arran4/dev-dotfiles-debian:latest
+sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec podman run -it --pull=always --name "dev-agent-${name}" --restart=no --detach-keys="" --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" --env DEV_VOLUME_INIT=1 --workdir /workspace --mount type=volume,src="dev-agent-${name}-workspace",dst=/workspace --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
 ```
 
 The empty `--detach-keys` disables Podman's interactive detach sequence for this container. Exiting the login shell therefore stops the container rather than leaving it running in the background.
@@ -115,10 +83,7 @@ The empty `--detach-keys` disables Podman's interactive detach sequence for this
 Resume the same stopped container later:
 
 ```sh
-RAW_NAME=${SANDBOX_NAME:-$(basename "$PWD")}
-SANDBOX_NAME=$(echo "$RAW_NAME" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
-SANDBOX_NAME=${SANDBOX_NAME:-default-project}
-podman start -ai --detach-keys="" "dev-agent-${SANDBOX_NAME}"
+sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec podman start -ai --detach-keys="" "dev-agent-${name}"'
 ```
 
 #### Docker
@@ -126,31 +91,13 @@ podman start -ai --detach-keys="" "dev-agent-${SANDBOX_NAME}"
 Create and attach the Docker equivalent:
 
 ```sh
-RAW_NAME=${SANDBOX_NAME:-$(basename "$PWD")}
-SANDBOX_NAME=$(echo "$RAW_NAME" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
-SANDBOX_NAME=${SANDBOX_NAME:-default-project}
-docker run -it \
-  --pull=always \
-  --name "dev-agent-${SANDBOX_NAME}" \
-  --restart=no \
-  --hostname "agent-${SANDBOX_NAME}" \
-  --env DEV_VOLUME_INIT=1 \
-  --workdir /workspace \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-workspace",dst=/workspace \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-codex",dst=/home/user/.codex \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-agy",dst=/home/user/.gemini \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-gh",dst=/home/user/.config/gh \
-  --mount type=volume,src="dev-agent-${SANDBOX_NAME}-glab",dst=/home/user/.config/glab-cli \
-  ghcr.io/arran4/dev-dotfiles-debian:latest
+sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec docker run -it --pull=always --name "dev-agent-${name}" --restart=no --hostname "agent-sandbox-${name}" --env DEV_VOLUME_INIT=1 --workdir /workspace --mount type=volume,src="dev-agent-${name}-workspace",dst=/workspace --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
 ```
 
 Resume it later with:
 
 ```sh
-RAW_NAME=${SANDBOX_NAME:-$(basename "$PWD")}
-SANDBOX_NAME=$(echo "$RAW_NAME" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
-SANDBOX_NAME=${SANDBOX_NAME:-default-project}
-docker start -ai "dev-agent-${SANDBOX_NAME}"
+sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec docker start -ai "dev-agent-${name}"'
 ```
 
 The image entrypoint handles the one engine-dependent detail that should not have to live in a host script. When `DEV_VOLUME_INIT=1` is set, it fixes ownership of only the named-volume mount-point roots and then `exec`s the normal login `zsh`. For the bind-mounted checkout workflow, `DEV_FORGE_VOLUME_INIT=1` fixes only the `gh` and `glab` named-volume roots and deliberately leaves `/workspace` alone. Neither mode recursively changes the checked-out repository.
@@ -176,19 +123,10 @@ Multiple repositories can live under `/workspace`; the sandbox name is an isolat
 Removing the container does not remove its named volumes, so an accidentally removed container does not itself discard the checked-out repository or CLI/agent state. To intentionally destroy the complete `goa4web` sandbox, remove the container and then its volumes:
 
 ```sh
-RAW_NAME=${SANDBOX_NAME:-$(basename "$PWD")}
-SANDBOX_NAME=$(echo "$RAW_NAME" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/-\{2,\}/-/g' | sed 's/^-//;s/-$//')
-SANDBOX_NAME=${SANDBOX_NAME:-default-project}
-podman rm -f "dev-agent-${SANDBOX_NAME}"
-podman volume rm \
-  "dev-agent-${SANDBOX_NAME}-workspace" \
-  "dev-agent-${SANDBOX_NAME}-codex" \
-  "dev-agent-${SANDBOX_NAME}-agy" \
-  "dev-agent-${SANDBOX_NAME}-gh" \
-  "dev-agent-${SANDBOX_NAME}-glab"
+sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; podman rm -f "dev-agent-${name}" && podman volume rm "dev-agent-${name}-workspace" "dev-agent-${name}-codex" "dev-agent-${name}-agy" "dev-agent-${name}-gh" "dev-agent-${name}-glab"'
 ```
 
-Use the same commands with `docker` instead of `podman` for a Docker sandbox.
+Use the same command with `docker` instead of `podman` for a Docker sandbox.
 
 GNU Readline is not required for this flow. The image uses `zsh`, whose interactive line editor is ZLE. The stopped named container preserves its writable container filesystem across later `start -ai` invocations, while the named volumes preserve the project and CLI/agent state independently of the container object.
 
