@@ -102,7 +102,7 @@ RUN set -euxo pipefail \
   && locale-gen \
   && rm -rf /var/lib/apt/lists/* \
   && groupadd --gid "${USER_GID}" "${USER_NAME}" \
-  && useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --shell /usr/bin/zsh "${USER_NAME}" \
+  && useradd --uid "${USER_UID}" --gid "${USER_GID}" --groups docker --create-home --shell /usr/bin/zsh "${USER_NAME}" \
   && mkdir -p /etc/sudoers.d \
   && echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME} \
   && chmod 0440 /etc/sudoers.d/${USER_NAME} \
