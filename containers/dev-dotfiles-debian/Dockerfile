@@ -149,12 +149,15 @@ WORKDIR /home/${USER_NAME}
 # This ensures chezmoi renders the same integrations the image will actually use.
 # Use Google's canonical installer invocation. It installs agy to ~/.local/bin,
 # which is already on PATH for the image user.
+# The container intentionally has no desktop D-Bus session, so remove the Codex
+# desktop notification hook after applying the otherwise-normal dotfiles.
 RUN set -euxo pipefail \
   && curl -fsSL https://antigravity.google/cli/install.sh | bash \
   && agy --version \
   && set +o pipefail \
   && yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug " \
   && set -o pipefail \
+  && rm -f "$HOME/.codex/hooks.json" \
   && rm -rf /tmp/dotfiles \
   && flutter --version \
   && go version \
