@@ -36,7 +36,6 @@ RUN set -euxo pipefail \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   jq \
-  yq \
   xmlstarlet \
   libxml2-utils \
   gh \
@@ -103,7 +102,6 @@ RUN set -euxo pipefail \
   python3 \
   python3-pip \
   python3-venv \
-  pipx \
   golang \
   default-jdk \
   maven \
