@@ -1,0 +1,4 @@
+[".config/quickshell"]
+type = "git-repo"
+url = "https://github.com/caelestia-dots/shell.git"
+clone.args = ["-b", "v1.3.3"]
