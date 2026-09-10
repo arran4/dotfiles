@@ -36,19 +36,37 @@ RUN set -euxo pipefail \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   jq \
+  yq \
+  xmlstarlet \
+  libxml2-utils \
   gh \
   git \
+  git-lfs \
   git-credential-oauth \
   openssh-client \
   sudo \
+  bash \
+  bash-completion \
   zsh \
   fish \
   vim \
   neovim \
   less \
+  bat \
   git-delta \
   kdiff3 \
+  coreutils \
+  grep \
+  sed \
+  gawk \
+  findutils \
   diffutils \
+  file \
+  patch \
+  rsync \
+  moreutils \
+  shellcheck \
+  shfmt \
   ripgrep \
   fd-find \
   fzf \
@@ -56,6 +74,13 @@ RUN set -euxo pipefail \
   htop \
   btop \
   tree \
+  procps \
+  psmisc \
+  lsof \
+  strace \
+  time \
+  util-linux \
+  bsdextrautils \
   build-essential \
   clang \
   clang-format \
@@ -86,14 +111,28 @@ RUN set -euxo pipefail \
   docker-cli \
   docker-buildx \
   docker-compose \
+  tar \
+  gzip \
+  bzip2 \
+  zip \
   unzip \
   7zip \
+  xz-utils \
+  dos2unix \
+  gettext-base \
+  iproute2 \
+  iputils-ping \
+  netcat-openbsd \
+  socat \
+  openssl \
+  traceroute \
   bind9-dnsutils \
   uptimed \
   hugo \
-  xz-utils \
   ca-certificates \
   locales \
+  && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
+  && ln -sf /usr/bin/batcat /usr/local/bin/bat \
   && GLAB_LATEST_URL=$(curl -sL https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases | jq -r '.[0].assets.links[] | select(.name | test("deb")) | .url' | grep -i "$(dpkg --print-architecture)" | head -n 1) \
   && curl -sL "$GLAB_LATEST_URL" -o glab.deb \
   && dpkg -i glab.deb \
@@ -207,6 +246,9 @@ RUN set -euxo pipefail \
      command -v github-copilot-cli >/dev/null || { echo "github-copilot-cli missing"; false; }; \
      command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
      command -v mini >/dev/null || { echo "mini missing"; false; }; \
+     for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs; do \
+       command -v "$tool" >/dev/null || { echo "$tool missing"; false; }; \
+     done; \
      command -v less >/dev/null || { echo "less missing"; false; }; \
      command -v delta >/dev/null || { echo "delta missing"; false; }; \
      command -v nvim >/dev/null || { echo "nvim missing"; false; }; \
