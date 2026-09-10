@@ -103,6 +103,7 @@ RUN set -euxo pipefail \
   python3 \
   python3-pip \
   python3-venv \
+  python3-yq \
   golang \
   default-jdk \
   maven \
@@ -235,7 +236,7 @@ RUN set -euxo pipefail \
     echo "claude"; \
     echo "github-copilot-cli"; \
     echo "qwen"; \
-  } > /home/${USER_NAME}/.bash_history \
+  } >> /home/${USER_NAME}/.bash_history \
   && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history \
   && /usr/bin/zsh -l -c 'set -e; \
      echo "Running smoke tests..."; \
@@ -246,7 +247,7 @@ RUN set -euxo pipefail \
      command -v github-copilot-cli >/dev/null || { echo "github-copilot-cli missing"; false; }; \
      command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
      command -v mini >/dev/null || { echo "mini missing"; false; }; \
-     for tool in rg grep sed awk find xargs fd bat jq yq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs; do \
+     for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs; do \
        command -v "$tool" >/dev/null || { echo "$tool missing"; false; }; \
      done; \
      command -v less >/dev/null || { echo "less missing"; false; }; \
@@ -270,6 +271,8 @@ RUN set -euxo pipefail \
      delta_path="$(command -v delta)"; \
      test "$(readlink -f "$pager")" = "$(readlink -f "$delta_path")" || { echo "git core.pager is not delta: $pager != $delta_path"; false; }; \
      git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
+     grep -q "gh auth login -h github.com -w -p https" ~/.bash_history || { echo "gh auth login history missing in bash"; false; }; \
+     grep -q "gh auth login -h github.com -w -p https" ~/.zsh_history || { echo "gh auth login history missing in zsh"; false; }; \
      echo "Smoke tests passed."'
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
