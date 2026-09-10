@@ -32,7 +32,7 @@ The source of truth remains:
 | `Super+I` | Toggle/open KMagMux special workspace | Routes/activates KMagMux. |
 | `Super+J` | Toggle/open kJules special workspace | Routes/activates kJules. |
 | `Super+Shift+J` | Start a new kJules session | Runs `kjules --new-session`. |
-| `Super+Shift+_` | Toggle/open which_browser special workspace | Config key name is `underscore`. |
+| `Super+Shift+-` | Toggle/open which_browser special workspace | Uses physical `code:20` for the `-`/`_` key because the shifted `underscore` keysym bind can register without firing. |
 | `Super+A` | Open Anytype | Only when Anytype is configured. |
 | `Super+.` | Open the Plasma emoji picker | Only when `plasma-emojier` is available. |
 | `Super+V` | Open clipboard history | Prefers Caelestia clipboard; otherwise cliphist/clipse fallbacks. |

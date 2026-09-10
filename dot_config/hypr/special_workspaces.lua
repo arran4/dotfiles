@@ -13,7 +13,7 @@ local workspaces = {
   { name = "scratchpad", key = "SUPER + D" },
   { name = "kmagmux", key = "SUPER + I" },
   { name = "kjules", key = "SUPER + J" },
-  { name = "which_browser", key = "SUPER + SHIFT + underscore" },
+  { name = "which_browser", key = "SUPER + SHIFT + code:20" },
 }
 
 local classRoutes = {
