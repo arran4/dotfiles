@@ -103,7 +103,7 @@ RUN set -euxo pipefail \
   python3 \
   python3-pip \
   python3-venv \
-  python3-yq \
+  pipx \
   golang \
   default-jdk \
   maven \
@@ -146,7 +146,7 @@ RUN set -euxo pipefail \
   && mkdir -p /etc/sudoers.d \
   && echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME} \
   && chmod 0440 /etc/sudoers.d/${USER_NAME} \
-  && python3 -m pip install --no-cache-dir --break-system-packages "mini-swe-agent" \
+  && python3 -m pip install --no-cache-dir --break-system-packages "mini-swe-agent" "yq" \
   && curl -fsSL https://chatgpt.com/codex/install.sh \
     | CODEX_HOME=/opt/codex \
       CODEX_INSTALL_DIR=/usr/local/bin \
