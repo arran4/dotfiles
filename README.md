@@ -99,21 +99,16 @@ treat the outer container as the security boundary and mount only the repository
 Rootless Podman is preferred because its `keep-id` user namespace mode maps the invoking host user directly to the
 container's `user` account.
 
+The copy/paste commands are deliberately single-line `sh -c` invocations. Project naming is derived inside that POSIX
+shell from the current directory, so the caller does not need shell-specific assignment or export syntax. To override
+the derived project name, prefix a command with `env SANDBOX_NAME=my-project`.
+
 ### Podman (recommended)
 
 From the repository that the agent should be allowed to modify:
 
 ```sh
-podman run --rm -it \
-  --userns=keep-id:uid=1000,gid=1000 \
-  --hostname agent-sandbox \
-  --workdir /workspace \
-  --mount type=bind,src="$PWD",dst=/workspace,rw \
-  --mount type=volume,src=dev-agent-codex,dst=/home/user/.codex \
-  --mount type=volume,src=dev-agent-agy,dst=/home/user/.gemini \
-  --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
-  --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
-  ghcr.io/arran4/dev-dotfiles-debian:latest
+sh -c 'workspace=$(pwd -P); raw=${SANDBOX_NAME:-$(basename "$workspace")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec podman run --rm -it --pull=always --name "dev-agent-${name}" --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" --env DEV_FORGE_VOLUME_INIT=1 --workdir /workspace --mount type=bind,src="$workspace",dst=/workspace,rw --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
 ```
 
 ### Docker
@@ -122,16 +117,12 @@ The same OCI image can be used with Docker. Prefer Docker's rootless mode when a
 setup where the host account is UID/GID `1000`, matching the image defaults, the equivalent command is:
 
 ```sh
-docker run --rm -it \
-  --hostname agent-sandbox \
-  --workdir /workspace \
-  --mount type=bind,src="$PWD",dst=/workspace,rw \
-  --mount type=volume,src=dev-agent-codex,dst=/home/user/.codex \
-  --mount type=volume,src=dev-agent-agy,dst=/home/user/.gemini \
-  --mount type=bind,src="$HOME/.config/gh",dst=/home/user/.config/gh,ro \
-  --mount type=bind,src="$HOME/.config/glab-cli",dst=/home/user/.config/glab-cli,ro \
-  ghcr.io/arran4/dev-dotfiles-debian:latest
+sh -c 'workspace=$(pwd -P); raw=${SANDBOX_NAME:-$(basename "$workspace")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec docker run --rm -it --pull=always --name "dev-agent-${name}" --hostname "agent-sandbox-${name}" --env DEV_FORGE_VOLUME_INIT=1 --workdir /workspace --mount type=bind,src="$workspace",dst=/workspace,rw --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
 ```
+
+The `gh` and `glab` configuration directories are isolated from the host and persisted in per-project named volumes.
+Authenticate once inside a new sandbox with `gh auth login` and/or `glab auth login`; later disposable container runs
+with the same derived project name reuse that CLI state without resetting or modifying the host clients.
 
 Docker rootless mode maps files owned by the host user to container UID `0`, rather than providing Podman's
 `--userns=keep-id` behaviour. If that makes the bind-mounted repository unwritable, run the rootless Docker container

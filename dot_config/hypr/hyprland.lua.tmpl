@@ -151,6 +151,7 @@ local lockcmd = [=[{{$lockcmd}}]=]
 local clipse = [=[{{$clipse}}]=]
 local cliphistCmd = [=[{{$cliphistCmd}}]=]
 local playerctlPlayer = [=[{{$playerctlPlayer}}]=]
+local anytype = [=[{{.anytypeLocation}}]=]
 
 -- Ensure hypr config directory is in Lua package path for module resolution
 local configDir = os.getenv("XDG_CONFIG_HOME")
@@ -276,6 +277,20 @@ if not loadedLocal then
   })
 end
 
+{{- $bibataModernClassicInstalled := false -}}
+{{- if eq .chezmoi.os "linux" -}}
+  {{- range $cursorRoot := list
+    (joinPath .chezmoi.homeDir ".local/share/icons")
+    (joinPath .chezmoi.homeDir ".icons")
+    "/usr/local/share/icons"
+    "/usr/share/icons"
+  -}}
+    {{- if stat (joinPath $cursorRoot "Bibata-Modern-Classic/cursors") -}}
+      {{- $bibataModernClassicInstalled = true -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 -- ------------------------
 -- General settings & Caelestia aesthetics
 -- ------------------------
@@ -292,6 +307,9 @@ hl.config({
   },
   cursor = {
     no_hardware_cursors = true,
+{{- if $bibataModernClassicInstalled }}
+    enable_hyprcursor = false,
+{{- end }}
   },
   decoration = {
     rounding = 10,
@@ -336,6 +354,10 @@ hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
+{{- if $bibataModernClassicInstalled }}
+hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
+hl.env("XCURSOR_SIZE", "24")
+{{- end }}
 
 -- ------------------------
 -- Animation Curves & Physics
@@ -370,7 +392,7 @@ hl.animation({ leaf = "fade", enabled = true, speed = 3.03, bezier = "quick" })
 hl.animation({ leaf = "fadeDim", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "border", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "workspaces", enabled = true, speed = 1.94, bezier = "almostLinear" })
-hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4, bezier = "specialWorkSwitch", style = "slidefadevert 15%" })
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4, bezier = "specialWorkSwitch", style = "slidefadevert -15%" })
 
 -- ------------------------
 -- Layer Rules
@@ -435,7 +457,7 @@ local function registerBinds()
     hl.bind("SUPER + mouse_up", hl.dsp.global("caelestia:launcherInterrupt"), { ignore_mods = true, non_consuming = true })
     hl.bind("SUPER + mouse_down", hl.dsp.global("caelestia:launcherInterrupt"), { ignore_mods = true, non_consuming = true })
 
-    hl.bind("SUPER + Escape", hl.dsp.global("caelestia:session"))
+    hl.bind("SUPER + ALT + Delete", hl.dsp.global("caelestia:session"))
     hl.bind("SUPER + N", hl.dsp.global("caelestia:sidebar"))
     hl.bind("SUPER + SHIFT + N", hl.dsp.global("caelestia:clearNotifs"), { locked = true })
     hl.bind("SUPER + K", hl.dsp.global("caelestia:showall"))
@@ -470,7 +492,13 @@ local function registerBinds()
         hl.bind("SUPER + Return", hl.dsp.exec_cmd(terminal.path))
     end
 
-    hl.bind("SUPER + Y", hl.dsp.exec_cmd("hypr-cycle-layout"))
+    -- Dwindle split orientation and whole-layout selection are separate controls.
+    hl.bind("SUPER + Y", hl.dsp.layout("togglesplit"))
+    hl.bind("SUPER + SHIFT + Y", hl.dsp.exec_cmd("hypr-cycle-layout"))
+
+    if anytype ~= "" then
+        hl.bind("SUPER + A", hl.dsp.exec_cmd(anytype))
+    end
 
     if emojiPicker then
         hl.bind("SUPER + Period", hl.dsp.exec_cmd(emojiPicker))

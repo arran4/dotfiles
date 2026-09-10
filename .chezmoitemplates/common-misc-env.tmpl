@@ -15,25 +15,24 @@ export WATCH=root
 	# No vim found!
 {{- end }}
 
+{{ if stat (index . "lessLocation") -}}
+	# Preserve ANSI SGR sequences emitted by chezmoi, git, delta and other tools.
+	export LESS='-R'
+	export DELTA_PAGER={{(index . "lessLocation")}}
+	export GH_PAGER={{(index . "lessLocation")}}
+{{- end }}
+
 {{ if stat (index . "nvimpagerLocation") -}}
-	# Pager IS less
+	# Prefer nvimpager when available.
 	export PAGER={{(index . "nvimpagerLocation")}}
-	export DELTA_PAGER=less
-{{-   if stat (index . "lessLocation") }}
-	export GH_PAGER={{(index . "lessLocation")}}
-{{-   end }}
 {{ else if stat (index . "vimpagerLocation") -}}
-	# Pager IS less
+	# Fall back to vimpager.
 	export PAGER={{(index . "vimpagerLocation")}}
-	export DELTA_PAGER=less
-{{-   if stat (index . "lessLocation") }}
-	export GH_PAGER={{(index . "lessLocation")}}
-{{-   end }}
 {{ else if stat (index . "lessLocation") -}}
-	# Pager IS less
+	# Final pager fallback is less with ANSI passthrough via LESS=-R above.
 	export PAGER={{(index . "lessLocation")}}
 {{- else -}}
-	# No less found!
+	# No pager found!
 {{- end }}
 
 # set variable identifying the chroot you work in (used in the prompt below)
