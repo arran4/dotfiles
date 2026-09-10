@@ -400,7 +400,9 @@ function M.setup(options)
     end
 
     if name == "which_browser" then
-      hl.exec_cmd("which_browser", { workspace = "special:which_browser silent" })
+      -- Use Which Browser's explicit single-instance activation contract so a
+      -- tray-only process reliably maps and focuses its main window.
+      hl.exec_cmd("which_browser --show", { workspace = "special:which_browser silent" })
     end
   end
 
