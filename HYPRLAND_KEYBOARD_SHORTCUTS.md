@@ -53,7 +53,7 @@ These bindings are only present in the Quickshell/Caelestia profile.
 | `Ctrl+Super+Shift+R` | Kill the Caelestia shell on key release. |
 | `Ctrl+Super+Alt+R` | Kill and restart the Caelestia shell on key release. |
 | `Super+/` | Open the runtime Hyprland cheatsheet. |
-| `Super+Shift+/` (`Super+?`) | Open the runtime Hyprland cheatsheet. |
+| `Super+Shift+/` (`Super+?`) | Open the runtime Hyprland cheatsheet; uses physical slash-key `code:61` so the shifted shortcut fires reliably under Wayland. |
 
 Without the Caelestia profile, `Super+L` invokes the configured lock command instead.
 
@@ -162,14 +162,26 @@ These bindings are present when `wf-recorder` and `slurp` are configured.
 
 ## Audio, media, and brightness
 
+The volume keys and, in the Caelestia profile, brightness keys share the same modifier-to-step mapping. Hold the listed modifier combination while pressing the corresponding raise/lower key.
+
+| Modifier(s) | Step |
+| --- | ---: |
+| None | 1% |
+| `Shift` | 2% |
+| `Ctrl` | 5% |
+| `Alt` | 10% |
+| `Ctrl+Shift` | 15% |
+| `Alt+Shift` | 20% |
+| `Ctrl+Alt` | 25% |
+
+`Ctrl+Shift+Alt` is intentionally not bound, so there is no 50% single-key jump.
+
 | Shortcut | Action | Notes |
 | --- | --- | --- |
-| `XF86AudioRaiseVolume` | Raise volume by 1%. | Repeats while held. |
-| `XF86AudioLowerVolume` | Lower volume by 1%. | |
+| `XF86AudioRaiseVolume` / `XF86AudioLowerVolume` | Raise/lower output volume using the selected step. | Repeats while held; raise is capped at 150%; works while locked. |
+| `XF86MonBrightnessUp` / `XF86MonBrightnessDown` | Raise/lower brightness using the selected step. | Caelestia only; repeats while held; works while locked. |
 | `XF86AudioMute` | Toggle output mute. | |
 | `Super+Shift+M` | Toggle output mute. | |
-| `XF86MonBrightnessUp` | Increase brightness. | Caelestia only. |
-| `XF86MonBrightnessDown` | Decrease brightness. | Caelestia only. |
 | `Ctrl+Super+Space` | Play/pause media. | Caelestia only. |
 | `Ctrl+Super+=` | Next media item. | Caelestia only. |
 | `Ctrl+Super+-` | Previous media item. | Caelestia only. |
