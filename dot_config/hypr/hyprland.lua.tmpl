@@ -387,7 +387,7 @@ hl.animation({ leaf = "windowsIn", enabled = true, speed = 4.1, bezier = "easeOu
 hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.49, bezier = "linear", style = "popin 87%" })
 hl.animation({ leaf = "windowsMove", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.73, bezier = "almostLinear" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.46, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.46, bezier = "linear", style = "popin 87%" })
 hl.animation({ leaf = "fade", enabled = true, speed = 3.03, bezier = "quick" })
 hl.animation({ leaf = "fadeDim", enabled = true, speed = 6, bezier = "standard" })
 hl.animation({ leaf = "border", enabled = true, speed = 6, bezier = "standard" })
@@ -426,6 +426,18 @@ hl.gesture({
   action = "workspace",
 })
 
+local controlSteps = {
+  { modifiers = "", percent = 1 },
+  { modifiers = "SHIFT + ", percent = 2 },
+  { modifiers = "CTRL + ", percent = 5 },
+  { modifiers = "ALT + ", percent = 10 },
+  { modifiers = "CTRL + SHIFT + ", percent = 15 },
+  { modifiers = "ALT + SHIFT + ", percent = 20 },
+  { modifiers = "CTRL + ALT + ", percent = 25 },
+}
+
+-- Ctrl+Shift+Alt is intentionally left unbound: 25% is the largest single step.
+
 -- ------------------------
 -- Keybindings
 -- ------------------------
@@ -463,14 +475,12 @@ local function registerBinds()
     hl.bind("SUPER + K", hl.dsp.global("caelestia:showall"))
     hl.bind("SUPER + L", hl.dsp.global("caelestia:lock"))
 
-    -- Cheatsheet / help (Meta + ?)
+    -- Cheatsheet / help. Use the physical slash key for the shifted '?' form;
+    -- shifted keysyms can register in Hyprland without firing under Wayland.
     hl.bind("SUPER + slash", hl.dsp.exec_cmd("hypr-cheatsheet"))
-    hl.bind("SUPER + SHIFT + slash", hl.dsp.exec_cmd("hypr-cheatsheet"))
+    hl.bind("SUPER + SHIFT + code:61", hl.dsp.exec_cmd("hypr-cheatsheet"))
 
     hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd("caelestia shell -d"), { locked = true })
-
-    hl.bind("XF86MonBrightnessUp", hl.dsp.global("caelestia:brightnessUp"), { locked = true })
-    hl.bind("XF86MonBrightnessDown", hl.dsp.global("caelestia:brightnessDown"), { locked = true })
 
     hl.bind("CTRL + SUPER + Space", hl.dsp.global("caelestia:mediaToggle"), { locked = true })
     hl.bind("XF86AudioPlay", hl.dsp.global("caelestia:mediaToggle"), { locked = true })
@@ -603,9 +613,24 @@ local function registerBinds()
     end
 {{- end }}
 
-    -- Media keys.
-    hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 1%+"), { repeating = true })
-    hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-"), { locked = true })
+    -- Volume and brightness controls use the same modifier-to-step mapping.
+    for _, step in ipairs(controlSteps) do
+        hl.bind(step.modifiers .. "XF86AudioRaiseVolume", hl.dsp.exec_cmd(
+            "wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ " .. step.percent .. "%+"
+        ), { locked = true, repeating = true })
+        hl.bind(step.modifiers .. "XF86AudioLowerVolume", hl.dsp.exec_cmd(
+            "wpctl set-volume @DEFAULT_AUDIO_SINK@ " .. step.percent .. "%-"
+        ), { locked = true, repeating = true })
+{{- if eq .hyprland_features "quickshell" }}
+        hl.bind(step.modifiers .. "XF86MonBrightnessUp", hl.dsp.exec_cmd(
+            "caelestia shell brightness set +" .. step.percent .. "%"
+        ), { locked = true, repeating = true })
+        hl.bind(step.modifiers .. "XF86MonBrightnessDown", hl.dsp.exec_cmd(
+            "caelestia shell brightness set " .. step.percent .. "%-"
+        ), { locked = true, repeating = true })
+{{- end }}
+    end
+
     hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
     hl.bind("SUPER + SHIFT + M", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
 {{- if ne .hyprland_features "quickshell" }}
