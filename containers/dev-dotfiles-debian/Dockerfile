@@ -272,6 +272,28 @@ RUN set -euxo pipefail \
      git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
      grep -q "gh auth login -h github.com -w -p https" ~/.bash_history || { echo "gh auth login history missing in bash"; false; }; \
      grep -q "gh auth login -h github.com -w -p https" ~/.zsh_history || { echo "gh auth login history missing in zsh"; false; }; \
-     echo "Smoke tests passed."'
+     echo "Smoke tests passed."' \
+  && entry_output=$(/usr/local/bin/dev-dotfiles-entrypoint -c "echo 'Entrypoint ran'" 2>&1 || true) \
+  && if ! echo "$entry_output" | grep -q "Checking GitHub CLI authentication status..."; then \
+       echo "Entrypoint failed to run auth status check"; \
+       echo "$entry_output"; \
+       false; \
+     fi \
+  && if ! echo "$entry_output" | grep -q "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"; then \
+       echo "Entrypoint failed to show unauthenticated hint"; \
+       echo "$entry_output"; \
+       false; \
+     fi; \
+  entry_output=$(/usr/local/bin/dev-dotfiles-entrypoint -c "echo 'Entrypoint ran'" 2>&1 || true); \
+  if ! echo "$entry_output" | grep -q "Checking GitHub CLI authentication status..."; then \
+    echo "Entrypoint failed to run auth status check"; \
+    echo "$entry_output"; \
+    false; \
+  fi; \
+  if ! echo "$entry_output" | grep -q "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"; then \
+    echo "Entrypoint failed to show unauthenticated hint"; \
+    echo "$entry_output"; \
+    false; \
+  fi
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
