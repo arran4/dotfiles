@@ -283,17 +283,11 @@ RUN set -euxo pipefail \
        echo "Entrypoint failed to show unauthenticated hint"; \
        echo "$entry_output"; \
        false; \
-     fi; \
-  entry_output=$(/usr/local/bin/dev-dotfiles-entrypoint -c "echo 'Entrypoint ran'" 2>&1 || true); \
-  if ! echo "$entry_output" | grep -q "Checking GitHub CLI authentication status..."; then \
-    echo "Entrypoint failed to run auth status check"; \
-    echo "$entry_output"; \
-    false; \
-  fi; \
-  if ! echo "$entry_output" | grep -q "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"; then \
-    echo "Entrypoint failed to show unauthenticated hint"; \
-    echo "$entry_output"; \
-    false; \
-  fi
+     fi \
+  && if ! echo "$entry_output" | grep -q "Entrypoint ran"; then \
+       echo "Entrypoint did not continue after auth status check"; \
+       echo "$entry_output"; \
+       false; \
+     fi
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
