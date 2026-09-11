@@ -234,6 +234,7 @@ RUN set -euxo pipefail \
     echo "claude"; \
     echo "github-copilot-cli"; \
     echo "qwen"; \
+    echo "gh auth login -h github.com -w -p https"; \
   } >> /home/${USER_NAME}/.bash_history \
   && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history \
   && /usr/bin/zsh -l -c 'set -e; \
