@@ -74,4 +74,9 @@ if [ "${DEV_DIND:-0}" = "1" ]; then
   done
 fi
 
+echo "Checking GitHub CLI authentication status..."
+if ! gh auth status -h github.com; then
+  echo "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"
+fi
+
 exec /usr/bin/zsh -l "$@"

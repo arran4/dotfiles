@@ -36,7 +36,6 @@ RUN set -euxo pipefail \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   jq \
-  yq \
   xmlstarlet \
   libxml2-utils \
   gh \
@@ -145,7 +144,7 @@ RUN set -euxo pipefail \
   && mkdir -p /etc/sudoers.d \
   && echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME} \
   && chmod 0440 /etc/sudoers.d/${USER_NAME} \
-  && python3 -m pip install --no-cache-dir --break-system-packages "mini-swe-agent" \
+  && python3 -m pip install --no-cache-dir --break-system-packages "mini-swe-agent" "yq" \
   && curl -fsSL https://chatgpt.com/codex/install.sh \
     | CODEX_HOME=/opt/codex \
       CODEX_INSTALL_DIR=/usr/local/bin \
@@ -235,7 +234,8 @@ RUN set -euxo pipefail \
     echo "claude"; \
     echo "github-copilot-cli"; \
     echo "qwen"; \
-  } > /home/${USER_NAME}/.bash_history \
+    echo "gh auth login -h github.com -w -p https"; \
+  } >> /home/${USER_NAME}/.bash_history \
   && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history \
   && /usr/bin/zsh -l -c 'set -e; \
      echo "Running smoke tests..."; \
@@ -270,6 +270,24 @@ RUN set -euxo pipefail \
      delta_path="$(command -v delta)"; \
      test "$(readlink -f "$pager")" = "$(readlink -f "$delta_path")" || { echo "git core.pager is not delta: $pager != $delta_path"; false; }; \
      git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
-     echo "Smoke tests passed."'
+     grep -q "gh auth login -h github.com -w -p https" ~/.bash_history || { echo "gh auth login history missing in bash"; false; }; \
+     grep -q "gh auth login -h github.com -w -p https" ~/.zsh_history || { echo "gh auth login history missing in zsh"; false; }; \
+     echo "Smoke tests passed."' \
+  && entry_output=$(/usr/local/bin/dev-dotfiles-entrypoint -c "echo 'Entrypoint ran'" 2>&1 || true) \
+  && if ! echo "$entry_output" | grep -q "Checking GitHub CLI authentication status..."; then \
+       echo "Entrypoint failed to run auth status check"; \
+       echo "$entry_output"; \
+       false; \
+     fi \
+  && if ! echo "$entry_output" | grep -q "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"; then \
+       echo "Entrypoint failed to show unauthenticated hint"; \
+       echo "$entry_output"; \
+       false; \
+     fi \
+  && if ! echo "$entry_output" | grep -q "Entrypoint ran"; then \
+       echo "Entrypoint did not continue after auth status check"; \
+       echo "$entry_output"; \
+       false; \
+     fi
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
