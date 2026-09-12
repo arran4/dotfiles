@@ -374,20 +374,35 @@ jobs:
           else
             mode="${{ inputs.mode }}"
             rel_type="${mode#release-}"
-            tag="$(git-tag-inc -print-version-only "$rel_type")"
 
-            if [[ -z "$tag" ]]; then
-              echo "Failed to compute release tag" >&2
-              exit 1
+            # Capture the output and exit status
+            tag="$(git-tag-inc -print-version-only "$rel_type" 2>&1)" || ret=$?
+            if [[ "${ret:-0}" -ne 0 ]]; then
+              # Re-run with -dry to get the diagnostic message
+              full_out="$(git-tag-inc -dry "$rel_type" 2>&1)" || true
+              if echo "$full_out" | grep -q "Hash is the same for this and previous tag"; then
+                existing_tag=$(echo "$full_out" | grep -oP '\(v[^\)]+\)' | tr -d '()')
+                if [[ -z "$existing_tag" ]]; then
+                  existing_tag="an existing tag"
+                fi
+                echo "Already released as $existing_tag. Skipping tag creation."
+                tag=""
+              else
+                echo "Failed to compute release tag: $full_out" >&2
+                exit 1
+              fi
             fi
 
-            echo "Running dot_local/bin/executable_gh-release.sh with argument: $rel_type"
-            ./dot_local/bin/executable_gh-release.sh "$rel_type"
+            if [[ -n "$tag" ]]; then
+              echo "Running dot_local/bin/executable_gh-release.sh with argument: $rel_type"
+              ./dot_local/bin/executable_gh-release.sh "$rel_type"
+            fi
           fi
 
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Dispatch release pipeline on tag
+        if: ${{ steps.release_tag.outputs.tag != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release_tag.outputs.tag }}

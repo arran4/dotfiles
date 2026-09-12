@@ -24,10 +24,18 @@ else
   set --
 fi
 
-version=$(git-tag-inc -print-version-only "$@")
-if [ "${version}" = "" ]; then
-  echo failed to generate version
-  exit 1
+version=$(git-tag-inc -print-version-only "$@" 2>&1) || ret=$?
+if [ "${ret:-0}" -ne 0 ] || [ -z "${version}" ]; then
+  # Retry with dry run to surface diagnostic information
+  full_out=$(git-tag-inc -dry "$@" 2>&1) || true
+  if echo "$full_out" | grep -q "Hash is the same for this and previous tag"; then
+    existing_tag=$(echo "$full_out" | grep -o '(v[^)]*)' | tr -d '()')
+    echo "Already released as ${existing_tag:-an existing tag}. Skipping."
+    exit 0
+  else
+    echo "failed to generate version: $full_out" >&2
+    exit 1
+  fi
 fi
 git-tag-inc "$@"
 
