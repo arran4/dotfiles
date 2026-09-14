@@ -198,17 +198,7 @@ update_agent() {
       local target
       target=$(readlink "$link")
       if [[ "$target" == "$staging_dir"* ]]; then
-        local rel_target="${target#$staging_dir/}"
-        # We need to make the symlink relative to the link's location, not just relative to staging_dir!
-        # If link is $staging_dir/packages/standalone/current and target is $staging_dir/packages/standalone/releases/v1
-        # The rel_target is packages/standalone/releases/v1
-        # But if we ln -s "packages/standalone/releases/v1" "$staging_dir/packages/standalone/current"
-        # It resolves to $staging_dir/packages/standalone/packages/standalone/releases/v1!
-
-        # A simpler way: we're going to rename staging_dir to new_version_dir.
-        # So we can just rewrite the absolute symlink to point to the FUTURE new_version_dir right now!
-        local new_target="${agent_dir}/${timestamp}/${rel_target}"
-        ln -sfn "$new_target" "$link"
+        ln -srf "$target" "$link"
       fi
     done
   fi
