@@ -1,0 +1,16 @@
+Wait, `{{- includeTemplate "gentoo-logo.svg" }}`
+Is there a newline issue?
+Wait! `includeTemplate "gentoo-logo.svg"` returns the content of the file `gentoo-logo.svg`.
+But wait! If the file ends with a newline, `{{- includeTemplate ... }}` trims whitespace at the left! That means the first `<?xml` might lose spaces or something? No, `{{-` trims whitespace from the text *before* the action. Here, it trims the newline after `cat << 'SVGEOF' > "${QS_LOGO}.tmp"`.
+If the newline after `cat << 'SVGEOF' > "${QS_LOGO}.tmp"` is trimmed, then the `<?xml` becomes attached to `"${QS_LOGO}.tmp"`, making it:
+`cat << 'SVGEOF' > "${QS_LOGO}.tmp"<?xml ...`
+This causes a syntax error!
+
+Oh my god! `{{- ` trims the preceding newline!
+Ah!
+```sh
+cat << 'SVGEOF' > "${QS_LOGO}.tmp"
+{{ includeTemplate "gentoo-logo.svg" }}
+SVGEOF
+```
+Should NOT use `{{- `!

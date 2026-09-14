@@ -12,7 +12,7 @@ if [ ! -f "$QS_LOGO" ]; then
 fi
 
 cat << 'SVGEOF' > "${QS_LOGO}.tmp"
-{{- includeTemplate "gentoo-logo.svg" }}
+{{ includeTemplate "gentoo-logo.svg" }}
 SVGEOF
 
 if ! cmp -s "$QS_LOGO" "${QS_LOGO}.tmp"; then
