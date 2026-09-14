@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+# Replace the default Caelestia logo with the Gentoo logo for the applications search menu
+# This script runs after chezmoi applies and external git-repos are updated.
+
+QS_LOGO="${HOME}/.config/quickshell/assets/logo.svg"
+
+if [ ! -f "$QS_LOGO" ]; then
+    echo "Error: Caelestia logo fallback not found at $QS_LOGO. Upstream path may have changed." >&2
+    false
+fi
+
+cat << 'SVGEOF' > "${QS_LOGO}.tmp"
+{{- includeTemplate "gentoo-logo.svg" }}
+SVGEOF
+
+if ! cmp -s "$QS_LOGO" "${QS_LOGO}.tmp"; then
+    mv "${QS_LOGO}.tmp" "$QS_LOGO"
+else
+    rm "${QS_LOGO}.tmp"
+fi
