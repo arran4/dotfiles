@@ -5,7 +5,12 @@ set -eu
 # to Caelestia's logo.svg so that git doesn't refuse to update or report a dirty tree.
 QS_DIR="${HOME}/.config/quickshell"
 
-if [ -d "$QS_DIR/.git" ]; then
-    # We only care about resetting the logo file if it was modified.
-    git -C "$QS_DIR" restore assets/logo.svg 2>/dev/null || true
+if [ ! -d "$QS_DIR/.git" ]; then
+    # Fresh install, checkout does not exist yet
+    exit 0
+fi
+
+if ! git -C "$QS_DIR" restore assets/logo.svg >/dev/null 2>&1; then
+    echo "Error: Failed to restore Caelestia logo fallback. Upstream path may have changed or file is missing." >&2
+    exit 1
 fi

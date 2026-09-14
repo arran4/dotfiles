@@ -8,7 +8,7 @@ QS_LOGO="${HOME}/.config/quickshell/assets/logo.svg"
 
 if [ ! -f "$QS_LOGO" ]; then
     echo "Error: Caelestia logo fallback not found at $QS_LOGO. Upstream path may have changed." >&2
-    false
+    exit 1
 fi
 
 cat << 'SVGEOF' > "${QS_LOGO}.tmp"
