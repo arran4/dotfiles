@@ -3,7 +3,8 @@ set -euo pipefail
 
 
 # Mocks
-export HOME=$(mktemp -d)
+HOME=$(mktemp -d)
+export HOME
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi
@@ -160,7 +161,7 @@ sleep 1
 # previous is restored to current
 
 run_test "7. Pinning suppressing inappropriate automatic promotion"
-"$AGENTCTL" pin testagent "$(readlink -f $CACHE_ROOT/testagent/current | xargs basename)"
+"$AGENTCTL" pin testagent "$(readlink -f "$CACHE_ROOT/testagent/current" | xargs basename)"
 "$AGENTCTL" refresh testagent
 # Verify no new staging directory made it to current
 

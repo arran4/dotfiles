@@ -119,7 +119,7 @@ install_script_agent() {
 
   if [ "$agent" = "codex" ]; then
     # Codex script supports setting these variables
-    if ! CODEX_HOME="$tmp_install_dir/codex_home" CODEX_INSTALL_DIR="$target_dir" CODEX_NON_INTERACTIVE=1 bash "$tmp_script" > /dev/null 2>&1; then
+    if ! CODEX_HOME="$target_dir" CODEX_INSTALL_DIR="$target_dir" CODEX_NON_INTERACTIVE=1 bash "$tmp_script" > /dev/null 2>&1; then
       rm -rf "$tmp_install_dir"
       return 1
     fi
@@ -130,7 +130,7 @@ install_script_agent() {
     fi
   elif [ "$agent" = "junie" ]; then
     # Junie script uses these env vars
-    if ! JUNIE_BIN="$target_dir" JUNIE_DATA="$tmp_install_dir/junie_data" bash "$tmp_script" > /dev/null 2>&1; then
+    if ! JUNIE_BIN="$target_dir" JUNIE_DATA="$target_dir" bash "$tmp_script" > /dev/null 2>&1; then
       rm -rf "$tmp_install_dir"
       return 1
     fi
@@ -188,6 +188,19 @@ update_agent() {
   exec_name=$(get_manifest_value "$agent" "executable")
   if [ -z "$exec_name" ]; then
       exec_name=$(get_manifest_value "$agent" "shim_cmd")
+  fi
+
+  if [ "$backend" = "script" ]; then
+    # Fix absolute symlinks pointing to staging_dir which will break on rename
+    for link in $(find "$staging_dir" -type l); do
+      target=$(readlink "$link")
+      if [[ "$target" == "$staging_dir"* ]]; then
+        # Replace absolute symlink with relative or just wait until after move?
+        # If we replace absolute with relative:
+        rel_target="${target#$staging_dir/}"
+        ln -sfn "$rel_target" "$link"
+      fi
+    done
   fi
 
   local found_bin=""
