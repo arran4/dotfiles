@@ -1,0 +1,45 @@
+{
+  "agents": {
+    "codex": {
+      "backend": "script",
+      "url": "https://chatgpt.com/codex/install.sh",
+      "shim_cmd": "codex"
+    },
+    "agy": {
+      "backend": "script",
+      "url": "https://antigravity.google/cli/install.sh",
+      "shim_cmd": "agy"
+    },
+    "mini": {
+      "backend": "uv",
+      "package": "mini-swe-agent",
+      "shim_cmd": "mini",
+      "executable": "mini-swe-agent"
+    },
+    "opencode": {
+      "backend": "npm",
+      "package": "opencode-ai",
+      "shim_cmd": "opencode"
+    },
+    "claude": {
+      "backend": "npm",
+      "package": "@anthropic-ai/claude-code",
+      "shim_cmd": "claude"
+    },
+    "github-copilot-cli": {
+      "backend": "npm",
+      "package": "@githubnext/github-copilot-cli",
+      "shim_cmd": "github-copilot-cli"
+    },
+    "qwen": {
+      "backend": "npm",
+      "package": "@qwen-code/qwen-code",
+      "shim_cmd": "qwen"
+    },
+    "junie": {
+      "backend": "script",
+      "url": "https://junie.jetbrains.com/install.sh",
+      "shim_cmd": "junie"
+    }
+  }
+}

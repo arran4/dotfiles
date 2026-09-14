@@ -1,0 +1,459 @@
+#!/bin/bash
+set -euo pipefail
+
+OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+ARCH="$(uname -m)"
+if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi
+if [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi
+
+CACHE_ROOT="${HOME}/.cache/dev-agents/${OS}-${ARCH}"
+BUILTIN_MANIFEST="/opt/agent-manager/agent-manifest.json"
+MANIFEST_PATH="${CACHE_ROOT}/agent-manifest.json"
+if [ ! -f "$MANIFEST_PATH" ]; then
+  MANIFEST_PATH="$BUILTIN_MANIFEST"
+fi
+SEED_DIR="/opt/agent-seed"
+SHIM_DIR="/opt/agent-manager/shims"
+LOCK_FILE="${CACHE_ROOT}/.update.lock"
+LAST_REFRESH_FILE="${CACHE_ROOT}/.last_refresh"
+
+# Ensure cache structure
+mkdir -p "$CACHE_ROOT"
+
+log() {
+  echo "[agentctl] $*" >&2
+}
+
+get_manifest_value() {
+  local agent="$1"
+  local key="$2"
+  jq -r ".agents[\"$agent\"][\"$key\"] // empty" "$MANIFEST_PATH"
+}
+
+get_agent_version() {
+  local agent_dir="$1"
+  if [ ! -d "$agent_dir" ] || [ ! -e "$agent_dir/current" ]; then
+    echo ""
+    return
+  fi
+  readlink -f "$agent_dir/current" | xargs basename
+}
+
+pin_agent() {
+  local agent="$1"
+  local version="$2"
+  local agent_dir="${CACHE_ROOT}/${agent}"
+  if [ ! -d "$agent_dir/$version" ]; then
+    log "Version $version not found for $agent"
+    exit 1
+  fi
+  ln -sfn "$agent_dir/$version" "$agent_dir/current"
+  touch "$agent_dir/.pinned"
+  log "Pinned $agent to $version"
+}
+
+unpin_agent() {
+  local agent="$1"
+  local agent_dir="${CACHE_ROOT}/${agent}"
+  rm -f "$agent_dir/.pinned"
+  log "Unpinned $agent"
+}
+
+rollback_agent() {
+  local agent="$1"
+  local agent_dir="${CACHE_ROOT}/${agent}"
+  if [ -e "$agent_dir/.pinned" ]; then
+    log "Cannot rollback pinned agent $agent. Unpin first."
+    exit 1
+  fi
+  if [ ! -e "$agent_dir/previous" ]; then
+    log "No previous version available for $agent"
+    exit 1
+  fi
+  local prev_version
+  prev_version=$(readlink -f "$agent_dir/previous" | xargs basename)
+  local current_version
+  current_version=$(readlink -f "$agent_dir/current" | xargs basename)
+
+  ln -sfn "$agent_dir/$prev_version" "$agent_dir/current"
+  ln -sfn "$agent_dir/$current_version" "$agent_dir/previous"
+  log "Rolled back $agent from $current_version to $prev_version"
+}
+
+install_npm_agent() {
+  local package="$1"
+  local target_dir="$2"
+  # Run in a temporary temp dir to avoid modifying global NPM space if running as non-root
+  mkdir -p "$target_dir"
+  if ! npm install --prefix "$target_dir" --global-style --no-audit --no-fund "$package" > /dev/null 2>&1; then
+    return 1
+  fi
+  return 0
+}
+
+install_uv_agent() {
+  local package="$1"
+  local target_dir="$2"
+  export UV_TOOL_DIR="$target_dir/tools"
+  export UV_TOOL_BIN_DIR="$target_dir/bin"
+  if ! uv tool install "$package" > /dev/null 2>&1; then
+    return 1
+  fi
+  return 0
+}
+
+install_script_agent() {
+  local agent="$1"
+  local url="$2"
+  local target_dir="$3"
+
+  local tmp_install_dir
+  tmp_install_dir=$(mktemp -d)
+  local tmp_script
+  tmp_script="$tmp_install_dir/install.sh"
+
+  if ! curl -fsSL "$url" > "$tmp_script" 2>/dev/null; then
+    rm -rf "$tmp_install_dir"
+    return 1
+  fi
+
+  if [ "$agent" = "codex" ]; then
+    # Codex script supports setting these variables
+    if ! CODEX_HOME="$tmp_install_dir/codex_home" CODEX_INSTALL_DIR="$target_dir" CODEX_NON_INTERACTIVE=1 bash "$tmp_script" > /dev/null 2>&1; then
+      rm -rf "$tmp_install_dir"
+      return 1
+    fi
+  elif [ "$agent" = "agy" ]; then
+    if ! bash "$tmp_script" --dir "$target_dir" > /dev/null 2>&1; then
+      rm -rf "$tmp_install_dir"
+      return 1
+    fi
+  elif [ "$agent" = "junie" ]; then
+    # Junie script uses these env vars
+    if ! JUNIE_BIN="$target_dir" JUNIE_DATA="$tmp_install_dir/junie_data" bash "$tmp_script" > /dev/null 2>&1; then
+      rm -rf "$tmp_install_dir"
+      return 1
+    fi
+  else
+    log "Unknown script agent: $agent"
+    rm -rf "$tmp_install_dir"
+    return 1
+  fi
+  rm -rf "$tmp_install_dir"
+  return 0
+}
+
+update_agent() {
+  local agent="$1"
+  local agent_dir="${CACHE_ROOT}/${agent}"
+
+  if [ -e "$agent_dir/.pinned" ]; then
+    return 0
+  fi
+
+  local backend
+  backend=$(get_manifest_value "$agent" "backend")
+  if [ -z "$backend" ]; then
+    log "Unknown agent: $agent"
+    return 1
+  fi
+
+  local timestamp
+  timestamp=$(date +%s)
+  local staging_dir="${agent_dir}/.staging_${timestamp}"
+  mkdir -p "$staging_dir"
+
+  local success=0
+  if [ "$backend" = "npm" ]; then
+    local package
+    package=$(get_manifest_value "$agent" "package")
+    install_npm_agent "$package" "$staging_dir" || success=1
+  elif [ "$backend" = "uv" ]; then
+    local package
+    package=$(get_manifest_value "$agent" "package")
+    install_uv_agent "$package" "$staging_dir" || success=1
+  elif [ "$backend" = "script" ]; then
+    local url
+    url=$(get_manifest_value "$agent" "url")
+    install_script_agent "$agent" "$url" "$staging_dir" || success=1
+  fi
+
+  if [ $success -ne 0 ]; then
+    rm -rf "$staging_dir"
+    touch "${agent_dir}/.last_failure"
+    return 1
+  fi
+
+  local exec_name
+  exec_name=$(get_manifest_value "$agent" "executable")
+  if [ -z "$exec_name" ]; then
+      exec_name=$(get_manifest_value "$agent" "shim_cmd")
+  fi
+
+  local found_bin=""
+  if [ "$backend" = "npm" ]; then
+    found_bin="$staging_dir/node_modules/.bin/$exec_name"
+  elif [ "$backend" = "uv" ]; then
+    found_bin="$staging_dir/bin/$exec_name"
+  elif [ "$backend" = "script" ]; then
+    found_bin="$staging_dir/$exec_name"
+  fi
+
+  if [ ! -x "$found_bin" ]; then
+    log "Validation failed: executable $found_bin not found or not executable for $agent"
+    rm -rf "$staging_dir"
+    touch "${agent_dir}/.last_failure"
+    return 1
+  fi
+
+  # Basic smoke test (some tools return 1 on --version, so we just check it runs without segfaulting/crashing immediately)
+  if ! "$found_bin" --version > /dev/null 2>&1 && ! "$found_bin" -h > /dev/null 2>&1 && ! "$found_bin" --help > /dev/null 2>&1; then
+      # A lot of these tools might require setup before version works, but let's assume it should run at all.
+      # If it's agy/codex etc, --version should work. Let's make it soft failure.
+      :
+  fi
+
+  local current_version=""
+  if [ -e "$agent_dir/current" ]; then
+    current_version=$(readlink -f "$agent_dir/current")
+  fi
+
+  local new_version_dir="${agent_dir}/${timestamp}"
+  mv "$staging_dir" "$new_version_dir"
+
+  if [ -n "$current_version" ] && [ -d "$current_version" ]; then
+      ln -sfn "$current_version" "$agent_dir/previous"
+  fi
+  ln -sfn "$new_version_dir" "$agent_dir/current"
+  rm -f "${agent_dir}/.last_failure"
+
+  # Clean up old versions, keep current and previous
+  for vdir in "$agent_dir"/*; do
+      if [ -d "$vdir" ] && [ "$vdir" != "$agent_dir/current" ] && [ "$vdir" != "$agent_dir/previous" ]; then
+          local vbase
+          vbase=$(basename "$vdir")
+          local cbase=""
+          local pbase=""
+          if [ -e "$agent_dir/current" ]; then cbase=$(readlink -f "$agent_dir/current" | xargs basename); fi
+          if [ -e "$agent_dir/previous" ]; then pbase=$(readlink -f "$agent_dir/previous" | xargs basename); fi
+
+          if [ "$vbase" != "$cbase" ] && [ "$vbase" != "$pbase" ] && [[ "$vbase" =~ ^[0-9]+$ ]]; then
+              rm -rf "$vdir"
+          fi
+      fi
+  done
+  return 0
+}
+
+background_refresh() {
+  if ! mkdir "$LOCK_FILE" 2>/dev/null; then
+    return 0 # Already running
+  fi
+  # Clean up lock on end
+  trap 'rm -rf "$LOCK_FILE"' EXIT
+
+  # Try to update manifest
+  if curl -fsSL "https://raw.githubusercontent.com/arran4/dotfiles/main/containers/dev-dotfiles-debian/agent-manager/agent-manifest.json" > "${CACHE_ROOT}/agent-manifest.json.tmp" 2>/dev/null; then
+    # Validate it's json and has agents
+    if jq -e '.agents' "${CACHE_ROOT}/agent-manifest.json.tmp" > /dev/null 2>&1; then
+      mv "${CACHE_ROOT}/agent-manifest.json.tmp" "${CACHE_ROOT}/agent-manifest.json"
+      MANIFEST_PATH="${CACHE_ROOT}/agent-manifest.json"
+    else
+      rm -f "${CACHE_ROOT}/agent-manifest.json.tmp"
+    fi
+  fi
+
+  local agents
+  agents=$(jq -r '.agents | keys | .[]' "$MANIFEST_PATH")
+  for agent in $agents; do
+    update_agent "$agent" || true
+  done
+
+  date +%s > "$LAST_REFRESH_FILE"
+}
+
+check_stale() {
+  if [ ! -f "$LAST_REFRESH_FILE" ]; then
+    return 0 # Stale
+  fi
+  local last
+  last=$(cat "$LAST_REFRESH_FILE")
+  local now
+  now=$(date +%s)
+  local diff=$((now - last))
+  # 23 hours = 82800 seconds
+  if [ $diff -ge 82800 ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+dispatch_agent() {
+  local agent="$1"
+  shift
+
+  local agent_dir="${CACHE_ROOT}/${agent}"
+  local exec_name
+  exec_name=$(get_manifest_value "$agent" "executable")
+  if [ -z "$exec_name" ]; then
+      exec_name=$(get_manifest_value "$agent" "shim_cmd")
+  fi
+  local backend
+  backend=$(get_manifest_value "$agent" "backend")
+
+  local target_bin=""
+  # 1. Try cache current
+  if [ -e "$agent_dir/current" ]; then
+      local current_dir
+      current_dir=$(readlink -f "$agent_dir/current")
+      if [ "$backend" = "npm" ]; then target_bin="$current_dir/node_modules/.bin/$exec_name"
+      elif [ "$backend" = "uv" ]; then target_bin="$current_dir/bin/$exec_name"
+      elif [ "$backend" = "script" ]; then target_bin="$current_dir/$exec_name"
+      fi
+  fi
+
+  # 2. Try seed current
+  if [ ! -x "$target_bin" ] && [ -e "$SEED_DIR/$agent/current" ]; then
+      local seed_dir
+      seed_dir=$(readlink -f "$SEED_DIR/$agent/current")
+      if [ "$backend" = "npm" ]; then target_bin="$seed_dir/node_modules/.bin/$exec_name"
+      elif [ "$backend" = "uv" ]; then target_bin="$seed_dir/bin/$exec_name"
+      elif [ "$backend" = "script" ]; then target_bin="$seed_dir/$exec_name"
+      fi
+  fi
+
+  # 3. If missing, synchronously bootstrap
+  if [ ! -x "$target_bin" ]; then
+      log "No cached or seeded version of $agent found. Bootstrapping..."
+      if update_agent "$agent"; then
+          local current_dir
+          current_dir=$(readlink -f "$agent_dir/current")
+          if [ "$backend" = "npm" ]; then target_bin="$current_dir/node_modules/.bin/$exec_name"
+          elif [ "$backend" = "uv" ]; then target_bin="$current_dir/bin/$exec_name"
+          elif [ "$backend" = "script" ]; then target_bin="$current_dir/$exec_name"
+          fi
+      else
+          log "Failed to bootstrap $agent. Please check network connection."
+          exit 1
+      fi
+  fi
+
+  exec "$target_bin" "$@"
+}
+
+status() {
+  local agents
+  agents=$(jq -r '.agents | keys | .[]' "$MANIFEST_PATH")
+  echo "Agent Status:"
+  printf "%-20s %-15s %-15s %-15s %-10s %s\n" "AGENT" "CURRENT" "PREVIOUS" "SEEDED" "PINNED" "LAST FAIL"
+  echo "--------------------------------------------------------------------------------------------"
+  for agent in $agents; do
+    local agent_dir="${CACHE_ROOT}/${agent}"
+
+    local c_ver="-"
+    if [ -e "$agent_dir/current" ]; then c_ver=$(readlink -f "$agent_dir/current" | xargs basename); fi
+
+    local p_ver="-"
+    if [ -e "$agent_dir/previous" ]; then p_ver=$(readlink -f "$agent_dir/previous" | xargs basename); fi
+
+    local s_ver="-"
+    if [ -e "$SEED_DIR/$agent/current" ]; then s_ver=$(readlink -f "$SEED_DIR/$agent/current" | xargs basename); fi
+
+    local pinned="No"
+    if [ -e "$agent_dir/.pinned" ]; then pinned="Yes"; fi
+
+    local last_fail="No"
+    if [ -e "$agent_dir/.last_failure" ]; then last_fail="Yes"; fi
+
+    printf "%-20s %-15s %-15s %-15s %-10s %s\n" "$agent" "$c_ver" "$p_ver" "$s_ver" "$pinned" "$last_fail"
+  done
+  if [ -f "$LAST_REFRESH_FILE" ]; then
+    echo "Last refresh: $(date -d @$(cat $LAST_REFRESH_FILE))"
+  else
+    echo "Last refresh: Never"
+  fi
+}
+
+seed() {
+  # Build a seed cache inside SEED_DIR
+  # Used primarily during image build
+  local old_cache="$CACHE_ROOT"
+  CACHE_ROOT="$SEED_DIR"
+  mkdir -p "$SEED_DIR"
+  local agents
+  agents=$(jq -r '.agents | keys | .[]' "$MANIFEST_PATH")
+  for agent in $agents; do
+    log "Seeding $agent..."
+    update_agent "$agent" || log "Warning: Failed to seed $agent"
+  done
+  # Clean up last_refresh/lock so they aren't baked into seed
+  rm -f "$SEED_DIR/.last_refresh"
+  rm -rf "$SEED_DIR/.update.lock"
+  CACHE_ROOT="$old_cache"
+}
+
+setup_shims() {
+  mkdir -p "$SHIM_DIR"
+  local agents
+  agents=$(jq -r '.agents | keys | .[]' "$MANIFEST_PATH")
+  for agent in $agents; do
+    local shim_cmd
+    shim_cmd=$(get_manifest_value "$agent" "shim_cmd")
+    cat << SHIM_EOF > "$SHIM_DIR/$shim_cmd"
+#!/bin/bash
+exec /opt/agent-manager/agentctl dispatch "$agent" "\$@"
+SHIM_EOF
+    chmod +x "$SHIM_DIR/$shim_cmd"
+  done
+}
+
+case "${1:-}" in
+  refresh)
+    if [ -n "${2:-}" ]; then
+      update_agent "$2"
+    else
+      background_refresh
+    fi
+    ;;
+  refresh-bg)
+    background_refresh > /tmp/agentctl-bg.log 2>&1 &
+    ;;
+  check-stale)
+    if check_stale; then
+      exit 0
+    else
+      exit 1
+    fi
+    ;;
+  status)
+    status
+    ;;
+  rollback)
+    if [ -z "${2:-}" ]; then log "Usage: agentctl rollback <agent>"; exit 1; fi
+    rollback_agent "$2"
+    ;;
+  pin)
+    if [ -z "${2:-}" ] || [ -z "${3:-}" ]; then log "Usage: agentctl pin <agent> <version>"; exit 1; fi
+    pin_agent "$2" "$3"
+    ;;
+  unpin)
+    if [ -z "${2:-}" ]; then log "Usage: agentctl unpin <agent>"; exit 1; fi
+    unpin_agent "$2"
+    ;;
+  dispatch)
+    if [ -z "${2:-}" ]; then log "Usage: agentctl dispatch <agent> [args...]"; exit 1; fi
+    shift
+    dispatch_agent "$@"
+    ;;
+  seed)
+    seed
+    ;;
+  setup-shims)
+    setup_shims
+    ;;
+  *)
+    echo "Usage: agentctl [status|refresh|refresh-bg|check-stale|rollback|pin|unpin|dispatch|seed|setup-shims]"
+    exit 1
+    ;;
+esac

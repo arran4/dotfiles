@@ -79,4 +79,8 @@ if ! gh auth status -h github.com; then
   echo "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"
 fi
 
+if /opt/agent-manager/agentctl check-stale > /dev/null 2>&1; then
+  /opt/agent-manager/agentctl refresh-bg
+fi
+
 exec /usr/bin/zsh -l "$@"

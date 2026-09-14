@@ -106,6 +106,7 @@ RUN set -euxo pipefail \
   default-jdk \
   maven \
   nodejs \
+  curl \
   docker.io \
   docker-cli \
   docker-buildx \
@@ -144,18 +145,10 @@ RUN set -euxo pipefail \
   && mkdir -p /etc/sudoers.d \
   && echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME} \
   && chmod 0440 /etc/sudoers.d/${USER_NAME} \
-  && python3 -m pip install --no-cache-dir --break-system-packages "mini-swe-agent" "yq" \
-  && curl -fsSL https://chatgpt.com/codex/install.sh \
-    | CODEX_HOME=/opt/codex \
-      CODEX_INSTALL_DIR=/usr/local/bin \
-      CODEX_NON_INTERACTIVE=1 \
-      CODEX_RELEASE="${CODEX_RELEASE}" \
-      sh \
-  && codex --version \
-  && npm install -g opencode-ai \
-  && npm install -g @anthropic-ai/claude-code \
-  && npm install -g @githubnext/github-copilot-cli \
-  && npm install -g @qwen-code/qwen-code \
+  && python3 -m pip install --no-cache-dir --break-system-packages "yq" \
+  && curl -LsSf https://astral.sh/uv/install.sh | sh \
+  && mv /root/.local/bin/uv /usr/local/bin/uv \
+  && mv /root/.local/bin/uvx /usr/local/bin/uvx \
   && GOBIN=/usr/local/bin go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
   && mv /usr/local/bin/server /usr/local/bin/CLIProxyAPI \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
@@ -173,11 +166,18 @@ RUN set -euxo pipefail \
 #   && chown -R root:root "$(npm root -g)/@google/jules" \
 #   && jules version
 
-ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
+ENV PATH=/opt/agent-manager/shims:/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
 
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
+
+COPY --chown=${USER_UID}:${USER_GID} containers/dev-dotfiles-debian/agent-manager /opt/agent-manager
+RUN set -euxo pipefail \
+  && chmod +x /opt/agent-manager/agentctl \
+  && chown -R ${USER_UID}:${USER_GID} /opt/agent-manager \
+  && mkdir -p /opt/agent-seed \
+  && chown -R ${USER_UID}:${USER_GID} /opt/agent-seed
 
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
@@ -190,12 +190,10 @@ WORKDIR /home/${USER_NAME}
 # The container intentionally has no desktop D-Bus session, so remove the Codex
 # desktop notification hook after applying the otherwise-normal dotfiles.
 RUN set -euxo pipefail \
-  && curl -fsSL https://antigravity.google/cli/install.sh | bash \
-  && agy --version \
+
   && set +o pipefail \
   && yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug " \
   && set -o pipefail \
-  && rm -f "$HOME/.codex/hooks.json" \
   && rm -rf /tmp/dotfiles \
   && flutter --version \
   && go version \
@@ -203,28 +201,22 @@ RUN set -euxo pipefail \
   && docker --version \
   && docker buildx version \
   && docker compose version \
-  && codex --version \
-  && agy --version \
+  && /opt/agent-manager/agentctl seed \
+  && /opt/agent-manager/agentctl setup-shims \
   && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; command -v docker; command -v dockerd; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac' \
-  && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
-  && junie --version \
   && { \
     echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})"; \
+    echo "Stable development dependencies and tools are baked in."; \
     echo ""; \
-    echo "Installed AI Agents & Tools:"; \
-    echo "- Codex: $(codex --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- Antigravity: $(agy --version 2>/dev/null || echo 'Unknown')"; \
-    MINI_SWE_VERSION=$(python3 -m pip show mini-swe-agent 2>/dev/null | awk '/^Version:/{print $2; exit}'); \
-    echo "- Mini SWE Agent: ${MINI_SWE_VERSION:-Unknown}"; \
-    echo "- OpenCode AI: $(opencode --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- Claude Code: $(claude --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- GitHub Copilot CLI: $(github-copilot-cli --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- QwenChat: $(jq -r '.version // empty' /usr/local/lib/qwen-code/manifest.json 2>/dev/null || npm list -g @qwen-code/qwen-code | grep @qwen-code/qwen-code@ | sed 's/.*@//' 2>/dev/null || echo 'Unknown')"; \
+    echo "AI agents are managed dynamically at runtime via agentctl."; \
+    echo "Run 'agentctl status' to view current versions, or invoke an agent directly (e.g. 'codex', 'claude')."; \
+    echo ""; \
+    echo "Installed Base Tools:"; \
     echo "- Flutter: $(flutter --version 2>/dev/null | head -n 1 || echo 'Unknown')"; \
     echo "- Go: $(go version 2>/dev/null || echo 'Unknown')"; \
     echo "- Git: $(git --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Docker: $(docker --version 2>/dev/null || echo 'Unknown')"; \
-    echo "- Junie: $(junie --version 2>/dev/null || echo 'Unknown')"; \
+    echo "- uv: $(uv --version 2>/dev/null || echo 'Unknown')"; \
   } | sudo tee /etc/motd > /dev/null \
   && { \
     echo "codex --dangerously-bypass-approvals-and-sandbox"; \
@@ -246,6 +238,8 @@ RUN set -euxo pipefail \
      command -v github-copilot-cli >/dev/null || { echo "github-copilot-cli missing"; false; }; \
      command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
      command -v mini >/dev/null || { echo "mini missing"; false; }; \
+     command -v junie >/dev/null || { echo "junie missing"; false; }; \
+     /opt/agent-manager/agentctl check-stale >/dev/null || true; \
      for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs; do \
        command -v "$tool" >/dev/null || { echo "$tool missing"; false; }; \
      done; \
@@ -263,7 +257,7 @@ RUN set -euxo pipefail \
      command -v dockerd >/dev/null || { echo "dockerd missing"; false; }; \
      docker buildx version >/dev/null || { echo "docker buildx unavailable"; false; }; \
      docker compose version >/dev/null || { echo "docker compose unavailable"; false; }; \
-     python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
+     codex --version >/dev/null || { echo "codex version check failed"; false; }; \
      opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
      test "${LESS:-}" = "-R" || { echo "LESS is not configured for ANSI passthrough"; false; }; \
      pager="$(git config --global --get core.pager)"; \
