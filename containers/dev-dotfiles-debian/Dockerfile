@@ -239,7 +239,7 @@ RUN set -euxo pipefail \
      command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
      command -v mini >/dev/null || { echo "mini missing"; false; }; \
      command -v junie >/dev/null || { echo "junie missing"; false; }; \
-     /opt/agent-manager/agentctl check-stale >/dev/null || true; \
+
      for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs; do \
        command -v "$tool" >/dev/null || { echo "$tool missing"; false; }; \
      done; \
