@@ -1,0 +1,237 @@
+#!/bin/bash
+set -euxo pipefail
+
+OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+ARCH="$(uname -m)"
+if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi
+if [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi
+
+CACHE_ROOT="${HOME}/.cache/dev-agents/${OS}-${ARCH}"
+SEED_DIR="/opt/agent-seed"
+SHIM_DIR="/opt/agent-manager/shims"
+
+mkdir -p "$CACHE_ROOT"
+
+log() {
+  echo "[agentctl] $*" >&2
+}
+
+install_agent() {
+  local agent="$1"
+  local target_dir="$2"
+
+  mkdir -p "$target_dir"
+
+  if [ "$agent" = "codex" ]; then
+    local tmp_script=$(mktemp)
+    if curl -fsSL "https://chatgpt.com/codex/install.sh" > "$tmp_script" 2>/dev/null; then
+      CODEX_HOME="$target_dir" CODEX_INSTALL_DIR="$target_dir" CODEX_NON_INTERACTIVE=1 bash "$tmp_script" >/dev/null 2>&1 || { rm -f "$tmp_script"; return 1; }
+      # fix symlink to relative
+      if [ -L "$target_dir/codex" ]; then
+        local target=$(readlink "$target_dir/codex")
+        if [[ "$target" == "$target_dir"* ]]; then
+          ln -srfn "$target" "$target_dir/codex"
+        fi
+      fi
+    else
+      rm -f "$tmp_script"
+      return 1
+    fi
+    rm -f "$tmp_script"
+  elif [ "$agent" = "agy" ]; then
+    local tmp_script=$(mktemp)
+    if curl -fsSL "https://antigravity.google/cli/install.sh" > "$tmp_script" 2>/dev/null; then
+      bash "$tmp_script" --dir "$target_dir" >/dev/null 2>&1 || { rm -f "$tmp_script"; return 1; }
+    else
+      rm -f "$tmp_script"
+      return 1
+    fi
+    rm -f "$tmp_script"
+  elif [ "$agent" = "junie" ]; then
+    local tmp_script=$(mktemp)
+    if curl -fsSL "https://junie.jetbrains.com/install.sh" > "$tmp_script" 2>/dev/null; then
+      HOME="$target_dir" bash "$tmp_script" >/dev/null 2>&1 || { rm -f "$tmp_script"; return 1; }
+      if [ -f "$target_dir/.local/bin/junie" ] || [ -L "$target_dir/.local/bin/junie" ]; then
+        # Create the JUNIE_DATA wrapper inside target_dir so it resolves relative data path
+        cat << 'WRAPPER_EOF' > "$target_dir/junie"
+#!/bin/bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export JUNIE_DATA="$DIR/.local/share/junie"
+exec "$DIR/.local/bin/junie" "$@"
+WRAPPER_EOF
+        chmod +x "$target_dir/junie"
+      fi
+    else
+      rm -f "$tmp_script"
+      return 1
+    fi
+    rm -f "$tmp_script"
+  elif [ "$agent" = "mini" ]; then
+    export UV_TOOL_DIR="$target_dir/tools"
+    export UV_TOOL_BIN_DIR="$target_dir/bin"
+    if uv tool install "mini-swe-agent" >/dev/null 2>&1; then
+      ln -s bin/mini "$target_dir/mini"
+    else
+      return 1
+    fi
+  elif [ "$agent" = "opencode" ] || [ "$agent" = "claude" ] || [ "$agent" = "github-copilot-cli" ] || [ "$agent" = "qwen" ]; then
+    local package=""
+    if [ "$agent" = "opencode" ]; then package="opencode-ai"; fi
+    if [ "$agent" = "claude" ]; then package="@anthropic-ai/claude-code"; fi
+    if [ "$agent" = "github-copilot-cli" ]; then package="@githubnext/github-copilot-cli"; fi
+    if [ "$agent" = "qwen" ]; then package="@qwen-code/qwen-code"; fi
+
+    if npm install --prefix "$target_dir" --global-style --no-audit --no-fund "$package" >/dev/null 2>&1; then
+      ln -s node_modules/.bin/$agent "$target_dir/$agent"
+    else
+      return 1
+    fi
+  else
+    return 1
+  fi
+
+  if [ ! -x "$target_dir/$agent" ]; then
+    return 1
+  fi
+
+  # Basic validation
+  if ! "$target_dir/$agent" --version >/dev/null 2>&1 && ! "$target_dir/$agent" -h >/dev/null 2>&1 && ! "$target_dir/$agent" --help >/dev/null 2>&1; then
+    :
+  fi
+
+  return 0
+}
+
+update_agent() {
+  local agent="$1"
+  local agent_dir="${CACHE_ROOT}/${agent}"
+
+  local staging_dir="${agent_dir}/.staging"
+  rm -rf "$staging_dir"
+  mkdir -p "$staging_dir"
+
+  if install_agent "$agent" "$staging_dir"; then
+    local timestamp=$(date +%s)
+    while [ -d "${agent_dir}/${timestamp}" ]; do
+      sleep 1
+      timestamp=$(date +%s)
+    done
+    mv "$staging_dir" "${agent_dir}/${timestamp}"
+    ln -sfn "$timestamp" "$agent_dir/current"
+
+    # Clean old ones
+    for vdir in "$agent_dir"/*; do
+      if [ -d "$vdir" ] && [ "$vdir" != "$agent_dir/current" ]; then
+        local base=$(basename "$vdir")
+        local curr=$(readlink -f "$agent_dir/current" | xargs basename)
+        if [ "$base" != "$curr" ] && [[ "$base" =~ ^[0-9]+$ ]]; then
+          rm -rf "$vdir"
+        fi
+      fi
+    done
+    return 0
+  else
+    rm -rf "$staging_dir"
+    return 1
+  fi
+}
+
+background_update() {
+  local agent="$1"
+  local agent_dir="${CACHE_ROOT}/${agent}"
+  local lockfile="${agent_dir}/.update.lock"
+  local last_refresh="${agent_dir}/.last_refresh"
+
+  mkdir -p "$agent_dir"
+  if ! mkdir "$lockfile" 2>/dev/null; then
+    return 0
+  fi
+
+  # Check if stale (23 hours = 82800 seconds)
+  local stale=0
+  if [ ! -f "$last_refresh" ]; then
+    stale=1
+  else
+    local last=$(cat "$last_refresh")
+    local now=$(date +%s)
+    local diff=$((now - last))
+    if [ $diff -ge 82800 ]; then
+      stale=1
+    fi
+  fi
+
+  if [ $stale -eq 1 ]; then
+    if update_agent "$agent"; then
+      date +%s > "$last_refresh"
+    fi
+  fi
+
+  rm -rf "$lockfile"
+}
+
+dispatch() {
+  local agent="$1"
+  shift
+
+  local agent_dir="${CACHE_ROOT}/${agent}"
+  local target_bin=""
+
+  if [ -x "$agent_dir/current/$agent" ]; then
+    target_bin="$agent_dir/current/$agent"
+  elif [ -x "$SEED_DIR/$agent/current/$agent" ]; then
+    target_bin="$SEED_DIR/$agent/current/$agent"
+  fi
+
+  if [ -n "$target_bin" ]; then
+    background_update "$agent" &
+    exec "$target_bin" "$@"
+  else
+    log "No cached version of $agent found. Bootstrapping synchronously..."
+    if update_agent "$agent"; then
+      date +%s > "${agent_dir}/.last_refresh"
+      exec "$agent_dir/current/$agent" "$@"
+    else
+      log "Failed to bootstrap $agent."
+      exit 1
+    fi
+  fi
+}
+
+seed() {
+  local old_cache="$CACHE_ROOT"
+  CACHE_ROOT="$SEED_DIR"
+  for agent in codex agy junie mini opencode claude github-copilot-cli qwen; do
+    log "Seeding $agent..."
+    update_agent "$agent" || log "Warning: Failed to seed $agent"
+  done
+  find "$SEED_DIR" -name ".last_refresh" -delete
+  find "$SEED_DIR" -name ".update.lock" -delete -o -name ".update.lock" -exec rm -rf {} + 2>/dev/null || true
+  CACHE_ROOT="$old_cache"
+}
+
+setup_shims() {
+  mkdir -p "$SHIM_DIR"
+  for agent in codex agy junie mini opencode claude github-copilot-cli qwen; do
+    cat << SHIM_EOF > "$SHIM_DIR/$agent"
+#!/bin/bash
+exec /opt/agent-manager/agentctl dispatch "$agent" "\$@"
+SHIM_EOF
+    chmod +x "$SHIM_DIR/$agent"
+  done
+}
+
+case "${1:-}" in
+  dispatch)
+    dispatch "${@:2}"
+    ;;
+  seed)
+    seed
+    ;;
+  setup-shims)
+    setup_shims
+    ;;
+  *)
+    echo "Usage: agentctl [dispatch|seed|setup-shims]"
+    exit 1
+    ;;
+esac

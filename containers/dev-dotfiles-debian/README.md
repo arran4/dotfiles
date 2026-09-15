@@ -157,3 +157,16 @@ If stronger containment is needed, restrict the outer container's outbound netwo
 ## Dotfiles Integration
 
 During the image build process, the dotfiles from this repository are copied into the container. `chezmoi` is installed and automatically applies these dotfiles to the home directory of the configured user, ensuring the environment is immediately ready for use with all custom configurations and aliases in place.
+
+## AI Agent Management (`agentctl`)
+
+The container image provides stable development dependencies while treating AI agent executables as a mutable user-space layer. This allows fast-moving agents (like Codex, Claude Code, Mini SWE Agent) to stay current without requiring constant image rebuilds.
+
+### Update Cadence
+The container checks for agent updates **at most once every 23 hours** by default. When you invoke an agent command (e.g., `codex` or `claude`), the shim will start a best-effort background refresh if the cache is stale. If no usable cached executable exists yet, it will bootstrap synchronously once. This ensures your interactive shell workflow remains fast and uninterrupted.
+
+### Persistent Cache
+Agent executables are stored in `~/.cache/dev-agents/`. It is highly recommended to mount this directory to a persistent volume (e.g. `dev-dotfiles-agents`) so updates are preserved across container runs. Authentication credentials remain securely isolated in their respective config directories (e.g. `~/.codex`).
+If a container is started entirely offline, it will gracefully fallback to the built-in *seed* versions baked into the image.
+
+If you ever wish to clear the executable cache completely (without losing authentication) to force a fresh update, simply delete the contents of the `~/.cache/dev-agents/` volume.
