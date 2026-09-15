@@ -129,10 +129,14 @@ install_script_agent() {
       return 1
     fi
   elif [ "$agent" = "junie" ]; then
-    # Junie script uses these env vars
-    if ! JUNIE_BIN="$target_dir" JUNIE_DATA="$target_dir" bash "$tmp_script" > /dev/null 2>&1; then
+    # Junie script ignores env vars and uses HOME
+    if ! HOME="$target_dir" bash "$tmp_script" > /dev/null 2>&1; then
       rm -rf "$tmp_install_dir"
       return 1
+    fi
+    # The binary is placed in .local/bin/junie
+    if [ -f "$target_dir/.local/bin/junie" ] || [ -L "$target_dir/.local/bin/junie" ]; then
+      ln -s .local/bin/junie "$target_dir/junie"
     fi
   else
     log "Unknown script agent: $agent"
@@ -198,7 +202,7 @@ update_agent() {
       local target
       target=$(readlink "$link")
       if [[ "$target" == "$staging_dir"* ]]; then
-        ln -srf "$target" "$link"
+        ln -srfn "$target" "$link"
       fi
     done
   fi

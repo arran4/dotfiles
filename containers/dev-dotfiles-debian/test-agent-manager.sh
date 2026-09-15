@@ -58,6 +58,8 @@ cat << 'EOF' > "$HOME/agentctl-wrapper"
 #!/bin/bash
 source /opt/agent-manager/agentctl >/dev/null 2>&1 || source ./agent-manager/agentctl >/dev/null 2>&1
 
+eval "$(declare -f install_script_agent | sed '1s/.*/original_install_script_agent ()/')"
+
 install_script_agent() {
   local agent="$1"
   local url="$2"
@@ -79,18 +81,7 @@ install_script_agent() {
     chmod +x "$target_dir/mismatch-real"
     return 0
   fi
-  if [[ "$agent" == "junie" ]]; then
-    # Simulate real installer's behavior when HOME is isolated
-    mkdir -p "$target_dir/.local/bin"
-    mkdir -p "$target_dir/.local/share/junie"
-    echo "#!/bin/bash" > "$target_dir/.local/bin/junie"
-    echo "echo 'junie version 1.0'" >> "$target_dir/.local/bin/junie"
-    chmod +x "$target_dir/.local/bin/junie"
-
-    # Also simulate agentctl's post-processing which is bypassed by replacing the function:
-    ln -s .local/bin/junie "$target_dir/junie"
-    return 0
-  fi
+  original_install_script_agent "$@"
 }
 # Override the actual calls to agentctl in the script by just running the functions directly
 "$@"
@@ -111,9 +102,9 @@ sed -i "s|BUILTIN_MANIFEST=.*|BUILTIN_MANIFEST=\"$MANIFEST_PATH\"|" "$AGENTCTL"
 sed -i 's|/opt/agent-manager/agentctl|'"$AGENTCTL"'|g' "$AGENTCTL"
 
 # Override install_script_agent in test script
-sed -i '/^case "${1:-}" in/i source /tmp/override.sh' "$AGENTCTL"
-"$AGENTCTL" setup-shims
 cat << 'EOF' > /tmp/override.sh
+
+eval "$(declare -f install_script_agent | sed '1s/.*/original_install_script_agent ()/')"
 
 install_script_agent() {
   local agent="$1"
@@ -136,20 +127,11 @@ install_script_agent() {
     chmod +x "$target_dir/mismatch-real"
     return 0
   fi
-  if [[ "$agent" == "junie" ]]; then
-    # Simulate real installer's behavior when HOME is isolated
-    mkdir -p "$target_dir/.local/bin"
-    mkdir -p "$target_dir/.local/share/junie"
-    echo "#!/bin/bash" > "$target_dir/.local/bin/junie"
-    echo "echo 'junie version 1.0'" >> "$target_dir/.local/bin/junie"
-    chmod +x "$target_dir/.local/bin/junie"
-
-    # Also simulate agentctl's post-processing which is bypassed by replacing the function:
-    ln -s .local/bin/junie "$target_dir/junie"
-    return 0
-  fi
+  original_install_script_agent "$@"
 }
 EOF
+sed -i '/^case "${1:-}" in/i source /tmp/override.sh' "$AGENTCTL"
+"$AGENTCTL" setup-shims
 
 run_test() {
   local name="$1"
@@ -258,6 +240,25 @@ assert [ "$output" = "mismatch-real version" ]
 run_test "13. Junie isolation and relative mapping"
 # Save real home to ensure we don't write to it
 REAL_HOME="$HOME"
+
+# Mock curl to return a fake junie installer script
+cat << 'CURL_EOF' > "$HOME/curl"
+#!/bin/bash
+if [[ "$*" == *"junie.sh"* ]]; then
+  echo '#!/bin/bash'
+  echo 'mkdir -p "$HOME/.local/bin"'
+  echo 'mkdir -p "$HOME/.local/share/junie"'
+  echo 'echo "#!/bin/bash" > "$HOME/.local/bin/junie"'
+  echo 'echo "echo \"junie version 1.0\"" >> "$HOME/.local/bin/junie"'
+  echo 'chmod +x "$HOME/.local/bin/junie"'
+  exit 0
+else
+  /usr/bin/curl "$@"
+fi
+CURL_EOF
+chmod +x "$HOME/curl"
+export PATH="$HOME:$PATH"
+
 "$AGENTCTL" refresh junie
 if [ -e "$REAL_HOME/.local/bin/junie" ]; then
   echo "Junie escaped to real home!"
@@ -265,5 +266,8 @@ if [ -e "$REAL_HOME/.local/bin/junie" ]; then
 fi
 output=$("$AGENTCTL" dispatch junie)
 assert [ "$output" = "junie version 1.0" ]
+
+# Clean up curl mock
+rm "$HOME/curl"
 
 echo "All tests passed successfully!"
