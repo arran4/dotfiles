@@ -41,6 +41,11 @@ cat << 'EOF' > "$MANIFEST_PATH"
       "url": "http://localhost/mismatch.sh",
       "shim_cmd": "mismatch",
       "executable": "mismatch-real"
+    },
+    "junie": {
+      "backend": "script",
+      "url": "http://localhost/junie.sh",
+      "shim_cmd": "junie"
     }
   }
 }
@@ -72,6 +77,18 @@ install_script_agent() {
     echo "#!/bin/bash" > "$target_dir/mismatch-real"
     echo "echo 'mismatch-real version'" >> "$target_dir/mismatch-real"
     chmod +x "$target_dir/mismatch-real"
+    return 0
+  fi
+  if [[ "$agent" == "junie" ]]; then
+    # Simulate real installer's behavior when HOME is isolated
+    mkdir -p "$target_dir/.local/bin"
+    mkdir -p "$target_dir/.local/share/junie"
+    echo "#!/bin/bash" > "$target_dir/.local/bin/junie"
+    echo "echo 'junie version 1.0'" >> "$target_dir/.local/bin/junie"
+    chmod +x "$target_dir/.local/bin/junie"
+
+    # Also simulate agentctl's post-processing which is bypassed by replacing the function:
+    ln -s .local/bin/junie "$target_dir/junie"
     return 0
   fi
 }
@@ -117,6 +134,18 @@ install_script_agent() {
     echo "#!/bin/bash" > "$target_dir/mismatch-real"
     echo "echo 'mismatch-real version'" >> "$target_dir/mismatch-real"
     chmod +x "$target_dir/mismatch-real"
+    return 0
+  fi
+  if [[ "$agent" == "junie" ]]; then
+    # Simulate real installer's behavior when HOME is isolated
+    mkdir -p "$target_dir/.local/bin"
+    mkdir -p "$target_dir/.local/share/junie"
+    echo "#!/bin/bash" > "$target_dir/.local/bin/junie"
+    echo "echo 'junie version 1.0'" >> "$target_dir/.local/bin/junie"
+    chmod +x "$target_dir/.local/bin/junie"
+
+    # Also simulate agentctl's post-processing which is bypassed by replacing the function:
+    ln -s .local/bin/junie "$target_dir/junie"
     return 0
   fi
 }
@@ -225,5 +254,16 @@ run_test "12. Executable mapping validated correctly"
 "$AGENTCTL" refresh mismatchagent
 output=$("$AGENTCTL" dispatch mismatchagent)
 assert [ "$output" = "mismatch-real version" ]
+
+run_test "13. Junie isolation and relative mapping"
+# Save real home to ensure we don't write to it
+REAL_HOME="$HOME"
+"$AGENTCTL" refresh junie
+if [ -e "$REAL_HOME/.local/bin/junie" ]; then
+  echo "Junie escaped to real home!"
+  exit 1
+fi
+output=$("$AGENTCTL" dispatch junie)
+assert [ "$output" = "junie version 1.0" ]
 
 echo "All tests passed successfully!"
