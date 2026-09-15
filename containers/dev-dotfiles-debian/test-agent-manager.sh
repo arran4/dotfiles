@@ -35,6 +35,12 @@ cat << 'EOF' > "$MANIFEST_PATH"
       "backend": "script",
       "url": "http://localhost/bad.sh",
       "shim_cmd": "badagent"
+    },
+    "mismatchagent": {
+      "backend": "script",
+      "url": "http://localhost/mismatch.sh",
+      "shim_cmd": "mismatch",
+      "executable": "mismatch-real"
     }
   }
 }
@@ -60,6 +66,13 @@ install_script_agent() {
   fi
   if [[ "$agent" == "badagent" ]]; then
     return 1
+  fi
+  if [[ "$agent" == "mismatchagent" ]]; then
+    mkdir -p "$target_dir"
+    echo "#!/bin/bash" > "$target_dir/mismatch-real"
+    echo "echo 'mismatch-real version'" >> "$target_dir/mismatch-real"
+    chmod +x "$target_dir/mismatch-real"
+    return 0
   fi
 }
 # Override the actual calls to agentctl in the script by just running the functions directly
@@ -98,6 +111,13 @@ install_script_agent() {
   fi
   if [[ "$agent" == "badagent" ]]; then
     return 1
+  fi
+  if [[ "$agent" == "mismatchagent" ]]; then
+    mkdir -p "$target_dir"
+    echo "#!/bin/bash" > "$target_dir/mismatch-real"
+    echo "echo 'mismatch-real version'" >> "$target_dir/mismatch-real"
+    chmod +x "$target_dir/mismatch-real"
+    return 0
   fi
 }
 EOF
@@ -201,4 +221,9 @@ if ! grep "testagent version 1.0" /tmp/shim_output >/dev/null; then
   echo "Shim failed to execute correctly"
   exit 1
 fi
+run_test "12. Executable mapping validated correctly"
+"$AGENTCTL" refresh mismatchagent
+output=$("$AGENTCTL" dispatch mismatchagent)
+assert [ "$output" = "mismatch-real version" ]
+
 echo "All tests passed successfully!"

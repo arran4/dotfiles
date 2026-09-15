@@ -13,8 +13,7 @@
     "mini": {
       "backend": "uv",
       "package": "mini-swe-agent",
-      "shim_cmd": "mini",
-      "executable": "mini-swe-agent"
+      "shim_cmd": "mini"
     },
     "opencode": {
       "backend": "npm",
