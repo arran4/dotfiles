@@ -136,7 +136,13 @@ install_script_agent() {
     fi
     # The binary is placed in .local/bin/junie
     if [ -f "$target_dir/.local/bin/junie" ] || [ -L "$target_dir/.local/bin/junie" ]; then
-      ln -s .local/bin/junie "$target_dir/junie"
+      cat << 'WRAPPER_EOF' > "$target_dir/junie"
+#!/bin/bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export JUNIE_DATA="$DIR/.local/share/junie"
+exec "$DIR/.local/bin/junie" "$@"
+WRAPPER_EOF
+      chmod +x "$target_dir/junie"
     fi
   else
     log "Unknown script agent: $agent"

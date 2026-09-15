@@ -249,7 +249,8 @@ if [[ "$*" == *"junie.sh"* ]]; then
   echo 'mkdir -p "$HOME/.local/bin"'
   echo 'mkdir -p "$HOME/.local/share/junie"'
   echo 'echo "#!/bin/bash" > "$HOME/.local/bin/junie"'
-  echo 'echo "echo \"junie version 1.0\"" >> "$HOME/.local/bin/junie"'
+  echo 'echo "if [ -z \"\$JUNIE_DATA\" ]; then JUNIE_DATA=\"\$HOME/.local/share/junie\"; fi" >> "$HOME/.local/bin/junie"'
+  echo 'echo "echo \"junie version 1.0 from \$JUNIE_DATA\"" >> "$HOME/.local/bin/junie"'
   echo 'chmod +x "$HOME/.local/bin/junie"'
   exit 0
 else
@@ -265,7 +266,9 @@ if [ -e "$REAL_HOME/.local/bin/junie" ]; then
   exit 1
 fi
 output=$("$AGENTCTL" dispatch junie)
-assert [ "$output" = "junie version 1.0" ]
+
+expected_data="$(readlink -f "$CACHE_ROOT/junie/current")/.local/share/junie"
+assert [ "$output" = "junie version 1.0 from $expected_data" ]
 
 # Clean up curl mock
 rm "$HOME/curl"
