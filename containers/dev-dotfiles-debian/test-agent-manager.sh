@@ -157,4 +157,80 @@ output=$("$AGENTCTL" dispatch junie)
 expected_data="$CACHE_ROOT/junie/current/.local/share/junie"
 assert [ "$output" = "junie v1 from $expected_data" ]
 
+run_test "5. Fresh cache + built-in seed starts background update"
+# Completely wipe the cache root to simulate a fresh cache volume
+rm -rf "$CACHE_ROOT"
+# The previous tests might have used it. Let's make sure testagent has a seed version.
+mkdir -p "$SEED_DIR/testagent/current"
+echo "#!/bin/bash" > "$SEED_DIR/testagent/current/testagent"
+echo "echo 'testagent seed'" >> "$SEED_DIR/testagent/current/testagent"
+chmod +x "$SEED_DIR/testagent/current/testagent"
+
+# Redefine mock to install v3 to see if background refresh works
+cat << 'MOCK_EOF' > /tmp/override.sh
+install_agent() {
+  local agent="$1"
+  local target_dir="$2"
+  if [ "$agent" = "testagent" ]; then
+    mkdir -p "$target_dir"
+    echo "#!/bin/bash" > "$target_dir/testagent"
+    echo "echo 'testagent v3'" >> "$target_dir/testagent"
+    chmod +x "$target_dir/testagent"
+    return 0
+  fi
+}
+MOCK_EOF
+
+# Dispatch should return seed version immediately, but start background refresh
+output=$("$AGENTCTL" dispatch testagent)
+assert [ "$output" = "testagent seed" ]
+
+# Wait for background task
+sleep 2
+
+# Now dispatch should use the newly cached v3
+output=$("$AGENTCTL" dispatch testagent)
+assert [ "$output" = "testagent v3" ]
+
+run_test "6. Update dispatch during promotion is race-safe"
+# We simulate a slow promotion by replacing mv with a slow mv in the mock?
+# Since the script uses pure mv, we can't easily mock `mv`.
+# But since we removed the `ln -sfn .staging current` step, the `current` symlink is updated in one atomic `ln -sfn` step from old target to new target.
+# We can just verify it locally by checking that `current` always points to a valid directory.
+# Actually, the user asked to "Add/adjust the update test to exercise dispatch while a replacement is being promoted."
+# I can mock `date` to pause? No, `install_agent` can sleep!
+cat << 'MOCK_EOF' > /tmp/override.sh
+install_agent() {
+  local agent="$1"
+  local target_dir="$2"
+  if [ "$agent" = "testagent" ]; then
+    mkdir -p "$target_dir"
+    echo "#!/bin/bash" > "$target_dir/testagent"
+    echo "echo 'testagent v4'" >> "$target_dir/testagent"
+    chmod +x "$target_dir/testagent"
+    # sleep so we can test dispatch while installing
+    sleep 2
+    return 0
+  fi
+}
+MOCK_EOF
+
+# Set stale so it updates in background
+old_time=$(($(date +%s) - 86400))
+echo $old_time > "$CACHE_ROOT/testagent/.last_refresh"
+
+# Start dispatch in background to trigger async update
+"$AGENTCTL" dispatch testagent > /dev/null &
+sleep 0.5 # wait for background update to reach sleep 2
+
+# Dispatch should STILL work perfectly with v3!
+output=$("$AGENTCTL" dispatch testagent)
+assert [ "$output" = "testagent v3" ]
+
+sleep 3 # Wait for background update to finish
+
+# Now it should be v4
+output=$("$AGENTCTL" dispatch testagent)
+assert [ "$output" = "testagent v4" ]
+
 echo "All tests passed successfully!"

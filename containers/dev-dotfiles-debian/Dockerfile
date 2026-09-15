@@ -208,8 +208,8 @@ RUN set -euxo pipefail \
     echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})"; \
     echo "Stable development dependencies and tools are baked in."; \
     echo ""; \
-    echo "AI agents are managed dynamically at runtime via agentctl."; \
-    echo "Run 'agentctl status' to view current versions, or invoke an agent directly (e.g. 'codex', 'claude')."; \
+    echo "AI agents are managed dynamically at runtime."; \
+    echo "Just invoke an agent directly (e.g. 'codex', 'claude') and updates are handled passively."; \
     echo ""; \
     echo "Installed Base Tools:"; \
     echo "- Flutter: $(flutter --version 2>/dev/null | head -n 1 || echo 'Unknown')"; \

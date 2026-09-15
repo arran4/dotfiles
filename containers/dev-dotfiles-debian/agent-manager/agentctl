@@ -111,10 +111,6 @@ update_agent() {
   mkdir -p "$staging_dir"
 
   if install_agent "$agent" "$staging_dir"; then
-    ln -sfn ".staging" "$agent_dir/current"
-    # Actually, we should just swap paths directly.
-    # To keep previous, we can mv current out, but the requirements said MINIMAL atomicity: install temp -> symlink.
-    # Let's create a timestamp dir and symlink it.
     local timestamp=$(date +%s)
     while [ -d "${agent_dir}/${timestamp}" ]; do
       sleep 1
@@ -146,6 +142,7 @@ background_update() {
   local lockfile="${agent_dir}/.update.lock"
   local last_refresh="${agent_dir}/.last_refresh"
 
+  mkdir -p "$agent_dir"
   if ! mkdir "$lockfile" 2>/dev/null; then
     return 0
   fi
