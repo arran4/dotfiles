@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - '.chezmoiexternal.toml'
-      - '.chezmoiscripts/run_once_remove-legacy-caelestia-shell.sh'
       - 'dot_config/caelestia/**'
       - '.github/workflows/caelestia-ownership.yml'
   push:
@@ -12,7 +11,6 @@ on:
       - main
     paths:
       - '.chezmoiexternal.toml'
-      - '.chezmoiscripts/run_once_remove-legacy-caelestia-shell.sh'
       - 'dot_config/caelestia/**'
       - '.github/workflows/caelestia-ownership.yml'
   workflow_dispatch:
