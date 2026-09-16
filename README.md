@@ -172,7 +172,7 @@ I use the following flatpak applications in this environment:
 - RustDesk (`com.rustdesk.RustDesk`)
 - Spotify (`com.spotify.Client`)
 - Steam (`com.valvesoftware.Steam`)
-- FluffyChat (`im.fluffychat.FluffyChat`)
+- FluffyChat (`im.fluffychat.Fluffychat`)
 - nheko (`im.nheko.Nheko`)
 - Element (`im.riot.Riot`)
 - Anytype (`io.anytype.anytype`)
@@ -191,7 +191,7 @@ I use the following flatpak applications in this environment:
 
 You can install them automatically with this one-liner:
 ```sh
-flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.FluffyChat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
+flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
 ```
 
 ### Try it out
