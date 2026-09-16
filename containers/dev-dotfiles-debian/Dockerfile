@@ -189,6 +189,9 @@ WORKDIR /home/${USER_NAME}
 # which is already on PATH for the image user.
 # The container intentionally has no desktop D-Bus session, so remove the Codex
 # desktop notification hook after applying the otherwise-normal dotfiles.
+# Shell histories are seeded with sandbox-oriented launch commands because the
+# outer container, rather than each agent's inner approval prompts, is the
+# security boundary for this image.
 RUN set -euxo pipefail \
   && curl -fsSL https://antigravity.google/cli/install.sh | bash \
   && agy --version \
@@ -231,10 +234,14 @@ RUN set -euxo pipefail \
     echo "agy --dangerously-skip-permissions"; \
     echo "mini --yolo"; \
     echo "opencode"; \
-    echo "claude"; \
+    echo "opencode --auto"; \
+    echo "claude --dangerously-skip-permissions"; \
     echo "github-copilot-cli"; \
-    echo "qwen"; \
+    echo "qwen --approval-mode yolo"; \
+    echo "junie"; \
+    echo "curl -fsS http://host.docker.internal:11434/v1/models | jq ."; \
     echo "gh auth login -h github.com -w -p https"; \
+    echo "glab auth login"; \
   } >> /home/${USER_NAME}/.bash_history \
   && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history \
   && /usr/bin/zsh -l -c 'set -e; \
@@ -246,6 +253,7 @@ RUN set -euxo pipefail \
      command -v github-copilot-cli >/dev/null || { echo "github-copilot-cli missing"; false; }; \
      command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
      command -v mini >/dev/null || { echo "mini missing"; false; }; \
+     command -v junie >/dev/null || { echo "junie missing"; false; }; \
      for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs; do \
        command -v "$tool" >/dev/null || { echo "$tool missing"; false; }; \
      done; \
@@ -265,13 +273,24 @@ RUN set -euxo pipefail \
      docker compose version >/dev/null || { echo "docker compose unavailable"; false; }; \
      python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
      opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
+     case "$(opencode --help 2>&1)" in *--auto*) ;; *) echo "opencode --auto unavailable"; false;; esac; \
+     case "$(claude --help 2>&1)" in *--dangerously-skip-permissions*) ;; *) echo "claude sandbox launch flag unavailable"; false;; esac; \
+     case "$(qwen --help 2>&1)" in *--approval-mode*) ;; *) echo "qwen approval mode unavailable"; false;; esac; \
      test "${LESS:-}" = "-R" || { echo "LESS is not configured for ANSI passthrough"; false; }; \
      pager="$(git config --global --get core.pager)"; \
      delta_path="$(command -v delta)"; \
      test "$(readlink -f "$pager")" = "$(readlink -f "$delta_path")" || { echo "git core.pager is not delta: $pager != $delta_path"; false; }; \
      git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
-     grep -q "gh auth login -h github.com -w -p https" ~/.bash_history || { echo "gh auth login history missing in bash"; false; }; \
-     grep -q "gh auth login -h github.com -w -p https" ~/.zsh_history || { echo "gh auth login history missing in zsh"; false; }; \
+     for history in ~/.bash_history ~/.zsh_history; do \
+       grep -Fqx "codex --dangerously-bypass-approvals-and-sandbox" "$history" || { echo "codex sandbox command missing from $history"; false; }; \
+       grep -Fqx "opencode --auto" "$history" || { echo "opencode sandbox command missing from $history"; false; }; \
+       grep -Fqx "claude --dangerously-skip-permissions" "$history" || { echo "claude sandbox command missing from $history"; false; }; \
+       grep -Fqx "qwen --approval-mode yolo" "$history" || { echo "qwen sandbox command missing from $history"; false; }; \
+       grep -Fqx "junie" "$history" || { echo "Junie command missing from $history"; false; }; \
+       grep -Fqx "curl -fsS http://host.docker.internal:11434/v1/models | jq ." "$history" || { echo "Ollama check missing from $history"; false; }; \
+       grep -Fqx "gh auth login -h github.com -w -p https" "$history" || { echo "GitHub auth command missing from $history"; false; }; \
+       grep -Fqx "glab auth login" "$history" || { echo "GitLab auth command missing from $history"; false; }; \
+     done; \
      echo "Smoke tests passed."' \
   && entry_output=$(/usr/local/bin/dev-dotfiles-entrypoint -c "echo 'Entrypoint ran'" 2>&1 || true) \
   && if ! echo "$entry_output" | grep -q "Checking GitHub CLI authentication status..."; then \
