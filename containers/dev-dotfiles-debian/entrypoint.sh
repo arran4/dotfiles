@@ -74,6 +74,34 @@ if [ "${DEV_DIND:-0}" = "1" ]; then
   done
 fi
 
+# Keep the host-Ollama default container-specific. Do not manage this through
+# the normal chezmoi source, because the same dotfiles are also applied directly
+# on hosts where host.docker.internal is not the correct Ollama address.
+opencode_config="$HOME/.config/opencode/opencode.json"
+if [ ! -e "$opencode_config" ]; then
+  mkdir -p "$(dirname "$opencode_config")"
+  cat > "$opencode_config" <<'EOF'
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (host)",
+      "options": {
+        "baseURL": "http://host.docker.internal:11434/v1"
+      },
+      "models": {
+        "qwen2.5-coder:7b": {
+          "name": "Qwen2.5 Coder 7B"
+        }
+      }
+    }
+  },
+  "model": "ollama/qwen2.5-coder:7b"
+}
+EOF
+fi
+
 echo "Checking GitHub CLI authentication status..."
 if ! gh auth status -h github.com; then
   echo "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"
