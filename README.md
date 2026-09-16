@@ -99,6 +99,24 @@ treat the outer container as the security boundary and mount only the repository
 Rootless Podman is preferred because its `keep-id` user namespace mode maps the invoking host user directly to the
 container's `user` account.
 
+### Quick start: OpenCode with host Ollama
+
+On the host, start Ollama so the development container can reach it, and pull the default model once:
+
+```sh
+OLLAMA_HOST=0.0.0.0:11434 ollama serve
+ollama pull qwen2.5-coder:7b
+```
+
+Start the container using one of the Podman/Docker commands below, then run `opencode`. On first start, the container
+creates a default OpenCode config pointing at `http://host.docker.internal:11434/v1` unless you already have one. Native
+Linux Docker may also need `--add-host host.docker.internal:host-gateway`.
+
+The container includes a few convenience defaults: `SANDBOX_NAME` can override the derived project/container name,
+per-project named volumes preserve forge/agent state, and common first-run commands such as `opencode`, the Codex and
+Antigravity full-access invocations, and `gh auth login -h github.com -w -p https` are seeded into Bash/Zsh history.
+See [`LOCAL-AI.md`](containers/dev-dotfiles-debian/LOCAL-AI.md) for the detailed Ollama, Aider, Zero and jcode setup.
+
 The copy/paste commands are deliberately single-line `sh -c` invocations. Project naming is derived inside that POSIX
 shell from the current directory, so the caller does not need shell-specific assignment or export syntax. To override
 the derived project name, prefix a command with `env SANDBOX_NAME=my-project`.
@@ -154,7 +172,7 @@ I use the following flatpak applications in this environment:
 - RustDesk (`com.rustdesk.RustDesk`)
 - Spotify (`com.spotify.Client`)
 - Steam (`com.valvesoftware.Steam`)
-- FluffyChat (`im.fluffychat.Fluffychat`)
+- FluffyChat (`im.fluffychat.FluffyChat`)
 - nheko (`im.nheko.Nheko`)
 - Element (`im.riot.Riot`)
 - Anytype (`io.anytype.anytype`)
@@ -173,7 +191,7 @@ I use the following flatpak applications in this environment:
 
 You can install them automatically with this one-liner:
 ```sh
-flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
+flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.FluffyChat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
 ```
 
 ### Try it out
