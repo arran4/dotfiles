@@ -2,6 +2,23 @@
 
 This directory contains the Dockerfile for the `dev-dotfiles-debian` container. It serves as a comprehensive, self-contained development environment based on Debian slim, pre-configured with a variety of development tools, languages, and AI assistants.
 
+## Quick start: OpenCode with host Ollama
+
+On the host, start Ollama so containers can reach it and pull the default model once:
+
+```sh
+OLLAMA_HOST=0.0.0.0:11434 ollama serve
+ollama pull qwen2.5-coder:7b
+```
+
+Start the development container using one of the Podman/Docker examples below, then run inside it:
+
+```sh
+opencode
+```
+
+The container creates a default OpenCode configuration on first start that connects to `http://host.docker.internal:11434/v1`. Native Linux Docker users may also need `--add-host host.docker.internal:host-gateway`. See [LOCAL-AI.md](LOCAL-AI.md) for Ollama service setup, troubleshooting, and Aider/Zero/jcode examples.
+
 ## Base Image
 
 The container is built on top of `debian:${DEBIAN_RELEASE}-slim` (defaulting to the `stable` release).
