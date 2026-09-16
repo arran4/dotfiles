@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# {{ if stat (joinPath .chezmoi.homeDir ".gemini/antigravity-cli/antigravity-oauth-token") }}
-# Hash of source token: {{ include (joinPath .chezmoi.homeDir ".gemini/antigravity-cli/antigravity-oauth-token") | sha256sum }}
-# {{ end }}
-
 SRC="$HOME/.gemini/antigravity-cli/antigravity-oauth-token"
 DST="$HOME/.codex/antigravity-cli/antigravity-oauth-token"
 
@@ -11,6 +7,6 @@ if [ -f "$SRC" ]; then
     if [ ! -f "$DST" ] || ! cmp -s "$SRC" "$DST"; then
         mkdir -p "$(dirname "$DST")"
         cp "$SRC" "$DST"
-        chmod 600 "$DST"
     fi
+    chmod 600 "$DST"
 fi
