@@ -12,8 +12,6 @@ FRESHNESS_WINDOW="${AGENT_FRESHNESS_WINDOW:-86400}"
 
 SUPPORTED_AGENTS="codex agy junie mini opencode claude github-copilot-cli qwen"
 
-mkdir -p "$CACHE_ROOT"
-
 log() {
   echo "[agentctl] $*" >&2
 }

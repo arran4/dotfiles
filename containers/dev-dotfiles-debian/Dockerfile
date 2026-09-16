@@ -188,7 +188,6 @@ WORKDIR /home/${USER_NAME}
 # The container intentionally has no desktop D-Bus session, so remove the Codex
 # desktop notification hook after applying the otherwise-normal dotfiles.
 RUN set -euxo pipefail \
-
   && set +o pipefail \
   && yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug " \
   && set -o pipefail \
