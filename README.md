@@ -108,14 +108,16 @@ OLLAMA_HOST=0.0.0.0:11434 ollama serve
 ollama pull qwen2.5-coder:7b
 ```
 
-Start the container using one of the Podman/Docker commands below, then run `opencode`. On first start, the container
-creates a default OpenCode config pointing at `http://host.docker.internal:11434/v1` unless you already have one. Native
-Linux Docker may also need `--add-host host.docker.internal:host-gateway`.
+Start the container using one of the Podman/Docker commands below, then run `opencode --auto`. On first start, the
+container creates a default OpenCode config pointing at `http://host.docker.internal:11434/v1` unless you already have
+one. Native Linux Docker may also need `--add-host host.docker.internal:host-gateway`.
 
 The container includes a few convenience defaults: `SANDBOX_NAME` can override the derived project/container name,
-per-project named volumes preserve forge/agent state, and common first-run commands such as `opencode`, the Codex and
-Antigravity full-access invocations, and `gh auth login -h github.com -w -p https` are seeded into Bash/Zsh history.
-See [`LOCAL-AI.md`](containers/dev-dotfiles-debian/LOCAL-AI.md) for the detailed Ollama, Aider, Zero and jcode setup.
+per-project named volumes preserve forge/agent state, and Bash/Zsh history is pre-seeded with sandbox-oriented launch
+commands (including permissive Codex, Antigravity, OpenCode, Claude and Qwen modes), the host-Ollama model check, and
+GitHub/GitLab authentication commands. These permissive entries assume the outer container is the security boundary;
+they are not intended as host-shell defaults. See [`LOCAL-AI.md`](containers/dev-dotfiles-debian/LOCAL-AI.md) for the
+detailed Ollama, Aider, Zero and jcode setup.
 
 The copy/paste commands are deliberately single-line `sh -c` invocations. Project naming is derived inside that POSIX
 shell from the current directory, so the caller does not need shell-specific assignment or export syntax. To override
