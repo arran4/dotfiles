@@ -226,15 +226,21 @@ RUN set -euxo pipefail \
     echo "- Docker: $(docker --version 2>/dev/null || echo 'Unknown')"; \
     echo "- Junie: $(junie --version 2>/dev/null || echo 'Unknown')"; \
   } | sudo tee /etc/motd > /dev/null \
+  # These are deliberately sandbox-oriented launch commands. The outer
+  # development container is the security boundary, so permissive agent modes
+  # are useful here but should not be copied into a normal host-shell history.
   && { \
     echo "codex --dangerously-bypass-approvals-and-sandbox"; \
     echo "agy --dangerously-skip-permissions"; \
     echo "mini --yolo"; \
     echo "opencode"; \
-    echo "claude"; \
+    echo "opencode --auto"; \
+    echo "claude --dangerously-skip-permissions"; \
     echo "github-copilot-cli"; \
-    echo "qwen"; \
+    echo "qwen --approval-mode yolo"; \
+    echo "curl -fsS http://host.docker.internal:11434/v1/models | jq ."; \
     echo "gh auth login -h github.com -w -p https"; \
+    echo "glab auth login"; \
   } >> /home/${USER_NAME}/.bash_history \
   && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history \
   && /usr/bin/zsh -l -c 'set -e; \
@@ -265,13 +271,23 @@ RUN set -euxo pipefail \
      docker compose version >/dev/null || { echo "docker compose unavailable"; false; }; \
      python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
      opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
+     opencode --help | grep -q -- "--auto" || { echo "opencode --auto unavailable"; false; }; \
+     claude --help | grep -q -- "--dangerously-skip-permissions" || { echo "claude sandbox launch flag unavailable"; false; }; \
+     qwen --help | grep -q -- "--approval-mode" || { echo "qwen approval mode unavailable"; false; }; \
      test "${LESS:-}" = "-R" || { echo "LESS is not configured for ANSI passthrough"; false; }; \
      pager="$(git config --global --get core.pager)"; \
      delta_path="$(command -v delta)"; \
      test "$(readlink -f "$pager")" = "$(readlink -f "$delta_path")" || { echo "git core.pager is not delta: $pager != $delta_path"; false; }; \
      git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
-     grep -q "gh auth login -h github.com -w -p https" ~/.bash_history || { echo "gh auth login history missing in bash"; false; }; \
-     grep -q "gh auth login -h github.com -w -p https" ~/.zsh_history || { echo "gh auth login history missing in zsh"; false; }; \
+     for history in ~/.bash_history ~/.zsh_history; do \
+       grep -Fqx "codex --dangerously-bypass-approvals-and-sandbox" "$history" || { echo "codex sandbox command missing from $history"; false; }; \
+       grep -Fqx "opencode --auto" "$history" || { echo "opencode sandbox command missing from $history"; false; }; \
+       grep -Fqx "claude --dangerously-skip-permissions" "$history" || { echo "claude sandbox command missing from $history"; false; }; \
+       grep -Fqx "qwen --approval-mode yolo" "$history" || { echo "qwen sandbox command missing from $history"; false; }; \
+       grep -Fqx "curl -fsS http://host.docker.internal:11434/v1/models | jq ." "$history" || { echo "Ollama check missing from $history"; false; }; \
+       grep -Fqx "gh auth login -h github.com -w -p https" "$history" || { echo "GitHub auth command missing from $history"; false; }; \
+       grep -Fqx "glab auth login" "$history" || { echo "GitLab auth command missing from $history"; false; }; \
+     done; \
      echo "Smoke tests passed."' \
   && entry_output=$(/usr/local/bin/dev-dotfiles-entrypoint -c "echo 'Entrypoint ran'" 2>&1 || true) \
   && if ! echo "$entry_output" | grep -q "Checking GitHub CLI authentication status..."; then \
