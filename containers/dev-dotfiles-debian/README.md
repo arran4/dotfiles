@@ -41,18 +41,18 @@ The Debian-packaged tools that affect capability-dependent dotfile rendering are
 `difftastic` and `zellij` are referenced or detected by the wider dotfiles but are not installed here because the image follows Debian's package set rather than adding ad-hoc upstream installers for optional tools. Desktop-only Hyprland/KDE tools are likewise outside this headless development image.
 
 ### AI Assistants & Agents
-The container is equipped with several AI-powered CLI tools and agents:
-- OpenAI Codex CLI (`codex`), installed with the official standalone installer
-- Google Antigravity CLI (`agy`), installed with the official installer
+AI-agent commands are provided as lightweight passive shims on `PATH`:
+- OpenAI Codex CLI (`codex`)
+- Google Antigravity CLI (`agy`)
+- JetBrains Junie (`junie`)
 - Mini SWE Agent (`mini`)
 - OpenCode AI (`opencode`)
-- Claude Code (`@anthropic-ai/claude-code`)
-- GitHub Copilot CLI (`@githubnext/github-copilot-cli`)
-- QwenChat (`qwen`)
+- Claude Code (`claude`)
+- GitHub Copilot CLI (`github-copilot-cli`)
+- Qwen (`qwen`)
 
-Jules CLI is intentionally not installed. Its npm installer can preserve high UID/GID values from its downloaded payload, which can make the published image impossible for normal rootless Podman subordinate-ID mappings to unpack. The Dockerfile retains a commented installation recipe that normalizes the Jules payload to `root:root` if it is re-enabled later.
-
-Codex is installed under `/opt/codex` with its executable exposed in `/usr/local/bin`. Its runtime `~/.codex` directory therefore remains separate and can safely be persisted as a container volume.
+The shims install and update their backing agents on demand under `~/.cache/dev-agents/`.
+Authentication and user configuration directories (e.g. `~/.codex`, `~/.gemini`) remain separate and can safely be persisted as container volumes.
 
 ## Recommended full-access agent sandbox
 
@@ -157,3 +157,15 @@ If stronger containment is needed, restrict the outer container's outbound netwo
 ## Dotfiles Integration
 
 During the image build process, the dotfiles from this repository are copied into the container. `chezmoi` is installed and automatically applies these dotfiles to the home directory of the configured user, ensuring the environment is immediately ready for use with all custom configurations and aliases in place.
+
+## AI Agent Shims
+
+AI-agent commands are lightweight shims. The first invocation installs the agent if necessary. Approximately once every 24 hours, invocation checks for an update before launching. Installed agents are cached persistently.
+
+### Behavior & Caching
+- **Synchronous on Invocation:** When an agent command is invoked, if no usable installation exists, it installs synchronously. If the installation is approximately 24 hours old, it synchronously checks/updates before launching the agent. Otherwise, it immediately executes the cached agent.
+- **Persistent Cache:** Agent executables are stored under `~/.cache/dev-agents/`. Mounting this directory to a persistent volume (e.g. `dev-dotfiles-agents`) ensures installed agents and updates are preserved across disposable container runs.
+- **Credential Isolation:** Credentials and user configuration directories (e.g. `~/.codex`, `~/.gemini`, `~/.config/gh`) remain outside the managed executable cache.
+- **Resilience:** If an update or check fails, a warning is printed and the existing known-good cached installation is executed.
+- **Manual Updates:** If you wish to manually trigger an update without waiting for the 24-hour freshness window, you can run `agentctl update <agent>` (or `agentctl update` to check all cached agents).
+

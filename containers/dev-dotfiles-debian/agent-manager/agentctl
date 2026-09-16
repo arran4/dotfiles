@@ -1,0 +1,334 @@
+#!/bin/bash
+set -euo pipefail
+
+OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+ARCH="$(uname -m)"
+if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi
+if [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi
+
+CACHE_ROOT="${CACHE_ROOT:-${HOME}/.cache/dev-agents/${OS}-${ARCH}}"
+SHIM_DIR="${SHIM_DIR:-/opt/agent-manager/shims}"
+FRESHNESS_WINDOW="${AGENT_FRESHNESS_WINDOW:-86400}"
+
+SUPPORTED_AGENTS="codex agy junie mini opencode claude github-copilot-cli qwen"
+
+log() {
+  echo "[agentctl] $*" >&2
+}
+
+validate_agent() {
+  local agent="$1"
+  local bin="$2"
+
+  if [ ! -x "$bin" ]; then
+    return 1
+  fi
+
+  if "$bin" --version >/dev/null 2>&1; then
+    return 0
+  fi
+  if "$bin" --help >/dev/null 2>&1; then
+    return 0
+  fi
+  if "$bin" -h >/dev/null 2>&1; then
+    return 0
+  fi
+
+  return 1
+}
+
+install_agent() {
+  local agent="$1"
+  local target_dir="$2"
+
+  mkdir -p "$target_dir"
+
+  case "$agent" in
+    codex)
+      local tmp_script
+      tmp_script=$(mktemp)
+      if curl -fsSL "https://chatgpt.com/codex/install.sh" > "$tmp_script" 2>/dev/null; then
+        CODEX_HOME="$target_dir" CODEX_INSTALL_DIR="$target_dir" CODEX_NON_INTERACTIVE=1 bash "$tmp_script" >/dev/null 2>&1 || { rm -f "$tmp_script"; return 1; }
+        if [ -L "$target_dir/codex" ]; then
+          local target
+          target=$(readlink "$target_dir/codex")
+          if [[ "$target" == "$target_dir"* ]]; then
+            ln -srfn "$target" "$target_dir/codex"
+          fi
+        fi
+      else
+        rm -f "$tmp_script"
+        return 1
+      fi
+      rm -f "$tmp_script"
+      ;;
+    agy)
+      local tmp_script
+      tmp_script=$(mktemp)
+      if curl -fsSL "https://antigravity.google/cli/install.sh" > "$tmp_script" 2>/dev/null; then
+        bash "$tmp_script" --dir "$target_dir" >/dev/null 2>&1 || { rm -f "$tmp_script"; return 1; }
+      else
+        rm -f "$tmp_script"
+        return 1
+      fi
+      rm -f "$tmp_script"
+      ;;
+    junie)
+      local tmp_script
+      tmp_script=$(mktemp)
+      if curl -fsSL "https://junie.jetbrains.com/install.sh" > "$tmp_script" 2>/dev/null; then
+        HOME="$target_dir" bash "$tmp_script" >/dev/null 2>&1 || { rm -f "$tmp_script"; return 1; }
+        if [ -f "$target_dir/.local/bin/junie" ] || [ -L "$target_dir/.local/bin/junie" ]; then
+          cat << 'WRAPPER_EOF' > "$target_dir/junie"
+#!/bin/bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export JUNIE_DATA="${JUNIE_DATA:-$DIR/.local/share/junie}"
+exec "$DIR/.local/bin/junie" "$@"
+WRAPPER_EOF
+          chmod +x "$target_dir/junie"
+        fi
+      else
+        rm -f "$tmp_script"
+        return 1
+      fi
+      rm -f "$tmp_script"
+      ;;
+    mini)
+      export UV_TOOL_DIR="$target_dir/tools"
+      export UV_TOOL_BIN_DIR="$target_dir/bin"
+      if uv tool install "mini-swe-agent" >/dev/null 2>&1; then
+        ln -s bin/mini "$target_dir/mini"
+      else
+        return 1
+      fi
+      ;;
+    opencode|claude|github-copilot-cli|qwen)
+      local package=""
+      case "$agent" in
+        opencode) package="opencode-ai" ;;
+        claude) package="@anthropic-ai/claude-code" ;;
+        github-copilot-cli) package="@githubnext/github-copilot-cli" ;;
+        qwen) package="@qwen-code/qwen-code" ;;
+      esac
+
+      if npm install --prefix "$target_dir" --global-style --no-audit --no-fund "$package" >/dev/null 2>&1; then
+        ln -s "node_modules/.bin/$agent" "$target_dir/$agent"
+      else
+        return 1
+      fi
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  if [ ! -x "$target_dir/$agent" ]; then
+    return 1
+  fi
+
+  validate_agent "$agent" "$target_dir/$agent" || return 1
+  return 0
+}
+
+# Allow test overrides
+if [ -n "${DEV_AGENT_OVERRIDE:-}" ] && [ -f "${DEV_AGENT_OVERRIDE}" ]; then
+  # shellcheck source=/dev/null
+  source "${DEV_AGENT_OVERRIDE}"
+fi
+
+promote_agent() {
+  local agent="$1"
+  local staging_dir="$2"
+  local agent_dir="${CACHE_ROOT}/${agent}"
+  local timestamp
+  timestamp=$(date +%s)
+
+  local prev_version=""
+  if [ -L "$agent_dir/current" ]; then
+    prev_version=$(readlink "$agent_dir/current" 2>/dev/null || true)
+    prev_version=$(basename "$prev_version")
+  fi
+
+  # Prune versions older than prev_version (retaining the immediately previous version)
+  for vdir in "$agent_dir"/*; do
+    if [ -d "$vdir" ] && [ "$vdir" != "$agent_dir/current" ]; then
+      local base
+      base=$(basename "$vdir")
+      if [[ "$base" =~ ^[0-9]+$ ]] && [ -n "$prev_version" ] && [[ "$prev_version" =~ ^[0-9]+$ ]]; then
+        if [ "$base" -lt "$prev_version" ]; then
+          rm -rf "$vdir"
+        fi
+      fi
+    fi
+  done
+
+  while [ -d "${agent_dir}/${timestamp}" ]; do
+    sleep 1
+    timestamp=$(date +%s)
+  done
+
+  mv "$staging_dir" "${agent_dir}/${timestamp}"
+  ln -sfn "$timestamp" "${agent_dir}/.current.tmp"
+  mv -Tf "${agent_dir}/.current.tmp" "${agent_dir}/current"
+  date +%s > "${agent_dir}/.last_check"
+}
+
+update_agent() {
+  local agent="$1"
+  local agent_dir="${CACHE_ROOT}/${agent}"
+  local lockfile="${agent_dir}/.update.lock"
+
+  mkdir -p "$agent_dir"
+
+  # Clean up legacy directory lock if left by older code or crash
+  if [ -d "$lockfile" ]; then
+    rm -rf "$lockfile"
+  fi
+
+  exec 200>"$lockfile"
+  if command -v flock >/dev/null 2>&1; then
+    if ! flock -w 120 200; then
+      log "Warning: Timed out waiting for update lock on $agent."
+      exec 200>&-
+      return 1
+    fi
+  fi
+
+  # Check if agent was already updated while waiting for lock
+  if [ -x "${agent_dir}/current/${agent}" ] && [ -f "${agent_dir}/.last_check" ]; then
+    local last
+    last=$(cat "${agent_dir}/.last_check" 2>/dev/null || echo 0)
+    local now
+    now=$(date +%s)
+    if [ $((now - last)) -lt "$FRESHNESS_WINDOW" ]; then
+      exec 200>&-
+      return 0
+    fi
+  fi
+
+  local staging_dir="${agent_dir}/.staging.$$"
+  rm -rf "$staging_dir"
+
+  local install_ok=0
+  if install_agent "$agent" "$staging_dir"; then
+    if [ -x "$staging_dir/$agent" ] && validate_agent "$agent" "$staging_dir/$agent"; then
+      promote_agent "$agent" "$staging_dir"
+      install_ok=1
+    else
+      rm -rf "$staging_dir"
+    fi
+  else
+    rm -rf "$staging_dir"
+  fi
+
+  exec 200>&-
+
+  if [ $install_ok -eq 1 ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+dispatch() {
+  local agent="$1"
+  shift
+
+  local agent_dir="${CACHE_ROOT}/${agent}"
+  local target_bin="${agent_dir}/current/${agent}"
+  local last_check="${agent_dir}/.last_check"
+
+  if [ ! -x "$target_bin" ]; then
+    log "No cached version of $agent found. Installing synchronously..."
+    if update_agent "$agent"; then
+      target_bin="${agent_dir}/current/${agent}"
+    else
+      log "Error: Failed to install $agent."
+      exit 1
+    fi
+  else
+    local stale=0
+    if [ ! -f "$last_check" ]; then
+      stale=1
+    else
+      local last
+      last=$(cat "$last_check" 2>/dev/null || echo 0)
+      local now
+      now=$(date +%s)
+      if [ $((now - last)) -ge "$FRESHNESS_WINDOW" ]; then
+        stale=1
+      fi
+    fi
+
+    if [ $stale -eq 1 ]; then
+      log "Checking for updates to $agent..."
+      if update_agent "$agent"; then
+        target_bin="${agent_dir}/current/${agent}"
+      else
+        log "Warning: Failed to update $agent; running existing cached version."
+      fi
+    fi
+  fi
+
+  if [ -x "$target_bin" ]; then
+    exec "$target_bin" "$@"
+  else
+    log "Error: Executable for $agent not found at $target_bin."
+    exit 1
+  fi
+}
+
+cmd_update() {
+  local agent="${1:-}"
+  if [ -n "$agent" ]; then
+    log "Updating $agent..."
+    if update_agent "$agent"; then
+      log "Successfully updated $agent."
+    else
+      log "Error: Failed to update $agent."
+      exit 1
+    fi
+  else
+    for a in $SUPPORTED_AGENTS; do
+      if [ -d "${CACHE_ROOT}/${a}" ]; then
+        log "Updating $a..."
+        update_agent "$a" || log "Warning: Failed to update $a."
+      fi
+    done
+  fi
+}
+
+setup_shims() {
+  local dest_dir="${1:-$SHIM_DIR}"
+  local agentctl_bin="${AGENTCTL_BIN:-/opt/agent-manager/agentctl}"
+  mkdir -p "$dest_dir"
+  for agent in $SUPPORTED_AGENTS; do
+    cat << SHIM_EOF > "$dest_dir/$agent"
+#!/bin/bash
+exec "$agentctl_bin" dispatch "$agent" "\$@"
+SHIM_EOF
+    chmod +x "$dest_dir/$agent"
+  done
+}
+
+case "${1:-}" in
+  dispatch)
+    shift
+    dispatch "$@"
+    ;;
+  update)
+    shift
+    cmd_update "$@"
+    ;;
+  setup-shims)
+    shift
+    setup_shims "$@"
+    ;;
+  -h|--help|help)
+    echo "Usage: agentctl [dispatch <agent> [args...]|update [agent]|setup-shims [dir]]"
+    ;;
+  *)
+    echo "Usage: agentctl [dispatch <agent> [args...]|update [agent]|setup-shims [dir]]" >&2
+    exit 1
+    ;;
+esac

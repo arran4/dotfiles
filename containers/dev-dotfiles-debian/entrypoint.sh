@@ -14,7 +14,8 @@ if [ "${DEV_VOLUME_INIT:-0}" = "1" ]; then
     "$HOME/.codex" \
     "$HOME/.gemini" \
     "$HOME/.config/gh" \
-    "$HOME/.config/glab-cli"
+    "$HOME/.config/glab-cli" \
+    "$HOME/.cache/dev-agents"
   do
     if [ -e "$path" ]; then
       sudo chown "$uid:$gid" "$path"
@@ -78,5 +79,7 @@ echo "Checking GitHub CLI authentication status..."
 if ! gh auth status -h github.com; then
   echo "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"
 fi
+
+
 
 exec /usr/bin/zsh -l "$@"
