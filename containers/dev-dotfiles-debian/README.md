@@ -14,10 +14,12 @@ ollama pull qwen2.5-coder:7b
 Start the development container using one of the Podman/Docker examples below, then run inside it:
 
 ```sh
-opencode
+opencode --auto
 ```
 
-The container creates a default OpenCode configuration on first start that connects to `http://host.docker.internal:11434/v1`. Native Linux Docker users may also need `--add-host host.docker.internal:host-gateway`. See [LOCAL-AI.md](LOCAL-AI.md) for Ollama service setup, troubleshooting, and Aider/Zero/jcode examples.
+The container creates a default OpenCode configuration on first start that connects to `http://host.docker.internal:11434/v1`. Native Linux Docker users may also need `--add-host host.docker.internal:host-gateway`.
+
+Bash and Zsh history are pre-seeded with useful sandbox commands, including permissive agent launch modes, the host-Ollama model check, and GitHub/GitLab authentication commands. These entries assume the outer container is the security boundary and are not intended as host-shell defaults. See [LOCAL-AI.md](LOCAL-AI.md) for Ollama service setup, troubleshooting, and Aider/Zero/jcode examples.
 
 ## Base Image
 
