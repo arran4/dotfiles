@@ -175,9 +175,7 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/de
 COPY --chown=${USER_UID}:${USER_GID} containers/dev-dotfiles-debian/agent-manager /opt/agent-manager
 RUN set -euxo pipefail \
   && chmod +x /opt/agent-manager/agentctl \
-  && chown -R ${USER_UID}:${USER_GID} /opt/agent-manager \
-  && mkdir -p /opt/agent-seed \
-  && chown -R ${USER_UID}:${USER_GID} /opt/agent-seed
+  && chown -R ${USER_UID}:${USER_GID} /opt/agent-manager
 
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
@@ -201,15 +199,15 @@ RUN set -euxo pipefail \
   && docker --version \
   && docker buildx version \
   && docker compose version \
-  && /opt/agent-manager/agentctl seed \
   && /opt/agent-manager/agentctl setup-shims \
   && /usr/bin/zsh -l -c 'set -e; command -v agy; command -v codex; command -v flutter; command -v docker; command -v dockerd; case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "login PATH is missing $HOME/.local/bin" >&2; exit 1 ;; esac' \
   && { \
     echo "dev-dotfiles-debian release: ${DOTFILES_RELEASE} (commit ${DOTFILES_COMMIT})"; \
     echo "Stable development dependencies and tools are baked in."; \
     echo ""; \
-    echo "AI agents are managed dynamically at runtime."; \
-    echo "Just invoke an agent directly (e.g. 'codex', 'claude') and updates are handled passively."; \
+    echo "AI-agent commands are lightweight shims. The first invocation installs the agent"; \
+    echo "if necessary. Approximately once every 24 hours, invocation checks for an update"; \
+    echo "before launching. Installed agents are cached persistently in ~/.cache/dev-agents."; \
     echo ""; \
     echo "Installed Base Tools:"; \
     echo "- Flutter: $(flutter --version 2>/dev/null | head -n 1 || echo 'Unknown')"; \
@@ -226,20 +224,17 @@ RUN set -euxo pipefail \
     echo "claude"; \
     echo "github-copilot-cli"; \
     echo "qwen"; \
+    echo "agentctl update codex"; \
     echo "gh auth login -h github.com -w -p https"; \
   } >> /home/${USER_NAME}/.bash_history \
   && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history \
   && /usr/bin/zsh -l -c 'set -e; \
      echo "Running smoke tests..."; \
-     command -v codex >/dev/null || { echo "codex missing"; false; }; \
-     command -v agy >/dev/null || { echo "agy missing"; false; }; \
-     command -v opencode >/dev/null || { echo "opencode missing"; false; }; \
-     command -v claude >/dev/null || { echo "claude missing"; false; }; \
-     command -v github-copilot-cli >/dev/null || { echo "github-copilot-cli missing"; false; }; \
-     command -v qwen >/dev/null || { echo "qwen missing"; false; }; \
-     command -v mini >/dev/null || { echo "mini missing"; false; }; \
-     command -v junie >/dev/null || { echo "junie missing"; false; }; \
-
+     for agent in codex agy opencode claude github-copilot-cli qwen mini junie; do \
+       command -v "$agent" >/dev/null || { echo "$agent missing from PATH"; false; }; \
+       test -x "/opt/agent-manager/shims/$agent" || { echo "$agent shim not executable"; false; }; \
+     done; \
+     test ! -d /home/${USER_NAME}/.cache/dev-agents || test -z "$(ls -A /home/${USER_NAME}/.cache/dev-agents 2>/dev/null)" || { echo "agent cache unexpectedly populated during build"; false; }; \
      for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs; do \
        command -v "$tool" >/dev/null || { echo "$tool missing"; false; }; \
      done; \
@@ -257,8 +252,6 @@ RUN set -euxo pipefail \
      command -v dockerd >/dev/null || { echo "dockerd missing"; false; }; \
      docker buildx version >/dev/null || { echo "docker buildx unavailable"; false; }; \
      docker compose version >/dev/null || { echo "docker compose unavailable"; false; }; \
-     codex --version >/dev/null || { echo "codex version check failed"; false; }; \
-     opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
      test "${LESS:-}" = "-R" || { echo "LESS is not configured for ANSI passthrough"; false; }; \
      pager="$(git config --global --get core.pager)"; \
      delta_path="$(command -v delta)"; \
@@ -282,6 +275,7 @@ RUN set -euxo pipefail \
        echo "Entrypoint did not continue after auth status check"; \
        echo "$entry_output"; \
        false; \
-     fi
+     fi \
+  && (test ! -d /home/${USER_NAME}/.cache/dev-agents || test -z "$(ls -A /home/${USER_NAME}/.cache/dev-agents 2>/dev/null)") || { echo "agent cache unexpectedly populated during entrypoint test"; false; }
 
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]

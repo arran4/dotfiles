@@ -14,7 +14,8 @@ if [ "${DEV_VOLUME_INIT:-0}" = "1" ]; then
     "$HOME/.codex" \
     "$HOME/.gemini" \
     "$HOME/.config/gh" \
-    "$HOME/.config/glab-cli"
+    "$HOME/.config/glab-cli" \
+    "$HOME/.cache/dev-agents"
   do
     if [ -e "$path" ]; then
       sudo chown "$uid:$gid" "$path"
