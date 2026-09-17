@@ -273,23 +273,23 @@ RUN set -euxo pipefail \
      docker compose version >/dev/null || { echo "docker compose unavailable"; false; }; \
      python3 -m pip show mini-swe-agent >/dev/null || { echo "mini-swe-agent version check failed"; false; }; \
      opencode --version >/dev/null || { echo "opencode version check failed"; false; }; \
-     case "$(opencode --help)" in *--auto*) ;; *) echo "opencode --auto unavailable"; false;; esac; \
-     case "$(claude --help)" in *--dangerously-skip-permissions*) ;; *) echo "claude sandbox launch flag unavailable"; false;; esac; \
-     case "$(qwen --help)" in *--approval-mode*) ;; *) echo "qwen approval mode unavailable"; false;; esac; \
+     case "$(opencode --help 2>&1)" in *--auto*) ;; *) echo "opencode --auto unavailable"; false;; esac; \
+     case "$(claude --help 2>&1)" in *--dangerously-skip-permissions*) ;; *) echo "claude sandbox launch flag unavailable"; false;; esac; \
+     case "$(qwen --help 2>&1)" in *--approval-mode*) ;; *) echo "qwen approval mode unavailable"; false;; esac; \
      test "${LESS:-}" = "-R" || { echo "LESS is not configured for ANSI passthrough"; false; }; \
      pager="$(git config --global --get core.pager)"; \
      delta_path="$(command -v delta)"; \
      test "$(readlink -f "$pager")" = "$(readlink -f "$delta_path")" || { echo "git core.pager is not delta: $pager != $delta_path"; false; }; \
      git config --global --get-all credential.helper | grep -Eq "oauth( -device)?$" || { echo "git credential helper is not using OAuth"; false; }; \
-     for history in ~/.bash_history ~/.zsh_history; do \
-       grep -Fqx "codex --dangerously-bypass-approvals-and-sandbox" "$history" || { echo "codex sandbox command missing from $history"; false; }; \
-       grep -Fqx "opencode --auto" "$history" || { echo "opencode sandbox command missing from $history"; false; }; \
-       grep -Fqx "claude --dangerously-skip-permissions" "$history" || { echo "claude sandbox command missing from $history"; false; }; \
-       grep -Fqx "qwen --approval-mode yolo" "$history" || { echo "qwen sandbox command missing from $history"; false; }; \
-       grep -Fqx "junie" "$history" || { echo "Junie command missing from $history"; false; }; \
-       grep -Fqx "curl -fsS http://host.docker.internal:11434/v1/models | jq ." "$history" || { echo "Ollama check missing from $history"; false; }; \
-       grep -Fqx "gh auth login -h github.com -w -p https" "$history" || { echo "GitHub auth command missing from $history"; false; }; \
-       grep -Fqx "glab auth login" "$history" || { echo "GitLab auth command missing from $history"; false; }; \
+     for history_file in ~/.bash_history ~/.zsh_history; do \
+       grep -Fqx "codex --dangerously-bypass-approvals-and-sandbox" "$history_file" || { echo "codex sandbox command missing from $history_file"; false; }; \
+       grep -Fqx "opencode --auto" "$history_file" || { echo "opencode sandbox command missing from $history_file"; false; }; \
+       grep -Fqx "claude --dangerously-skip-permissions" "$history_file" || { echo "claude sandbox command missing from $history_file"; false; }; \
+       grep -Fqx "qwen --approval-mode yolo" "$history_file" || { echo "qwen sandbox command missing from $history_file"; false; }; \
+       grep -Fqx "junie" "$history_file" || { echo "Junie command missing from $history_file"; false; }; \
+       grep -Fqx "curl -fsS http://host.docker.internal:11434/v1/models | jq ." "$history_file" || { echo "Ollama check missing from $history_file"; false; }; \
+       grep -Fqx "gh auth login -h github.com -w -p https" "$history_file" || { echo "GitHub auth command missing from $history_file"; false; }; \
+       grep -Fqx "glab auth login" "$history_file" || { echo "GitLab auth command missing from $history_file"; false; }; \
      done; \
      echo "Smoke tests passed."' \
   && entry_output=$(/usr/local/bin/dev-dotfiles-entrypoint -c "echo 'Entrypoint ran'" 2>&1 || true) \
