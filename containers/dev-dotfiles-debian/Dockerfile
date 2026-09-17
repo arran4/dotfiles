@@ -241,6 +241,7 @@ RUN set -euxo pipefail \
     echo "junie"; \
     echo "curl -fsS http://host.docker.internal:11434/v1/models | jq ."; \
     echo "gh auth login -h github.com -w -p https"; \
+    echo "gh auth refresh"; \
     echo "glab auth login"; \
   } >> /home/${USER_NAME}/.bash_history \
   && cp /home/${USER_NAME}/.bash_history /home/${USER_NAME}/.zsh_history \
@@ -289,6 +290,7 @@ RUN set -euxo pipefail \
        grep -Fqx "junie" "$history_file" || { echo "Junie command missing from $history_file"; false; }; \
        grep -Fqx "curl -fsS http://host.docker.internal:11434/v1/models | jq ." "$history_file" || { echo "Ollama check missing from $history_file"; false; }; \
        grep -Fqx "gh auth login -h github.com -w -p https" "$history_file" || { echo "GitHub auth command missing from $history_file"; false; }; \
+       grep -Fqx "gh auth refresh" "$history_file" || { echo "GitHub auth refresh command missing from $history_file"; false; }; \
        grep -Fqx "glab auth login" "$history_file" || { echo "GitLab auth command missing from $history_file"; false; }; \
      done; \
      echo "Smoke tests passed."' \
