@@ -178,6 +178,7 @@ ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
+COPY --chmod=0644 containers/dev-dotfiles-debian/codex-config.toml /usr/local/share/dev-dotfiles-debian/codex-config.toml
 
 USER ${USER_NAME}
 WORKDIR /home/${USER_NAME}
@@ -199,6 +200,8 @@ RUN set -euxo pipefail \
   && yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug " \
   && set -o pipefail \
   && rm -f "$HOME/.codex/hooks.json" \
+  && mkdir -p "$HOME/.codex" \
+  && if [ ! -e "$HOME/.codex/config.toml" ]; then cp /usr/local/share/dev-dotfiles-debian/codex-config.toml "$HOME/.codex/config.toml"; fi \
   && rm -rf /tmp/dotfiles \
   && flutter --version \
   && go version \

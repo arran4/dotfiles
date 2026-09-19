@@ -74,6 +74,14 @@ if [ "${DEV_DIND:-0}" = "1" ]; then
   done
 fi
 
+# Populate missing Codex configuration on first use of an empty named volume.
+# Never overwrite an existing config or disturb persisted authentication.
+codex_config="$HOME/.codex/config.toml"
+if [ ! -e "$codex_config" ]; then
+  mkdir -p "$(dirname "$codex_config")"
+  cp /usr/local/share/dev-dotfiles-debian/codex-config.toml "$codex_config"
+fi
+
 # Keep the host-Ollama default container-specific. Do not manage this through
 # the normal chezmoi source, because the same dotfiles are also applied directly
 # on hosts where host.docker.internal is not the correct Ollama address.
