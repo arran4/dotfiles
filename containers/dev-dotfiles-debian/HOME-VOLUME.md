@@ -30,23 +30,26 @@ Replace `podman build` with `docker build` when using Docker. `BASE_IMAGE` may i
 
 **An image upgrade requires replacing the container**, not merely running `podman start` or `docker start`: existing container objects retain their old image. Back up important home changes, stop the container, remove only that container object, rebuild the alternative image with the new seed, and run a new container with the same project-home volume name. Retain or restore the workspace separately as appropriate for the selected mode. Do not remove named volumes while replacing the container.
 
-## Launch with Podman
+## Workspace modes
 
-Use a unique project name; do not reuse an existing legacy container name without planning migration. These examples use `name=home-volume-trial`. Rootless Podman uses `--userns=keep-id:uid=1000,gid=1000`; the image defaults to user/UID/GID `user`/`1000`/`1000`.
+All modes keep `/workspace` as an ordinary directory. Use a unique Docker/Podman-safe `name` per project and the same home volume name after replacing a container. The commands below use `name=home-volume-trial`; adapt the workspace and container name as needed. A host checkout, an independently persistent volume, a repository imported into the container filesystem, and a fully disposable container are all supported. The home seeding process does not determine or modify the workspace layout.
 
-**Bind-mounted checkout (one named volume, for home):**
+### Launch with Podman
+
+**Bind-mounted checkout (one named volume, for home):** run from the directory to work on:
 
 ```sh
 name=home-volume-trial
-workspace=$(pwd -P)
 podman run -it --name "dev-agent-${name}" --restart=no \
   --userns=keep-id:uid=1000,gid=1000 \
   --hostname "agent-sandbox-${name}" --env DEV_HOME_VOLUME_INIT=1 \
   --workdir /workspace \
   --mount "type=volume,src=dev-agent-${name}-home,dst=/home/user" \
-  --mount "type=bind,src=${workspace},dst=/workspace,rw" \
+  --mount "type=bind,src=$(pwd -P),dst=/workspace,rw" \
   dev-dotfiles-home-volume:trial
 ```
+
+This keeps the host checkout outside the home volume and does not bind-mount host authentication. The home volume persists independently of the container. The host checkout continues to exist if the container is removed.
 
 **Disconnected, independently persistent project (two volumes):** use the same Podman command, but replace its `/workspace` bind mount with:
 
@@ -68,18 +71,17 @@ podman start -ai --detach-keys='' "dev-agent-${name}"
 
 Do not use `--rm` when relying on a container's writable layer. Deliberate detachment can leave the shell running; exit the login shell to stop it.
 
-## Launch with Docker
+### Launch with Docker
 
 Build the experimental image using `docker build` above. The equivalent **bind-mounted project** launch (normal Docker with a matching UID/GID `1000`) is:
 
 ```sh
 name=home-volume-trial
-workspace=$(pwd -P)
 docker run -it --name "dev-agent-${name}" --restart=no \
   --hostname "agent-sandbox-${name}" --env DEV_HOME_VOLUME_INIT=1 \
   --workdir /workspace \
   --mount "type=volume,src=dev-agent-${name}-home,dst=/home/user" \
-  --mount "type=bind,src=${workspace},dst=/workspace,rw" \
+  --mount "type=bind,src=$(pwd -P),dst=/workspace,rw" \
   dev-dotfiles-home-volume:trial
 ```
 
@@ -91,7 +93,7 @@ For both engines, this image consolidates the agent/forge configuration into hom
 
 The original persistent sandbox uses `-workspace`, `-codex`, `-agy`, `-gh` and `-glab` volumes. The experimental `-home` volume **does not import them**. Stop the old container, back up its volumes, and copy each of the four agent/forge volumes into the corresponding directory in the new home using a separate migration container. Retain or mount the original `-workspace` volume at `/workspace` if that project should survive container removal. Verify ownership, repositories and authentication before deleting any old container or volume. In particular, do not mount old agent/forge volumes as nested mounts inside the new home: they conceal its contents. Keyring-backed logins may require reauthentication.
 
-For an intentional cleanup, first identify whether the workspace is bind-mounted, a named volume or only a container writable layer. Remove the named container and **only the specific volumes you intend to discard**; do not reuse legacy five-volume cleanup commands for the experimental home.
+For intentional cleanup, first identify whether the workspace is bind-mounted, a named volume or only a container writable layer. Remove the named container and **only the specific volumes you intend to discard**; do not reuse legacy five-volume cleanup commands for the experimental home.
 
 ## Verification and limitations
 
