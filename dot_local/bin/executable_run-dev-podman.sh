@@ -14,7 +14,7 @@ command -v podman >/dev/null 2>&1 || { echo 'podman is required.' >&2; exit 1; }
 
 workspace=$(pwd -P)
 raw=${SANDBOX_NAME:-$(basename "$workspace")}
-name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/-\{2\}/-/g' -e 's/^-//' -e 's/-$//')
+name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//')
 name=${name:-default-project}
 container="dev-agent-${name}-trial"
 image=${DEV_IMAGE:-dev-dotfiles-home-volume:trial}
