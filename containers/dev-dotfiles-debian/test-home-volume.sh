@@ -46,16 +46,19 @@ seed_home
 test "$(cat "$tmp/home/.config/example")" = 'user config'
 test "$(cat "$tmp/home/.zsh_history")" = 'user history'
 
-# Updating the archive and its version overlays matching config paths without
-# deleting a volume-only path, persisted credentials or the workspace.
+# Updating the archive and version overlays matching config paths without
+# deleting volume-only paths, runtime auth, shell history or the workspace.
 printf 'image config v2\n' > "$tmp/seed/.config/example"
 printf 'new image history\n' > "$tmp/seed/.zsh_history"
+mkdir -p "$tmp/seed/.config/gh"
+printf 'build-time auth placeholder\n' > "$tmp/seed/.config/gh/hosts.yml"
 tar -C "$tmp/seed" -cf "$tmp/seed.tar" .
 printf 'image-v2:sha256-v2\n' > "$tmp/version"
 seed_home
 test "$(cat "$tmp/home/.config/example")" = 'image config v2'
 test "$(cat "$tmp/home/only-in-volume")" = 'keep this'
 test "$(cat "$tmp/home/.config/gh/hosts.yml")" = 'runtime token'
+test "$(cat "$tmp/home/.zsh_history")" = 'user history'
 test "$(cat "$tmp/workspace/README")" = 'existing checkout'
 test "$(cat "$tmp/home/.dev-dotfiles-seed-version")" = 'image-v2:sha256-v2'
 
