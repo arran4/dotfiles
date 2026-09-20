@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Runs during the image build as the non-root image user.
-set -Eeuxo pipefail
-trap 'rc=$?; printf "setup-user.sh:%s: command failed (exit %s): %s\n" "$LINENO" "$rc" "$BASH_COMMAND" >&2' ERR
+set -euxo pipefail
+# Keep the failing command and line visible without inheriting the trap into
+# command substitutions (where a single failure would be reported repeatedly).
+trap 'printf "setup-user.sh:%s: command failed (exit %s): %s\n" "$LINENO" "$?" "$BASH_COMMAND" >&2' ERR
 
 curl -fsSL https://antigravity.google/cli/install.sh | bash
 agy --version
@@ -43,13 +45,14 @@ junie --version
   echo "Installed AI Agents & Tools:"
   echo "- Codex: $(codex --version 2>/dev/null || echo 'Unknown')"
   echo "- Antigravity: $(agy --version 2>/dev/null || echo 'Unknown')"
-  MINI_SWE_VERSION=$(python3 -m pip show mini-swe-agent 2>/dev/null | awk '/^Version:/{print $2; exit}')
+  # Do not exit awk early: pip must finish writing to avoid SIGPIPE under pipefail.
+  MINI_SWE_VERSION=$(python3 -m pip show mini-swe-agent 2>/dev/null | awk '/^Version:/ {print $2}')
   echo "- Mini SWE Agent: ${MINI_SWE_VERSION:-Unknown}"
   echo "- OpenCode AI: $(opencode --version 2>/dev/null || echo 'Unknown')"
   echo "- Claude Code: $(claude --version 2>/dev/null || echo 'Unknown')"
   echo "- GitHub Copilot CLI: $(github-copilot-cli --version 2>/dev/null || echo 'Unknown')"
   echo "- QwenChat: $(jq -r '.version // empty' /usr/local/lib/qwen-code/manifest.json 2>/dev/null || npm list -g @qwen-code/qwen-code | grep @qwen-code/qwen-code@ | sed 's/.*@//' 2>/dev/null || echo 'Unknown')"
-  echo "- Flutter: $(flutter --version 2>/dev/null | head -n 1 || echo 'Unknown')"
+  echo "- Flutter: $(flutter --version 2>/dev/null | awk 'NR == 1 {print}' || echo 'Unknown')"
   echo "- Go: $(go version 2>/dev/null || echo 'Unknown')"
   echo "- Git: $(git --version 2>/dev/null || echo 'Unknown')"
   echo "- Docker: $(docker --version 2>/dev/null || echo 'Unknown')"
