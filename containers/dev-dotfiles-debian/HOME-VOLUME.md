@@ -17,14 +17,16 @@ Replace `podman build` with `docker build` when using Docker. `BASE_IMAGE` may i
 
 ## Linux launch scripts
 
-On Linux, use the executable [`run-dev-podman.sh`](run-dev-podman.sh) or [`run-dev-docker.sh`](run-dev-docker.sh) in this directory instead of copying the multiline `run` commands below. **Run from the project directory**, not the dotfiles directory; each launcher uses the caller's current directory for the default bind-mounted `/workspace` and derives the sandbox name from its basename. The scripts may be invoked by absolute path, for example:
+The launchers are chezmoi-managed host commands: [`run-dev-podman.sh`](../../dot_local/bin/executable_run-dev-podman.sh) and [`run-dev-docker.sh`](../../dot_local/bin/executable_run-dev-docker.sh). Their **source files are in `dot_local/bin/`**, with the `executable_` prefix so chezmoi installs them to `~/.local/bin/` under their normal command names. Apply this dotfiles branch with chezmoi and ensure `~/.local/bin` is on your `PATH`. Run either command from the host **project directory**, not the dotfiles directory: the default bind-mounted `/workspace` is the caller's current directory and the sandbox name derives from its basename.
 
 ```sh
 cd ~/Documents/Projects/my-project
-~/Documents/Projects/dotfiles/containers/dev-dotfiles-debian/run-dev-podman.sh
+run-dev-podman.sh
 # Or, if the trial image was built with Docker:
-~/Documents/Projects/dotfiles/containers/dev-dotfiles-debian/run-dev-docker.sh
+run-dev-docker.sh
 ```
+
+If chezmoi has not installed the commands yet, run their source files from the project directory using an absolute path to the dotfiles checkout, e.g. `~/Documents/Projects/dotfiles/dot_local/bin/executable_run-dev-podman.sh`. They remain Linux-only, and the multiline `run` commands below remain available for manual customization.
 
 Use `SANDBOX_NAME=my-project` to give a sandbox a stable, distinct name regardless of the current directory. The launchers default to `dev-dotfiles-home-volume:trial` (locally built with the matching engine), a named project-home volume, a host checkout bind-mounted at `/workspace`, a persistent named container, and **no** nested Docker daemon. Override the image with `DEV_IMAGE=<locally-built-home-volume-image>`; they intentionally reject the published legacy `ghcr.io/arran4/dev-dotfiles-debian:<tag>` image, which does not implement home seeding.
 
@@ -43,8 +45,7 @@ Environment options for **both** launchers:
 For example, a disconnected project with its own persistent workspace and home:
 
 ```sh
-SANDBOX_NAME=my-project DEV_WORKSPACE_MODE=volume \
-  ~/Documents/Projects/dotfiles/containers/dev-dotfiles-debian/run-dev-podman.sh
+SANDBOX_NAME=my-project DEV_WORKSPACE_MODE=volume run-dev-podman.sh
 ```
 
 To work entirely inside a named container with no mounts, use `DEV_WORKSPACE_MODE=container DEV_HOME_MODE=container`. The scripts do **not** pass `--rm`, because that would destroy workspace or home data stored only in the container's writable layer. If the named container is stopped, the same script resumes it rather than creating another one; if it is already running, it prints an `exec` command for another shell. **Resuming keeps the old image and ignores any newly selected mount/mode options.** To use a rebuilt image or change modes, explicitly back up any writable-layer data, remove only the old container object, and rerun the script with the same named volumes. Neither launcher deletes volumes or migrates legacy state.
