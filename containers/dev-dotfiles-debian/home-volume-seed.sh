@@ -10,6 +10,14 @@ fi
 archive=${DEV_HOME_SEED_ARCHIVE:-/usr/local/share/dev-dotfiles-debian/home-seed.tar}
 marker="$HOME/.dev-dotfiles-home-initialized"
 
+# Only the mount-point root may need ownership repair for a fresh named volume.
+# Do not recursively chown persisted state (or a host checkout).
+uid=$(id -u)
+gid=$(id -g)
+if [ "$(stat -c %u "$HOME")" != "$uid" ] || [ "$(stat -c %g "$HOME")" != "$gid" ]; then
+  sudo chown "$uid:$gid" "$HOME"
+fi
+
 if [ -e "$marker" ]; then
   exit 0
 fi
@@ -17,14 +25,6 @@ fi
 if [ ! -f "$archive" ]; then
   echo "Home seed archive is missing: $archive" >&2
   exit 1
-fi
-
-# Only the mount-point root may need ownership repair for a fresh named volume.
-# Do not recursively chown persisted state (or a host checkout).
-uid=$(id -u)
-gid=$(id -g)
-if [ "$(stat -c %u "$HOME")" != "$uid" ] || [ "$(stat -c %g "$HOME")" != "$gid" ]; then
-  sudo chown "$uid:$gid" "$HOME"
 fi
 
 # An overlay extraction replaces paths present in the image's seed but never
