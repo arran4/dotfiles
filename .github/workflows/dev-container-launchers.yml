@@ -1,0 +1,27 @@
+name: Development container launchers
+
+on:
+  pull_request:
+    paths:
+      - 'dot_local/bin/executable_run-dev-*.sh'
+      - 'containers/dev-dotfiles-debian/test-launchers.sh'
+      - 'containers/dev-dotfiles-debian/README.md'
+      - '.github/workflows/dev-container-launchers.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dot_local/bin/executable_run-dev-*.sh'
+      - 'containers/dev-dotfiles-debian/test-launchers.sh'
+      - 'containers/dev-dotfiles-debian/README.md'
+      - '.github/workflows/dev-container-launchers.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  launchers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check launcher syntax and compatible image selection
+        run: sh containers/dev-dotfiles-debian/test-launchers.sh
