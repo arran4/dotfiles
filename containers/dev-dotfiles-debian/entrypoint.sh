@@ -112,7 +112,13 @@ fi
 
 echo "Checking GitHub CLI authentication status..."
 if ! gh auth status -h github.com; then
-  echo "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"
+  echo "GitHub CLI could not verify authentication; this can also be caused by API rate limits or network failures."
+  echo "Before reauthorizing, diagnose with:"
+  echo "  gh api /user --jq .login"
+  echo "  gh api /rate_limit --jq '{core: .resources.core, graphql: .resources.graphql}'"
+  echo "  gh auth status -h github.com --json hosts"
+  echo "For verified invalid credentials, see recovery and concurrent-container guidance:"
+  echo "  https://github.com/arran4/dotfiles/blob/main/containers/dev-dotfiles-debian/GH-AUTH.md"
 fi
 
 exec /usr/bin/zsh -l "$@"
