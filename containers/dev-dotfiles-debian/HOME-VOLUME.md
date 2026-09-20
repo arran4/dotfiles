@@ -15,6 +15,42 @@ podman build -f containers/dev-dotfiles-debian/Dockerfile.home-volume \
 
 Replace `podman build` with `docker build` when using Docker. `BASE_IMAGE` may instead refer to a locally built primary image. For another release, rebuild and change `IMAGE_VERSION` (prefer a real release or commit identifier). The archive digest is also included in the image's seed version.
 
+## Linux launch scripts
+
+On Linux, use the executable [`run-dev-podman.sh`](run-dev-podman.sh) or [`run-dev-docker.sh`](run-dev-docker.sh) in this directory instead of copying the multiline `run` commands below. **Run from the project directory**, not the dotfiles directory; each launcher uses the caller's current directory for the default bind-mounted `/workspace` and derives the sandbox name from its basename. The scripts may be invoked by absolute path, for example:
+
+```sh
+cd ~/Documents/Projects/my-project
+~/Documents/Projects/dotfiles/containers/dev-dotfiles-debian/run-dev-podman.sh
+# Or, if the trial image was built with Docker:
+~/Documents/Projects/dotfiles/containers/dev-dotfiles-debian/run-dev-docker.sh
+```
+
+Use `SANDBOX_NAME=my-project` to give a sandbox a stable, distinct name regardless of the current directory. The launchers default to `dev-dotfiles-home-volume:trial` (locally built with the matching engine), a named project-home volume, a host checkout bind-mounted at `/workspace`, a persistent named container, and **no** nested Docker daemon. Override the image with `DEV_IMAGE=<locally-built-home-volume-image>`; they intentionally reject the published legacy `ghcr.io/arran4/dev-dotfiles-debian:<tag>` image, which does not implement home seeding.
+
+Environment options for **both** launchers:
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `SANDBOX_NAME` | Current directory basename | Project-specific container and named-volume prefix; normalized to a lowercase Docker-safe name |
+| `DEV_WORKSPACE_MODE` | `bind` | `bind` mounts the current host directory, `volume` mounts the separate persistent `-workspace` volume, `container` uses the container's writable `/workspace` |
+| `DEV_HOME_MODE` | `volume` | `volume` mounts the persistent `-home` volume; `container` stores home only in the container's writable layer |
+| `DEV_IMAGE` | `dev-dotfiles-home-volume:trial` | Alternative image already built in the selected container engine |
+| `DEV_DIND` | `0` | `1` enables privileged nested Docker; never passes through the host Docker socket |
+| `DEV_DIND_PERSIST` | `0` | With `DEV_DIND=1`, `1` adds an **optional** `/var/lib/docker` volume; otherwise its state is volatile across outer-container removal |
+| `DEV_DOCKER_HOST_GATEWAY` | `0` | Docker script only: `1` adds the native Linux `host.docker.internal:host-gateway` mapping for host Ollama |
+
+For example, a disconnected project with its own persistent workspace and home:
+
+```sh
+SANDBOX_NAME=my-project DEV_WORKSPACE_MODE=volume \
+  ~/Documents/Projects/dotfiles/containers/dev-dotfiles-debian/run-dev-podman.sh
+```
+
+To work entirely inside a named container with no mounts, use `DEV_WORKSPACE_MODE=container DEV_HOME_MODE=container`. The scripts do **not** pass `--rm`, because that would destroy workspace or home data stored only in the container's writable layer. If the named container is stopped, the same script resumes it rather than creating another one; if it is already running, it prints an `exec` command for another shell. **Resuming keeps the old image and ignores any newly selected mount/mode options.** To use a rebuilt image or change modes, explicitly back up any writable-layer data, remove only the old container object, and rerun the script with the same named volumes. Neither launcher deletes volumes or migrates legacy state.
+
+The scripts assume the trial image's default user is UID/GID `1000:1000`. The Podman script uses rootless `--userns=keep-id:uid=1000,gid=1000`; the Docker script omits that Podman-specific option and requires independently compatible bind-mount permissions. `DEV_DIND=1` uses outer `--privileged`, so review the security considerations in [DIND.md](DIND.md) before enabling it. The multiline examples below remain available for manual customization and for comparing the exact engine arguments.
+
 ## Paths and lifecycle
 
 | Path | Purpose |
