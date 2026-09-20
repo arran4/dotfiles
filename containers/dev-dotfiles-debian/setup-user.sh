@@ -117,7 +117,7 @@ cp "/home/${USER_NAME}/.bash_history" "/home/${USER_NAME}/.zsh_history"
     grep -Fqx "codex --dangerously-bypass-approvals-and-sandbox" "$history_file" || { echo "codex sandbox command missing from $history_file"; false; };
     grep -Fqx "opencode --auto" "$history_file" || { echo "opencode sandbox command missing from $history_file"; false; };
     grep -Fqx "claude --dangerously-skip-permissions" "$history_file" || { echo "claude sandbox command missing from $history_file"; false; };
-    grep -Fqx "qwen --approval-mode yolo" "$history_file" || { echo "qwen sandbox command missing from $history_file"; false; };
+    grep -Fqx "qwen --approval-mode yolo" "$history_file" || { echo "qwen approval mode command missing from $history_file"; false; };
     grep -Fqx "junie" "$history_file" || { echo "Junie command missing from $history_file"; false; };
     grep -Fqx "curl -fsS http://host.docker.internal:11434/v1/models | jq ." "$history_file" || { echo "Ollama check missing from $history_file"; false; };
     grep -Fqx "gh auth login -h github.com -w -p https" "$history_file" || { echo "GitHub auth command missing from $history_file"; false; };
@@ -126,18 +126,22 @@ cp "/home/${USER_NAME}/.bash_history" "/home/${USER_NAME}/.zsh_history"
   done;
   echo "Smoke tests passed."'
 
-entry_output=$(/usr/local/bin/dev-dotfiles-entrypoint -c "echo 'Entrypoint ran'" 2>&1 || true)
-if ! grep -q "Checking GitHub CLI authentication status..." <<< "$entry_output"; then
+# The image build has no credentials, but authentication failures can have
+# different diagnostic wording (for example when the API is unavailable).
+# Assert observable behaviour rather than matching one obsolete help sentence.
+entry_output=$(/usr/local/bin/dev-dotfiles-entrypoint -c "echo 'Entrypoint ran'" 2>&1)
+if ! grep -Fq "Checking GitHub CLI authentication status..." <<< "$entry_output"; then
   echo "Entrypoint failed to run auth status check"
   echo "$entry_output"
   exit 1
 fi
-if ! grep -q "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https" <<< "$entry_output"; then
-  echo "Entrypoint failed to show unauthenticated hint"
+if ! grep -Fq "Not authenticated with GitHub CLI." <<< "$entry_output" &&
+   ! grep -Fq "GitHub CLI could not verify authentication" <<< "$entry_output"; then
+  echo "Entrypoint did not provide unauthenticated GitHub CLI guidance"
   echo "$entry_output"
   exit 1
 fi
-if ! grep -q "Entrypoint ran" <<< "$entry_output"; then
+if ! grep -Fxq "Entrypoint ran" <<< "$entry_output"; then
   echo "Entrypoint did not continue after auth status check"
   echo "$entry_output"
   exit 1
