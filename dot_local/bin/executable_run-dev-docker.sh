@@ -7,7 +7,7 @@ if [ "$(uname -s)" != Linux ]; then
   exit 1
 fi
 if [ "$#" -ne 0 ]; then
-  echo 'Configure the launcher with SANDBOX_NAME and DEV_* environment variables; see HOME-VOLUME.md.' >&2
+  echo 'Configure the launcher with SANDBOX_NAME and DEV_* environment variables; see containers/dev-dotfiles-debian/README.md.' >&2
   exit 2
 fi
 command -v docker >/dev/null 2>&1 || { echo 'docker is required.' >&2; exit 1; }
