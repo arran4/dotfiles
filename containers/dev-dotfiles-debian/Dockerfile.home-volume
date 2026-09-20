@@ -6,6 +6,10 @@ ARG BASE_IMAGE=ghcr.io/arran4/dev-dotfiles-debian:latest
 FROM ${BASE_IMAGE}
 
 ARG USER_NAME=user
+# Set to the actual release/tag or commit when building a published image.
+# The archive digest also changes the seed version when defaults change in a
+# development build that still uses the same IMAGE_VERSION.
+ARG IMAGE_VERSION=development
 
 USER root
 
@@ -21,6 +25,8 @@ RUN set -eu; \
   mkdir -p "$home/workspace"; \
   chown "$(id -u "$USER_NAME"):$(id -g "$USER_NAME")" "$home/workspace"; \
   tar -C "$home" -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
+  digest=$(sha256sum /usr/local/share/dev-dotfiles-debian/home-seed.tar | cut -d ' ' -f 1); \
+  printf '%s:%s\n' "$IMAGE_VERSION" "$digest" > /usr/local/share/dev-dotfiles-debian/home-seed-version; \
   find "$home" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +; \
   install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" "$home/workspace"; \
   ln -s "$home/workspace" /workspace
@@ -28,7 +34,8 @@ RUN set -eu; \
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-entrypoint.sh /usr/local/bin/dev-dotfiles-home-entrypoint
 
-ENV DEV_HOME_SEED_ARCHIVE=/usr/local/share/dev-dotfiles-debian/home-seed.tar
+ENV DEV_HOME_SEED_ARCHIVE=/usr/local/share/dev-dotfiles-debian/home-seed.tar \
+  DEV_HOME_SEED_VERSION_FILE=/usr/local/share/dev-dotfiles-debian/home-seed-version
 
 USER ${USER_NAME}
 WORKDIR /workspace
