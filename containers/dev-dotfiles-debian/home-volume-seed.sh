@@ -3,7 +3,7 @@ set -eu
 
 # Explicit opt-in: never unpack a home archive into an accidental host-home bind.
 if [ "${DEV_HOME_VOLUME_INIT:-0}" != "1" ]; then
-  echo 'Project home volume requires DEV_HOME_VOLUME_INIT=1' >&2
+  echo 'Project home initialization requires DEV_HOME_VOLUME_INIT=1' >&2
   exit 1
 fi
 
@@ -41,12 +41,24 @@ if [ ! -f "$archive" ]; then
 fi
 
 # An overlay extraction replaces paths present in the new image's seed but
-# never removes volume-only paths. This also refreshes matching config files
-# that a user has edited. Runtime-only auth/credentials must stay out of the
-# build-time archive. If extraction fails, leave the previous version in place
-# so the next start retries it.
+# never removes volume-only paths. Runtime credentials and history must not be
+# reapplied from the image after the first successful initialization.
+# Other matching config paths (including edited dotfiles) ARE overwritten.
 echo "Applying home seed version $seed_version"
-tar -C "$HOME" --no-same-owner --no-overwrite-dir -xf "$archive"
+if [ -f "$marker" ]; then
+  tar -C "$HOME" --no-same-owner --no-overwrite-dir \
+    --exclude='./.bash_history' \
+    --exclude='./.zsh_history' \
+    --exclude='./.config/gh' \
+    --exclude='./.config/glab-cli' \
+    --exclude='./.codex/auth.json' \
+    --exclude='./.codex/history.jsonl' \
+    --exclude='./.codex/sessions' \
+    --exclude='./.gemini/oauth_creds.json' \
+    -xf "$archive"
+else
+  tar -C "$HOME" --no-same-owner --no-overwrite-dir -xf "$archive"
+fi
 
 # Record the version atomically only after a successful extraction. A crash
 # before the rename causes the next start to retry the overlay.
