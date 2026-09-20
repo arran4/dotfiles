@@ -112,7 +112,12 @@ fi
 
 echo "Checking GitHub CLI authentication status..."
 if ! gh auth status -h github.com; then
-  echo "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"
+  echo "GitHub CLI credentials are missing or invalid. Authenticate in the container:"
+  echo "  New credentials: gh auth login -h github.com -p https -s workflow"
+  echo "  Existing account: gh auth refresh -h github.com -s workflow"
+  echo "If the container cannot open a browser, use https://github.com/login/device on the host."
+  echo "To avoid per-project OAuth-token churn, see:"
+  echo "  https://github.com/arran4/dotfiles/blob/main/containers/dev-dotfiles-debian/GH-AUTH.md"
 fi
 
 exec /usr/bin/zsh -l "$@"
