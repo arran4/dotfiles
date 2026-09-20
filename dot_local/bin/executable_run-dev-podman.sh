@@ -7,14 +7,14 @@ if [ "$(uname -s)" != Linux ]; then
   exit 1
 fi
 if [ "$#" -ne 0 ]; then
-  echo 'Configure the launcher with SANDBOX_NAME and DEV_* environment variables; see HOME-VOLUME.md.' >&2
+  echo 'Configure the launcher with SANDBOX_NAME and DEV_* environment variables; see containers/dev-dotfiles-debian/README.md.' >&2
   exit 2
 fi
 command -v podman >/dev/null 2>&1 || { echo 'podman is required.' >&2; exit 1; }
 
 workspace=$(pwd -P)
 raw=${SANDBOX_NAME:-$(basename "$workspace")}
-name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//')
+name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/-\{2\}/-/g' -e 's/^-//' -e 's/-$//')
 name=${name:-default-project}
 container="dev-agent-${name}-trial"
 image=${DEV_IMAGE:-dev-dotfiles-home-volume:trial}
