@@ -1,178 +1,105 @@
 # dev-dotfiles-debian
 
-This directory contains the Dockerfile for the `dev-dotfiles-debian` container. It serves as a comprehensive, self-contained development environment based on Debian slim, pre-configured with a variety of development tools, languages, and AI assistants.
+This directory contains a Debian-based development image with dotfiles, compilers, language toolchains, GitHub/GitLab clients and AI coding agents. It works with Podman and Docker.
 
-## Quick start: OpenCode with host Ollama
+**Image status:** `ghcr.io/arran4/dev-dotfiles-debian:latest` is still the published image, using separate volumes for the agent and forge configuration. PR #464 introduces an **opt-in, locally built alternative**, `dev-dotfiles-home-volume:trial`, that consolidates those directories in a versioned project-home volume. The commands for the alternative image below **do not work with published `:latest`** until its Dockerfile and entrypoint are integrated. See [HOME-VOLUME.md](HOME-VOLUME.md) for the complete Podman and Docker command matrix, persistence and migration guidance. No existing volume is migrated automatically.
 
-On the host, start Ollama so containers can reach it and pull the default model once:
+**Linux launchers:** After building the trial image, install the host commands from [`dot_local/bin/executable_run-dev-podman.sh`](../../dot_local/bin/executable_run-dev-podman.sh) and [`dot_local/bin/executable_run-dev-docker.sh`](../../dot_local/bin/executable_run-dev-docker.sh) by applying this dotfiles branch with chezmoi. Chezmoi removes the `executable_` source prefix, installs them at `~/.local/bin/run-dev-podman.sh` and `~/.local/bin/run-dev-docker.sh`, and sets executable permissions. With `~/.local/bin` on your `PATH`, run `run-dev-podman.sh` or `run-dev-docker.sh` **from the host project directory**. They replace the multiline `run` examples below: the default bind-mounts the current directory at `/workspace`, uses one named home volume and preserves the named container. They also support an independently persistent workspace, no volume mounts and optional nested Docker without a persistent Docker-data volume. See [Linux launch scripts](HOME-VOLUME.md#linux-launch-scripts) for usage, environment overrides, resumption and safe image replacement. These scripts are for the **locally built trial image only**, not the published legacy tag.
+
+## Quick start: the proposed project home
+
+Build the alternative image from the repository root, using the existing published image as a base:
+
+```sh
+podman build -f containers/dev-dotfiles-debian/Dockerfile.home-volume \
+  --build-arg BASE_IMAGE=ghcr.io/arran4/dev-dotfiles-debian:latest \
+  --build-arg IMAGE_VERSION=home-volume-trial-1 \
+  -t dev-dotfiles-home-volume:trial .
+```
+
+With Docker, replace `podman build` with `docker build`. Use a distinct project/container name from an existing legacy sandbox.
+
+### Podman: host checkout plus one home volume
+
+From the host project directory:
+
+```sh
+workspace=$(pwd -P)
+name=$(basename "$workspace")
+podman run -it --name "dev-agent-${name}-trial" --restart=no \
+  --userns=keep-id:uid=1000,gid=1000 \
+  --hostname "agent-sandbox-${name}" --env DEV_HOME_VOLUME_INIT=1 \
+  --workdir /workspace \
+  --mount "type=bind,src=${workspace},dst=/workspace,rw" \
+  --mount "type=volume,src=dev-agent-${name}-home,dst=/home/user" \
+  dev-dotfiles-home-volume:trial
+```
+
+### Docker: host checkout plus one home volume
+
+Use the locally built Docker variant on a Docker setup whose UID/GID matches the image's `1000:1000` user:
+
+```sh
+workspace=$(pwd -P)
+name=$(basename "$workspace")
+docker run -it --name "dev-agent-${name}-trial" --restart=no \
+  --hostname "agent-sandbox-${name}" --env DEV_HOME_VOLUME_INIT=1 \
+  --workdir /workspace \
+  --mount "type=bind,src=${workspace},dst=/workspace,rw" \
+  --mount "type=volume,src=dev-agent-${name}-home,dst=/home/user" \
+  dev-dotfiles-home-volume:trial
+```
+
+Docker does not support Podman's `--userns=keep-id`. Rootless Docker users should check bind-mount permissions rather than copying the Podman flags blindly. On native Linux Docker using host Ollama, add `--add-host host.docker.internal:host-gateway` to `docker run`.
+
+Both examples keep **`/workspace` as an independent real directory**, not a symlink into home. Instead of a host bind mount, you can mount `dev-agent-${name}-workspace` at `/workspace` for an independently persistent, filesystem-disconnected checkout or imported/bare Git repository; that uses **two named volumes**, home and workspace. Without a workspace mount, imports and clones into `/workspace` persist only while the same container object exists. Without either volume, both home and workspace are disposable with the container. See [HOME-VOLUME.md](HOME-VOLUME.md#workspace-modes) for all four launch modes and their exact commands.
+
+Run `gh auth login`, `glab auth login`, `codex` or `agy` inside the container as usual. Agent and forge state is stored in its project home rather than in separate `-codex`, `-agy`, `-gh` and `-glab` volumes; do not add nested mounts for those directories. No host credential or host home-directory bind mount is required.
+
+To stop an attached sandbox, exit its login shell; resume the same stopped container with `podman start -ai dev-agent-${name}-trial` or `docker start -ai dev-agent-${name}-trial` as appropriate. **Starting an existing container does not upgrade its image.** To refresh the versioned home seed, back up any important changes, rebuild the alternative image, stop and remove the old *container object* (not its named volumes), and create a new container with the same home volume name. Persist or export `/workspace` before recreation when it lives only in the old container's writable layer. A changed seed version overlays matching dotfiles while preserving unrelated home files and known auth/history paths; see [HOME-VOLUME.md](HOME-VOLUME.md#paths-and-lifecycle) for limitations and migration.
+
+### Currently published image: legacy volume layout
+
+Until the prototype is integrated and published, `ghcr.io/arran4/dev-dotfiles-debian:latest` still needs the **original** launch flags. For a host checkout in Podman, its persistence mounts are:
+
+```sh
+--env DEV_FORGE_VOLUME_INIT=1 \
+--mount "type=bind,src=$(pwd -P),dst=/workspace,rw" \
+--mount "type=volume,src=dev-agent-${name}-codex,dst=/home/user/.codex" \
+--mount "type=volume,src=dev-agent-${name}-agy,dst=/home/user/.gemini" \
+--mount "type=volume,src=dev-agent-${name}-gh,dst=/home/user/.config/gh" \
+--mount "type=volume,src=dev-agent-${name}-glab,dst=/home/user/.config/glab-cli"
+```
+
+For a disconnected project with the published image, use `--env DEV_VOLUME_INIT=1` and add `--mount "type=volume,src=dev-agent-${name}-workspace,dst=/workspace"` instead of the bind mount. These flags are **legacy-only**: do not pass the four separate home-subdirectory mounts to the experimental home-volume image. Keep the old volumes until migration has been verified; the new `-home` volume does not automatically inherit their contents.
+
+## Configuration and tools
+
+The base image is built on `debian:${DEBIAN_RELEASE}-slim` (default `stable`). Its default user is `user`, UID/GID `1000:1000`, with `zsh` and passwordless `sudo`. Build arguments `USER_NAME`, `USER_UID` and `USER_GID` configure the primary Dockerfile; the examples and derived trial image assume the defaults. Rootless Podman is preferred when running agents with unrestricted permissions inside their **outer** container boundary. Avoid broad host mounts and host socket passthrough.
+
+Installed tools include Git, Git LFS, `git-credential-oauth`, `gh`, `glab`, zsh, fish, tmux, vim, Neovim, less, `git-delta`, kdiff3, ripgrep, fd, jq, shellcheck, shfmt, clang, CMake, Ninja, Go, Node.js, Python, Java/Maven, Flutter, Docker CLI/daemon and Buildx/Compose. The build applies the dotfiles with chezmoi only after relevant tools are installed, so capability-dependent editor, pager and OAuth settings are rendered with those tools available. `difftastic`, `zellij` and desktop-only Hyprland/KDE tools are not installed in the headless image.
+
+Agent CLIs include Codex, Antigravity (`agy`), Mini SWE Agent (`mini`), OpenCode, Claude Code, GitHub Copilot CLI and Qwen. Codex's executable is installed outside the runtime home; its auth/config state lives under `~/.codex`. Jules CLI is deliberately omitted because its installer can produce image layers incompatible with normal rootless Podman subordinate-ID mapping. The Dockerfile documents a disabled recipe for normalizing that installer if reinstated.
+
+The base image runs `chezmoi init --apply` at build time. The **trial image** additionally snapshots the resulting prepared home outside the runtime home mount, then initializes or reapplies it on a version change; it does **not** run chezmoi against a project volume on every start. Locally modified seeded dotfiles may be replaced on version changes. Review and back up customizations before changing images. The trial derives from the original image, so it does not yet remove the older image's baked-home layers.
+
+## OpenCode with host Ollama
+
+Start Ollama on the host and pull the default model:
 
 ```sh
 OLLAMA_HOST=0.0.0.0:11434 ollama serve
 ollama pull qwen2.5-coder:7b
 ```
 
-Start the development container using one of the Podman/Docker examples below, then run inside it:
+Once inside either variant, use `opencode --auto`. The entrypoint creates the default `~/.config/opencode/opencode.json` when missing, pointing at `http://host.docker.internal:11434/v1`; native Linux Docker may need the `--add-host` flag shown above. On a trial-image upgrade, the existing OpenCode configuration is in the versioned home and should be reviewed before rebuilding; [LOCAL-AI.md](LOCAL-AI.md) covers host bridging, security and alternative agents.
 
-```sh
-opencode --auto
-```
+## Docker-in-Docker and security
 
-The container creates a default OpenCode configuration on first start that connects to `http://host.docker.internal:11434/v1`. Native Linux Docker users may also need `--add-host host.docker.internal:host-gateway`.
+Nested Docker is a separate, opt-in mode using `DEV_DIND=1`. By default its daemon stores images, build cache and inner containers under `/var/lib/docker` in the **outer container's writable layer**, not in the home volume. They survive stopping and restarting that outer container but are discarded when it is removed or recreated. A separate Docker-data volume is **optional**, only for retaining nested Docker state across outer-container recreation. Privileged outer containers have additional security implications. Use the appropriate image-specific example in [DIND.md](DIND.md), and never bind mount the host's Docker or Podman socket.
 
-Bash and Zsh history are pre-seeded with useful sandbox commands, including permissive agent launch modes, the host-Ollama model check, and GitHub/GitLab authentication commands. These entries assume the outer container is the security boundary and are not intended as host-shell defaults. See [LOCAL-AI.md](LOCAL-AI.md) for Ollama service setup, troubleshooting, and Aider/Zero/jcode examples.
+The project-home volume consolidates isolated container credentials, **not host credentials**. Do not mount the host home directory, `.ssh`, desktop keyring, password store, or Docker socket into an unrestricted agent container. Restrict outbound network access when necessary. If passing an API key, pass only the key the selected agent needs. Antigravity's account authentication may require reauthentication where its external keyring state is not portable.
 
-## Base Image
+## Verification
 
-The container is built on top of `debian:${DEBIAN_RELEASE}-slim` (defaulting to the `stable` release).
-
-## Configuration
-
-By default, the container is configured with a non-root user that has passwordless `sudo` privileges:
-
-- **User:** `user` (configurable via `USER_NAME`)
-- **UID:** `1000` (configurable via `USER_UID`)
-- **GID:** `1000` (configurable via `USER_GID`)
-- **Shell:** `zsh`
-
-This is intentional for agent use: Codex or Antigravity can be given unrestricted permissions inside the container and can use `sudo` to install packages or modify the container filesystem without receiving host root privileges when the image is run with a rootless container engine.
-
-## Pre-installed Tools
-
-The environment comes pre-installed with a wide array of tools to support various development workflows:
-
-### Core Development Tools & Utilities
-- **Version Control & Forges:** `git`, GitHub CLI (`gh`), GitLab CLI (`glab`), `git-credential-oauth`
-- **Shell & Terminal:** `zsh`, `fish`, `tmux`, `fzf`, `htop`, `btop`, `tree`
-- **Editors, Pager & Diff:** `vim`, `neovim`, `less`, `git-delta`, `kdiff3`, `diffutils`
-- **Search & Navigation:** `ripgrep`, `fd-find`
-- **Build & C/C++:** `build-essential`, `clang`, `clang-format`, `cmake`, `ninja-build`, `make`, `autoconf`, `automake`, `libtool`, `pkg-config`, `gdb`, `lldb`
-- **Web & Misc:** `curl`, `wget`, `jq`, `unzip`, `7z`, `dig`, `uprecords`, `hugo`, `sqlite3`
-
-### Languages & Frameworks
-- **Python:** `python3`, `python3-pip`, `python3-venv`
-- **Go:** `golang`
-- **Java:** `default-jdk`, `maven`
-- **Node.js:** `nodejs`, `npm`
-- **Flutter:** Installed from the `stable` channel to `/opt/flutter`
-
-The Debian-packaged tools that affect capability-dependent dotfile rendering are installed before `chezmoi init --apply`. In particular, the image is rendered with Delta available as the Git/chezmoi diff pager, Neovim available as the preferred editor, `less` available as the ANSI-safe fallback, and `git-credential-oauth` available for headless OAuth fallback. The Docker build smoke tests verify both the executables and those rendered configuration choices.
-
-`difftastic` and `zellij` are referenced or detected by the wider dotfiles but are not installed here because the image follows Debian's package set rather than adding ad-hoc upstream installers for optional tools. Desktop-only Hyprland/KDE tools are likewise outside this headless development image.
-
-### AI Assistants & Agents
-The container is equipped with several AI-powered CLI tools and agents:
-- OpenAI Codex CLI (`codex`), installed with the official standalone installer
-- Google Antigravity CLI (`agy`), installed with the official installer
-- Mini SWE Agent (`mini`)
-- OpenCode AI (`opencode`)
-- Claude Code (`@anthropic-ai/claude-code`)
-- GitHub Copilot CLI (`@githubnext/github-copilot-cli`)
-- QwenChat (`qwen`)
-
-Jules CLI is intentionally not installed. Its npm installer can preserve high UID/GID values from its downloaded payload, which can make the published image impossible for normal rootless Podman subordinate-ID mappings to unpack. The Dockerfile retains a commented installation recipe that normalizes the Jules payload to `root:root` if it is re-enabled later.
-
-Codex is installed under `/opt/codex` with its executable exposed in `/usr/local/bin`. Its runtime `~/.codex` directory therefore remains separate and can safely be persisted as a container volume.
-
-## Recommended full-access agent sandbox
-
-Use the container itself as the security boundary and run the agent without its inner command sandbox or approval prompts. Rootless Podman is preferred because container root remains inside an unprivileged user namespace on the host.
-
-From the repository that the agent should be allowed to modify. The command derives the project name internally and uses it in both the container name and hostname, so a shell prompt immediately identifies the active project:
-
-```sh
-sh -c 'workspace=$(pwd -P); raw=${SANDBOX_NAME:-$(basename "$workspace")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec podman run --rm -it --pull=always --name "dev-agent-${name}" --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" --env DEV_FORGE_VOLUME_INIT=1 --workdir /workspace --mount type=bind,src="$workspace",dst=/workspace,rw --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
-```
-
-The GitHub and GitLab CLI configuration is deliberately not bind-mounted from the host. Each sandbox gets its own named `gh` and `glab` volumes, so authentication and CLI state persist across disposable container runs without either modifying or depending on the host CLI configuration. Authenticate inside a new sandbox with `gh auth login` and/or `glab auth login`.
-
-### Persistent, filesystem-disconnected sandbox
-
-A persistent sandbox does not need this repository, a launcher script, or an existing source checkout on the host. It only needs Docker or Podman and the published image. Give the container and volumes a stable name based on the current directory. The copy/paste commands are deliberately single-line `sh -c` invocations so their temporary variables do not depend on the caller's shell assignment or export rules. To override the derived name portably, prefix a command with `env SANDBOX_NAME=my-project`.
-
-#### Podman
-
-Create and attach the sandbox for the first time:
-
-```sh
-sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec podman run -it --pull=always --name "dev-agent-${name}" --restart=no --detach-keys="" --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" --env DEV_VOLUME_INIT=1 --workdir /workspace --mount type=volume,src="dev-agent-${name}-workspace",dst=/workspace --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
-```
-
-The empty `--detach-keys` disables Podman's interactive detach sequence for this container. Exiting the login shell therefore stops the container rather than leaving it running in the background.
-
-Resume the same stopped container later:
-
-```sh
-sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec podman start -ai --detach-keys="" "dev-agent-${name}"'
-```
-
-#### Docker
-
-Create and attach the Docker equivalent:
-
-```sh
-sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec docker run -it --pull=always --name "dev-agent-${name}" --restart=no --hostname "agent-sandbox-${name}" --env DEV_VOLUME_INIT=1 --workdir /workspace --mount type=volume,src="dev-agent-${name}-workspace",dst=/workspace --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
-```
-
-Resume it later with:
-
-```sh
-sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec docker start -ai "dev-agent-${name}"'
-```
-
-The image entrypoint handles the one engine-dependent detail that should not have to live in a host script. When `DEV_VOLUME_INIT=1` is set, it fixes ownership of only the named-volume mount-point roots and then `exec`s the normal login `zsh`. For the bind-mounted checkout workflow, `DEV_FORGE_VOLUME_INIT=1` fixes only the `gh` and `glab` named-volume roots and deliberately leaves `/workspace` alone. Neither mode recursively changes the checked-out repository.
-
-The login `zsh` is the container's primary process. In ordinary attached use, exiting it stops the container; the stopped container object and all named volumes remain. `--restart=no` prevents a daemon or host restart from automatically starting the sandbox. Docker and Podman also support deliberately detaching from an interactive container; doing so intentionally leaves its shell running, so this workflow is intended to be ended with `exit`, not detach.
-
-Authenticate and check out repositories from inside the sandbox:
-
-```sh
-gh auth login
-gh repo clone arran4/goa4web
-```
-
-or:
-
-```sh
-glab auth login
-glab repo clone GROUP/PROJECT
-```
-
-Multiple repositories can live under `/workspace`; the sandbox name is an isolation name and does not have to match a repository. Network access remains enabled so `gh`, `glab`, `git` and the agents can reach their services. "Disconnected" here means disconnected from the host filesystem.
-
-Removing the container does not remove its named volumes, so an accidentally removed container does not itself discard the checked-out repository or CLI/agent state. To intentionally destroy the complete `goa4web` sandbox, remove the container and then its volumes:
-
-```sh
-sh -c 'raw=${SANDBOX_NAME:-$(basename "$(pwd -P)")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; podman rm -f "dev-agent-${name}" && podman volume rm "dev-agent-${name}-workspace" "dev-agent-${name}-codex" "dev-agent-${name}-agy" "dev-agent-${name}-gh" "dev-agent-${name}-glab"'
-```
-
-Use the same command with `docker` instead of `podman` for a Docker sandbox.
-
-GNU Readline is not required for this flow. The image uses `zsh`, whose interactive line editor is ZLE. The stopped named container preserves its writable container filesystem across later `start -ai` invocations, while the named volumes preserve the project and CLI/agent state independently of the container object.
-
-Then run either agent inside the container:
-
-```sh
-codex --dangerously-bypass-approvals-and-sandbox
-```
-
-```sh
-agy --dangerously-skip-permissions
-```
-
-This gives the agent unrestricted access to the container and the mounted repository, including passwordless `sudo`, while keeping the rest of the host filesystem outside its namespace.
-
-The named volumes retain agent configuration and session state without exposing the host's normal `~/.codex` or `~/.gemini` directories. For API-key authentication, explicitly pass only the credential required by the selected agent, for example `--env OPENAI_API_KEY` or `--env GEMINI_API_KEY`. Antigravity's Google-account authentication uses the operating-system keyring; do not bind the host D-Bus or desktop keyring into an unrestricted agent container merely to reuse host credentials.
-
-### Docker
-
-The same OCI image works with Docker. Prefer Docker's rootless mode if it is configured. The important properties are the same: mount the target repository rather than the whole home directory and do not grant the outer container host-level privileges.
-
-### Boundary rules
-
-Do not add `--privileged`, host PID/network namespaces, broad device access, or the Docker/Podman daemon socket. Do not mount the whole host home directory, SSH directory, password store, or desktop keyring. Any credential intentionally passed into an unrestricted agent container should be scoped as narrowly as practical, especially GitHub or other forge tokens that can mutate remote repositories.
-
-If stronger containment is needed, restrict the outer container's outbound network access rather than re-enabling the agent's inner sandbox. The main goal of this setup is to let the agent behave like a root-capable developer machine inside a disposable boundary, not to make it root-equivalent on the host.
-
-## Dotfiles Integration
-
-During the image build process, the dotfiles from this repository are copied into the container. `chezmoi` is installed and automatically applies these dotfiles to the home directory of the configured user, ensuring the environment is immediately ready for use with all custom configurations and aliases in place.
+From the repository root run `sh containers/dev-dotfiles-debian/test-home-volume.sh` to check initial seed, same-version restart, version changes, auth/history preservation, workspace independence and failed-upgrade retry. The derived image and actual rootless Docker/Podman lifecycle have not been fully validated; do not replace existing sandboxes or delete their volumes solely on the basis of this PR. The experimental image and the legacy published tag remain distinct until the change is deliberately adopted.
