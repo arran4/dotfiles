@@ -94,7 +94,7 @@ Once inside either variant, use `opencode --auto`. The entrypoint creates the de
 
 ## Docker-in-Docker and security
 
-Nested Docker is a separate, opt-in mode using `DEV_DIND=1`. Its daemon stores images and containers in an **independent** `/var/lib/docker` volume; moving the CLI and agent home directories into one volume does not move the nested daemon's storage. Privileged outer containers have additional security implications. Use the appropriate image-specific example in [DIND.md](DIND.md), and never bind mount the host's Docker or Podman socket.
+Nested Docker is a separate, opt-in mode using `DEV_DIND=1`. By default its daemon stores images, build cache and inner containers under `/var/lib/docker` in the **outer container's writable layer**, not in the home volume. They survive stopping and restarting that outer container but are discarded when it is removed or recreated. A separate Docker-data volume is **optional**, only for retaining nested Docker state across outer-container recreation. Privileged outer containers have additional security implications. Use the appropriate image-specific example in [DIND.md](DIND.md), and never bind mount the host's Docker or Podman socket.
 
 The project-home volume consolidates isolated container credentials, **not host credentials**. Do not mount the host home directory, `.ssh`, desktop keyring, password store, or Docker socket into an unrestricted agent container. Restrict outbound network access when necessary. If passing an API key, pass only the key the selected agent needs. Antigravity's account authentication may require reauthentication where its external keyring state is not portable.
 
