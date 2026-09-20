@@ -93,74 +93,65 @@ Feel free to copy individual pieces or adapt the whole setup to suit your needs.
 
 ## Containerised development environment
 
-The development image under [`containers/dev-dotfiles-debian`](containers/dev-dotfiles-debian/README.md) is published as
-`ghcr.io/arran4/dev-dotfiles-debian:latest`. It can be run with either Podman or Docker. For full-access AI agents,
-treat the outer container as the security boundary and mount only the repository the agent should be able to modify.
-Rootless Podman is preferred because its `keep-id` user namespace mode maps the invoking host user directly to the
-container's `user` account.
+The Debian development image in [`containers/dev-dotfiles-debian`](containers/dev-dotfiles-debian/README.md) supports Docker and Podman, including rootless operation. **The published** `ghcr.io/arran4/dev-dotfiles-debian:latest` **still uses the original separate Codex/Antigravity/GitHub/GitLab volumes.** PR #464 adds an **opt-in, locally built** `dev-dotfiles-home-volume:trial` with one versioned project-home volume and an independent `/workspace`. The trial commands below are not interchangeable with the published tag. See [HOME-VOLUME.md](containers/dev-dotfiles-debian/HOME-VOLUME.md) for the complete build, migration, persistence and Docker/Podman launch instructions.
 
-### Quick start: OpenCode with host Ollama
+### Build the proposed project-home image
 
-On the host, start Ollama so the development container can reach it, and pull the default model once:
+From this repository's root:
 
 ```sh
-OLLAMA_HOST=0.0.0.0:11434 ollama serve
-ollama pull qwen2.5-coder:7b
+podman build -f containers/dev-dotfiles-debian/Dockerfile.home-volume \
+  --build-arg BASE_IMAGE=ghcr.io/arran4/dev-dotfiles-debian:latest \
+  --build-arg IMAGE_VERSION=home-volume-trial-1 \
+  -t dev-dotfiles-home-volume:trial .
 ```
 
-Start the container using one of the Podman/Docker commands below, then run `opencode --auto`. On first start, the
-container creates a default OpenCode config pointing at `http://host.docker.internal:11434/v1` unless you already have
-one. Native Linux Docker may also need `--add-host host.docker.internal:host-gateway`.
+For Docker use `docker build` instead. Choose a **new** trial container name and do not remove your existing sandbox or its volumes when trying the alternative.
 
-The container pre-seeds Bash/Zsh history with sandbox-oriented launch commands for the installed agents, the host-Ollama
-model check, and forge authentication commands. These permissive entries assume the outer container is the security
-boundary; they are not intended as host-shell defaults. `SANDBOX_NAME` can override the derived project/container name,
-and per-project named volumes preserve forge/agent state. See
-[`LOCAL-AI.md`](containers/dev-dotfiles-debian/LOCAL-AI.md) for the detailed Ollama, Aider, Zero and jcode setup.
+### Podman: project checkout and versioned home
 
-The copy/paste commands are deliberately single-line `sh -c` invocations. Project naming is derived inside that POSIX
-shell from the current directory, so the caller does not need shell-specific assignment or export syntax. To override
-the derived project name, prefix a command with `env SANDBOX_NAME=my-project`.
-
-### Podman (recommended)
-
-From the repository that the agent should be allowed to modify:
+From the host checkout that the agent should be able to modify:
 
 ```sh
-sh -c 'workspace=$(pwd -P); raw=${SANDBOX_NAME:-$(basename "$workspace")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec podman run --rm -it --pull=always --name "dev-agent-${name}" --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" --env DEV_FORGE_VOLUME_INIT=1 --workdir /workspace --mount type=bind,src="$workspace",dst=/workspace,rw --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
+workspace=$(pwd -P)
+name=$(basename "$workspace")
+podman run -it --name "dev-agent-${name}-trial" --restart=no \
+  --userns=keep-id:uid=1000,gid=1000 \
+  --hostname "agent-sandbox-${name}" --env DEV_HOME_VOLUME_INIT=1 \
+  --workdir /workspace \
+  --mount "type=bind,src=${workspace},dst=/workspace,rw" \
+  --mount "type=volume,src=dev-agent-${name}-home,dst=/home/user" \
+  dev-dotfiles-home-volume:trial
 ```
 
-### Docker
+### Docker: project checkout and versioned home
 
-The same OCI image can be used with Docker. Prefer Docker's rootless mode when available. For a conventional Docker
-setup where the host account is UID/GID `1000`, matching the image defaults, the equivalent command is:
+For a Docker daemon with writable host checkout permissions for the image's UID/GID `1000:1000`:
 
 ```sh
-sh -c 'workspace=$(pwd -P); raw=${SANDBOX_NAME:-$(basename "$workspace")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec docker run --rm -it --pull=always --name "dev-agent-${name}" --hostname "agent-sandbox-${name}" --env DEV_FORGE_VOLUME_INIT=1 --workdir /workspace --mount type=bind,src="$workspace",dst=/workspace,rw --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
+workspace=$(pwd -P)
+name=$(basename "$workspace")
+docker run -it --name "dev-agent-${name}-trial" --restart=no \
+  --hostname "agent-sandbox-${name}" --env DEV_HOME_VOLUME_INIT=1 \
+  --workdir /workspace \
+  --mount "type=bind,src=${workspace},dst=/workspace,rw" \
+  --mount "type=volume,src=dev-agent-${name}-home,dst=/home/user" \
+  dev-dotfiles-home-volume:trial
 ```
 
-The `gh` and `glab` configuration directories are isolated from the host and persisted in per-project named volumes.
-Authenticate once inside a new sandbox with `gh auth login` and/or `glab auth login`; later disposable container runs
-with the same derived project name reuse that CLI state without resetting or modifying the host clients.
+`--userns=keep-id` is a Podman-specific option; verify bind-mount ownership with rootless Docker rather than copying Podman's flags. Native Linux Docker may additionally need `--add-host host.docker.internal:host-gateway` for host Ollama. Do not mount your **host** home or credentials. The new project-home volume contains only that project's sandbox state.
 
-Docker rootless mode maps files owned by the host user to container UID `0`, rather than providing Podman's
-`--userns=keep-id` behaviour. If that makes the bind-mounted repository unwritable, run the rootless Docker container
-with `--user 0:0 --env HOME=/home/user`. Do not use that workaround with a rootful Docker daemon, because it would run
-the agent as real container root and can leave root-owned files in the mounted repository.
+### Independent workspace and upgrades
 
-Once inside either container, the agents can be run with their own inner restrictions disabled:
+`/workspace` is an ordinary directory, **not** a symlink into home. The examples above bind-mount a host checkout and use one named volume for home. To keep a disconnected workspace across container recreation, replace the bind mount with `--mount "type=volume,src=dev-agent-${name}-workspace,dst=/workspace"`; that uses **two named volumes**. You may also omit the workspace mount and import/clone a repository into the container's writable `/workspace`, or omit all volumes for a fully disposable sandbox. In either case, removing the container destroys any data stored only in its writable layer. A bare Git repository is handled just like any other workspace content. The home initializer never writes to `/workspace`.
 
-```sh
-codex --dangerously-bypass-approvals-and-sandbox
-```
+The image's seed is overlaid onto home on first start and when the stored seed version differs from the rebuilt image; existing files absent from the seed are retained, and known agent/forge authentication and shell-history paths are skipped on subsequent upgrades. Other matching locally edited dotfiles **can be overwritten**. `podman start -ai` and `docker start -ai` resume an existing container; they **do not upgrade its image**. To apply a rebuilt image, stop and remove the old container object, preserve any workspace held only in its writable layer, and create a new container with the **same home volume name**. Do not delete the named volumes or assume old agent/forge volumes are imported automatically; see the migration procedure in [HOME-VOLUME.md](containers/dev-dotfiles-debian/HOME-VOLUME.md#migration-and-cleanup).
 
-```sh
-agy --dangerously-skip-permissions
-```
+### Currently published image and additional modes
 
-For container commands that differ only by engine name, Podman and Docker should be treated as alternatives. Do not
-blindly copy engine-specific flags between them: in particular, `--userns=keep-id` is a Podman feature. The detailed
-container README contains the security boundary and credential-handling guidance.
+If you are **not** building the trial image, use the published tag and the legacy `DEV_FORGE_VOLUME_INIT=1`/`DEV_VOLUME_INIT=1` launch flags and separate `-codex`, `-agy`, `-gh`, `-glab` volumes described under [Currently published image: legacy volume layout](containers/dev-dotfiles-debian/README.md#currently-published-image-legacy-volume-layout). Do not pass the experimental `DEV_HOME_VOLUME_INIT=1` flag to published `:latest`. Existing legacy volumes should be retained until an explicit migration is complete. The detailed [container README](containers/dev-dotfiles-debian/README.md) covers tool versions, persistence and credentials; [DIND.md](containers/dev-dotfiles-debian/DIND.md) covers the separate privileged Docker-in-Docker mode and its independent `/var/lib/docker` volume.
+
+Inside either image, run `gh auth login`, `glab auth login`, `codex --dangerously-bypass-approvals-and-sandbox` or `agy --dangerously-skip-permissions` as needed. The outer container is the agent's security boundary; avoid broad host mounts and host daemon sockets. For host Ollama, start `OLLAMA_HOST=0.0.0.0:11434 ollama serve`, pull `qwen2.5-coder:7b` and use `opencode --auto` inside the container. See [LOCAL-AI.md](containers/dev-dotfiles-debian/LOCAL-AI.md) for the host-bridge and firewall setup.
 
 ## Flatpak Apps
 
@@ -170,10 +161,10 @@ I use the following flatpak applications in this environment:
 - Beeper (`com.beeper.Beeper`)
 - Dropbox (`com.dropbox.Client`)
 - Google Chrome (`com.google.Chrome`)
-- RustDesk (`com.rustdesk.RustDesk`)
+- RustDesk (`com.rustdesk.desktop`)
 - Spotify (`com.spotify.Client`)
 - Steam (`com.valvesoftware.Steam`)
-- FluffyChat (`im.fluffychat.Fluffychat`)
+- FluffyChat (`im.fluffychat.FluffyChat`)
 - nheko (`im.nheko.Nheko`)
 - Element (`im.riot.Riot`)
 - Anytype (`io.anytype.anytype`)
@@ -192,7 +183,7 @@ I use the following flatpak applications in this environment:
 
 You can install them automatically with this one-liner:
 ```sh
-flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
+flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.desktop com.spotify.Client com.valvesoftware.Steam im.fluffychat.FluffyChat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote io.github.drawy org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
 ```
 
 ### Try it out
@@ -260,6 +251,7 @@ dotfiles:
 
 ```sh
 git config --global core.editor <command>
+```
 
 ## SSH configuration
 
