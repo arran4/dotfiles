@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1.7
+# Reviewable prototype: turn an existing dev-dotfiles image into a project-home
+# volume image without changing the published default image or launcher.
+# Pass --build-arg BASE_IMAGE=<locally-built-image> to evaluate local changes.
+ARG BASE_IMAGE=ghcr.io/arran4/dev-dotfiles-debian:latest
+FROM ${BASE_IMAGE}
+
+ARG USER_NAME=user
+
+USER root
+
+# The upstream image has already installed the tools and applied chezmoi.
+# Move the resulting home state into an archive OUTSIDE the volume mount,
+# then leave the runtime image's home empty apart from a workspace directory.
+# No home credentials are baked into this archive: it contains only build-time
+# state. Runtime authentication is created inside the persistent named volume.
+RUN set -eu; \
+  home=$(getent passwd "$USER_NAME" | cut -d: -f6); \
+  test -d "$home"; \
+  install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
+  mkdir -p "$home/workspace"; \
+  chown "$(id -u "$USER_NAME"):$(id -g "$USER_NAME")" "$home/workspace"; \
+  tar -C "$home" -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
+  find "$home" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +; \
+  install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" "$home/workspace"; \
+  ln -s "$home/workspace" /workspace
+
+COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
+COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-entrypoint.sh /usr/local/bin/dev-dotfiles-home-entrypoint
+
+ENV DEV_HOME_SEED_ARCHIVE=/usr/local/share/dev-dotfiles-debian/home-seed.tar
+
+USER ${USER_NAME}
+WORKDIR /workspace
+ENTRYPOINT ["/usr/local/bin/dev-dotfiles-home-entrypoint"]
