@@ -1,25 +1,10 @@
-# Project-scoped home volume (opt-in prototype)
+# Versioned project home (opt-in prototype)
 
-This is an **alternative image**, not a change to the currently published `dev-dotfiles-debian` image or the existing launcher examples in `README.md`. It demonstrates consolidating the four agent/forge configuration volumes into one per-project home volume **without deciding how `/workspace` is supplied**.
+The current published `ghcr.io/arran4/dev-dotfiles-debian:latest` image still uses the original separate agent/forge volumes. PR #464 adds **an alternative, locally built image** using `Dockerfile.home-volume`; do not run its commands against the published `:latest` tag. The existing container documentation distinguishes these two images until the primary image and launchers are migrated.
 
-## Layout and upgrade lifecycle
+## Build the alternative image
 
-| Location | Purpose |
-| --- | --- |
-| `dev-agent-${name}-home` mounted at `/home/user` | One optional project-scoped home volume for dotfiles, shell history, and CLI/agent authentication |
-| `/workspace` | A **real, independent directory**: bind mount, named volume, imported repository, or ordinary container filesystem; never a symlink into the home volume |
-| `~/workspace` | Optional convenience symlink pointing **to `/workspace`**, created in the image seed only if that home path does not already exist |
-| `/usr/local/share/dev-dotfiles-debian/home-seed.tar` | Archive of the image's prepared home, outside any home volume |
-| `/usr/local/share/dev-dotfiles-debian/home-seed-version` | Image build version plus SHA-256 of that archive |
-| `~/.dev-dotfiles-seed-version` | Last successfully applied seed version, inside the home directory |
-
-The image builds all tools and applies chezmoi before archiving the prepared home. On container start, `DEV_HOME_VOLUME_INIT=1` enables a version check. If the home has no applied-version marker, the entrypoint overlays the archive onto it. If the marker matches the image seed version, it leaves home untouched. If the image version or archived home contents change, it overlays the archive once again, overwriting matching dotfiles while preserving paths that exist only in home. The marker is updated atomically **after** successful extraction so an interrupted update is retried. A running container must be recreated with the newer image to trigger the new version; `podman start` on an existing container does not update its image.
-
-On *upgrades*, the entrypoint excludes existing shell histories, GitHub/GitLab CLI configuration, and known Codex/Antigravity authentication/session paths from the overlay. Other matching home configuration files, **including locally edited dotfiles**, are overwritten intentionally. The seed should never contain host credentials; it is produced at image build time. The exclusion list is not a universal guarantee for unknown applications' session paths: review it before adding agent state to the image seed. Runtime-only files absent from the archive are preserved. The user can keep a local config override in a path not included in the seed.
-
-The opt-in flag does **not** detect whether `/home/user` is a named volume, a bind mount, or the image's own writable filesystem. Never mount your host home directory there and then opt into seeding: matching host files would be overwritten.
-
-## Build (from the dotfiles repository root)
+From the dotfiles repository root (with either engine):
 
 ```sh
 podman build -f containers/dev-dotfiles-debian/Dockerfile.home-volume \
@@ -28,51 +13,86 @@ podman build -f containers/dev-dotfiles-debian/Dockerfile.home-volume \
   -t dev-dotfiles-home-volume:trial .
 ```
 
-For a later image release, use the new release/commit for `IMAGE_VERSION` and rebuild. The seed also carries an archive digest, so a change to the prepared home refreshes the version even when that build argument is unchanged.
+Replace `podman build` with `docker build` when using Docker. `BASE_IMAGE` may instead refer to a locally built primary image. For another release, rebuild and change `IMAGE_VERSION` (prefer a real release or commit identifier). The archive digest is also included in the image's seed version.
 
-## Workspace modes
+## Paths and lifecycle
 
-All modes keep `/workspace` as an ordinary directory. Use a unique `name` per project and the same home volume name after replacing a container.
+| Path | Purpose |
+| --- | --- |
+| `/home/user` | Optional per-project named volume `dev-agent-${name}-home`; holds dotfiles, history, forge and agent state |
+| `/workspace` | An ordinary **independent directory**: host bind mount, named volume, imported/bare Git repository, or the container's writable filesystem |
+| `~/workspace` | Optional seed-provided convenience link **to** `/workspace`; never makes `/workspace` a link into home |
+| `/usr/local/share/dev-dotfiles-debian/home-seed.tar` | Prepared image home, outside `/home/user` |
+| `/usr/local/share/dev-dotfiles-debian/home-seed-version` | Image-build identifier and archive digest |
+| `~/.dev-dotfiles-seed-version` | Version last successfully applied to this home |
 
-**A. Bind-mounted project checkout; one project home volume.** Run from the directory to work on:
+`DEV_HOME_VOLUME_INIT=1` enables seeding for the experimental image. On a new home, matching seed files are copied over existing files, while paths absent from the seed remain. On subsequent starts with the **same** seed version, no overlay runs. On a changed image seed version, matching configuration is overlaid again and locally edited seeded dotfiles may be overwritten. On upgrades, the initializer excludes known shell histories, GitHub/GitLab CLI configurations and Codex/Antigravity authentication/session paths; unknown applications' credentials may need separate protection. Only successful extraction advances the stored version. The flag does not verify that home is a volume: never bind mount your host home to `/home/user` with this flag.
+
+**An image upgrade requires replacing the container**, not merely running `podman start` or `docker start`: existing container objects retain their old image. Back up important home changes, stop the container, remove only that container object, rebuild the alternative image with the new seed, and run a new container with the same project-home volume name. Retain or restore the workspace separately as appropriate for the selected mode. Do not remove named volumes while replacing the container.
+
+## Launch with Podman
+
+Use a unique project name; do not reuse an existing legacy container name without planning migration. These examples use `name=home-volume-trial`. Rootless Podman uses `--userns=keep-id:uid=1000,gid=1000`; the image defaults to user/UID/GID `user`/`1000`/`1000`.
+
+**Bind-mounted checkout (one named volume, for home):**
 
 ```sh
 name=home-volume-trial
+workspace=$(pwd -P)
 podman run -it --name "dev-agent-${name}" --restart=no \
   --userns=keep-id:uid=1000,gid=1000 \
   --hostname "agent-sandbox-${name}" --env DEV_HOME_VOLUME_INIT=1 \
   --workdir /workspace \
   --mount "type=volume,src=dev-agent-${name}-home,dst=/home/user" \
-  --mount "type=bind,src=$(pwd -P),dst=/workspace,rw" \
+  --mount "type=bind,src=${workspace},dst=/workspace,rw" \
   dev-dotfiles-home-volume:trial
 ```
 
-This keeps the host checkout outside the home volume and does not bind-mount host authentication. The home volume persists independently of the container. The host checkout continues to exist if the container is removed.
-
-**B. Existing independent project volume or imported Git repository.** Use the same command as A, but replace the bind mount with:
+**Disconnected, independently persistent project (two volumes):** use the same Podman command, but replace its `/workspace` bind mount with:
 
 ```sh
   --mount "type=volume,src=dev-agent-${name}-workspace,dst=/workspace" \
 ```
 
-That is **two named volumes**, not one: one for home and one for an independently persistent workspace. This retains the current disconnected-project architecture while replacing the four separate agent/forge state volumes. An existing `-workspace` volume can be reused as-is, including a repository or bare Git repository already in it; the home initializer does not touch `/workspace`. For an empty workspace, clone a project or import a repository there using your existing workflow. If Podman creates the workspace volume root as unwritable by the non-root user, fix ownership of that mount-point root explicitly rather than recursively chowning an imported repository.
+An existing `-workspace` volume can be reused, including an imported or bare Git repository. The home initializer never seeds or modifies `/workspace`. For a new empty named workspace, the non-root user may need ownership of the mount-point root adjusted explicitly; do not recursively change imported checkout ownership.
 
-**C. Home volume, no workspace mount.** Omit the bind or workspace-volume mount from A. Work in the container's ordinary `/workspace` directory; `git clone` and `git clone --bare` both work there. Stopping and restarting that **same container** retains the workspace in its writable layer; removing the container loses the workspace even though the home volume survives. Copy it out before removing or recreating the container.
+**Import or clone into the container's own workspace:** omit the `/workspace` mount from the bind-mounted example. `/workspace` stays a real directory; clone or import repositories there. Stopping and restarting the **same container** retains them; removing or recreating that container discards its writable workspace. Copy it out or use a workspace volume before an image upgrade.
 
-**D. No volumes at all.** Omit both mount flags from A. Keep `--env DEV_HOME_VOLUME_INIT=1`: despite its historical name, it also initializes the image's ordinary writable `/home/user` directory. Home and workspace survive `podman start` of the same container, but **both are lost when the container is removed**. This is useful for a disposable experiment; do not use `--rm` if you expect to resume it.
+**No volumes:** omit both `--mount` flags, but retain `DEV_HOME_VOLUME_INIT=1`. Home and workspace are then held only by that container object's writable layer and are lost on removal. This is disposable, not suitable for retaining work or credentials across image replacements.
 
-For any mode, stop and resume the same named container with:
+To resume a stopped named Podman container without replacing its image:
 
 ```sh
-podman start -ai --detach-keys="" dev-agent-home-volume-trial
+podman start -ai --detach-keys='' "dev-agent-${name}"
 ```
 
-Docker can run the same OCI image with `docker run` and the same mounts; omit Podman's `--userns=keep-id:uid=1000,gid=1000` if unsupported by your Docker installation. Do not mount additional volumes over `~/.codex`, `~/.gemini`, `~/.config/gh`, or `~/.config/glab-cli` when using the consolidated home.
+Do not use `--rm` when relying on a container's writable layer. Deliberate detachment can leave the shell running; exit the login shell to stop it.
 
-## Existing project volumes: do not delete or silently migrate
+## Launch with Docker
 
-The current persistent sandbox has five named volumes: `-workspace`, `-codex`, `-agy`, `-gh`, and `-glab`. The new `-home` volume **does not** automatically import any of them. Keep the old `-workspace` mounted at `/workspace`, and copy only the other four state volumes into the corresponding directories in the **new** home volume using a one-off migration container while the old container is stopped. Review ownership and permissions after copying and reauthenticate where a source application's keyring cannot be migrated. Do not remove the old container or its state volumes until the new sandbox is verified. Never mount the old subdirectory volumes over the new home volume in the regular sandbox: nested mounts conceal the consolidated state.
+Build the experimental image using `docker build` above. The equivalent **bind-mounted project** launch (normal Docker with a matching UID/GID `1000`) is:
+
+```sh
+name=home-volume-trial
+workspace=$(pwd -P)
+docker run -it --name "dev-agent-${name}" --restart=no \
+  --hostname "agent-sandbox-${name}" --env DEV_HOME_VOLUME_INIT=1 \
+  --workdir /workspace \
+  --mount "type=volume,src=dev-agent-${name}-home,dst=/home/user" \
+  --mount "type=bind,src=${workspace},dst=/workspace,rw" \
+  dev-dotfiles-home-volume:trial
+```
+
+For a disconnected workspace, replace Docker's bind mount with `--mount "type=volume,src=dev-agent-${name}-workspace,dst=/workspace"`. Omit just the workspace mount for an imported/ephemeral project, or both mounts for a fully disposable container, with the same persistence caveats as Podman. Resume with `docker start -ai "dev-agent-${name}"`. Docker does **not** support Podman's `--userns=keep-id`; verify bind-mount permissions under rootless Docker. On native Linux Docker using host Ollama, add `--add-host host.docker.internal:host-gateway` to the `docker run` invocation.
+
+For both engines, this image consolidates the agent/forge configuration into home: do **not** also mount separate `~/.codex`, `~/.gemini`, `~/.config/gh` or `~/.config/glab-cli` volumes over it. Docker-in-Docker is an exceptional mode requiring its own independent `/var/lib/docker` volume and additional privileges; see [DIND.md](DIND.md).
+
+## Migration and cleanup
+
+The original persistent sandbox uses `-workspace`, `-codex`, `-agy`, `-gh` and `-glab` volumes. The experimental `-home` volume **does not import them**. Stop the old container, back up its volumes, and copy each of the four agent/forge volumes into the corresponding directory in the new home using a separate migration container. Retain or mount the original `-workspace` volume at `/workspace` if that project should survive container removal. Verify ownership, repositories and authentication before deleting any old container or volume. In particular, do not mount old agent/forge volumes as nested mounts inside the new home: they conceal its contents. Keyring-backed logins may require reauthentication.
+
+For an intentional cleanup, first identify whether the workspace is bind-mounted, a named volume or only a container writable layer. Remove the named container and **only the specific volumes you intend to discard**; do not reuse legacy five-volume cleanup commands for the experimental home.
 
 ## Verification and limitations
 
-Run `sh containers/dev-dotfiles-debian/test-home-volume.sh` for a local first-run/restart/image-upgrade/failure regression check. A full image build and actual rootless Podman/Docker lifecycle test are required before switching the default launcher. The prototype derives from an already-built upstream image, so old image layers retain the baked home: integrating the archive directly into the **primary Dockerfile** would avoid that duplication. The default published image and existing launcher examples remain unchanged until that integration is reviewed.
+From the repository root, run `sh containers/dev-dotfiles-debian/test-home-volume.sh`. Real Podman and Docker tests (first start, same-version restart, new image, container recreation, ownership and volume migration) are still required before making the alternative image the default. This prototype derives from an already-built image, so earlier image layers still contain the baked home; directly integrating the seed into the primary Dockerfile is a separate follow-up.
