@@ -14,22 +14,22 @@ ARG IMAGE_VERSION=development
 USER root
 
 # The upstream image has already installed the tools and applied chezmoi.
-# Move the resulting home state into an archive OUTSIDE the volume mount,
-# then leave the runtime image's home empty apart from a workspace directory.
-# No home credentials are baked into this archive: it contains only build-time
-# state. Runtime authentication is created inside the persistent named volume.
+# Snapshot only its prepared home into an archive OUTSIDE the runtime mount.
+# /workspace is independent: it can be bind-mounted, volume-mounted, filled
+# from a Git repository or kept on the container's own writable layer.
+# Never bake runtime credentials or a host checkout into the seed archive.
 RUN set -eu; \
   home=$(getent passwd "$USER_NAME" | cut -d: -f6); \
   test -d "$home"; \
+  test ! -L /workspace; \
+  install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" /workspace; \
   install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
-  mkdir -p "$home/workspace"; \
-  chown "$(id -u "$USER_NAME"):$(id -g "$USER_NAME")" "$home/workspace"; \
+  if [ -d "$home/workspace" ] && [ ! -L "$home/workspace" ] && [ -z "$(ls -A "$home/workspace")" ]; then rmdir "$home/workspace"; fi; \
+  if [ ! -e "$home/workspace" ] && [ ! -L "$home/workspace" ]; then ln -s /workspace "$home/workspace"; fi; \
   tar -C "$home" -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
   digest=$(sha256sum /usr/local/share/dev-dotfiles-debian/home-seed.tar | cut -d ' ' -f 1); \
   printf '%s:%s\n' "$IMAGE_VERSION" "$digest" > /usr/local/share/dev-dotfiles-debian/home-seed-version; \
-  find "$home" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +; \
-  install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" "$home/workspace"; \
-  ln -s "$home/workspace" /workspace
+  find "$home" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-entrypoint.sh /usr/local/bin/dev-dotfiles-home-entrypoint
