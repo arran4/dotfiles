@@ -1,6 +1,27 @@
 #!/bin/sh
 set -eu
 
+# Published seeded images carry their prepared home outside /home/user. Seed
+# before creating runtime configuration so a new named home volume is populated
+# on first start and receives updated defaults after an image upgrade. During
+# the Dockerfile's setup-user step the archive has not been built yet, so the
+# same entrypoint continues to work without seeding at image build time.
+seed_archive=${DEV_HOME_SEED_ARCHIVE:-/usr/local/share/dev-dotfiles-debian/home-seed.tar}
+seed_version_file=${DEV_HOME_SEED_VERSION_FILE:-/usr/local/share/dev-dotfiles-debian/home-seed-version}
+if [ -e "$seed_archive" ] || [ -e "$seed_version_file" ]; then
+  if [ ! -f "$seed_archive" ] || [ ! -f "$seed_version_file" ]; then
+    echo 'Incomplete image home seed: archive and version file must both exist.' >&2
+    exit 1
+  fi
+  # The explicit opt-in protects against accidentally extracting into a host
+  # home bind mount. Both normal launchers set it for seeded image layouts.
+  if [ "${DEV_HOME_VOLUME_INIT:-0}" != 1 ]; then
+    echo 'Seeded image requires DEV_HOME_VOLUME_INIT=1; do not bind-mount a host home at /home/user.' >&2
+    exit 1
+  fi
+  /usr/local/bin/dev-dotfiles-home-seed
+fi
+
 uid=$(id -u)
 gid=$(id -g)
 
@@ -118,7 +139,7 @@ if ! gh auth status -h github.com; then
   echo "  gh api /rate_limit --jq '{core: .resources.core, graphql: .resources.graphql}'"
   echo "  gh auth status -h github.com --json hosts"
   echo "For verified invalid credentials, see recovery and concurrent-container guidance:"
-  echo "  https://github.com/arran4/dotfiles/blob/main/containers/dev-dotfiles-debian/GH-AUTH.md"
+  echo "  https://github.com/arran4/dotfiles/blob/main/containers/dev-dotfiles-debian/README.md#github-cli-authentication"
 fi
 
 exec /usr/bin/zsh -l "$@"
