@@ -1,26 +1,23 @@
 # syntax=docker/dockerfile:1.7
-# Reviewable prototype: turn an existing dev-dotfiles image into a project-home
-# volume image without changing the published default image or launcher.
-# Pass --build-arg BASE_IMAGE=<locally-built-image> to evaluate local changes.
+# Optional local experiment based on an existing image. The primary Dockerfile
+# now also publishes the home-seed layout, without requiring this wrapper.
 ARG BASE_IMAGE=ghcr.io/arran4/dev-dotfiles-debian:latest
 FROM ${BASE_IMAGE}
 
 ARG USER_NAME=user
-# Set to the actual release/tag or commit when building a published image.
-# The archive digest also changes the seed version when defaults change in a
-# development build that still uses the same IMAGE_VERSION.
+# Set to a release/tag or commit when building a local experiment. The
+# archive digest also changes the version when the baked home contents change.
 ARG IMAGE_VERSION=development
 
 USER root
 
-# The upstream image has already installed the tools and applied chezmoi.
-# Snapshot only its prepared home into an archive OUTSIDE the runtime mount.
-# /workspace is independent: it can be bind-mounted, volume-mounted, filled
-# from a Git repository or kept on the container's own writable layer.
-# Never bake runtime credentials or a host checkout into the seed archive.
+# Snapshot only the image's prepared home, outside the runtime home mount.
+# This wrapper is intended for older base images that still have a baked home;
+# do not wrap an already seeded published image (its baked home is empty).
 RUN set -eu; \
   home=$(getent passwd "$USER_NAME" | cut -d: -f6); \
   test -d "$home"; \
+  test -n "$(ls -A "$home")"; \
   test ! -L /workspace; \
   install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" /workspace; \
   install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
@@ -36,6 +33,7 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-entrypoint.sh /usr/
 
 ENV DEV_HOME_SEED_ARCHIVE=/usr/local/share/dev-dotfiles-debian/home-seed.tar \
   DEV_HOME_SEED_VERSION_FILE=/usr/local/share/dev-dotfiles-debian/home-seed-version
+LABEL io.github.arran4.dev-dotfiles.home-seed="1"
 
 USER ${USER_NAME}
 WORKDIR /workspace
