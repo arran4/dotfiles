@@ -207,11 +207,10 @@ RUN set -eu; \
   find "$home" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
-COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-entrypoint.sh /usr/local/bin/dev-dotfiles-home-entrypoint
 ENV DEV_HOME_SEED_ARCHIVE=/usr/local/share/dev-dotfiles-debian/home-seed.tar \
   DEV_HOME_SEED_VERSION_FILE=/usr/local/share/dev-dotfiles-debian/home-seed-version
 LABEL io.github.arran4.dev-dotfiles.home-seed="1"
 
 USER ${USER_NAME}
 WORKDIR /workspace
-ENTRYPOINT ["/usr/local/bin/dev-dotfiles-home-entrypoint"]
+ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]
