@@ -19,6 +19,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8
 
+# Keep the expensive tool installation separate from the dotfiles-dependent
+# home seed so changing dotfiles does not reinstall the entire toolchain.
 RUN set -euxo pipefail \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -176,21 +178,32 @@ RUN set -euxo pipefail \
 ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
 
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
-
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
-# Explicitly create a traversable directory for the non-root setup user.
-RUN install -d -m 0755 /usr/local/share/dev-dotfiles-debian
 COPY --chmod=0644 containers/dev-dotfiles-debian/codex-config.toml /usr/local/share/dev-dotfiles-debian/codex-config.toml
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
+COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
+
+# Prepare the home as the non-root user, then archive and clear it as root in
+# the SAME layer. This avoids a temporary full home in an intermediate image
+# layer and avoids switching Dockerfile USER/WORKDIR for build-only operations.
+RUN set -eu; \
+  home=$(getent passwd "$USER_NAME" | cut -d: -f6); \
+  test -d "$home"; \
+  runuser -u "$USER_NAME" -- sh -c 'cd "$HOME" && exec /usr/local/bin/dev-dotfiles-setup-user'; \
+  test ! -L /workspace; \
+  install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" /workspace; \
+  install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
+  if [ -d "$home/workspace" ] && [ ! -L "$home/workspace" ] && [ -z "$(ls -A "$home/workspace")" ]; then rmdir "$home/workspace"; fi; \
+  if [ ! -e "$home/workspace" ] && [ ! -L "$home/workspace" ]; then ln -s /workspace "$home/workspace"; fi; \
+  tar -C "$home" -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
+  digest=$(sha256sum /usr/local/share/dev-dotfiles-debian/home-seed.tar | cut -d ' ' -f 1); \
+  printf '%s:%s:%s\n' "$DOTFILES_RELEASE" "$DOTFILES_COMMIT" "$digest" > /usr/local/share/dev-dotfiles-debian/home-seed-version; \
+  find "$home" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+
+ENV DEV_HOME_SEED_ARCHIVE=/usr/local/share/dev-dotfiles-debian/home-seed.tar \
+  DEV_HOME_SEED_VERSION_FILE=/usr/local/share/dev-dotfiles-debian/home-seed-version
+LABEL io.github.arran4.dev-dotfiles.home-seed="1"
 
 USER ${USER_NAME}
-WORKDIR /home/${USER_NAME}
-
-# Tools that influence rendered dotfiles (for example delta, nvim, less and
-# git-credential-oauth) are installed above before this apply step.
-# This ensures chezmoi renders the same integrations the image will actually use.
-# The setup script applies the dotfiles, configures the image user, and checks
-# tool availability with command tracing and a line-specific failure message.
-RUN /usr/local/bin/dev-dotfiles-setup-user
-
+WORKDIR /workspace
 ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]

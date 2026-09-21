@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'dot_local/bin/executable_run-dev-*.sh'
+      - 'containers/dev-dotfiles-debian/Dockerfile'
+      - 'containers/dev-dotfiles-debian/entrypoint.sh'
+      - 'containers/dev-dotfiles-debian/home-volume-seed.sh'
+      - 'containers/dev-dotfiles-debian/test-home-volume.sh'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
       - 'containers/dev-dotfiles-debian/README.md'
       - '.github/workflows/dev-container-launchers.yml'
@@ -11,6 +15,10 @@ on:
     branches: [main]
     paths:
       - 'dot_local/bin/executable_run-dev-*.sh'
+      - 'containers/dev-dotfiles-debian/Dockerfile'
+      - 'containers/dev-dotfiles-debian/entrypoint.sh'
+      - 'containers/dev-dotfiles-debian/home-volume-seed.sh'
+      - 'containers/dev-dotfiles-debian/test-home-volume.sh'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
       - 'containers/dev-dotfiles-debian/README.md'
       - '.github/workflows/dev-container-launchers.yml'
@@ -25,3 +33,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check launcher syntax and compatible image selection
         run: sh containers/dev-dotfiles-debian/test-launchers.sh
+      - name: Check home seeding and single entrypoint wiring
+        run: |
+          sh -n containers/dev-dotfiles-debian/entrypoint.sh
+          sh -n containers/dev-dotfiles-debian/home-volume-seed.sh
+          sh containers/dev-dotfiles-debian/test-home-volume.sh
+          grep -F 'ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]' containers/dev-dotfiles-debian/Dockerfile
+          ! grep -Fq 'home-volume-entrypoint' containers/dev-dotfiles-debian/Dockerfile
