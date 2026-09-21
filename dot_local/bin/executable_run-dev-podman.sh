@@ -1,9 +1,8 @@
 #!/bin/sh
 set -eu
 
-# Linux-only launcher. Published tags may contain either the historical
-# per-agent layout or the newer versioned home seed. Inspect the local image
-# instead of assuming that a mutable tag identifies its contents.
+# One canonical Dockerfile produces the development image. A cached old image
+# may lack the home seed; inspect the actual image instead of trusting its tag.
 if [ "$(uname -s)" != Linux ]; then
   echo 'This launcher supports Linux only.' >&2
   exit 1
@@ -31,10 +30,10 @@ case "$home_mode" in volume|container) ;; *) echo 'DEV_HOME_MODE must be volume 
 case "$new_home" in 0|1) ;; *) echo 'DEV_NEW_HOME must be 0 or 1.' >&2; exit 2 ;; esac
 case "$dind:$dind_persist" in 0:0|1:0|1:1) ;; *) echo 'DEV_DIND and DEV_DIND_PERSIST must be 0 or 1; persistence requires DEV_DIND=1.' >&2; exit 2 ;; esac
 
-# A stopped container can contain the only copy of an unmapped workspace.
-# Resume an existing sandbox before any image pull. A published home sandbox
-# takes precedence over an old published sandbox; DEV_NEW_HOME=1 explicitly
-# bypasses an existing legacy container without deleting or importing it.
+# Resume existing sandboxes before inspecting/pulling an image: a container
+# writable layer may contain the only copy of a project checkout. An existing
+# seeded home takes precedence. An explicit new home bypasses a legacy sandbox,
+# without modifying or migrating it.
 resume() {
   container=$1
   if podman container exists "$container"; then
@@ -46,15 +45,11 @@ resume() {
     exec podman start -ai --detach-keys='' "$container"
   fi
 }
-if [ "$published" = 1 ]; then
-  resume "dev-agent-${name}-home"
-  if [ "$new_home" = 0 ]; then resume "dev-agent-${name}"; fi
-else
-  resume "dev-agent-${name}-trial"
-fi
+resume "dev-agent-${name}-home"
+if [ "$new_home" = 0 ]; then resume "dev-agent-${name}"; fi
 
-# Offline use succeeds with an already available image. Only the published
-# image is pulled automatically; custom trial images must exist locally.
+# Offline use succeeds with a local image. Only the official published image
+# is pulled automatically; custom DEV_IMAGE values must already exist locally.
 if ! podman image exists "$image"; then
   if [ "$published" = 1 ]; then
     if ! podman pull "$image"; then
@@ -62,21 +57,20 @@ if ! podman image exists "$image"; then
       exit 1
     fi
   else
-    echo "Development image $image is missing locally. Build/select the home-volume image first; see containers/dev-dotfiles-debian/README.md. Existing containers and volumes were not changed." >&2
+    echo "Development image $image is missing locally. Build it from containers/dev-dotfiles-debian/Dockerfile or select a published image; existing state was not changed." >&2
     exit 1
   fi
 fi
 
-# Old :latest layers have no seed, and must keep their historical mounts.
-# A new published image opts into the home layout via its build-time label.
+# The published home-seed capability is labelled at build time. A historical
+# local image without it must use its historical per-agent volume layout.
 seed_label=$(podman image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' "$image")
 if [ "$seed_label" = 1 ]; then
-  if [ "$published" = 1 ]; then layout=home; container="dev-agent-${name}-home"; home_volume="dev-agent-${name}-project-home"
-  else layout=trial; container="dev-agent-${name}-trial"; home_volume="dev-agent-${name}-home"
-  fi
+  layout=home
+  container="dev-agent-${name}-home"
 else
   if [ "$published" != 1 ]; then
-    echo "Image $image does not advertise versioned home initialization; refusing to mount /home/user over unseeded image contents." >&2
+    echo "Image $image has no versioned home seed; select an image built from the canonical Dockerfile." >&2
     exit 1
   fi
   if [ "$new_home" = 1 ]; then
@@ -95,10 +89,10 @@ set -- run -it --name "$container" --restart=no --detach-keys='' \
   --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" \
   --workdir /workspace
 
-if [ "$layout" != legacy ]; then
+if [ "$layout" = home ]; then
   set -- "$@" --env DEV_HOME_VOLUME_INIT=1
   if [ "$home_mode" = volume ]; then
-    set -- "$@" --mount "type=volume,src=${home_volume},dst=/home/user"
+    set -- "$@" --mount "type=volume,src=dev-agent-${name}-project-home,dst=/home/user"
   fi
 else
   set -- "$@" --env DEV_FORGE_VOLUME_INIT=1 \
