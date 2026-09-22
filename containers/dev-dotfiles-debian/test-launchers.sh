@@ -28,7 +28,10 @@ case "$1:$2" in
       exit 0
     fi
     # A successful pull makes exactly that image available to later inspect.
-    [ -f "$MOCK_PULLED_IMAGE" ] && [ "$(cat "$MOCK_PULLED_IMAGE")" = "${3:-}" ] ;;
+    if [ -f "$MOCK_PULLED_IMAGE" ] && [ "$(cat "$MOCK_PULLED_IMAGE")" = "${3:-}" ]; then
+      exit 0
+    fi
+    exit 1 ;;
   inspect:*) printf '%s\n' "${MOCK_RUNNING:-false}"; exit 0 ;;
   pull:*)
     [ "${MOCK_PULL_FAIL:-0}" != 1 ] || exit 1
