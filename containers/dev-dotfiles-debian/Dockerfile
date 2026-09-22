@@ -189,10 +189,12 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/
 RUN set -eu; \
   home=$(getent passwd "$USER_NAME" | cut -d: -f6); \
   test -d "$home"; \
+  # COPY may have created the config parent without directory search permission.
+  install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
+  runuser -u "$USER_NAME" -- test -r /usr/local/share/dev-dotfiles-debian/codex-config.toml; \
   runuser -u "$USER_NAME" -- sh -c 'cd "$HOME" && exec /usr/local/bin/dev-dotfiles-setup-user'; \
   test ! -L /workspace; \
   install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" /workspace; \
-  install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
   if [ -d "$home/workspace" ] && [ ! -L "$home/workspace" ] && [ -z "$(ls -A "$home/workspace")" ]; then rmdir "$home/workspace"; fi; \
   if [ ! -e "$home/workspace" ] && [ ! -L "$home/workspace" ]; then ln -s /workspace "$home/workspace"; fi; \
   tar -C "$home" -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
