@@ -186,10 +186,11 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/
 # Prepare the home as the non-root user, then archive and clear it as root in
 # the SAME layer. This avoids a temporary full home in an intermediate image
 # layer and avoids switching Dockerfile USER/WORKDIR for build-only operations.
+# COPY can leave the config parent without directory search permission; fix it
+# before running the user setup and verify access as the actual non-root user.
 RUN set -eu; \
   home=$(getent passwd "$USER_NAME" | cut -d: -f6); \
   test -d "$home"; \
-  # COPY may have created the config parent without directory search permission.
   install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
   runuser -u "$USER_NAME" -- test -r /usr/local/share/dev-dotfiles-debian/codex-config.toml; \
   runuser -u "$USER_NAME" -- sh -c 'cd "$HOME" && exec /usr/local/bin/dev-dotfiles-setup-user'; \
