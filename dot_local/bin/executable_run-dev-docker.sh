@@ -15,7 +15,7 @@ command -v docker >/dev/null 2>&1 || { echo 'docker is required.' >&2; exit 1; }
 
 workspace=$(pwd -P)
 raw=${SANDBOX_NAME:-$(basename "$workspace")}
-name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/^-//' -e 's/-$//')
+name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//')
 name=${name:-default-project}
 image=${DEV_IMAGE:-ghcr.io/arran4/dev-dotfiles-debian:latest}
 workspace_mode=${DEV_WORKSPACE_MODE:-bind}
