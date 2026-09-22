@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-# One canonical Dockerfile produces the development image. A cached old image
-# may lack the home seed; inspect the actual image instead of trusting its tag.
+# One canonical Dockerfile produces the development image. Inspect its actual
+# labels after pulling, rather than trusting a potentially stale local tag.
 if [ "$(uname -s)" != Linux ]; then
   echo 'This launcher supports Linux only.' >&2
   exit 1
@@ -15,7 +15,7 @@ command -v docker >/dev/null 2>&1 || { echo 'docker is required.' >&2; exit 1; }
 
 workspace=$(pwd -P)
 raw=${SANDBOX_NAME:-$(basename "$workspace")}
-name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//')
+name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/^-//' -e 's/-$//')
 name=${name:-default-project}
 image=${DEV_IMAGE:-ghcr.io/arran4/dev-dotfiles-debian:latest}
 workspace_mode=${DEV_WORKSPACE_MODE:-bind}
@@ -24,6 +24,7 @@ new_home=${DEV_NEW_HOME:-0}
 dind=${DEV_DIND:-0}
 dind_persist=${DEV_DIND_PERSIST:-0}
 host_gateway=${DEV_DOCKER_HOST_GATEWAY:-0}
+pull_mode=${DEV_PULL_MODE:-}
 
 case "$image" in ghcr.io/arran4/dev-dotfiles-debian:*) published=1 ;; *) published=0 ;; esac
 case "$workspace_mode" in bind|volume|container) ;; *) echo 'DEV_WORKSPACE_MODE must be bind, volume or container.' >&2; exit 2 ;; esac
@@ -31,11 +32,17 @@ case "$home_mode" in volume|container) ;; *) echo 'DEV_HOME_MODE must be volume 
 case "$new_home" in 0|1) ;; *) echo 'DEV_NEW_HOME must be 0 or 1.' >&2; exit 2 ;; esac
 case "$dind:$dind_persist" in 0:0|1:0|1:1) ;; *) echo 'DEV_DIND and DEV_DIND_PERSIST must be 0 or 1; persistence requires DEV_DIND=1.' >&2; exit 2 ;; esac
 case "$host_gateway" in 0|1) ;; *) echo 'DEV_DOCKER_HOST_GATEWAY must be 0 or 1.' >&2; exit 2 ;; esac
+case "$pull_mode" in
+  '') if [ "$published" = 1 ]; then pull_mode=always; else pull_mode=never; fi ;;
+  always|missing|never) ;;
+  *) echo 'DEV_PULL_MODE must be always, missing or never.' >&2; exit 2 ;;
+esac
 
 # Resume existing sandboxes before inspecting/pulling an image: a container
-# writable layer may contain the only copy of a project checkout. An existing
-# seeded home takes precedence. An explicit new home bypasses a legacy sandbox,
-# without modifying or migrating it.
+# writable layer may contain the only copy of a project checkout. Pulling an
+# image would not update an existing container. An existing seeded home takes
+# precedence. An explicit new home bypasses a legacy sandbox, without
+# modifying or migrating it.
 resume() {
   container=$1
   if docker container inspect "$container" >/dev/null 2>&1; then
@@ -50,18 +57,18 @@ resume() {
 resume "dev-agent-${name}-home"
 if [ "$new_home" = 0 ]; then resume "dev-agent-${name}"; fi
 
-# Offline use succeeds with a local image. Only the official published image
-# is pulled automatically; custom DEV_IMAGE values must already exist locally.
-if ! docker image inspect "$image" >/dev/null 2>&1; then
-  if [ "$published" = 1 ]; then
-    if ! docker pull "$image"; then
-      echo "Could not obtain published development image $image. Check network access and registry permissions; existing containers and volumes were not changed." >&2
-      exit 1
-    fi
-  else
-    echo "Development image $image is missing locally. Build it from containers/dev-dotfiles-debian/Dockerfile or select a published image; existing state was not changed." >&2
+# New sandboxes use the latest published image by default, even when :latest
+# exists locally. Local development images remain local unless explicitly
+# opted into registry pulls. DEV_PULL_MODE=missing permits offline cache use.
+if [ "$pull_mode" = always ] || { [ "$pull_mode" = missing ] && ! docker image inspect "$image" >/dev/null 2>&1; }; then
+  if ! docker pull "$image"; then
+    echo "Could not pull development image $image. Check network access and registry permissions; use DEV_PULL_MODE=missing to permit a cached image. Existing containers and volumes were not changed." >&2
     exit 1
   fi
+fi
+if ! docker image inspect "$image" >/dev/null 2>&1; then
+  echo "Development image $image is missing locally. Build it from containers/dev-dotfiles-debian/Dockerfile, select a published image, or enable registry pulls with DEV_PULL_MODE=always; existing state was not changed." >&2
+  exit 1
 fi
 
 # The published home-seed capability is labelled at build time. A historical
