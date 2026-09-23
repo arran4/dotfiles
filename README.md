@@ -57,12 +57,18 @@ flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden
 
 ### Application-specific tokens
 
-For scripts requiring secure tokens that should not be globally exported (e.g. `slackpm`), standard behavior is to store the token in an application-specific file with `600` or `400` permissions. For example, `slackpm` will fallback to loading its token from `~/.config/slackpm/token` if the `$SLACK_TOKEN` environment variable is not explicitly set.
+For scripts requiring secure tokens that should not be globally exported (e.g. `slackpm`), standard behavior is to store the token in an application-specific file with strict `600` or `400` permissions. For example, `slackpm` will fallback to loading its token from `~/.config/slackpm/token` if the `$SLACK_TOKEN` environment variable is not explicitly set.
+
+Do not mount the host's password store or entire credential directory into dev containers. Keep credential files scoped and private.
+
+To safely create this file without leaking your token to your shell history, create an empty file with strict permissions first, then edit it:
 
 ```sh
 mkdir -p ~/.config/slackpm
-echo "your-token-here" > ~/.config/slackpm/token
+chmod 700 ~/.config/slackpm
+touch ~/.config/slackpm/token
 chmod 600 ~/.config/slackpm/token
+# Open ~/.config/slackpm/token in your preferred editor and paste your token
 ```
 
 ### Encrypt credentials with ejson

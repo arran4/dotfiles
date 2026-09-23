@@ -33,29 +33,41 @@ EOF
 # If SLACK_TOKEN is not provided in environment, fallback to a local token file
 token_file="${HOME}/.config/slackpm/token"
 
-if [ -z "$SLACK_TOKEN" ] && [ -f "$token_file" ]; then
-  if [ -h "$token_file" ]; then
-    echo "Error: Token file $token_file cannot be a symlink." >&2
-    exit 1
-  fi
-  # Check ownership (must be current user)
-  owner=$(stat -c "%U" "$token_file" 2>/dev/null || stat -f "%Su" "$token_file" 2>/dev/null || echo "")
-  if [ "$owner" != "$(id -un)" ]; then
-    echo "Error: Token file $token_file must be owned by you (current user)." >&2
-    exit 1
-  fi
-  # Check permissions (must be 600 or 400)
-  perms=$(stat -c "%a" "$token_file" 2>/dev/null || stat -f "%Lp" "$token_file" 2>/dev/null || echo "")
-  # Strip leading zero if BSD prints e.g. 0600
-  perms=$(echo "$perms" | sed 's/^0*//')
-  if [ "$perms" != "600" ] && [ "$perms" != "400" ]; then
-    echo "Error: Token file $token_file has insecure permissions (expected 600 or 400)." >&2
-    echo "Run 'chmod 600 $token_file' to secure it." >&2
-    exit 1
-  fi
-  if ! SLACK_TOKEN=$(cat "$token_file" 2>/dev/null) || [ -z "$SLACK_TOKEN" ]; then
-    echo "Error: Token file $token_file is empty or unreadable." >&2
-    exit 1
+if [ -z "$SLACK_TOKEN" ]; then
+  if [ -e "$token_file" ] || [ -h "$token_file" ]; then
+    if [ -h "$token_file" ]; then
+      echo "Error: Token file $token_file cannot be a symlink." >&2
+      exit 1
+    fi
+    if [ ! -f "$token_file" ]; then
+      echo "Error: Token file $token_file must be a regular file." >&2
+      exit 1
+    fi
+    # Check ownership (must be current user)
+    owner=$(stat -c "%U" "$token_file" 2>/dev/null || stat -f "%Su" "$token_file" 2>/dev/null || echo "")
+    if [ "$owner" != "$(id -un)" ]; then
+      echo "Error: Token file $token_file must be owned by you (current user)." >&2
+      exit 1
+    fi
+    # Check permissions (must be 600 or 400)
+    perms=$(stat -c "%a" "$token_file" 2>/dev/null || stat -f "%Lp" "$token_file" 2>/dev/null || echo "")
+    # Strip leading zero if BSD prints e.g. 0600
+    perms=$(echo "$perms" | sed 's/^0*//')
+    if [ "$perms" != "600" ] && [ "$perms" != "400" ]; then
+      echo "Error: Token file $token_file has insecure permissions (expected 600 or 400)." >&2
+      echo "Run 'chmod 600 $token_file' to secure it." >&2
+      exit 1
+    fi
+    if ! raw_token=$(cat "$token_file" 2>/dev/null); then
+      echo "Error: Token file $token_file is unreadable." >&2
+      exit 1
+    fi
+    # Remove carriage returns and newlines to prevent header injection
+    SLACK_TOKEN=$(echo "$raw_token" | tr -d '\r\n')
+    if [ -z "$SLACK_TOKEN" ]; then
+      echo "Error: Token file $token_file is empty." >&2
+      exit 1
+    fi
   fi
 fi
 
