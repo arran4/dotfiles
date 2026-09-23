@@ -103,6 +103,10 @@ if [ ! -e "$codex_config" ]; then
   cp /usr/local/share/dev-dotfiles-debian/codex-config.toml "$codex_config"
 fi
 
+# Antigravity settings must be initialized after the home seed, not packaged
+# in it: a new image must not overwrite settings edited in a persistent home.
+/usr/local/bin/dev-dotfiles-antigravity-settings
+
 # Keep the host-Ollama default container-specific. Do not manage this through
 # the normal chezmoi source, because the same dotfiles are also applied directly
 # on hosts where host.docker.internal is not the correct Ollama address.
