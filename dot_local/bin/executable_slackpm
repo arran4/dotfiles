@@ -59,7 +59,7 @@ nick_to_userid(){
   # get the users
   local response
   response=$(curl -sSL -X POST \
-    --data-urlencode "token=${SLACK_TOKEN}" \
+    -H "Authorization: Bearer ${SLACK_TOKEN}" \
     https://slack.com/api/users.list)
 
   if [[ $(echo "$response" | jq -r '.ok') != "true" ]]; then
@@ -92,7 +92,7 @@ user_to_channelid(){
   # Open a DM channel with the user using the Conversations API
   local response
   response=$(curl -sSL -X POST \
-    --data-urlencode "token=${SLACK_TOKEN}" \
+    -H "Authorization: Bearer ${SLACK_TOKEN}" \
     --data-urlencode "users=${user}" \
     https://slack.com/api/conversations.open)
 
@@ -118,7 +118,7 @@ send_message(){
 
   local postresp
   postresp=$(curl -sSL -X POST \
-    --data-urlencode "token=${SLACK_TOKEN}" \
+    -H "Authorization: Bearer ${SLACK_TOKEN}" \
     --data-urlencode "channel=${channelid}" \
     --data-urlencode "text=${message}" \
     --data-urlencode "as_user=1" \
