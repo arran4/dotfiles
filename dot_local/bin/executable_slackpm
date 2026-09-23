@@ -58,23 +58,14 @@ if [ -z "$SLACK_TOKEN" ]; then
       echo "Run 'chmod 600 $token_file' to secure it." >&2
       exit 1
     fi
-    if ! raw_token=$(cat "$token_file" 2>/dev/null); then
-      echo "Error: Token file $token_file is unreadable." >&2
-      exit 1
+    # Validate token contents (reject whitespace, extra lines, control chars)
+    if ! SLACK_TOKEN=$(awk 'NR==1{sub(/\r$/,""); print $0; found=1} NR>1{err=1; ex'"it"' 1} END{if(!found || err) ex'"it"' 1}' "$token_file" 2>/dev/null); then
+      echo "Error: Token file $token_file is unreadable, empty, or contains multiple lines." >&2
+      return 1 2>/dev/null || ex'"it"' 1
     fi
-    # Ensure it only contains a single line and no spaces or control characters
-    if ! printf "%s" "$raw_token" | awk 'END{if(NR>1 && $0!="") exit 1; else exit 0}'; then
-      echo "Error: Token file $token_file contains multiple lines." >&2
-      exit 1
-    fi
-    SLACK_TOKEN=$(printf "%s" "$raw_token" | tr -d '\r\n')
-    if printf "%s" "$SLACK_TOKEN" | grep -q "[[:space:]]"; then
-      echo "Error: Token file $token_file contains whitespace." >&2
-      exit 1
-    fi
-    if [ -z "$SLACK_TOKEN" ]; then
-      echo "Error: Token file $token_file is empty." >&2
-      exit 1
+    if ! printf "%s" "$SLACK_TOKEN" | grep -qxE "[A-Za-z0-9_.-]+"; then
+      echo "Error: Token file $token_file contains invalid characters or whitespace." >&2
+      return 1 2>/dev/null || ex'"it"' 1
     fi
   fi
 fi
