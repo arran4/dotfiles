@@ -200,6 +200,8 @@ This checks the nested build, image store and runtime without accessing an inner
 
 The container can use a host Ollama server without embedding its daemon or models. The entrypoint seeds `~/.config/opencode/opencode.json` only when absent, defaulting to `ollama/qwen2.5-coder:7b` at `http://host.docker.internal:11434/v1`. A changed home seed can overlay matching configuration files on recreation; back up custom agent settings and third-party credentials before seed upgrades.
 
+**Antigravity CLI workspace trust (after this change is released):** At container startup, `~/.gemini/antigravity-cli/settings.json` is created if missing with `{"trustedWorkspaces":["/workspace"]}`. Existing settings files are left unchanged, including any other workspace choices or agent-specific options. The settings file is excluded from the build-time home archive, so a later home-seed upgrade does not replace it. The initializer works with either the seeded-home or historical per-agent-volume layout when running an image containing this change. It does not change authentication or conversations. Merging the PR does not update an existing container: publish/pull the new image and explicitly recreate the container while preserving relevant named volumes, following [Storage, upgrades, and migration](#storage-upgrades-and-migration).
+
 On the host, pull the model and expose Ollama on the bridge:
 
 ```sh
@@ -254,7 +256,9 @@ aider --model ollama_chat/qwen2.5-coder:7b
 ```sh
 zero setup ollama \
   --base-url http://host.docker.internal:11434/v1 \
-  --model qwen2.5-coder:7b
+  --model qwen2.5-coder:7b \
+  --no-api-key \
+  --set-default
 zero providers list
 zero models list
 zero doctor
@@ -281,9 +285,10 @@ From the repository root:
 
 ```sh
 sh containers/dev-dotfiles-debian/test-home-volume.sh
+sh containers/dev-dotfiles-debian/test-antigravity-settings.sh
 sh containers/dev-dotfiles-debian/test-launchers.sh
 sh -n dot_local/bin/executable_run-dev-docker.sh
 sh -n dot_local/bin/executable_run-dev-podman.sh
 ```
 
-The home-volume test covers first initialization, same-version restart, updated seed preservation, independent workspace and failed-upgrade retry. The launcher test mocks both engines to check seeded versus old published tags, published-home separation, explicit legacy bypass, local builds of the same Dockerfile, missing-image handling and stopped-container resumption. CI and live rootless Podman/Docker lifecycle, mount ownership, versioned recreation, and credential migration must still be verified before replacing sandboxes or deleting old volumes. Keep documentation aligned with **actually published image capabilities and implemented scripts**, not merely merged code.
+The home-volume test covers first initialization, same-version restart, updated seed preservation, independent workspace and failed-upgrade retry. The Antigravity test checks initial workspace trust settings, preservation of existing user settings and exclusion from the home seed. The launcher test mocks both engines to check seeded versus old published tags, published-home separation, explicit legacy bypass, local builds of the same Dockerfile, missing-image handling and stopped-container resumption. CI and live rootless Podman/Docker lifecycle, mount ownership, versioned recreation, and credential migration must still be verified before replacing sandboxes or deleting old volumes. Keep documentation aligned with **actually published image capabilities and implemented scripts**, not merely merged code.
