@@ -63,9 +63,13 @@ if [ -z "$SLACK_TOKEN" ]; then
       exit 1
     fi
     # Ensure it only contains a single line and no spaces or control characters
-    SLACK_TOKEN=$(echo "$raw_token" | awk 'NR==1 {print $1}')
-    if [ "$SLACK_TOKEN" != "$(echo "$raw_token" | tr -d '\r\n ')" ]; then
-      echo "Error: Token file $token_file contains multiple lines or invalid whitespace." >&2
+    if ! printf "%s" "$raw_token" | awk 'END{if(NR>1 && $0!="") exit 1; else exit 0}'; then
+      echo "Error: Token file $token_file contains multiple lines." >&2
+      exit 1
+    fi
+    SLACK_TOKEN=$(printf "%s" "$raw_token" | tr -d '\r\n')
+    if printf "%s" "$SLACK_TOKEN" | grep -q "[[:space:]]"; then
+      echo "Error: Token file $token_file contains whitespace." >&2
       exit 1
     fi
     if [ -z "$SLACK_TOKEN" ]; then

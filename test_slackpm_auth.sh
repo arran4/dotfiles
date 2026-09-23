@@ -95,7 +95,7 @@ rm -f "$token_file" "$HOME/.config/slackpm/real_token"
 # Test 3: Bad permissions
 run_test
 echo -n "Test 3: Token file with bad permissions... "
-echo "VALID_FAKE_TOKEN" > "$token_file"
+printf "VALID_FAKE_TOKEN\n" > "$token_file"
 chmod 644 "$token_file"
 if output=$($script_path user msg 2>&1); then
     echo "FAIL: Exited 0"
@@ -130,7 +130,7 @@ if output=$($script_path user msg 2>&1); then
         exit 1
     fi
 else
-    echo "FAIL: Exited non-zero"
+    echo "FAIL: Exited non-zero"; echo "output: $output"
     exit 1
 fi
 
@@ -150,14 +150,14 @@ if output=$(SLACK_TOKEN="ENV_FAKE_TOKEN" $script_path user msg 2>&1); then
         exit 1
     fi
 else
-    echo "FAIL: Exited non-zero"
+    echo "FAIL: Exited non-zero"; echo "output: $output"
     exit 1
 fi
 
 # Test 6: Empty token file
 run_test
 echo -n "Test 6: Empty token file... "
-> "$token_file"
+: > "$token_file"
 chmod 600 "$token_file"
 if output=$($script_path user msg 2>&1); then
     echo "FAIL: Exited 0"
@@ -186,7 +186,7 @@ if output=$($script_path user msg 2>&1); then
     echo "FAIL: Exited 0"
     exit 1
 else
-    if echo "$output" | grep -q "contains multiple lines or invalid whitespace"; then
+    if echo "$output" | grep -q "multiple lines"; then
         if assert_curl_called 0; then
             echo "PASS"
         else
@@ -195,6 +195,28 @@ else
         fi
     else
         echo "FAIL: Did not report multi-line error"
+        exit 1
+    fi
+fi
+
+# Test 8: Trailing whitespace
+run_test
+echo -n "Test 8: Token with trailing space... "
+printf "VALID_FAKE_TOKEN " > "$token_file"
+chmod 600 "$token_file"
+if output=$($script_path user msg 2>&1); then
+    echo "FAIL: Exited 0"
+    exit 1
+else
+    if echo "$output" | grep -q "whitespace"; then
+        if assert_curl_called 0; then
+            echo "PASS"
+        else
+            echo "FAIL: Curl called"
+            exit 1
+        fi
+    else
+        echo "FAIL: Did not report whitespace error"
         exit 1
     fi
 fi
