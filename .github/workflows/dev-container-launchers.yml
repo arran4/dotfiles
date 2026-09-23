@@ -6,8 +6,6 @@ on:
       - 'dot_local/bin/executable_run-dev-*.sh'
       - 'containers/dev-dotfiles-debian/Dockerfile'
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
-      - 'containers/dev-dotfiles-debian/antigravity-settings.sh'
-      - 'containers/dev-dotfiles-debian/test-antigravity-settings.sh'
       - 'containers/dev-dotfiles-debian/home-volume-seed.sh'
       - 'containers/dev-dotfiles-debian/test-home-volume.sh'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
@@ -19,8 +17,6 @@ on:
       - 'dot_local/bin/executable_run-dev-*.sh'
       - 'containers/dev-dotfiles-debian/Dockerfile'
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
-      - 'containers/dev-dotfiles-debian/antigravity-settings.sh'
-      - 'containers/dev-dotfiles-debian/test-antigravity-settings.sh'
       - 'containers/dev-dotfiles-debian/home-volume-seed.sh'
       - 'containers/dev-dotfiles-debian/test-home-volume.sh'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
@@ -44,7 +40,3 @@ jobs:
           sh containers/dev-dotfiles-debian/test-home-volume.sh
           grep -F 'ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]' containers/dev-dotfiles-debian/Dockerfile
           ! grep -Fq 'home-volume-entrypoint' containers/dev-dotfiles-debian/Dockerfile
-      - name: Check Antigravity CLI workspace trust initialization
-        run: |
-          sh -n containers/dev-dotfiles-debian/antigravity-settings.sh
-          sh containers/dev-dotfiles-debian/test-antigravity-settings.sh
