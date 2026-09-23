@@ -103,9 +103,19 @@ if [ ! -e "$codex_config" ]; then
   cp /usr/local/share/dev-dotfiles-debian/codex-config.toml "$codex_config"
 fi
 
-# Antigravity settings must be initialized after the home seed, not packaged
-# in it: a new image must not overwrite settings edited in a persistent home.
-/usr/local/bin/dev-dotfiles-antigravity-settings
+# Seed Antigravity workspace trust only when no user settings exist.
+antigravity_config="$HOME/.gemini/antigravity-cli/settings.json"
+if [ ! -e "$antigravity_config" ] && [ ! -L "$antigravity_config" ]; then
+  mkdir -p "$(dirname "$antigravity_config")"
+  (umask 077; cat > "$antigravity_config" <<'EOF'
+{
+  "trustedWorkspaces": [
+    "/workspace"
+  ]
+}
+EOF
+  )
+fi
 
 # Keep the host-Ollama default container-specific. Do not manage this through
 # the normal chezmoi source, because the same dotfiles are also applied directly
