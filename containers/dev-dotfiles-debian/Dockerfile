@@ -179,6 +179,7 @@ ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
 
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
+COPY --chmod=0755 containers/dev-dotfiles-debian/antigravity-settings.sh /usr/local/bin/dev-dotfiles-antigravity-settings
 COPY --chmod=0644 containers/dev-dotfiles-debian/codex-config.toml /usr/local/share/dev-dotfiles-debian/codex-config.toml
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
@@ -198,7 +199,7 @@ RUN set -eu; \
   install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" /workspace; \
   if [ -d "$home/workspace" ] && [ ! -L "$home/workspace" ] && [ -z "$(ls -A "$home/workspace")" ]; then rmdir "$home/workspace"; fi; \
   if [ ! -e "$home/workspace" ] && [ ! -L "$home/workspace" ]; then ln -s /workspace "$home/workspace"; fi; \
-  tar -C "$home" -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
+  tar -C "$home" --exclude='./.gemini/antigravity-cli/settings.json' -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
   digest=$(sha256sum /usr/local/share/dev-dotfiles-debian/home-seed.tar | cut -d ' ' -f 1); \
   printf '%s:%s:%s\n' "$DOTFILES_RELEASE" "$DOTFILES_COMMIT" "$digest" > /usr/local/share/dev-dotfiles-debian/home-seed-version; \
   find "$home" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
