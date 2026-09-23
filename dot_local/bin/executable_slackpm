@@ -34,15 +34,29 @@ EOF
 token_file="${HOME}/.config/slackpm/token"
 
 if [ -z "$SLACK_TOKEN" ] && [ -f "$token_file" ]; then
-  # Ensure the token file has secure permissions
-  # Portable way to check permissions using ls (ignoring ACL markers)
-  perms=$(ls -l "$token_file" | awk '{print substr($1, 1, 10)}')
-  if [ "$perms" != "-rw-------" ] && [ "$perms" != "-r--------" ]; then
-    echo "Error: Token file $token_file has insecure permissions ($perms)." >&2
-    echo "Run 'chmod 600 $token_file' to secure it." >&2
-    return 1 2>/dev/null || exit 1
+  if [ -h "$token_file" ]; then
+    echo "Error: Token file $token_file cannot be a symlink." >&2
+    exit 1
   fi
-  SLACK_TOKEN=$(cat "$token_file")
+  # Check ownership (must be current user)
+  owner=$(stat -c "%U" "$token_file" 2>/dev/null || stat -f "%Su" "$token_file" 2>/dev/null || echo "")
+  if [ "$owner" != "$(id -un)" ]; then
+    echo "Error: Token file $token_file must be owned by you (current user)." >&2
+    exit 1
+  fi
+  # Check permissions (must be 600 or 400)
+  perms=$(stat -c "%a" "$token_file" 2>/dev/null || stat -f "%Lp" "$token_file" 2>/dev/null || echo "")
+  # Strip leading zero if BSD prints e.g. 0600
+  perms=$(echo "$perms" | sed 's/^0*//')
+  if [ "$perms" != "600" ] && [ "$perms" != "400" ]; then
+    echo "Error: Token file $token_file has insecure permissions (expected 600 or 400)." >&2
+    echo "Run 'chmod 600 $token_file' to secure it." >&2
+    exit 1
+  fi
+  if ! SLACK_TOKEN=$(cat "$token_file" 2>/dev/null) || [ -z "$SLACK_TOKEN" ]; then
+    echo "Error: Token file $token_file is empty or unreadable." >&2
+    exit 1
+  fi
 fi
 
 [ "$SLACK_TOKEN" ] || usage
@@ -58,8 +72,9 @@ nick_to_userid(){
 
   # get the users
   local response
-  response=$(curl -sSL -X POST \
-    -H "Authorization: Bearer ${SLACK_TOKEN}" \
+  # Use printf builtin to avoid argv exposure, and -H @- to feed headers via stdin
+  response=$(printf "Authorization: Bearer %s" "${SLACK_TOKEN}" | curl -sS -X POST \
+    -H @- \
     https://slack.com/api/users.list)
 
   if [[ $(echo "$response" | jq -r '.ok') != "true" ]]; then
@@ -91,8 +106,8 @@ user_to_channelid(){
 
   # Open a DM channel with the user using the Conversations API
   local response
-  response=$(curl -sSL -X POST \
-    -H "Authorization: Bearer ${SLACK_TOKEN}" \
+  response=$(printf "Authorization: Bearer %s" "${SLACK_TOKEN}" | curl -sS -X POST \
+    -H @- \
     --data-urlencode "users=${user}" \
     https://slack.com/api/conversations.open)
 
@@ -117,8 +132,8 @@ send_message(){
   user_to_channelid "${userid}"
 
   local postresp
-  postresp=$(curl -sSL -X POST \
-    -H "Authorization: Bearer ${SLACK_TOKEN}" \
+  postresp=$(printf "Authorization: Bearer %s" "${SLACK_TOKEN}" | curl -sS -X POST \
+    -H @- \
     --data-urlencode "channel=${channelid}" \
     --data-urlencode "text=${message}" \
     --data-urlencode "as_user=1" \

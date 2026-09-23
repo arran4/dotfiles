@@ -14,8 +14,9 @@ unset SLACK_TOKEN
 mkdir -p "$HOME/bin"
 cat << 'MOCK' > "$HOME/bin/curl"
 #!/bin/bash
-# Check if token is passed in data-urlencode
-if echo "$*" | grep -q "Authorization: Bearer "; then
+# Check if token is passed via stdin header
+stdin_content=$(cat)
+if echo "$stdin_content" | grep -q "Authorization: Bearer "; then
   echo '{"ok":false, "error":"mock_invalid_auth"}'
 else
   echo '{"ok":false, "error":"mock_missing_token"}'
@@ -38,7 +39,7 @@ if echo "$output" | grep -q "provide it in a secure local file at ~/.config/slac
 else
     echo "FAIL"
     echo "$output"
-    return 1 2>/dev/null || exit 1
+    exit 1
 fi
 
 # Test 2: Token file present but bad permissions
@@ -51,7 +52,7 @@ if echo "$output" | grep -q "has insecure permissions"; then
 else
     echo "FAIL"
     echo "$output"
-    return 1 2>/dev/null || exit 1
+    exit 1
 fi
 
 # Test 3: Token file present with good permissions (600)
@@ -63,7 +64,7 @@ if echo "$output" | grep -q "mock_invalid_auth"; then
 else
     echo "FAIL"
     echo "$output"
-    return 1 2>/dev/null || exit 1
+    exit 1
 fi
 
 # Test 4: Token file present with good permissions (400)
@@ -75,7 +76,7 @@ if echo "$output" | grep -q "mock_invalid_auth"; then
 else
     echo "FAIL"
     echo "$output"
-    return 1 2>/dev/null || exit 1
+    exit 1
 fi
 
 # Test 5: Env var overrides file
@@ -87,7 +88,7 @@ if echo "$output" | grep -q "mock_invalid_auth"; then
 else
     echo "FAIL"
     echo "$output"
-    return 1 2>/dev/null || exit 1
+    exit 1
 fi
 
 echo "All tests passed."
