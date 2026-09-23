@@ -95,27 +95,17 @@ if [ "${DEV_DIND:-0}" = "1" ]; then
   done
 fi
 
-# Populate missing Codex configuration on first use of an empty named volume.
-# Never overwrite an existing config or disturb persisted authentication.
-codex_config="$HOME/.codex/config.toml"
-if [ ! -e "$codex_config" ]; then
-  mkdir -p "$(dirname "$codex_config")"
-  cp /usr/local/share/dev-dotfiles-debian/codex-config.toml "$codex_config"
-fi
-
-# Seed Antigravity workspace trust only when no user settings exist.
-antigravity_config="$HOME/.gemini/antigravity-cli/settings.json"
-if [ ! -e "$antigravity_config" ] && [ ! -L "$antigravity_config" ]; then
-  mkdir -p "$(dirname "$antigravity_config")"
-  (umask 077; cat > "$antigravity_config" <<'EOF'
-{
-  "trustedWorkspaces": [
-    "/workspace"
-  ]
-}
-EOF
-  )
-fi
+# Populate missing container-only defaults after home seeding. Existing files,
+# including dangling symlinks, and all authentication/session state are kept.
+skel=/usr/local/share/dev-dotfiles-debian/skel
+find "$skel" -type f -print | while IFS= read -r source; do
+  relative=${source#"$skel"/}
+  target="$HOME/$relative"
+  if [ ! -e "$target" ] && [ ! -L "$target" ]; then
+    mkdir -p "$(dirname "$target")"
+    (umask 077; cp "$source" "$target")
+  fi
+done
 
 # Keep the host-Ollama default container-specific. Do not manage this through
 # the normal chezmoi source, because the same dotfiles are also applied directly
