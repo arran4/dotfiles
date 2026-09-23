@@ -62,8 +62,12 @@ if [ -z "$SLACK_TOKEN" ]; then
       echo "Error: Token file $token_file is unreadable." >&2
       exit 1
     fi
-    # Remove carriage returns and newlines to prevent header injection
-    SLACK_TOKEN=$(echo "$raw_token" | tr -d '\r\n')
+    # Ensure it only contains a single line and no spaces or control characters
+    SLACK_TOKEN=$(echo "$raw_token" | awk 'NR==1 {print $1}')
+    if [ "$SLACK_TOKEN" != "$(echo "$raw_token" | tr -d '\r\n ')" ]; then
+      echo "Error: Token file $token_file contains multiple lines or invalid whitespace." >&2
+      exit 1
+    fi
     if [ -z "$SLACK_TOKEN" ]; then
       echo "Error: Token file $token_file is empty." >&2
       exit 1

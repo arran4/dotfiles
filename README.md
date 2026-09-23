@@ -61,14 +61,14 @@ For scripts requiring secure tokens that should not be globally exported (e.g. `
 
 Do not mount the host's password store or entire credential directory into dev containers. Keep credential files scoped and private.
 
-To safely create this file without leaking your token to your shell history, create an empty file with strict permissions first, then edit it:
+To safely create this file without leaking your token to your shell history, create an empty file under a strict umask first, then edit it. Verify the permissions after saving, as some text editors may replace the file entirely:
 
 ```sh
 mkdir -p ~/.config/slackpm
 chmod 700 ~/.config/slackpm
-touch ~/.config/slackpm/token
-chmod 600 ~/.config/slackpm/token
+(umask 077 && touch ~/.config/slackpm/token)
 # Open ~/.config/slackpm/token in your preferred editor and paste your token
+ls -l ~/.config/slackpm/token # Verify it is still -rw-------
 ```
 
 ### Encrypt credentials with ejson

@@ -205,6 +205,9 @@ jobs:
       - run: |
           shopt -s globstar
           shellcheck **/*.sh
+      - name: Unit Tests
+        run: |
+          ./test_slackpm_auth.sh
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
       - name: Verify shell configuration parses
