@@ -179,7 +179,6 @@ ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
 
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
-COPY --chmod=0755 containers/dev-dotfiles-debian/antigravity-settings.sh /usr/local/bin/dev-dotfiles-antigravity-settings
 COPY --chmod=0644 containers/dev-dotfiles-debian/codex-config.toml /usr/local/share/dev-dotfiles-debian/codex-config.toml
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
