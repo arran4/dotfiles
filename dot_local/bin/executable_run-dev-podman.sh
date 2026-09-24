@@ -7,10 +7,19 @@ if [ "$(uname -s)" != Linux ]; then
   echo 'This launcher supports Linux only.' >&2
   exit 1
 fi
-if [ "$#" -ne 0 ]; then
-  echo 'Configure the launcher with SANDBOX_NAME and DEV_* environment variables; see containers/dev-dotfiles-debian/README.md.' >&2
-  exit 2
-fi
+podman_security=${DEV_PODMAN_SECURITY:-nested}
+case "$#" in
+  0) ;;
+  1) case "$1" in
+       --podman-security=*) podman_security=${1#*=} ;;
+       *) echo 'Usage: run-dev-podman.sh [--podman-security=nested|unconfined|privileged|off]' >&2; exit 2 ;;
+     esac ;;
+  *) echo 'Usage: run-dev-podman.sh [--podman-security=nested|unconfined|privileged|off]' >&2; exit 2 ;;
+esac
+case "$podman_security" in
+  nested|unconfined|privileged|off) ;;
+  *) echo 'Podman security must be nested, unconfined, privileged or off.' >&2; exit 2 ;;
+esac
 command -v podman >/dev/null 2>&1 || { echo 'podman is required.' >&2; exit 1; }
 
 workspace=$(pwd -P)
@@ -23,6 +32,7 @@ home_mode=${DEV_HOME_MODE:-volume}
 new_home=${DEV_NEW_HOME:-0}
 dind=${DEV_DIND:-0}
 dind_persist=${DEV_DIND_PERSIST:-0}
+podman_persist=${DEV_PODMAN_PERSIST:-0}
 pull_mode=${DEV_PULL_MODE:-}
 
 case "$image" in ghcr.io/arran4/dev-dotfiles-debian:*) published=1 ;; *) published=0 ;; esac
@@ -30,17 +40,15 @@ case "$workspace_mode" in bind|volume|container) ;; *) echo 'DEV_WORKSPACE_MODE 
 case "$home_mode" in volume|container) ;; *) echo 'DEV_HOME_MODE must be volume or container.' >&2; exit 2 ;; esac
 case "$new_home" in 0|1) ;; *) echo 'DEV_NEW_HOME must be 0 or 1.' >&2; exit 2 ;; esac
 case "$dind:$dind_persist" in 0:0|1:0|1:1) ;; *) echo 'DEV_DIND and DEV_DIND_PERSIST must be 0 or 1; persistence requires DEV_DIND=1.' >&2; exit 2 ;; esac
+case "$podman_persist" in 0|1) ;; *) echo 'DEV_PODMAN_PERSIST must be 0 or 1.' >&2; exit 2 ;; esac
 case "$pull_mode" in
   '') if [ "$published" = 1 ]; then pull_mode=always; else pull_mode=never; fi ;;
   always|missing|never) ;;
   *) echo 'DEV_PULL_MODE must be always, missing or never.' >&2; exit 2 ;;
 esac
 
-# Resume existing sandboxes before inspecting/pulling an image: a container
-# writable layer may contain the only copy of a project checkout. Pulling an
-# image would not update an existing container. An existing seeded home takes
-# precedence. An explicit new home bypasses a legacy sandbox, without
-# modifying or migrating it.
+# Resuming preserves the existing image, permissions and mounts; launcher
+# flags cannot retrofit security settings onto an already-created container.
 resume() {
   container=$1
   if podman container exists "$container"; then
@@ -48,16 +56,13 @@ resume() {
       echo "Container $container is already running; use podman exec -it $container zsh to open another shell." >&2
       exit 1
     fi
-    echo "Resuming $container; to use a newer image, back up writable-layer data and recreate the container explicitly." >&2
+    echo "Resuming $container; to use a newer image or different Podman security settings, back up writable-layer data and recreate the container explicitly." >&2
     exec podman start -ai --detach-keys='' "$container"
   fi
 }
 resume "dev-agent-${name}-home"
 if [ "$new_home" = 0 ]; then resume "dev-agent-${name}"; fi
 
-# New sandboxes use the latest published image by default, even when :latest
-# exists locally. Local development images remain local unless explicitly
-# opted into registry pulls. DEV_PULL_MODE=missing permits offline cache use.
 if [ "$pull_mode" = always ] || { [ "$pull_mode" = missing ] && ! podman image exists "$image"; }; then
   if ! podman pull "$image"; then
     echo "Could not pull development image $image. Check network access and registry permissions; use DEV_PULL_MODE=missing to permit a cached image. Existing containers and volumes were not changed." >&2
@@ -69,8 +74,6 @@ if ! podman image exists "$image"; then
   exit 1
 fi
 
-# The published home-seed capability is labelled at build time. A historical
-# local image without it must use its historical per-agent volume layout.
 seed_label=$(podman image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' "$image")
 if [ "$seed_label" = 1 ]; then
   layout=home
@@ -112,6 +115,26 @@ case "$workspace_mode" in
   bind) set -- "$@" --mount "type=bind,src=${workspace},dst=/workspace,rw" ;;
   volume) set -- "$@" --env DEV_VOLUME_INIT=1 --mount "type=volume,src=dev-agent-${name}-workspace,dst=/workspace" ;;
   container) ;;
+esac
+if [ "$podman_persist" = 1 ]; then
+  set -- "$@" --env DEV_PODMAN_VOLUME_INIT=1 \
+    --mount "type=volume,src=dev-agent-${name}-podman,dst=/var/lib/dev-podman"
+fi
+case "$podman_security" in
+  nested|unconfined)
+    if [ ! -c /dev/fuse ]; then
+      echo 'Nested Podman requires host /dev/fuse. Enable FUSE or use --podman-security=off to launch without nested-Podman support.' >&2
+      exit 1
+    fi
+    # Private rootless Podman, no host runtime socket. Leave AppArmor intact
+    # unless unconfined is explicitly requested for a host that needs it.
+    set -- "$@" --device /dev/fuse --security-opt seccomp=unconfined \
+      --security-opt label=disable --security-opt unmask=ALL
+    if [ "$podman_security" = unconfined ]; then
+      set -- "$@" --security-opt apparmor=unconfined
+    fi ;;
+  privileged) set -- "$@" --privileged ;;
+  off) ;;
 esac
 if [ "$dind" = 1 ]; then
   set -- "$@" --privileged --env DEV_DIND=1
