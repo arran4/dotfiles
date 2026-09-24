@@ -15,16 +15,8 @@ yes "" | sh -c 'chezmoi init --source /tmp/dotfiles --apply --force --no-tty --d
 set -o pipefail
 
 rm -f "$HOME/.codex/hooks.json"
-mkdir -p "$HOME/.codex"
-if [[ ! -e "$HOME/.codex/config.toml" ]]; then
-  config_source=/usr/local/share/dev-dotfiles-debian/codex-config.toml
-  if [[ ! -r "$config_source" ]]; then
-    printf 'Codex config is not readable by %s: %s\n' "$(id -un)" "$config_source" >&2
-    ls -ld /usr/local/share /usr/local/share/dev-dotfiles-debian "$config_source" >&2 || true
-    exit 1
-  fi
-  cp "$config_source" "$HOME/.codex/config.toml"
-fi
+# Populate only missing default settings; never replace agent-created config.
+(umask 077; rsync -r --ignore-existing /usr/local/share/dev-dotfiles-debian/skel/ "$HOME/")
 rm -rf /tmp/dotfiles
 
 flutter --version

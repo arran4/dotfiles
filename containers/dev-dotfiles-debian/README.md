@@ -200,6 +200,8 @@ This checks the nested build, image store and runtime without accessing an inner
 
 The container can use a host Ollama server without embedding its daemon or models. The entrypoint seeds `~/.config/opencode/opencode.json` only when absent, defaulting to `ollama/qwen2.5-coder:7b` at `http://host.docker.internal:11434/v1`. A changed home seed can overlay matching configuration files on recreation; back up custom agent settings and third-party credentials before seed upgrades.
 
+**Antigravity CLI:** Once the updated image is published, the existing entrypoint creates `~/.gemini/antigravity-cli/settings.json` with `/workspace` in `trustedWorkspaces` only if the file is absent. An existing settings file is never overwritten, including on home-seed upgrades: the file is excluded from the build-time archive. Existing containers require recreation using the new image while preserving their volumes; merging this change alone does not update them.
+
 On the host, pull the model and expose Ollama on the bridge:
 
 ```sh
