@@ -27,7 +27,6 @@ case "$1:$2" in
     if [ "${MOCK_IMAGE_PRESENT:-1}" = 1 ]; then
       exit 0
     fi
-    # A successful pull makes exactly that image available to later inspect.
     if [ -f "$MOCK_PULLED_IMAGE" ] && [ "$(cat "$MOCK_PULLED_IMAGE")" = "${3:-}" ]; then
       exit 0
     fi
@@ -49,6 +48,9 @@ ln -s container-mock "$tmp/bin/docker"
 export PATH="$tmp/bin:$PATH"
 export MOCK_LOG="$tmp/calls"
 export MOCK_PULLED_IMAGE="$tmp/pulled-image"
+# The ordinary layout tests run without host /dev/fuse. Nested-mode tests
+# separately exercise argument generation and failure on unsupported hosts.
+export DEV_PODMAN_SECURITY=off
 cd "$tmp/project"
 
 assert_line() { grep -Fx -- "$1" "$tmp/output" >/dev/null || { echo "Missing argument: $1" >&2; exit 1; }; }
@@ -61,7 +63,6 @@ for engine in podman docker; do
   sh -n "$launcher"
   rm -f "$MOCK_PULLED_IMAGE"
 
-  # A new sandbox checks the published image even if it exists locally.
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_call "$engine pull ghcr.io/arran4/dev-dotfiles-debian:latest"
@@ -71,18 +72,17 @@ for engine in podman docker; do
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
   assert_absent 'DEV_FORGE_VOLUME_INIT=1'
   assert_absent 'type=volume,src=dev-agent-check-gh,dst=/home/user/.config/gh'
+  assert_absent '--privileged'
+  assert_absent '--device'
 
-  # DEV_PULL_MODE=missing preserves offline cache-first behaviour.
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_PULL_MODE=missing SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_no_call "$engine pull "
 
-  # DEV_PULL_MODE=never uses only an available local image.
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_PULL_MODE=never SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_no_call "$engine pull "
 
-  # An older image still uses the historical volume layout.
   : > "$MOCK_LOG"
   SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_line 'dev-agent-check'
@@ -91,8 +91,6 @@ for engine in podman docker; do
   assert_absent 'DEV_HOME_VOLUME_INIT=1'
   assert_absent 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
 
-  # An old named container always resumes unchanged, even when the local image
-  # has since moved to the new layout. Explicit opt-in creates a separate home.
   : > "$MOCK_LOG"
   MOCK_LEGACY_CONTAINER=1 MOCK_SEED_LABEL=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_call "$engine start -ai"
@@ -113,13 +111,11 @@ for engine in podman docker; do
   grep -F 'does not support the versioned home layout' "$tmp/error" >/dev/null
   assert_no_call "$engine run "
 
-  # Existing home containers resume without an image pull.
   : > "$MOCK_LOG"
   MOCK_HOME_CONTAINER=1 MOCK_IMAGE_PRESENT=0 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"
   assert_call "$engine start -ai"
   assert_no_call "$engine pull "
 
-  # A locally built image from the same canonical Dockerfile stays local.
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 SANDBOX_NAME=check DEV_IMAGE=dev-dotfiles-local:dev "$launcher" > "$tmp/output"
   assert_no_call "$engine pull "
@@ -139,14 +135,12 @@ for engine in podman docker; do
   assert_line 'type=volume,src=dev-agent-check-workspace,dst=/workspace'
   assert_line 'DEV_VOLUME_INIT=1'
 
-  # A successful pull must make a previously missing image available.
   : > "$MOCK_LOG"
   rm -f "$MOCK_PULLED_IMAGE"
   MOCK_SEED_LABEL=1 MOCK_IMAGE_PRESENT=0 SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_call "$engine pull ghcr.io/arran4/dev-dotfiles-debian:latest"
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
 
-  # A failed required pull must not silently fall back to a cached image.
   : > "$MOCK_LOG"
   if MOCK_IMAGE_PRESENT=0 MOCK_PULL_FAIL=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
     echo 'Expected published-image pull failure' >&2; exit 1
@@ -162,7 +156,6 @@ for engine in podman docker; do
   grep -F 'Build it from containers/dev-dotfiles-debian/Dockerfile' "$tmp/error" >/dev/null
   assert_no_call "$engine pull "
 
-  # A missing published image with pulling disabled must fail locally.
   : > "$MOCK_LOG"
   rm -f "$MOCK_PULLED_IMAGE"
   if MOCK_IMAGE_PRESENT=0 DEV_PULL_MODE=never SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
@@ -177,5 +170,34 @@ for engine in podman docker; do
   fi
   grep -F 'has no versioned home seed' "$tmp/error" >/dev/null
   assert_no_call "$engine run "
+
+  # Default nested security needs a real /dev/fuse host device.
+  if [ ! -c /dev/fuse ]; then
+    : > "$MOCK_LOG"
+    if DEV_PODMAN_SECURITY=nested MOCK_SEED_LABEL=1 "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+      echo 'Expected nested Podman mode to reject missing /dev/fuse' >&2; exit 1
+    fi
+    grep -F 'requires host /dev/fuse' "$tmp/error" >/dev/null
+    assert_no_call "$engine run "
+  fi
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_PODMAN_SECURITY=privileged DEV_PODMAN_PERSIST=1 "$launcher" > "$tmp/output"
+  assert_line '--privileged'
+  assert_line 'DEV_PODMAN_VOLUME_INIT=1'
+  assert_line 'type=volume,src=dev-agent-project-podman,dst=/var/lib/dev-podman'
+  assert_absent 'type=volume,src=dev-agent-project-docker,dst=/var/lib/docker'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_PODMAN_SECURITY=off "$launcher" --podman-security=privileged > "$tmp/output"
+  assert_line '--privileged'
+
+  : > "$MOCK_LOG"
+  if "$launcher" --podman-security=invalid > "$tmp/output" 2> "$tmp/error"; then
+    echo 'Expected invalid Podman security mode to be rejected' >&2; exit 1
+  fi
+  grep -F 'Podman security must be' "$tmp/error" >/dev/null
+  assert_no_call "$engine run "
+
 done
 printf 'Development launcher tests passed.\n'

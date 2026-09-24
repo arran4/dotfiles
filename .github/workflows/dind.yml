@@ -37,6 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           docker run --rm --privileged \
+            --env DEV_HOME_VOLUME_INIT=1 \
             --env DEV_DIND=1 \
             --mount type=volume,dst=/var/lib/docker \
             "dev-dotfiles-dind:${{ github.sha }}" \
