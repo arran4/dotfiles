@@ -180,26 +180,24 @@ ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
 COPY containers/dev-dotfiles-debian/skel/ /usr/local/share/dev-dotfiles-debian/skel/
-COPY --chmod=0644 containers/dev-dotfiles-debian/skel/.codex/config.toml /usr/local/share/dev-dotfiles-debian/codex-config.toml
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
 
 # Prepare the home as the non-root user, then archive and clear it as root in
 # the SAME layer. This avoids a temporary full home in an intermediate image
 # layer and avoids switching Dockerfile USER/WORKDIR for build-only operations.
-# COPY can leave the config parent without directory search permission; fix it
-# before running the user setup and verify access as the actual non-root user.
 RUN set -eu; \
   home=$(getent passwd "$USER_NAME" | cut -d: -f6); \
   test -d "$home"; \
   install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
-  runuser -u "$USER_NAME" -- test -r /usr/local/share/dev-dotfiles-debian/codex-config.toml; \
   runuser -u "$USER_NAME" -- sh -c 'cd "$HOME" && exec /usr/local/bin/dev-dotfiles-setup-user'; \
   test ! -L /workspace; \
   install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" /workspace; \
   if [ -d "$home/workspace" ] && [ ! -L "$home/workspace" ] && [ -z "$(ls -A "$home/workspace")" ]; then rmdir "$home/workspace"; fi; \
   if [ ! -e "$home/workspace" ] && [ ! -L "$home/workspace" ]; then ln -s /workspace "$home/workspace"; fi; \
-  tar -C "$home" --exclude='./.codex/config.toml' --exclude='./.gemini/antigravity-cli/settings.json' -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
+  find /usr/local/share/dev-dotfiles-debian/skel -type f -printf './%P\n' > /tmp/dev-dotfiles-skel-excludes; \
+  tar -C "$home" --exclude-from=/tmp/dev-dotfiles-skel-excludes -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
+  rm /tmp/dev-dotfiles-skel-excludes; \
   digest=$(sha256sum /usr/local/share/dev-dotfiles-debian/home-seed.tar | cut -d ' ' -f 1); \
   printf '%s:%s:%s\n' "$DOTFILES_RELEASE" "$DOTFILES_COMMIT" "$digest" > /usr/local/share/dev-dotfiles-debian/home-seed-version; \
   find "$home" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
