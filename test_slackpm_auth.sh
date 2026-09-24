@@ -44,7 +44,7 @@ assert_curl_not_called() {
 
 assert_curl_called() {
     local expected_token=$1
-    if [ ! -f "$HOME/mock_curl_args.log" ]; then
+    if [ ! -f "$HOME/mock_curl_args.log" ] || [ ! -f "$HOME/mock_curl_stdin.log" ]; then
         echo "FAIL: Curl was not called"
         exit 1
     fi
@@ -52,6 +52,12 @@ assert_curl_called() {
     actual_calls=$(wc -l < "$HOME/mock_curl_args.log")
     if [ "$actual_calls" -ne 3 ]; then
         echo "FAIL: Curl not called exactly 3 times ($actual_calls)"
+        exit 1
+    fi
+    local stdin_lines
+    stdin_lines=$(wc -l < "$HOME/mock_curl_stdin.log")
+    if [ "$stdin_lines" -ne 3 ]; then
+        echo "FAIL: Stdin log does not have exactly 3 entries ($stdin_lines)"
         exit 1
     fi
 
@@ -83,12 +89,7 @@ if output=$($script_path user msg 2>&1); then
 else
     if echo "$output" | grep -q "provide it in a secure local file at ~/.config/slackpm/token"; then
         assert_curl_not_called
-        if true; then
-            echo "PASS"
-        else
-            echo "FAIL: Curl called"
-            exit 1
-        fi
+        echo "PASS"
     else
         echo "FAIL: Missing usage"
         exit 1
@@ -106,12 +107,7 @@ if output=$($script_path user msg 2>&1); then
 else
     if echo "$output" | grep -q "cannot be a symlink"; then
         assert_curl_not_called
-        if true; then
-            echo "PASS"
-        else
-            echo "FAIL: Curl called"
-            exit 1
-        fi
+        echo "PASS"
     else
         echo "FAIL: Did not reject symlink"
         exit 1
@@ -130,12 +126,7 @@ if output=$($script_path user msg 2>&1); then
 else
     if echo "$output" | grep -q "insecure permissions"; then
         assert_curl_not_called
-        if true; then
-            echo "PASS"
-        else
-            echo "FAIL: Curl called"
-            exit 1
-        fi
+        echo "PASS"
     else
         echo "FAIL: Did not reject bad permissions"
         exit 1
@@ -195,12 +186,7 @@ if output=$($script_path user msg 2>&1); then
 else
     if echo "$output" | grep -q "unreadable, empty, or contains multiple lines"; then
         assert_curl_not_called
-        if true; then
-            echo "PASS"
-        else
-            echo "FAIL: Curl called"
-            exit 1
-        fi
+        echo "PASS"
     else
         echo "FAIL: Did not report empty file error"
         exit 1
@@ -219,12 +205,7 @@ if output=$($script_path user msg 2>&1); then
 else
     if echo "$output" | grep -q "multiple lines"; then
         assert_curl_not_called
-        if true; then
-            echo "PASS"
-        else
-            echo "FAIL: Curl called"
-            exit 1
-        fi
+        echo "PASS"
     else
         echo "FAIL: Did not report multi-line error"
         exit 1
@@ -242,12 +223,7 @@ if output=$($script_path user msg 2>&1); then
 else
     if echo "$output" | grep -q "invalid characters or whitespace"; then
         assert_curl_not_called
-        if true; then
-            echo "PASS"
-        else
-            echo "FAIL: Curl called"
-            exit 1
-        fi
+        echo "PASS"
     else
         echo "FAIL: Did not report invalid characters or whitespace error"
         exit 1

@@ -59,13 +59,13 @@ if [ -z "$SLACK_TOKEN" ]; then
       exit 1
     fi
     # Validate token contents (reject whitespace, extra lines, control chars)
-    if ! SLACK_TOKEN=$(awk 'NR==1{sub(/\r$/,""); print $0; found=1} NR>1{err=1; ex'"it"' 1} END{if(!found || err) ex'"it"' 1}' "$token_file" 2>/dev/null); then
+    if ! SLACK_TOKEN=$(awk 'NR==1{sub(/\r$/,""); print $0; found=1} NR>1{err=1; exit 1} END{if(!found || err) exit 1}' "$token_file" 2>/dev/null); then
       echo "Error: Token file $token_file is unreadable, empty, or contains multiple lines." >&2
-      return 1 2>/dev/null || ex'"it"' 1
+      exit 1
     fi
     if ! printf "%s" "$SLACK_TOKEN" | grep -qxE "[A-Za-z0-9_.-]+"; then
       echo "Error: Token file $token_file contains invalid characters or whitespace." >&2
-      return 1 2>/dev/null || ex'"it"' 1
+      exit 1
     fi
   fi
 fi
