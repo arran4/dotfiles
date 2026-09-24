@@ -13,8 +13,6 @@ if [ -e "$seed_archive" ] || [ -e "$seed_version_file" ]; then
     echo 'Incomplete image home seed: archive and version file must both exist.' >&2
     exit 1
   fi
-  # The explicit opt-in protects against accidentally extracting into a host
-  # home bind mount. Both normal launchers set it for seeded image layouts.
   if [ "${DEV_HOME_VOLUME_INIT:-0}" != 1 ]; then
     echo 'Seeded image requires DEV_HOME_VOLUME_INIT=1; do not bind-mount a host home at /home/user.' >&2
     exit 1
@@ -24,6 +22,21 @@ fi
 
 uid=$(id -u)
 gid=$(id -g)
+
+# Only change ownership of explicit volume mount-point roots, never recursively
+# chown an existing container store or a host checkout.
+if [ "${DEV_PODMAN_VOLUME_INIT:-0}" = 1 ]; then
+  sudo chown "$uid:$gid" /var/lib/dev-podman
+  sudo chmod 0700 /var/lib/dev-podman
+  unset DEV_PODMAN_VOLUME_INIT
+fi
+
+# Rootless Podman needs a private runtime directory even when systemd/logind
+# is not running inside this container. Never use a host-mounted runtime dir.
+if [ -f /etc/containers/dev-podman-storage.conf ]; then
+  export XDG_RUNTIME_DIR="/run/user/$uid"
+  sudo install -d -m 0700 -o "$uid" -g "$gid" "$XDG_RUNTIME_DIR"
+fi
 
 # Fresh named volumes can be owned by root depending on the container engine.
 # Persistent-volume invocations opt into fixing only the mount-point roots.
