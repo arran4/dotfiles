@@ -143,12 +143,7 @@ if output=$($script_path user msg 2>&1); then
         exit 1
     fi
     assert_curl_called "VALID_FAKE_TOKEN"
-    if true; then
-        echo "PASS"
-    else
-        echo "FAIL: Curl not called 3 times"
-        exit 1
-    fi
+    echo "PASS"
 else
     echo "FAIL: Exited non-zero"; echo "output: $output"
     exit 1
@@ -164,12 +159,7 @@ if output=$(SLACK_TOKEN="ENV_FAKE_TOKEN" $script_path user msg 2>&1); then
         exit 1
     fi
     assert_curl_called "ENV_FAKE_TOKEN"
-    if true; then
-        echo "PASS"
-    else
-        echo "FAIL: Curl not called 3 times"
-        exit 1
-    fi
+    echo "PASS"
 else
     echo "FAIL: Exited non-zero"; echo "output: $output"
     exit 1
