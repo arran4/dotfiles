@@ -112,6 +112,13 @@ RUN set -euxo pipefail \
   docker-cli \
   docker-buildx \
   docker-compose \
+  podman \
+  uidmap \
+  fuse-overlayfs \
+  slirp4netns \
+  passt \
+  crun \
+  iptables \
   tar \
   gzip \
   bzip2 \
@@ -164,6 +171,16 @@ RUN set -euxo pipefail \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
 
+# Nested rootless Podman needs subordinate IDs that fit inside a typical
+# 65536-ID rootless outer namespace, not useradd's default host-sized range.
+# The store is deliberately outside home/workspace and is user-owned before
+# any optional persistence volume is mounted on it.
+RUN set -eu; \
+  sed -i "/^${USER_NAME}:/d" /etc/subuid /etc/subgid; \
+  printf '%s:10000:32768\n' "$USER_NAME" >> /etc/subuid; \
+  printf '%s:10000:32768\n' "$USER_NAME" >> /etc/subgid; \
+  install -d -m 0700 -o "$USER_UID" -g "$USER_GID" /var/lib/dev-podman
+
 # Jules CLI is intentionally disabled. Its npm installer can preserve high
 # UID/GID values from its downloaded payload, which makes the resulting image
 # impossible to unpack with a normal rootless Podman subordinate-ID range.
@@ -175,8 +192,10 @@ RUN set -euxo pipefail \
 #   && chown -R root:root "$(npm root -g)/@google/jules" \
 #   && jules version
 
-ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
+ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH} \
+  CONTAINERS_STORAGE_CONF=/etc/containers/dev-podman-storage.conf
 
+COPY --chmod=0644 containers/dev-dotfiles-debian/podman-storage.conf /etc/containers/dev-podman-storage.conf
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
 COPY --chmod=0644 containers/dev-dotfiles-debian/codex-config.toml /usr/local/share/dev-dotfiles-debian/codex-config.toml
