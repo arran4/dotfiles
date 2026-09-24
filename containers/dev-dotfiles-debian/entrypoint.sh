@@ -95,17 +95,9 @@ if [ "${DEV_DIND:-0}" = "1" ]; then
   done
 fi
 
-# Populate missing container-only defaults after home seeding. Existing files,
-# including dangling symlinks, and all authentication/session state are kept.
-skel=/usr/local/share/dev-dotfiles-debian/skel
-find "$skel" -type f -print | while IFS= read -r source; do
-  relative=${source#"$skel"/}
-  target="$HOME/$relative"
-  if [ ! -e "$target" ] && [ ! -L "$target" ]; then
-    mkdir -p "$(dirname "$target")"
-    (umask 077; cp "$source" "$target")
-  fi
-done
+# Recursively add container-only defaults without replacing existing user files.
+# The skeleton lives outside the seeded home to protect customized settings.
+(umask 077; rsync -r --ignore-existing /usr/local/share/dev-dotfiles-debian/skel/ "$HOME/")
 
 # Keep the host-Ollama default container-specific. Do not manage this through
 # the normal chezmoi source, because the same dotfiles are also applied directly
