@@ -705,7 +705,7 @@
         {{- writeToStdout "Can't find flatpak. On non-headless Linux, chezmoi will attempt to install Flatpak and then install the configured apps, including com.bitwarden.desktop.\n" -}}
 {{- else -}}
         {{- $installedFlatpaks := output $flatpakLocation "list" "--app" "--columns=application" | splitList "\n" -}}
-        {{- $flatpakApps := list "app.authpass.AuthPass" "com.beeper.Beeper" "com.bitwarden.desktop" "com.dropbox.Client" "com.google.Chrome" "com.rustdesk.RustDesk" "com.spotify.Client" "com.valvesoftware.Steam" "im.fluffychat.Fluffychat" "im.nheko.Nheko" "im.riot.Riot" "io.anytype.anytype" "io.ente.auth" "io.github.martinrotter.rssguard" "io.github.picocrypt.Picocrypt" "net.werwolv.ImHex" "org.kde.drawy" "org.kde.marknote" "org.libreoffice.LibreOffice" "org.localsend.localsend_app" "org.mozilla.firefox" "org.mozilla.thunderbird" "org.signal.Signal" -}}
+        {{- $flatpakApps := list "app.authpass.AuthPass" "com.beeper.Beeper" "com.bitwarden.desktop" "com.dropbox.Client" "com.google.Chrome" "com.rustdesk.RustDesk" "com.spotify.Client" "com.valvesoftware.Steam" "im.fluffychat.Fluffychat" "im.nheko.Nheko" "im.riot.Riot" "io.anytype.anytype" "io.ente.auth" "io.github.martinrotter.rssguard" "io.github.picocrypt.Picocrypt" "net.mkiol.SpeechNote" "net.werwolv.ImHex" "org.kde.drawy" "org.kde.marknote" "org.libreoffice.LibreOffice" "org.localsend.localsend_app" "org.mozilla.firefox" "org.mozilla.thunderbird" "org.signal.Signal" -}}
         {{- $missingApps := list -}}
         {{- range $app := $flatpakApps -}}
                 {{- if not (has $app $installedFlatpaks) -}}
