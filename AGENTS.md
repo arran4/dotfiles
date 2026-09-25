@@ -21,7 +21,6 @@ This repository stores dotfiles applied with [chezmoi](https://www.chezmoi.io/).
 - Do **not** use scripting-language package managers (such as `npm`, `pip`, or `gem`) to install packages globally.
 - Prefer OS-level package managers (for example, `emerge`, `apt`, or `pacman`), even if a package must be built from source.
 - Prefer Flatpak over manual installations for desktop applications.
-- Keep Flatpak application inventories in `README.md`, `.chezmoi.toml.tmpl`, and the chezmoi Flatpak installer synchronized. Bitwarden (`com.bitwarden.desktop`) is part of the required Flatpak set.
 - `go install` may be used sparingly for user-level installs, not system-wide installs.
 
 ## Hyprland keyboard shortcuts
