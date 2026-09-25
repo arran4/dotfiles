@@ -1,0 +1,81 @@
+{{- if and (eq .chezmoi.os "linux") (not .headless) (not .isDevcontainer) -}}
+#!/bin/sh
+set -eu
+
+flatpak_apps='
+app.authpass.AuthPass
+com.beeper.Beeper
+com.bitwarden.desktop
+com.dropbox.Client
+com.google.Chrome
+com.rustdesk.RustDesk
+com.spotify.Client
+com.valvesoftware.Steam
+im.fluffychat.Fluffychat
+im.nheko.Nheko
+im.riot.Riot
+io.anytype.anytype
+io.ente.auth
+io.github.martinrotter.rssguard
+io.github.picocrypt.Picocrypt
+net.mkiol.SpeechNote
+net.werwolv.ImHex
+org.kde.drawy
+org.kde.marknote
+org.libreoffice.LibreOffice
+org.localsend.localsend_app
+org.mozilla.firefox
+org.mozilla.thunderbird
+org.signal.Signal
+'
+
+run_root() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  elif command -v doas >/dev/null 2>&1; then
+    doas "$@"
+  else
+    printf '%s\n' "Need root privileges to install Flatpak, but neither sudo nor doas is available." >&2
+    return 1
+  fi
+}
+
+if ! command -v flatpak >/dev/null 2>&1; then
+  if command -v emerge >/dev/null 2>&1; then
+    run_root emerge --noreplace sys-apps/flatpak
+  elif command -v apt-get >/dev/null 2>&1; then
+    run_root apt-get update
+    run_root apt-get install -y flatpak
+  elif command -v pacman >/dev/null 2>&1; then
+    run_root pacman -S --needed --noconfirm flatpak
+  elif command -v dnf >/dev/null 2>&1; then
+    run_root dnf install -y flatpak
+  elif command -v zypper >/dev/null 2>&1; then
+    run_root zypper --non-interactive install flatpak
+  else
+    printf '%s\n' "Can't find flatpak and don't know how to install it on this Linux system." >&2
+    exit 1
+  fi
+fi
+
+if ! flatpak remotes --columns=name | grep -Fxq flathub; then
+  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+fi
+
+installed_flatpaks="$(flatpak list --app --columns=application)"
+missing_flatpaks=
+for app in $flatpak_apps; do
+  if ! printf '%s\n' "$installed_flatpaks" | grep -Fxq "$app"; then
+    missing_flatpaks="$missing_flatpaks $app"
+  fi
+done
+
+if [ -n "$missing_flatpaks" ]; then
+  printf 'Installing missing Flatpak apps:%s\n' "$missing_flatpaks"
+  # Flatpak application IDs contain no shell whitespace.
+  # shellcheck disable=SC2086
+  flatpak install -y flathub $missing_flatpaks
+fi
+{{- end }}
