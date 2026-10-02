@@ -108,6 +108,48 @@ if [ "${DEV_DIND:-0}" = "1" ]; then
   done
 fi
 
+# Report the outer-container runtime mode. Launcher permissions are fixed at
+# container creation time, so switching Docker-in-Docker on requires recreating
+# the outer container rather than merely stopping and restarting it.
+printf '%s\n' 'Development container runtime modes:'
+if [ -n "${DEV_LAUNCHER_COMMAND:-}" ]; then
+  printf '  Launcher: %s\n' "$DEV_LAUNCHER_COMMAND"
+fi
+case "${DEV_PODMAN_SECURITY:-unknown}" in
+  nested)
+    printf '%s\n' '  Nested Podman: enabled (rootless nested mode)'
+    ;;
+  unconfined)
+    printf '%s\n' '  Nested Podman: enabled (rootless, AppArmor unconfined)'
+    ;;
+  privileged)
+    printf '%s\n' '  Nested Podman: enabled (privileged outer container)'
+    ;;
+  off)
+    printf '%s\n' '  Nested Podman: disabled by launcher security mode (Podman remains installed)'
+    ;;
+  *)
+    printf '  Nested Podman: launcher mode unknown (%s)\n' "${DEV_PODMAN_SECURITY:-not supplied}"
+    ;;
+esac
+
+if [ "${DEV_DIND:-0}" = 1 ]; then
+  if [ "${DEV_DIND_PERSIST:-0}" = 1 ]; then
+    printf '%s\n' '  Docker-in-Docker: enabled (persistent /var/lib/docker)'
+  else
+    printf '%s\n' '  Docker-in-Docker: enabled (outer-container writable layer)'
+  fi
+else
+  printf '%s\n' '  Docker-in-Docker: disabled'
+  if [ -n "${DEV_LAUNCHER_COMMAND:-}" ] && [ -n "${DEV_OUTER_ENGINE:-}" ] && [ -n "${DEV_CONTAINER_NAME:-}" ]; then
+    printf '%s\n' '  To enable DIND, recreate this outer container; restart alone cannot add --privileged:'
+    printf '%s\n' '    exit'
+    printf '    %s rm %s\n' "$DEV_OUTER_ENGINE" "$DEV_CONTAINER_NAME"
+    printf '    DEV_DIND=1 %s\n' "$DEV_LAUNCHER_COMMAND"
+    printf '%s\n' '  The rm command above does not remove named volumes.'
+  fi
+fi
+
 # Recursively add container-only defaults without replacing existing user files.
 # The skeleton lives outside the seeded home to protect customized settings.
 (umask 077; rsync -r --ignore-existing /usr/local/share/dev-dotfiles-debian/skel/ "$HOME/")
