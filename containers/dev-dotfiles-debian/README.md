@@ -74,6 +74,7 @@ Set environment variables on invocation, e.g. `SANDBOX_NAME=my-project DEV_WORKS
 | `DEV_NEW_HOME` | `0` | `1` bypasses an existing legacy container for a separate seeded-home sandbox; does not import any old volumes. |
 | `DEV_WORKSPACE_MODE` | `bind` | `bind` = current host checkout at `/workspace`; `volume` = persistent `-workspace` volume; `container` = outer container writable layer. `/workspace` is independent of home. |
 | `DEV_HOME_MODE` | `volume` | On seeded images, `volume` mounts a persistent home, `container` uses the outer writable layer. Historical published images require their legacy mounts. |
+| `DEV_PODMAN_SECURITY` | `nested` | Controls outer-container permissions for nested rootless Podman: `nested`, `unconfined`, `privileged`, or `off`. Podman is installed in the image independently of this setting. |
 | `DEV_DIND` | `0` | `1` enables a privileged nested Docker daemon, never the host daemon socket. |
 | `DEV_DIND_PERSIST` | `0` | With `DEV_DIND=1`, `1` mounts a separate persistent `-docker` volume at `/var/lib/docker`. |
 | `DEV_DOCKER_HOST_GATEWAY` | `0` | Docker launcher only: `1` adds native Linux's `host.docker.internal:host-gateway` mapping. |
@@ -172,6 +173,8 @@ DEV_DIND=1 DEV_DIND_PERSIST=1 run-dev-podman.sh
 ```
 
 For Docker use `run-dev-docker.sh`. For manual commands add `--privileged --env DEV_DIND=1`, and optionally `--mount "type=volume,src=dev-agent-${name}-docker,dst=/var/lib/docker"`. The extra volume is **not required for ordinary nested Docker**. Without it, `/var/lib/docker` is in the outer writable layer; a `--tmpfs` mount is stop-volatile and requires separate size/storage-driver testing. Home and workspace volumes never store nested Docker images.
+
+At startup, launcher-created containers print the selected launcher, nested-Podman security mode, and Docker-in-Docker state. When DIND is disabled, the banner also prints the concrete host commands needed to switch it on. Enabling DIND changes the outer container to `--privileged`, so an existing named container cannot be upgraded by `start`; it must be exited and removed **without removing its named volumes**, then recreated with `DEV_DIND=1 run-dev-podman.sh` or `DEV_DIND=1 run-dev-docker.sh`. The startup banner uses the matching launcher automatically.
 
 To verify nested Docker inside the container without pulling an inner base image:
 
@@ -277,7 +280,7 @@ jcode --provider-profile host-ollama auth-test
 
 The single image uses `debian:${DEBIAN_RELEASE}-slim` (default `stable`), UID/GID `1000:1000`, zsh and passwordless sudo. The Dockerfile accepts `USER_NAME`, `USER_UID`, and `USER_GID`; the launchers assume default IDs. The build installs tools before applying chezmoi and snapshots the prepared home after setup. The archive lives outside `/home/user` so mounting a fresh home volume cannot hide it. The primary image labels its seeded-home capability; the release workflow builds this same Dockerfile. A successful merge is not proof that the revised `:latest` has been published.
 
-Tools include Git, Git LFS, `git-credential-oauth`, `gh`, `glab`, zsh, fish, tmux, vim/Neovim, less, `git-delta`, kdiff3, ripgrep, fd, jq, ShellCheck, shfmt, clang, CMake, Ninja, Go, Node.js, Python, Java/Maven, Flutter, Docker CLI/daemon, Buildx and Compose. Agent CLIs include Codex, Antigravity (`agy`), Mini SWE Agent (`mini`), OpenCode, Claude Code, GitHub Copilot CLI and Qwen. `difftastic`, `zellij` and desktop Hyprland/KDE tools are not installed. Jules CLI is intentionally omitted because its installer introduced layer ownership incompatible with normal rootless Podman subordinate-ID mapping; the Dockerfile retains a disabled ownership-normalization recipe.
+Tools include Git, Git LFS, `git-credential-oauth`, `gh`, `glab`, zsh, fish, tmux, vim/Neovim, less, `git-delta`, kdiff3, ripgrep, fd, jq, ShellCheck, shfmt, clang, CMake, Ninja, Go, Node.js, Python, Java/Maven, Flutter, Podman, Docker CLI/daemon, Buildx and Compose. The image build verifies that `podman`, `docker`, and `dockerd` are present and executable, and the container-runtime smoke workflow checks them again from the built image. Agent CLIs include Codex, Antigravity (`agy`), Mini SWE Agent (`mini`), OpenCode, Claude Code, GitHub Copilot CLI and Qwen. `difftastic`, `zellij` and desktop Hyprland/KDE tools are not installed. Jules CLI is intentionally omitted because its installer introduced layer ownership incompatible with normal rootless Podman subordinate-ID mapping; the Dockerfile retains a disabled ownership-normalization recipe.
 
 From the repository root:
 
