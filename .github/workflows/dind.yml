@@ -32,6 +32,19 @@ jobs:
           build-args: |
             DOTFILES_RELEASE=dind-ci
             DOTFILES_COMMIT=${{ github.sha }}
+      - name: Verify bundled container runtimes
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint sh "dev-dotfiles-dind:${{ github.sha }}" -c '
+            set -eu
+            command -v podman
+            podman --version
+            command -v docker
+            docker --version
+            command -v dockerd
+            dockerd --version
+          '
       - name: Build and run a container using the nested daemon
         shell: bash
         run: |
