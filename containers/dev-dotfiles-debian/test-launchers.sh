@@ -189,6 +189,18 @@ for engine in podman docker; do
   assert_absent 'type=volume,src=dev-agent-project-docker,dst=/var/lib/docker'
 
   : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_DIND=1 "$launcher" > "$tmp/output"
+  assert_line '--privileged'
+  assert_line 'DEV_DIND=1'
+  assert_absent 'type=volume,src=dev-agent-project-docker,dst=/var/lib/docker'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_DIND=1 DEV_DIND_PERSIST=1 "$launcher" > "$tmp/output"
+  assert_line '--privileged'
+  assert_line 'DEV_DIND=1'
+  assert_line 'type=volume,src=dev-agent-project-docker,dst=/var/lib/docker'
+
+  : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_PODMAN_SECURITY=off "$launcher" --podman-security=privileged > "$tmp/output"
   assert_line '--privileged'
 
