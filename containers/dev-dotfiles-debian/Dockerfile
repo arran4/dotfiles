@@ -139,6 +139,12 @@ RUN set -euxo pipefail \
   hugo \
   ca-certificates \
   locales \
+  && command -v podman \
+  && podman --version \
+  && command -v docker \
+  && docker --version \
+  && command -v dockerd \
+  && dockerd --version \
   && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
   && ln -sf /usr/bin/batcat /usr/local/bin/bat \
   && GLAB_LATEST_URL=$(curl -sL https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases | jq -r '.[0].assets.links[] | select(.name | test("deb")) | .url' | grep -i "$(dpkg --print-architecture)" | head -n 1) \

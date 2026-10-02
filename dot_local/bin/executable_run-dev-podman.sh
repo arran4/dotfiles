@@ -97,7 +97,13 @@ fi
 
 set -- run -it --name "$container" --restart=no --detach-keys='' \
   --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" \
-  --workdir /workspace
+  --workdir /workspace \
+  --env DEV_LAUNCHER_COMMAND=run-dev-podman.sh \
+  --env DEV_OUTER_ENGINE=podman \
+  --env DEV_CONTAINER_NAME="$container" \
+  --env DEV_PODMAN_SECURITY="$podman_security" \
+  --env DEV_DIND="$dind" \
+  --env DEV_DIND_PERSIST="$dind_persist"
 
 if [ "$layout" = home ]; then
   set -- "$@" --env DEV_HOME_VOLUME_INIT=1
@@ -137,7 +143,7 @@ case "$podman_security" in
   off) ;;
 esac
 if [ "$dind" = 1 ]; then
-  set -- "$@" --privileged --env DEV_DIND=1
+  set -- "$@" --privileged
   if [ "$dind_persist" = 1 ]; then
     set -- "$@" --mount "type=volume,src=dev-agent-${name}-docker,dst=/var/lib/docker"
   fi

@@ -32,6 +32,31 @@ jobs:
           build-args: |
             DOTFILES_RELEASE=dind-ci
             DOTFILES_COMMIT=${{ github.sha }}
+      - name: Verify bundled container runtimes
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint sh "dev-dotfiles-dind:${{ github.sha }}" -c '
+            set -eu
+            command -v podman
+            podman --version
+            command -v docker
+            docker --version
+            command -v dockerd
+            dockerd --version
+          '
+      - name: Verify startup runtime-mode guidance
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(
+            docker run --rm               --env DEV_HOME_VOLUME_INIT=1               --env DEV_LAUNCHER_COMMAND=run-dev-docker.sh               --env DEV_OUTER_ENGINE=docker               --env DEV_CONTAINER_NAME=dev-agent-ci-home               --env DEV_PODMAN_SECURITY=off               --env DEV_DIND=0               "dev-dotfiles-dind:${{ github.sha }}"               -c true 2>&1
+          )"
+          grep -F 'Development container runtime modes:' <<<"$output"
+          grep -F 'Nested Podman: disabled by launcher security mode (Podman remains installed)' <<<"$output"
+          grep -F 'Docker-in-Docker: disabled' <<<"$output"
+          grep -F 'docker rm dev-agent-ci-home' <<<"$output"
+          grep -F 'DEV_DIND=1 run-dev-docker.sh' <<<"$output"
       - name: Build and run a container using the nested daemon
         shell: bash
         run: |

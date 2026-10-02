@@ -69,6 +69,12 @@ for engine in podman docker; do
   assert_line 'ghcr.io/arran4/dev-dotfiles-debian:latest'
   assert_line 'dev-agent-check-home'
   assert_line 'DEV_HOME_VOLUME_INIT=1'
+  assert_line 'DEV_LAUNCHER_COMMAND=run-dev-'"$engine"'.sh'
+  assert_line 'DEV_OUTER_ENGINE='"$engine"
+  assert_line 'DEV_CONTAINER_NAME=dev-agent-check-home'
+  assert_line 'DEV_PODMAN_SECURITY=off'
+  assert_line 'DEV_DIND=0'
+  assert_line 'DEV_DIND_PERSIST=0'
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
   assert_absent 'DEV_FORGE_VOLUME_INIT=1'
   assert_absent 'type=volume,src=dev-agent-check-gh,dst=/home/user/.config/gh'
@@ -187,6 +193,23 @@ for engine in podman docker; do
   assert_line 'DEV_PODMAN_VOLUME_INIT=1'
   assert_line 'type=volume,src=dev-agent-project-podman,dst=/var/lib/dev-podman'
   assert_absent 'type=volume,src=dev-agent-project-docker,dst=/var/lib/docker'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_DIND=1 "$launcher" > "$tmp/output"
+  assert_line '--privileged'
+  assert_line 'DEV_LAUNCHER_COMMAND=run-dev-'"$engine"'.sh'
+  assert_line 'DEV_OUTER_ENGINE='"$engine"
+  assert_line 'DEV_CONTAINER_NAME=dev-agent-project-home'
+  assert_line 'DEV_DIND=1'
+  assert_line 'DEV_DIND_PERSIST=0'
+  assert_absent 'type=volume,src=dev-agent-project-docker,dst=/var/lib/docker'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_DIND=1 DEV_DIND_PERSIST=1 "$launcher" > "$tmp/output"
+  assert_line '--privileged'
+  assert_line 'DEV_DIND=1'
+  assert_line 'DEV_DIND_PERSIST=1'
+  assert_line 'type=volume,src=dev-agent-project-docker,dst=/var/lib/docker'
 
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_PODMAN_SECURITY=off "$launcher" --podman-security=privileged > "$tmp/output"
