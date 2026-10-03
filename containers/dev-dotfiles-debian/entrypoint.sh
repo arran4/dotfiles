@@ -145,8 +145,12 @@ case "${DEV_PODMAN_SECURITY:-unknown}" in
     ;;
 esac
 
-if [ "${DEV_DIND:-0}" = 1 ]; then
-  if [ "${DEV_DIND_PERSIST:-0}" = 1 ]; then
+current_podman_security=${DEV_PODMAN_SECURITY:-nested}
+current_dind=${DEV_DIND:-0}
+current_dind_persist=${DEV_DIND_PERSIST:-0}
+
+if [ "$current_dind" = 1 ]; then
+  if [ "$current_dind_persist" = 1 ]; then
     printf '%s\n' '  Docker-in-Docker: enabled (persistent /var/lib/docker)'
     dind_persist_switch=0
   else
@@ -154,9 +158,11 @@ if [ "${DEV_DIND:-0}" = 1 ]; then
     dind_persist_switch=1
   fi
   dind_switch=0
+  dind_switch_persist=0
 else
   printf '%s\n' '  Docker-in-Docker: disabled'
   dind_switch=1
+  dind_switch_persist="$current_dind_persist"
   dind_persist_switch=0
 fi
 
@@ -164,10 +170,13 @@ if [ -n "${DEV_LAUNCHER_COMMAND:-}" ] && [ -n "${DEV_OUTER_ENGINE:-}" ] && [ -n 
   printf '%s\n' '  Runtime-mode changes require outer-container recreation; restart alone is not enough:'
   printf '%s\n' '    exit'
   printf '    %s rm %s\n' "$DEV_OUTER_ENGINE" "$DEV_CONTAINER_NAME"
-  printf '    DEV_DIND=%s DEV_PODMAN_SECURITY=%s %s\n' "$dind_switch" "${DEV_PODMAN_SECURITY:-nested}" "$DEV_LAUNCHER_COMMAND"
-  printf '  To switch nested Podman mode instead: DEV_PODMAN_SECURITY=%s %s\n' "$podman_switch" "$DEV_LAUNCHER_COMMAND"
-  if [ "${DEV_DIND:-0}" = 1 ]; then
-    printf '  To switch Docker storage persistence instead: DEV_DIND_PERSIST=%s %s\n' "$dind_persist_switch" "$DEV_LAUNCHER_COMMAND"
+  printf '  Toggle Docker-in-Docker:\n'
+  printf '    DEV_DIND=%s DEV_DIND_PERSIST=%s DEV_PODMAN_SECURITY=%s %s\n' "$dind_switch" "$dind_switch_persist" "$current_podman_security" "$DEV_LAUNCHER_COMMAND"
+  printf '  Switch nested Podman mode:\n'
+  printf '    DEV_DIND=%s DEV_DIND_PERSIST=%s DEV_PODMAN_SECURITY=%s %s\n' "$current_dind" "$current_dind_persist" "$podman_switch" "$DEV_LAUNCHER_COMMAND"
+  if [ "$current_dind" = 1 ]; then
+    printf '  Toggle Docker storage persistence:\n'
+    printf '    DEV_DIND=1 DEV_DIND_PERSIST=%s DEV_PODMAN_SECURITY=%s %s\n' "$dind_persist_switch" "$current_podman_security" "$DEV_LAUNCHER_COMMAND"
   fi
   printf '%s\n' '  The rm command above does not remove named volumes.'
 fi

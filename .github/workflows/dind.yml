@@ -62,7 +62,7 @@ jobs:
           grep -F 'Nested Podman: disabled by launcher security mode (Podman remains installed)' <<<"$output"
           grep -F 'Docker-in-Docker: disabled' <<<"$output"
           grep -F 'docker rm dev-agent-ci-home' <<<"$output"
-          grep -F 'DEV_DIND=1 run-dev-docker.sh' <<<"$output"
+          grep -F 'DEV_DIND=1 DEV_DIND_PERSIST=0 DEV_PODMAN_SECURITY=off run-dev-docker.sh' <<<"$output"
       - name: Build and run a container using the nested daemon
         shell: bash
         run: |
