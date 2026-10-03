@@ -841,7 +841,11 @@
 {{end -}}
 
 [diff]
+  exclude = ["scripts"]
 {{if stat $deltaLocation -}}
   pager = "{{$deltaLocation}}"
 {{end -}}
+
+[status]
+  exclude = ["scripts"]
 
