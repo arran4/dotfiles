@@ -108,46 +108,77 @@ if [ "${DEV_DIND:-0}" = "1" ]; then
   done
 fi
 
-# Report the outer-container runtime mode. Launcher permissions are fixed at
-# container creation time, so switching Docker-in-Docker on requires recreating
-# the outer container rather than merely stopping and restarting it.
+# Report runtime versions and creation-time settings on every start. The
+# launcher environment and outer-container privileges/mounts cannot be changed
+# by merely stopping and restarting an existing named container.
 printf '%s\n' 'Development container runtime modes:'
+printf '  Podman: %s\n' "$(podman --version 2>/dev/null || printf '%s' 'unavailable')"
+printf '  Docker CLI: %s\n' "$(docker --version 2>/dev/null || printf '%s' 'unavailable')"
+printf '  Docker daemon: %s\n' "$(dockerd --version 2>/dev/null || printf '%s' 'unavailable')"
 if [ -n "${DEV_LAUNCHER_COMMAND:-}" ]; then
   printf '  Launcher: %s\n' "$DEV_LAUNCHER_COMMAND"
 fi
+printf '  DEV_PODMAN_SECURITY=%s\n' "${DEV_PODMAN_SECURITY:-not supplied}"
+printf '  DEV_DIND=%s\n' "${DEV_DIND:-not supplied}"
+printf '  DEV_DIND_PERSIST=%s\n' "${DEV_DIND_PERSIST:-not supplied}"
+
 case "${DEV_PODMAN_SECURITY:-unknown}" in
   nested)
     printf '%s\n' '  Nested Podman: enabled (rootless nested mode)'
+    podman_switch=off
     ;;
   unconfined)
     printf '%s\n' '  Nested Podman: enabled (rootless, AppArmor unconfined)'
+    podman_switch=nested
     ;;
   privileged)
     printf '%s\n' '  Nested Podman: enabled (privileged outer container)'
+    podman_switch=nested
     ;;
   off)
     printf '%s\n' '  Nested Podman: disabled by launcher security mode (Podman remains installed)'
+    podman_switch=nested
     ;;
   *)
     printf '  Nested Podman: launcher mode unknown (%s)\n' "${DEV_PODMAN_SECURITY:-not supplied}"
+    podman_switch=nested
     ;;
 esac
 
-if [ "${DEV_DIND:-0}" = 1 ]; then
-  if [ "${DEV_DIND_PERSIST:-0}" = 1 ]; then
+current_podman_security=${DEV_PODMAN_SECURITY:-nested}
+current_dind=${DEV_DIND:-0}
+current_dind_persist=${DEV_DIND_PERSIST:-0}
+
+if [ "$current_dind" = 1 ]; then
+  if [ "$current_dind_persist" = 1 ]; then
     printf '%s\n' '  Docker-in-Docker: enabled (persistent /var/lib/docker)'
+    dind_persist_switch=0
   else
     printf '%s\n' '  Docker-in-Docker: enabled (outer-container writable layer)'
+    dind_persist_switch=1
   fi
+  dind_switch=0
+  dind_switch_persist=0
 else
   printf '%s\n' '  Docker-in-Docker: disabled'
-  if [ -n "${DEV_LAUNCHER_COMMAND:-}" ] && [ -n "${DEV_OUTER_ENGINE:-}" ] && [ -n "${DEV_CONTAINER_NAME:-}" ]; then
-    printf '%s\n' '  To enable DIND, recreate this outer container; restart alone cannot add --privileged:'
-    printf '%s\n' '    exit'
-    printf '    %s rm %s\n' "$DEV_OUTER_ENGINE" "$DEV_CONTAINER_NAME"
-    printf '    DEV_DIND=1 %s\n' "$DEV_LAUNCHER_COMMAND"
-    printf '%s\n' '  The rm command above does not remove named volumes.'
+  dind_switch=1
+  dind_switch_persist="$current_dind_persist"
+  dind_persist_switch=0
+fi
+
+if [ -n "${DEV_LAUNCHER_COMMAND:-}" ] && [ -n "${DEV_OUTER_ENGINE:-}" ] && [ -n "${DEV_CONTAINER_NAME:-}" ]; then
+  printf '%s\n' '  Runtime-mode changes require outer-container recreation; restart alone is not enough:'
+  printf '%s\n' '    exit'
+  printf '    %s rm %s\n' "$DEV_OUTER_ENGINE" "$DEV_CONTAINER_NAME"
+  printf '  Toggle Docker-in-Docker:\n'
+  printf '    DEV_DIND=%s DEV_DIND_PERSIST=%s DEV_PODMAN_SECURITY=%s %s\n' "$dind_switch" "$dind_switch_persist" "$current_podman_security" "$DEV_LAUNCHER_COMMAND"
+  printf '  Switch nested Podman mode:\n'
+  printf '    DEV_DIND=%s DEV_DIND_PERSIST=%s DEV_PODMAN_SECURITY=%s %s\n' "$current_dind" "$current_dind_persist" "$podman_switch" "$DEV_LAUNCHER_COMMAND"
+  if [ "$current_dind" = 1 ]; then
+    printf '  Toggle Docker storage persistence:\n'
+    printf '    DEV_DIND=1 DEV_DIND_PERSIST=%s DEV_PODMAN_SECURITY=%s %s\n' "$dind_persist_switch" "$current_podman_security" "$DEV_LAUNCHER_COMMAND"
   fi
+  printf '%s\n' '  The rm command above does not remove named volumes.'
 fi
 
 # Recursively add container-only defaults without replacing existing user files.
