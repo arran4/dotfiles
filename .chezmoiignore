@@ -655,6 +655,12 @@ public_html
 containers/
 LICENSE
 
+{{ if eq .chezmoi.os "linux" }}
+# Konsole rewrites Quick Commands from its in-memory model when it exits.
+# A run-after script owns updates on Linux so it can defer while Konsole is running.
+.config/konsolequickcommandsconfig
+{{ end }}
+
 {{ if and (ne .chezmoi.hostname "x1linux") (ne .chezmoi.hostname "x1laptop") }}
 .config/caelestia/shell.json
 {{ end }}
