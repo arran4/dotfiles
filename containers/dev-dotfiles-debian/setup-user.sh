@@ -5,7 +5,29 @@ set -euxo pipefail
 # command substitutions (where a single failure would be reported repeatedly).
 trap 'printf "setup-user.sh:%s: command failed (exit %s): %s\n" "$LINENO" "$?" "$BASH_COMMAND" >&2' ERR
 
-curl -fsSL https://antigravity.google/cli/install.sh | bash
+install_shell_script_url() {
+  url=$1
+  tmp=$(mktemp)
+  unpacked=
+  trap 'rm -f "$tmp" "$unpacked"' RETURN
+
+  curl --fail --silent --show-error --location     --retry 3 --retry-delay 1 --retry-all-errors     "$url" -o "$tmp"
+
+  if gzip -t "$tmp" >/dev/null 2>&1; then
+    unpacked=$(mktemp)
+    gzip -dc "$tmp" > "$unpacked"
+    rm -f "$tmp"
+    tmp=$unpacked
+    unpacked=
+  fi
+
+  bash -n "$tmp"
+  bash "$tmp"
+  rm -f "$tmp"
+  trap - RETURN
+}
+
+install_shell_script_url https://antigravity.google/cli/install.sh
 agy --version
 
 # The endless yes process may exit with SIGPIPE once chezmoi finishes reading.
