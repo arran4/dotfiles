@@ -112,6 +112,9 @@ fi
 # container creation time, so switching Docker-in-Docker on requires recreating
 # the outer container rather than merely stopping and restarting it.
 printf '%s\n' 'Development container runtime modes:'
+printf '  Podman: %s\n' "$(podman --version 2>/dev/null || printf '%s' 'unavailable')"
+printf '  Docker CLI: %s\n' "$(docker --version 2>/dev/null || printf '%s' 'unavailable')"
+printf '  Docker daemon: %s\n' "$(dockerd --version 2>/dev/null || printf '%s' 'unavailable')"
 if [ -n "${DEV_LAUNCHER_COMMAND:-}" ]; then
   printf '  Launcher: %s\n' "$DEV_LAUNCHER_COMMAND"
 fi

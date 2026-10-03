@@ -88,7 +88,7 @@ for engine in podman docker; do
   assert_line 'TZ=Pacific/Auckland'
 
   : > "$MOCK_LOG"
-  MOCK_SEED_LABEL=1 DEV_TZ= TZ=Europe/London SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  MOCK_SEED_LABEL=1 DEV_TZ='' TZ=Europe/London SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_line 'TZ=Europe/London'
 
   : > "$MOCK_LOG"
