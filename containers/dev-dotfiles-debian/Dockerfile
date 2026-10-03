@@ -14,7 +14,7 @@ ARG DOTFILES_RELEASE=unknown
 ARG DOTFILES_COMMIT=unknown
 
 ENV DEBIAN_FRONTEND=noninteractive \
-  TZ=Etc/UTC \
+  TZ=Australia/Melbourne \
   SHELL=/usr/bin/zsh \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8
@@ -139,6 +139,7 @@ RUN set -euxo pipefail \
   hugo \
   ca-certificates \
   locales \
+  tzdata \
   && command -v podman \
   && podman --version \
   && command -v docker \

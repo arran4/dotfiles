@@ -22,6 +22,35 @@ case "$podman_security" in
 esac
 command -v podman >/dev/null 2>&1 || { echo 'podman is required.' >&2; exit 1; }
 
+detect_host_timezone() {
+  if [ -n "${DEV_TZ:-}" ]; then
+    printf '%s\n' "$DEV_TZ"
+    return
+  fi
+  if [ -n "${TZ:-}" ]; then
+    printf '%s\n' "$TZ"
+    return
+  fi
+  if [ -r /etc/timezone ]; then
+    timezone=$(head -n 1 /etc/timezone 2>/dev/null || true)
+    if [ -n "$timezone" ]; then
+      printf '%s\n' "$timezone"
+      return
+    fi
+  fi
+  if [ -L /etc/localtime ]; then
+    localtime=$(readlink -f /etc/localtime 2>/dev/null || true)
+    case "$localtime" in
+      /usr/share/zoneinfo/*)
+        printf '%s\n' "${localtime#/usr/share/zoneinfo/}"
+        return
+        ;;
+    esac
+  fi
+  printf '%s\n' 'Australia/Melbourne'
+}
+container_tz=$(detect_host_timezone)
+
 workspace=$(pwd -P)
 raw=${SANDBOX_NAME:-$(basename "$workspace")}
 name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//')
@@ -101,6 +130,7 @@ set -- run -it --name "$container" --restart=no --detach-keys='' \
   --env DEV_LAUNCHER_COMMAND=run-dev-podman.sh \
   --env DEV_OUTER_ENGINE=podman \
   --env DEV_CONTAINER_NAME="$container" \
+  --env TZ="$container_tz" \
   --env DEV_PODMAN_SECURITY="$podman_security" \
   --env DEV_DIND="$dind" \
   --env DEV_DIND_PERSIST="$dind_persist"

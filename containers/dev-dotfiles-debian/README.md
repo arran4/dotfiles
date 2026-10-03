@@ -74,10 +74,13 @@ Set environment variables on invocation, e.g. `SANDBOX_NAME=my-project DEV_WORKS
 | `DEV_NEW_HOME` | `0` | `1` bypasses an existing legacy container for a separate seeded-home sandbox; does not import any old volumes. |
 | `DEV_WORKSPACE_MODE` | `bind` | `bind` = current host checkout at `/workspace`; `volume` = persistent `-workspace` volume; `container` = outer container writable layer. `/workspace` is independent of home. |
 | `DEV_HOME_MODE` | `volume` | On seeded images, `volume` mounts a persistent home, `container` uses the outer writable layer. Historical published images require their legacy mounts. |
+| `DEV_TZ` | Host timezone when detectable; otherwise `Australia/Melbourne` | Overrides the timezone passed into a newly created container. Without an override the launchers use host `TZ`, then `/etc/timezone`, then the `/etc/localtime` zoneinfo symlink before falling back to Melbourne. |
 | `DEV_PODMAN_SECURITY` | `nested` | Controls outer-container permissions for nested rootless Podman: `nested`, `unconfined`, `privileged`, or `off`. Podman is installed in the image independently of this setting. |
 | `DEV_DIND` | `0` | `1` enables a privileged nested Docker daemon, never the host daemon socket. |
 | `DEV_DIND_PERSIST` | `0` | With `DEV_DIND=1`, `1` mounts a separate persistent `-docker` volume at `/var/lib/docker`. |
 | `DEV_DOCKER_HOST_GATEWAY` | `0` | Docker launcher only: `1` adds native Linux's `host.docker.internal:host-gateway` mapping. |
+
+Timezone selection is container-creation state: a stopped named container resumes with its existing `TZ` value, so changing `DEV_TZ` requires recreating the container while preserving any named volumes. The image includes `tzdata` and defaults to `Australia/Melbourne`, which also covers manual launches that do not pass `TZ`. For an explicit launcher override, use e.g. `DEV_TZ=Europe/London run-dev-podman.sh`.
 
 Neither launcher takes positional arguments. A named workspace volume is shared by old and new layouts *only when deliberately selected* with `DEV_WORKSPACE_MODE=volume` and the same project name; it is never imported into home. `DEV_HOME_MODE=container DEV_WORKSPACE_MODE=container` is disposable **on outer-container removal**, not on stop/start. Podman uses rootless `--userns=keep-id:uid=1000,gid=1000`; Docker omits that flag. Check host bind-mount ownership against the image's default UID/GID `1000:1000`, especially for rootless Docker.
 

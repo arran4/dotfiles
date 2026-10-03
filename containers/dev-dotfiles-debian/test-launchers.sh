@@ -51,6 +51,7 @@ export MOCK_PULLED_IMAGE="$tmp/pulled-image"
 # The ordinary layout tests run without host /dev/fuse. Nested-mode tests
 # separately exercise argument generation and failure on unsupported hosts.
 export DEV_PODMAN_SECURITY=off
+export DEV_TZ=Australia/Melbourne
 cd "$tmp/project"
 
 assert_line() { grep -Fx -- "$1" "$tmp/output" >/dev/null || { echo "Missing argument: $1" >&2; exit 1; }; }
@@ -72,6 +73,7 @@ for engine in podman docker; do
   assert_line 'DEV_LAUNCHER_COMMAND=run-dev-'"$engine"'.sh'
   assert_line 'DEV_OUTER_ENGINE='"$engine"
   assert_line 'DEV_CONTAINER_NAME=dev-agent-check-home'
+  assert_line 'TZ=Australia/Melbourne'
   assert_line 'DEV_PODMAN_SECURITY=off'
   assert_line 'DEV_DIND=0'
   assert_line 'DEV_DIND_PERSIST=0'
@@ -80,6 +82,14 @@ for engine in podman docker; do
   assert_absent 'type=volume,src=dev-agent-check-gh,dst=/home/user/.config/gh'
   assert_absent '--privileged'
   assert_absent '--device'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_TZ=Pacific/Auckland TZ=Etc/UTC SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  assert_line 'TZ=Pacific/Auckland'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_TZ= TZ=Europe/London SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  assert_line 'TZ=Europe/London'
 
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_PULL_MODE=missing SANDBOX_NAME=check "$launcher" > "$tmp/output"
