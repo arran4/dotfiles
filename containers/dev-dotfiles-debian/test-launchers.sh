@@ -75,12 +75,12 @@ for engine in podman docker; do
   assert_line 'DEV_CONTAINER_NAME=dev-agent-check-home'
   assert_line 'TZ=Australia/Melbourne'
   assert_line 'DEV_PODMAN_SECURITY=off'
-  assert_line 'DEV_DIND=0'
+  assert_line 'DEV_DIND=1'
   assert_line 'DEV_DIND_PERSIST=0'
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
   assert_absent 'DEV_FORGE_VOLUME_INIT=1'
   assert_absent 'type=volume,src=dev-agent-check-gh,dst=/home/user/.config/gh'
-  assert_absent '--privileged'
+  assert_line '--privileged'
   assert_absent '--device'
 
   : > "$MOCK_LOG"
@@ -203,6 +203,11 @@ for engine in podman docker; do
   assert_line 'DEV_PODMAN_VOLUME_INIT=1'
   assert_line 'type=volume,src=dev-agent-project-podman,dst=/var/lib/dev-podman'
   assert_absent 'type=volume,src=dev-agent-project-docker,dst=/var/lib/docker'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_DIND=0 "$launcher" > "$tmp/output"
+  assert_line 'DEV_DIND=0'
+  assert_absent '--privileged'
 
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_DIND=1 "$launcher" > "$tmp/output"

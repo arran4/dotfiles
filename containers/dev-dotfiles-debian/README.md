@@ -76,7 +76,7 @@ Set environment variables on invocation, e.g. `SANDBOX_NAME=my-project DEV_WORKS
 | `DEV_HOME_MODE` | `volume` | On seeded images, `volume` mounts a persistent home, `container` uses the outer writable layer. Historical published images require their legacy mounts. |
 | `DEV_TZ` | Host timezone when detectable; otherwise `Australia/Melbourne` | Overrides the timezone passed into a newly created container. Without an override the launchers use host `TZ`, then `/etc/timezone`, then the `/etc/localtime` zoneinfo symlink before falling back to Melbourne. |
 | `DEV_PODMAN_SECURITY` | `nested` | Controls outer-container permissions for nested rootless Podman: `nested`, `unconfined`, `privileged`, or `off`. Podman is installed in the image independently of this setting. |
-| `DEV_DIND` | `0` | `1` enables a privileged nested Docker daemon, never the host daemon socket. |
+| `DEV_DIND` | `1` | Nested Docker is enabled by default using a private daemon; set `0` to disable it. The host daemon socket is never mounted. |
 | `DEV_DIND_PERSIST` | `0` | With `DEV_DIND=1`, `1` mounts a separate persistent `-docker` volume at `/var/lib/docker`. |
 | `DEV_DOCKER_HOST_GATEWAY` | `0` | Docker launcher only: `1` adds native Linux's `host.docker.internal:host-gateway` mapping. |
 
@@ -165,19 +165,22 @@ For *legacy* sandboxes, trusted projects may replace their per-project `-gh` mou
 
 ## Docker-in-Docker
 
-Set `DEV_DIND=1` with either launcher to start a **nested Docker daemon**, never the host socket. The outer container becomes `--privileged`: rootless Podman confines it to the invoking user's namespace, while rootful Docker's privileged mode grants broad host-level capabilities and reduces isolation. Never pass `/var/run/docker.sock`, `/run/docker.sock`, or the host Podman socket into the sandbox. The entrypoint refuses a non-removable preexisting socket mount.
+Both launchers enable a **nested Docker daemon by default** (`DEV_DIND=1`), never the host socket. The outer container therefore becomes `--privileged`: rootless Podman confines that privilege to the invoking user's namespace, while rootful Docker's privileged mode grants broad host-level capabilities and reduces isolation. Set `DEV_DIND=0` when that trade-off is not wanted. Never pass `/var/run/docker.sock`, `/run/docker.sock`, or the host Podman socket into the sandbox. The entrypoint refuses a non-removable preexisting socket mount.
 
 ```sh
-# Data survives stop/start of this outer container, not its removal:
-DEV_DIND=1 run-dev-podman.sh
+# Normal launcher use: nested Podman and nested Docker are both enabled.
+run-dev-podman.sh
 
-# Nested Docker data also survives outer-container recreation:
-DEV_DIND=1 DEV_DIND_PERSIST=1 run-dev-podman.sh
+# Explicitly disable nested Docker:
+DEV_DIND=0 run-dev-podman.sh
+
+# Keep nested Docker data across outer-container recreation:
+DEV_DIND_PERSIST=1 run-dev-podman.sh
 ```
 
 For Docker use `run-dev-docker.sh`. For manual commands add `--privileged --env DEV_DIND=1`, and optionally `--mount "type=volume,src=dev-agent-${name}-docker,dst=/var/lib/docker"`. The extra volume is **not required for ordinary nested Docker**. Without it, `/var/lib/docker` is in the outer writable layer; a `--tmpfs` mount is stop-volatile and requires separate size/storage-driver testing. Home and workspace volumes never store nested Docker images.
 
-At startup, launcher-created containers print the installed Podman, Docker CLI and Docker daemon versions, followed by the selected launcher, nested-Podman security mode, and Docker-in-Docker state. When DIND is disabled, the banner also prints the concrete host commands needed to switch it on. Enabling DIND changes the outer container to `--privileged`, so an existing named container cannot be upgraded by `start`; it must be exited and removed **without removing its named volumes**, then recreated with `DEV_DIND=1 run-dev-podman.sh` or `DEV_DIND=1 run-dev-docker.sh`. The startup banner uses the matching launcher automatically.
+At every start or restart, launcher-created containers print the installed Podman, Docker CLI and Docker daemon versions, the effective `DEV_PODMAN_SECURITY`, `DEV_DIND` and `DEV_DIND_PERSIST` values, and human-readable runtime status. The banner also prints the exact launcher/environment setting needed to switch DIND, nested-Podman mode, or Docker persistence. These are outer-container creation settings: changing them requires exiting and removing the named container **without removing its named volumes**, then recreating it. A plain `start` cannot add or remove privileges, mounts, or container environment. The startup banner uses the matching launcher automatically.
 
 To verify nested Docker inside the container without pulling an inner base image:
 
