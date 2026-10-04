@@ -210,6 +210,8 @@ jobs:
           ./test_slackpm_auth.sh
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
+      - name: Verify recurring chezmoi drift guards
+        run: sh ./.github/scripts/test_chezmoi_drift.sh
       - name: Verify shell configuration parses
         run: |
           for f in ~/.bashrc ~/.bash_profile ~/.bash_login ~/.bash_logout ~/.profile; do
