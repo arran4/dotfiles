@@ -32,8 +32,8 @@ if grep -F 'include "{{ $themePath }}"' dot_gtkrc-2.0.tmpl >/dev/null; then
   exit 1
 fi
 
-if "$chezmoi_bin" managed --source="$source_dir" | grep -F -x '.config/konsolequickcommandsconfig' >/dev/null; then
-  echo "Konsole Quick Commands should be script-owned on Linux" >&2
+if ! "$chezmoi_bin" managed --source="$source_dir" | grep -F -x '.config/konsolequickcommandsconfig' >/dev/null; then
+  echo "Konsole Quick Commands should remain directly managed by chezmoi" >&2
   exit 1
 fi
 
@@ -42,7 +42,13 @@ if [ ! -s "$quick_commands" ]; then
   exit 1
 fi
 
+if [ "$(sed -n '1p' "$quick_commands")" != '[$i]' ]; then
+  echo "Konsole Quick Commands must be immutable to KConfig" >&2
+  exit 1
+fi
+
 grep -F -q '[system][chezmoi update apply init]' "$quick_commands"
 
 "$chezmoi_bin" apply --source="$source_dir"
+[ "$(sed -n '1p' "$quick_commands")" = '[$i]' ]
 grep -F -q '[system][chezmoi update apply init]' "$quick_commands"
