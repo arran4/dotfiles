@@ -84,6 +84,7 @@ junie --version
   echo "qwen --approval-mode yolo"
   echo "junie"
   echo "curl -fsS http://host.docker.internal:11434/v1/models | jq ."
+  echo "gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token"
   echo "gh auth login -h github.com -w -p https"
   echo "gh auth refresh -h github.com"
   echo "glab auth login"
@@ -134,7 +135,8 @@ cp "/home/${USER_NAME}/.bash_history" "/home/${USER_NAME}/.zsh_history"
     grep -Fqx "qwen --approval-mode yolo" "$history_file" || { echo "qwen approval mode command missing from $history_file"; false; };
     grep -Fqx "junie" "$history_file" || { echo "Junie command missing from $history_file"; false; };
     grep -Fqx "curl -fsS http://host.docker.internal:11434/v1/models | jq ." "$history_file" || { echo "Ollama check missing from $history_file"; false; };
-    grep -Fqx "gh auth login -h github.com -w -p https" "$history_file" || { echo "GitHub auth command missing from $history_file"; false; };
+    grep -Fqx "gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token" "$history_file" || { echo "GitHub token auth command missing from $history_file"; false; };
+    grep -Fqx "gh auth login -h github.com -w -p https" "$history_file" || { echo "GitHub web auth command missing from $history_file"; false; };
     grep -Fqx "gh auth refresh -h github.com" "$history_file" || { echo "GitHub auth refresh command missing from $history_file"; false; };
     grep -Fqx "glab auth login" "$history_file" || { echo "GitLab auth command missing from $history_file"; false; };
   done;
@@ -152,6 +154,12 @@ fi
 if ! grep -Fq "Not authenticated with GitHub CLI." <<< "$entry_output" &&
    ! grep -Fq "GitHub CLI could not verify authentication" <<< "$entry_output"; then
   echo "Entrypoint did not provide unauthenticated GitHub CLI guidance"
+  echo "$entry_output"
+  exit 1
+fi
+if ! grep -Fq "Per-container token:" <<< "$entry_output" ||
+   ! grep -Fq "Web/device OAuth:" <<< "$entry_output"; then
+  echo "Entrypoint did not advertise both GitHub authentication modes"
   echo "$entry_output"
   exit 1
 fi

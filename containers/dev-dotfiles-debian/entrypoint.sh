@@ -214,12 +214,28 @@ EOF
 fi
 
 echo "Checking GitHub CLI authentication status..."
+if [ -n "${GH_TOKEN:-}" ]; then
+  echo "GitHub authentication source: GH_TOKEN environment token (takes precedence over stored credentials)."
+elif [ -n "${GITHUB_TOKEN:-}" ]; then
+  echo "GitHub authentication source: GITHUB_TOKEN environment token (used when GH_TOKEN is unset; takes precedence over stored credentials)."
+elif [ -f "$HOME/.config/gh/hosts.yml" ]; then
+  echo "GitHub authentication source: stored GitHub CLI credentials (token or web/device login)."
+else
+  echo "GitHub authentication source: none detected."
+fi
+
 if ! gh auth status -h github.com; then
   echo "GitHub CLI could not verify authentication; this can also be caused by API rate limits or network failures."
   echo "Before reauthorizing, diagnose with:"
   echo "  gh api /user --jq .login"
   echo "  gh api /rate_limit --jq '{core: .resources.core, graphql: .resources.graphql}'"
   echo "  gh auth status -h github.com --json hosts"
+  echo "Supported authentication modes:"
+  echo "  Per-container token: set GH_TOKEN/GITHUB_TOKEN, or place a token in ~/.config/gh/container-token and run:"
+  echo "    gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token"
+  echo "  Web/device OAuth:"
+  echo "    gh auth login -h github.com -w -p https"
+  echo "Environment tokens take precedence over stored credentials; unset them to test or use a stored login."
   echo "For verified invalid credentials, see recovery and concurrent-container guidance:"
   echo "  https://github.com/arran4/dotfiles/blob/main/containers/dev-dotfiles-debian/README.md#github-cli-authentication"
 fi

@@ -128,7 +128,7 @@ For Docker, substitute `docker run` and omit `--userns`. To use a named workspac
 
 ## GitHub CLI authentication
 
-In a seeded-home sandbox `gh` configuration lives under `/home/user/.config/gh` in the per-project `-project-home` volume. Old published sandboxes retain their `-gh` volume; historical trials retain their old `-home` volume. **Persistent credentials do not guarantee permanently valid tokens.** Signing in from many containers may create distinct OAuth authorizations and revoke older tokens. Agents for one account share API rate limits. An `gh auth status` failure may reflect rate limiting or connectivity rather than expiry; see [GitHub CLI issue #14053](https://github.com/cli/cli/issues/14053).
+The container supports two independent GitHub authentication styles: **per-container tokens** and **stored web/device OAuth login**. Neither is mandatory or automatically converted into the other. In a seeded-home sandbox stored `gh` configuration lives under `/home/user/.config/gh` in the per-project `-project-home` volume. Old published sandboxes retain their `-gh` volume; historical trials retain their old `-home` volume. **Persistent credentials do not guarantee permanently valid tokens.** Signing in from many containers may create distinct OAuth authorizations and revoke older tokens. Agents for one account share API rate limits. An `gh auth status` failure may reflect rate limiting or connectivity rather than expiry; see [GitHub CLI issue #14053](https://github.com/cli/cli/issues/14053).
 
 ### Diagnose first; do not expose secrets
 
@@ -146,18 +146,30 @@ gh api /rate_limit --jq '{core: .resources.core, graphql: .resources.graphql}'
 gh auth status -h github.com --json hosts
 ```
 
-`GH_TOKEN` and `GITHUB_TOKEN` can override persisted login. A successful `/user` request confirms authentication for that request even if `gh auth status` reports an error. A rate-limit `403` or `429` warrants reducing calls and observing reset/retry time, not reauthorizing. An HTTP `401` with the intended token is consistent with invalid credentials; DNS, TLS, and `5xx` errors are different problems. Never publish `gh auth token`, `gh auth status --show-token`, `hosts.yml`, raw secrets or verbose HTTP traces. Multiple tokens for one user do not supply independent API quotas; see [GitHub REST rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
+`GH_TOKEN` and `GITHUB_TOKEN` override persisted login for GitHub.com; `GH_TOKEN` has precedence when both are set. This makes environment-token injection suitable for container-specific or headless credentials without disturbing a stored web/device login. A successful `/user` request confirms authentication for that request even if `gh auth status` reports an error. A rate-limit `403` or `429` warrants reducing calls and observing reset/retry time, not reauthorizing. An HTTP `401` with the intended token is consistent with invalid credentials; DNS, TLS, and `5xx` errors are different problems. Never publish `gh auth token`, `gh auth status --show-token`, `hosts.yml`, raw secrets or verbose HTTP traces. Multiple tokens for one user do not supply independent API quotas; see the [GitHub CLI environment reference](https://cli.github.com/manual/gh_help_environment) and [GitHub REST rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
 
-### Sign in or recover
+### Sign in or recover: token or web/device
 
-Only after confirming that authentication is needed, use HTTPS Git transport and include `workflow` scope when changing GitHub Actions:
+Only after confirming that authentication is needed, choose the credential model for that sandbox.
+
+**Per-container token:** For a token supplied by the container/session environment, set `GH_TOKEN` (preferred) or `GITHUB_TOKEN`; no `gh auth login` is required. This is also the GitHub CLI-recommended approach for fine-grained personal access tokens. If a token generator instead writes a private one-shot file inside the sandbox, the seeded shell history includes a stored-token alternative that never puts the token value in shell history:
 
 ```sh
-gh auth login -h github.com -p https -s workflow
+gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token
+rm -f ~/.config/gh/container-token
 gh api /user --jq .login
 ```
 
-For an existing login needing reauthorization or additional scope, run `gh auth refresh -h github.com -s workflow` and verify `/user`. This does **not** guarantee an automatically rotating OAuth refresh token. Do not reauthenticate all running sandboxes in a loop, attempt `offline_access`, or automatically reauthenticate on startup. Revoked tokens may require new authorization. For headless device login, enter the CLI code in a host browser at <https://github.com/login/device>; `xdg-open` failure alone does not mean login failed. See [login](https://cli.github.com/manual/gh_auth_login), [refresh](https://cli.github.com/manual/gh_auth_refresh), and [token expiration and revocation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/token-expiration-and-revocation).
+The supplied token itself must already have the repository permissions/scopes required for the work. For classic personal access tokens, GitHub CLI documents `repo`, `read:org`, and `gist` as minimum scopes for `--with-token`; include `workflow` when the token must modify GitHub Actions workflows. Do not type a raw token directly into a shell command or leave the one-shot token file behind after a successful import.
+
+**Web/device OAuth:** The existing interactive flow remains supported and is also seeded in shell history:
+
+```sh
+gh auth login -h github.com -w -p https
+gh api /user --jq .login
+```
+
+For an existing stored login needing reauthorization or additional scope, run `gh auth refresh -h github.com -s workflow` and verify `/user`. This does **not** apply to `GH_TOKEN`/`GITHUB_TOKEN` credentials and does **not** guarantee an automatically rotating OAuth refresh token. Do not reauthenticate all running sandboxes in a loop, attempt `offline_access`, or automatically reauthenticate on startup. Revoked tokens may require new authorization. For headless device login, enter the CLI code in a host browser at <https://github.com/login/device>; `xdg-open` failure alone does not mean login failed. See [login](https://cli.github.com/manual/gh_auth_login), [environment tokens](https://cli.github.com/manual/gh_help_environment), [refresh](https://cli.github.com/manual/gh_auth_refresh), and [token expiration and revocation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/token-expiration-and-revocation).
 
 ### Shared authentication: explicit trust trade-off
 
