@@ -56,6 +56,7 @@ cd "$tmp/project"
 
 assert_line() { grep -Fx -- "$1" "$tmp/output" >/dev/null || { echo "Missing argument: $1" >&2; exit 1; }; }
 assert_absent() { if grep -Fx -- "$1" "$tmp/output" >/dev/null; then echo "Unexpected argument: $1" >&2; exit 1; fi; }
+assert_absent_fragment() { if grep -F -- "$1" "$tmp/output" >/dev/null; then echo "Unexpected output fragment: $1" >&2; exit 1; fi; }
 assert_call() { grep -F -- "$1" "$MOCK_LOG" >/dev/null || { echo "Missing call: $1" >&2; exit 1; }; }
 assert_no_call() { if grep -F -- "$1" "$MOCK_LOG" >/dev/null; then echo "Unexpected call: $1" >&2; exit 1; fi; }
 
@@ -77,11 +78,20 @@ for engine in podman docker; do
   assert_line 'DEV_PODMAN_SECURITY=off'
   assert_line 'DEV_DIND=1'
   assert_line 'DEV_DIND_PERSIST=0'
+  assert_line 'DEV_CONTAINER_PERSIST=0'
+  assert_line '--rm'
+  assert_absent '--restart=no'
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
   assert_absent 'DEV_FORGE_VOLUME_INIT=1'
   assert_absent 'type=volume,src=dev-agent-check-gh,dst=/home/user/.config/gh'
   assert_line '--privileged'
   assert_absent '--device'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  assert_line 'DEV_CONTAINER_PERSIST=1'
+  assert_line '--restart=no'
+  assert_absent '--rm'
 
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_TZ=Pacific/Auckland TZ=Etc/UTC SANDBOX_NAME=check "$launcher" > "$tmp/output"
@@ -108,7 +118,16 @@ for engine in podman docker; do
   assert_absent 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
 
   : > "$MOCK_LOG"
-  MOCK_LEGACY_CONTAINER=1 MOCK_SEED_LABEL=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  if MOCK_LEGACY_CONTAINER=1 MOCK_SEED_LABEL=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+    echo 'Expected disposable mode to refuse an existing stopped container' >&2; exit 1
+  fi
+  grep -F 'Stopped container dev-agent-check exists from a persistent session' "$tmp/error" >/dev/null
+  assert_no_call "$engine start "
+  assert_no_call "$engine pull "
+  assert_no_call "$engine run "
+
+  : > "$MOCK_LOG"
+  MOCK_LEGACY_CONTAINER=1 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_call "$engine start -ai"
   assert_no_call "$engine pull "
   assert_no_call "$engine run "
@@ -128,7 +147,7 @@ for engine in podman docker; do
   assert_no_call "$engine run "
 
   : > "$MOCK_LOG"
-  MOCK_HOME_CONTAINER=1 MOCK_IMAGE_PRESENT=0 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"
+  MOCK_HOME_CONTAINER=1 MOCK_IMAGE_PRESENT=0 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"
   assert_call "$engine start -ai"
   assert_no_call "$engine pull "
 
@@ -229,6 +248,28 @@ for engine in podman docker; do
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_PODMAN_SECURITY=off "$launcher" --podman-security=privileged > "$tmp/output"
   assert_line '--privileged'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 SANDBOX_NAME=check "$launcher" --persist-container --no-home-volume --no-workspace-mount --podman-security=privileged > "$tmp/output"
+  assert_line 'DEV_CONTAINER_PERSIST=1'
+  assert_line '--restart=no'
+  assert_absent '--rm'
+  assert_absent 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
+  assert_absent_fragment 'dst=/workspace'
+  assert_line '--privileged'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" --ephemeral-container > "$tmp/output"
+  assert_line 'DEV_CONTAINER_PERSIST=0'
+  assert_line '--rm'
+  assert_absent '--restart=no'
+
+  : > "$MOCK_LOG"
+  if DEV_CONTAINER_PERSIST=2 MOCK_SEED_LABEL=1 "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+    echo 'Expected invalid container persistence mode to be rejected' >&2; exit 1
+  fi
+  grep -F 'DEV_CONTAINER_PERSIST must be 0 or 1' "$tmp/error" >/dev/null
+  assert_no_call "$engine run "
 
   : > "$MOCK_LOG"
   if "$launcher" --podman-security=invalid > "$tmp/output" 2> "$tmp/error"; then
