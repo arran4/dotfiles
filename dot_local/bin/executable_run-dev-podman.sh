@@ -8,17 +8,33 @@ if [ "$(uname -s)" != Linux ]; then
   exit 1
 fi
 podman_security=${DEV_PODMAN_SECURITY:-nested}
-case "$#" in
-  0) ;;
-  1) case "$1" in
-       --podman-security=*) podman_security=${1#*=} ;;
-       *) echo 'Usage: run-dev-podman.sh [--podman-security=nested|unconfined|privileged|off]' >&2; exit 2 ;;
-     esac ;;
-  *) echo 'Usage: run-dev-podman.sh [--podman-security=nested|unconfined|privileged|off]' >&2; exit 2 ;;
-esac
+container_persist=${DEV_CONTAINER_PERSIST:-0}
+workspace_mode=${DEV_WORKSPACE_MODE:-bind}
+home_mode=${DEV_HOME_MODE:-volume}
+
+usage() {
+  echo 'Usage: run-dev-podman.sh [--podman-security=nested|unconfined|privileged|off] [--persist-container|--ephemeral-container] [--no-home-volume] [--no-workspace-mount]' >&2
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --podman-security=*) podman_security=${1#*=} ;;
+    --persist-container) container_persist=1 ;;
+    --ephemeral-container) container_persist=0 ;;
+    --no-home-volume) home_mode=container ;;
+    --no-workspace-mount) workspace_mode=container ;;
+    -h|--help) usage; exit 0 ;;
+    *) usage; exit 2 ;;
+  esac
+  shift
+done
 case "$podman_security" in
   nested|unconfined|privileged|off) ;;
   *) echo 'Podman security must be nested, unconfined, privileged or off.' >&2; exit 2 ;;
+esac
+case "$container_persist" in
+  0|1) ;;
+  *) echo 'DEV_CONTAINER_PERSIST must be 0 or 1.' >&2; exit 2 ;;
 esac
 command -v podman >/dev/null 2>&1 || { echo 'podman is required.' >&2; exit 1; }
 
@@ -56,8 +72,6 @@ raw=${SANDBOX_NAME:-$(basename "$workspace")}
 name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//')
 name=${name:-default-project}
 image=${DEV_IMAGE:-ghcr.io/arran4/dev-dotfiles-debian:latest}
-workspace_mode=${DEV_WORKSPACE_MODE:-bind}
-home_mode=${DEV_HOME_MODE:-volume}
 new_home=${DEV_NEW_HOME:-0}
 dind=${DEV_DIND:-1}
 dind_persist=${DEV_DIND_PERSIST:-0}
@@ -76,21 +90,26 @@ case "$pull_mode" in
   *) echo 'DEV_PULL_MODE must be always, missing or never.' >&2; exit 2 ;;
 esac
 
-# Resuming preserves the existing image, permissions and mounts; launcher
-# flags cannot retrofit security settings onto an already-created container.
-resume() {
+# New containers are disposable by default. Existing stopped containers may
+# contain writable-layer state from the previous retained-container default, so
+# never delete them implicitly. Persistence is an explicit opt-in.
+handle_existing_container() {
   container=$1
   if podman container exists "$container"; then
     if [ "$(podman inspect --format '{{.State.Running}}' "$container")" = true ]; then
       echo "Container $container is already running; use podman exec -it $container zsh to open another shell." >&2
       exit 1
     fi
-    echo "Resuming $container; to use a newer image or different Podman security settings, back up writable-layer data and recreate the container explicitly." >&2
-    exec podman start -ai --detach-keys='' "$container"
+    if [ "$container_persist" = 1 ]; then
+      echo "Resuming persistent container $container." >&2
+      exec podman start -ai --detach-keys='' "$container"
+    fi
+    echo "Stopped container $container exists from a persistent session. Remove it explicitly without removing named volumes, or rerun with --persist-container (DEV_CONTAINER_PERSIST=1) to resume it." >&2
+    exit 1
   fi
 }
-resume "dev-agent-${name}-home"
-if [ "$new_home" = 0 ]; then resume "dev-agent-${name}"; fi
+handle_existing_container "dev-agent-${name}-home"
+if [ "$new_home" = 0 ]; then handle_existing_container "dev-agent-${name}"; fi
 
 if [ "$pull_mode" = always ] || { [ "$pull_mode" = missing ] && ! podman image exists "$image"; }; then
   if ! podman pull "$image"; then
@@ -124,12 +143,19 @@ else
   fi
 fi
 
-set -- run -it --name "$container" --restart=no --detach-keys='' \
+set -- run -it --name "$container" --detach-keys=''
+if [ "$container_persist" = 1 ]; then
+  set -- "$@" --restart=no
+else
+  set -- "$@" --rm
+fi
+set -- "$@" \
   --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" \
   --workdir /workspace \
   --env DEV_LAUNCHER_COMMAND=run-dev-podman.sh \
   --env DEV_OUTER_ENGINE=podman \
   --env DEV_CONTAINER_NAME="$container" \
+  --env DEV_CONTAINER_PERSIST="$container_persist" \
   --env TZ="$container_tz" \
   --env DEV_PODMAN_SECURITY="$podman_security" \
   --env DEV_DIND="$dind" \
