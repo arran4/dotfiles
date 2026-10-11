@@ -94,6 +94,40 @@ Chezmoi copies `dot_config/git/template` to `~/.config/git/template`; Git uses i
 git config --global core.editor <command>
 ```
 
+### Machine-local Git hosts and etckeeper
+
+The public Git template always includes `~/.config/git/config.local`, even when
+that file does not yet exist. Git ignores a missing include. Put site-specific
+hostnames, URL rewrites and per-host credential settings in that local file,
+not in this repository or in `dot_gitconfig.tmpl`. It is deliberately not a
+chezmoi-managed file; set it up separately for each account (including root
+when root uses these dotfiles).
+
+For example, using a placeholder hostname (replace it **locally**):
+
+```gitconfig
+[credential "https://git.example.invalid"]
+  gitLabAuthModes = pat
+[url "https://git.example.invalid/"]
+  insteadOf = git@git.example.invalid:
+  insteadOf = ssh://git@git.example.invalid/
+```
+
+The local file must be kept out of Git and chezmoi source control. It contains
+connection metadata, **not** passwords or tokens. If adding a host to an
+existing local file, append or merge only the new sections rather than
+overwriting other settings. Use permissions 0700 for `~/.config/git` and
+0600 for `config.local` if it contains private infrastructure details.
+
+For etckeeper on Gentoo, the `/etc` repository's remote and authentication
+are machine-local. A repository-local HTTPS credential helper can override
+an interactive global OAuth helper; its token must be provisioned separately
+and stored outside `/etc` so etckeeper cannot commit it. A root-owned
+credential store is plaintext unless an encrypted noninteractive backend is
+configured. Check unattended push with
+`sudo env GIT_TERMINAL_PROMPT=0 git -C /etc push --dry-run origin HEAD`.
+Do not change etckeeper's HTTPS remote to SSH as a workaround.
+
 ### SSH configuration
 
 The default SSH configuration adds keys to the agent and uses platform-appropriate keychain options and configured identities. On macOS, a host entry may use:
