@@ -10,8 +10,8 @@ case "$(uname -s)" in
   *) exit 0 ;;
 esac
 
-previous="\${HOME}/.gitconfig"
-local_config="\${HOME}/.config/git/config.local"
+previous="${HOME}/.gitconfig"
+local_config="${HOME}/.config/git/config.local"
 [ -f "$previous" ] || exit 0
 command -v awk >/dev/null 2>&1 || exit 0
 
@@ -29,7 +29,7 @@ source_local=/dev/null
 if [ -f "$local_config" ]; then
   source_local="$local_config"
 fi
-scratch="$(mktemp "\${TMPDIR:-/tmp}/chezmoi-git-migrate.XXXXXXXX")"
+scratch="$(mktemp "${TMPDIR:-/tmp}/chezmoi-git-migrate.XXXXXXXX")"
 trap 'rm -f "$scratch"' EXIT HUP INT TERM
 
 # Reading the destination first prevents duplicate sections on retries.
@@ -59,7 +59,7 @@ awk '
 ' "$source_local" "$previous" > "$scratch"
 
 [ -s "$scratch" ] || exit 0
-install -d -m 700 "\${HOME}/.config/git"
+install -d -m 700 "${HOME}/.config/git"
 if [ -e "$local_config" ]; then
   chmod 600 "$local_config"
 else
