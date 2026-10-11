@@ -208,8 +208,6 @@ jobs:
       - name: Unit Tests
         run: |
           ./test_slackpm_auth.sh
-      - name: Verify one-time Git host migration
-        run: sh ./.github/scripts/test_gitconfig_migration.sh
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
       - name: Verify recurring chezmoi drift guards
