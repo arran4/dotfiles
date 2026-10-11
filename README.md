@@ -97,7 +97,27 @@ git config --global core.editor <command>
 ### Machine-local Git hosts and etckeeper
 
 The public Git template always includes `~/.config/git/config.local`, even when
-that file does not yet exist. Git ignores a missing include. Put site-specific
+that file does not yet exist. Git ignores a missing include.
+
+**One-time upgrade:** A temporary chezmoi
+`run_once_before_migrate_private_git_hosts.sh` script checks the *existing*
+`~/.gitconfig` **before** chezmoi replaces it. For both normal-user and
+root runs, it copies Git `credential` and `url` sections pointing to
+non-public HTTPS hosts into that account's
+`~/.config/git/config.local`, preserving existing local entries and skipping
+duplicates. It does not prompt, read tokens, change Git remotes, or modify
+etckeeper. It prints no private hostnames. Run a full `chezmoi apply`
+for each account after pulling this change; a targeted
+`chezmoi apply ~/.gitconfig` may not run migration scripts.
+
+This migration only works if the **old** host-specific settings are still
+present in the existing `~/.gitconfig`. If the new template was already
+applied and removed them, restore the necessary Git stanzas from a local
+backup or construct local overrides from that account's own known
+configuration. No secrets should be copied into the local Git config.
+The migration script is transitional and has a separate deferred
+cleanup PR; existing `config.local` files will not be removed.
+ Put site-specific
 hostnames, URL rewrites and per-host credential settings in that local file,
 not in this repository or in `dot_gitconfig.tmpl`. It is deliberately not a
 chezmoi-managed file; set it up separately for each account (including root
