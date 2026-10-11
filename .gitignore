@@ -1,2 +1,5 @@
 bin/chezmoi
 
+# Private machine-specific Git config must not enter the public chezmoi source.
+/dot_config/git/config.local
+/dot_config/git/private_config.local

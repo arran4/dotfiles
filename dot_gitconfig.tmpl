@@ -90,10 +90,6 @@
 [credential "https://source.developers.google.com"]
   provider = generic
 
-[credential "https://gitlab.arran.net.au"]
-  gitLabAuthModes = pat
-  # oauthClientId = {{/* (ejsonDecrypt "private_gitlab_oauth.ejson").gitlab_oauth_client_id */}}
-
 {{ if ne .chezmoi.os "windows" }}
 [color]
   branch = auto
@@ -186,10 +182,10 @@
 [include]
   path = ~/.local/share/git/config.local
 {{- end }}
-{{- if stat (joinPath .chezmoi.homeDir ".config/git/config.local") }}
+# Git ignores this include if the file is absent. Keep machine-specific
+# hosts and authentication overrides in this untracked local file.
 [include]
   path = ~/.config/git/config.local
-{{- end }}
 {{- if stat (joinPath .chezmoi.homeDir ".gitconfig.d/config.local") }}
 [include]
   path = ~/.gitconfig.d/config.local
@@ -212,8 +208,8 @@
 [interactive "delta"]
   diffFilter = delta --color-only
 
-# Keep GitHub, Gist and GitLab remotes on HTTPS. Shorthand, git:// and SSH
-# spellings are normalized to HTTPS so HTTP credential helpers stay authoritative.
+# Keep public GitHub, Gist and GitLab remotes on HTTPS. Site-specific
+# rewrites belong in ~/.config/git/config.local, not this shared template.
 [url "https://github.com/"]
   insteadOf = "github:"
   insteadOf = "git://github.com/"
@@ -237,13 +233,6 @@
   insteadOf = "ssh://git@gitlab.com/"
   insteadOf = "git+ssh://git@gitlab.com/"
   insteadOf = "ssh+git://git@gitlab.com/"
-
-[url "https://gitlab.arran.net.au/"]
-  insteadOf = "git://gitlab.arran.net.au/"
-  insteadOf = "git@gitlab.arran.net.au:"
-  insteadOf = "ssh://git@gitlab.arran.net.au/"
-  insteadOf = "git+ssh://git@gitlab.arran.net.au/"
-  insteadOf = "ssh+git://git@gitlab.arran.net.au/"
 
 [http]
   cookiefile = ~/.cache/git/cookies
