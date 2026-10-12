@@ -120,6 +120,23 @@ Host legacy.example.com
 
 See the [Hyprland keyboard shortcut reference](HYPRLAND_KEYBOARD_SHORTCUTS.md) when you need the full bindings table. This is a separate on-demand *reference sheet*, not a competing setup guide; the binding configuration remains the source of truth. Coding-agent maintenance instructions for it are in [`AGENTS.md`](AGENTS.md).
 
+### X1 laptop touchpad (Hyprland)
+
+On the `x1linux` ThinkPad, `dot_config/hypr/local_x1linux.lua` is selected by the hostname-based loader in `dot_config/hypr/hyprland.lua.tmpl`. Its per-device `hl.device` override targets only `synaptics-tm3512-010`, not the ELAN TrackPoint, desktop2, or external mice. It temporarily disables tap-to-click and tap-and-drag to help distinguish unwanted tap clicks from a physical-button or lower-level libinput problem. Physical clicks and two-finger scrolling are not disabled.
+
+On `x1linux`, review and apply the update without affecting other machines:
+
+```sh
+chezmoi diff ~/.config/hypr/local_x1linux.lua
+chezmoi apply ~/.config/hypr/local_x1linux.lua
+hyprctl reload
+hyprctl configerrors
+```
+
+Compare a physical click on the lower touchpad with the TrackPoint buttons above it, and separately try moving the TrackPoint before touching the pad. A movement pause following TrackPoint activity may be libinput's disable-while-trackpointing behaviour; turning off tap recognition is **not** guaranteed to resolve it. If physical clicks still register twice, inspect `sudo libinput list-devices` and `sudo libinput debug-events --device /dev/input/eventN` (use the Synaptics device's actual event path). A normal two-finger scroll should generate finger-scroll events, rather than pinch events. Do not use `--grab` while observing normal desktop behaviour.
+
+If Firefox alone zooms the focused content during two-finger scrolling, set `apz.gtk.touchpad_pinch.enabled` to `false` in `about:config` **in the X1's Firefox profile** as a diagnostic workaround. The dotfiles do not automatically change Firefox profile preferences or disable legitimate pinch zoom on other hosts. Re-enable it if later testing resolves the false pinch events. To roll back the touchpad experiment, remove the device block from the host module, reapply with chezmoi, and reload Hyprland.
+
 ### KDE setup
 
 Chezmoi includes a run-once script that sets KDE's superuser command to `sudo` if `kwriteconfig6` is present. If you install KDE after applying these dotfiles, run `chezmoi apply` again to trigger the script.
