@@ -7,6 +7,7 @@ on:
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
       - '.github/scripts/test_hyprland_terminals.lua'
+      - '.github/scripts/test_hyprland_x1_touchpad.lua'
       - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - '.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
       - '.github/scripts/test_hyprland_terminals.lua'
+      - '.github/scripts/test_hyprland_x1_touchpad.lua'
       - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   workflow_dispatch:
 
@@ -38,6 +40,9 @@ jobs:
       - name: Check Hyprland Lua syntax
         run: |
           find "$HOME/.config/hypr" -name '*.lua' -print0 | xargs -0 -r luac5.4 -p
+
+      - name: Test X1-only touchpad configuration
+        run: lua5.4 .github/scripts/test_hyprland_x1_touchpad.lua
 
       - name: Validate Hyprland Lua dispatcher API usage
         shell: python
