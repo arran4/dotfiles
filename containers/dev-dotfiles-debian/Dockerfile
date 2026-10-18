@@ -217,6 +217,7 @@ RUN set -eu; \
   test -d "$home"; \
   install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
   runuser -u "$USER_NAME" -- sh -c 'cd "$HOME" && exec /usr/local/bin/dev-dotfiles-setup-user'; \
+  test ! -e "$home/.codex/antigravity-cli"; \
   test ! -L /workspace; \
   install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" /workspace; \
   if [ -d "$home/workspace" ] && [ ! -L "$home/workspace" ] && [ -z "$(ls -A "$home/workspace")" ]; then rmdir "$home/workspace"; fi; \
