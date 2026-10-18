@@ -84,7 +84,7 @@ done
 
 body=$(job_body docker-release)
 assert_has "image build disables automatic latest" "$body" "latest=false"
-assert_has "image build tags only ref name" "$body" 'type=raw,value=${{ github.ref_name }}'
+assert_has "image build tags only ref name" "$body" "type=raw,value=\${{ github.ref_name }}"
 
 body=$(job_body publish-image-aliases)
 assert_has "alias job runs after image success" "$body" "needs.docker-release.result == 'success'"
@@ -99,7 +99,7 @@ assert_has "tag creation not cancelled" "$body" "cancel-in-progress: false"
 front=$(sed '/^jobs:$/,$d' "$workflow")
 assert_has "release runs isolated from CI cancellation" "$front" "format('release-{0}', github.run_id)"
 assert_has "publish-tag included in release routing" "$front" "inputs.mode == 'publish-tag'"
-assert_has "CI cancellation preserved" "$front" 'cancel-in-progress: ${{ !('
+assert_has "CI cancellation preserved" "$front" "cancel-in-progress: \${{ !("
 
 body=$(job_body shell-check)
 assert_has "Bash release tests run in CI" "$body" "bash .github/scripts/test_release_safety.sh"
