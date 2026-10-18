@@ -207,11 +207,12 @@ jobs:
       - run: |
           shopt -s globstar
           shellcheck **/*.sh
+          shellcheck .github/scripts/release_aliases.sh .github/scripts/test_release_safety.sh
       - name: Unit Tests
         run: |
           ./test_slackpm_auth.sh
       - name: Release safety regression tests
-        run: python3 -m unittest discover -s .github/scripts -p 'test_release_*.py'
+        run: bash .github/scripts/test_release_safety.sh
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
       - name: Verify recurring chezmoi drift guards
@@ -328,7 +329,7 @@ jobs:
           set -euo pipefail
           test -n "$DIGEST"
           # Compute *inside* the serialized job, immediately before mutation.
-          python3 .github/scripts/release_aliases.py "$RELEASE_TAG" > "$RUNNER_TEMP/release-aliases.txt"
+          bash .github/scripts/release_aliases.sh "$RELEASE_TAG" > "$RUNNER_TEMP/release-aliases.txt"
           mapfile -t aliases < "$RUNNER_TEMP/release-aliases.txt"
           if (( ${#aliases[@]} == 0 )); then
             echo "No moving image aliases are eligible for $RELEASE_TAG"
