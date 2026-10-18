@@ -108,8 +108,20 @@ handle_existing_container() {
     exit 1
   fi
 }
-handle_existing_container "dev-agent-${name}-home"
-if [ "$new_home" = 0 ]; then handle_existing_container "dev-agent-${name}"; fi
+# Both image layouts now use one predictable outer-container name. Historical
+# seeded containers used -home; they may contain writable-layer state, so do
+# not rename or replace them without an explicit user action.
+container="dev-agent-${name}"
+old_container="${container}-home"
+if podman container exists "$old_container"; then
+  echo "Existing old-named container $old_container detected. Resolve it explicitly before relaunching: ensure $container is unused, then run 'podman rename $old_container $container'. The named home volume is unaffected; no container was changed." >&2
+  exit 1
+fi
+if [ "$new_home" = 1 ] && podman container exists "$container"; then
+  echo "DEV_NEW_HOME=1 cannot bypass the existing $container under the unified naming scheme. Rename the old container explicitly or choose another SANDBOX_NAME. No container was changed." >&2
+  exit 1
+fi
+handle_existing_container "$container"
 
 if [ "$pull_mode" = always ] || { [ "$pull_mode" = missing ] && ! podman image exists "$image"; }; then
   if ! podman pull "$image"; then
@@ -125,7 +137,6 @@ fi
 seed_label=$(podman image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' "$image")
 if [ "$seed_label" = 1 ]; then
   layout=home
-  container="dev-agent-${name}-home"
 else
   if [ "$published" != 1 ]; then
     echo "Image $image has no versioned home seed; select an image built from the canonical Dockerfile." >&2
@@ -136,7 +147,6 @@ else
     exit 1
   fi
   layout=legacy
-  container="dev-agent-${name}"
   if [ "$home_mode" != volume ]; then
     echo 'DEV_HOME_MODE=container requires a home-seed image; the cached published image uses legacy volumes.' >&2
     exit 2
