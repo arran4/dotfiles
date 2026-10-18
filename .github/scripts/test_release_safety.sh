@@ -83,14 +83,18 @@ for job in manual-release-tag package-dotfiles docker-release; do
 done
 
 body=$(job_body docker-release)
-assert_has "image build disables automatic latest" "$body" "latest=false"
-assert_has "image build tags only ref name" "$body" "type=raw,value=\${{ github.ref_name }}"
-
-body=$(job_body publish-image-aliases)
-assert_has "alias job runs after image success" "$body" "needs.docker-release.result == 'success'"
-assert_has "alias promotion is queued" "$body" "queue: max"
-assert_has "alias promotion never cancelled" "$body" "cancel-in-progress: false"
-assert_has "alias promotion executes Bash selector" "$body" "bash .github/scripts/release_aliases.sh"
+assert_has "image metadata disables automatic latest" "$body" "latest=false"
+assert_has "image version comes from release ref" "$body" "type=raw,value=\${{ github.ref_name }}"
+assert_has "image release job serialized" "$body" "queue: max"
+assert_has "image release not cancelled" "$body" "cancel-in-progress: false"
+assert_has "alias selection happens before push" "$body" 'aliases="$(bash .github/scripts/release_aliases.sh "$RELEASE_TAG")"'
+assert_has "image tags use computed safe aliases" "$body" "steps.image_tags.outputs.tags"
+assert_has "image version always included" "$body" 'printf '\''%s:%s\n'\'' "$IMAGE" "$RELEASE_TAG"'
+assert_eq "one publishing build/push action" "1" "$(grep -Fc -- 'uses: docker/build-push-action@v6' <<< "$body")"
+if grep -Fq '^  publish-image-aliases:' "$workflow"; then
+  printf 'FAIL: obsolete alias-promotion job remains\n' >&2
+  exit 1
+fi
 
 body=$(job_body manual-release-tag)
 assert_has "tag creation queued" "$body" "queue: max"
