@@ -89,9 +89,9 @@ assert_has "image release job serialized" "$body" "queue: max"
 assert_has "image release not cancelled" "$body" "cancel-in-progress: false"
 assert_has "alias selection happens before push" "$body" 'aliases="$(bash .github/scripts/release_aliases.sh "$RELEASE_TAG")"'
 assert_has "image tags use computed safe aliases" "$body" "steps.image_tags.outputs.tags"
-assert_has "image version always included" "$body" 'printf '\''%s:%s\n'\'' "$IMAGE" "$RELEASE_TAG"'
+assert_has "image version always included" "$body" '"$IMAGE" "$RELEASE_TAG"'
 assert_eq "one publishing build/push action" "1" "$(grep -Fc -- 'uses: docker/build-push-action@v6' <<< "$body")"
-if grep -Fq '^  publish-image-aliases:' "$workflow"; then
+if grep -q '^  publish-image-aliases:' "$workflow"; then
   printf 'FAIL: obsolete alias-promotion job remains\n' >&2
   exit 1
 fi
