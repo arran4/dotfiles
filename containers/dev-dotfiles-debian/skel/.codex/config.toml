@@ -1,8 +1,18 @@
 model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 
+# Unrestricted inside the isolated development container; not on the host.
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
 [projects."/workspace"]
 trust_level = "trusted"
+
+[tui]
+# Keep the transcript in normal terminal scrollback instead of an alternate buffer.
+alternate_screen = "never"
+# Prefer copy-friendly raw transcript text; toggle with /raw or Alt+R.
+raw_output_mode = true
 
 [tui.model_availability_nux]
 gpt-6-astra = 1

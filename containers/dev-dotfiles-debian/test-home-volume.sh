@@ -75,4 +75,62 @@ mv "$tmp/seed.backup.tar" "$tmp/seed.tar"
 seed_home
 test "$(cat "$tmp/home/.dev-dotfiles-seed-version")" = 'image-v3:sha256-v3'
 
-echo 'Home volume seed tests passed.'
+# Migrate known Antigravity files to the real ~/.gemini tree, including a
+# recoverable token, without overwriting user state or removing unknown files.
+migration="$here/migrate-antigravity-state.sh"
+legacy_home="$tmp/migrate-home"
+mkdir -p "$legacy_home/.codex/antigravity-cli/cache"
+printf 'old settings\n' > "$legacy_home/.codex/antigravity-cli/settings.json"
+printf 'old onboarding\n' > "$legacy_home/.codex/antigravity-cli/cache/onboarding.json"
+printf 'old token\n' > "$legacy_home/.codex/antigravity-cli/antigravity-oauth-token"
+HOME="$legacy_home" sh "$migration"
+test "$(cat "$legacy_home/.gemini/antigravity-cli/settings.json")" = 'old settings'
+test "$(cat "$legacy_home/.gemini/antigravity-cli/cache/onboarding.json")" = 'old onboarding'
+test "$(cat "$legacy_home/.gemini/antigravity-cli/antigravity-oauth-token")" = 'old token'
+test ! -e "$legacy_home/.codex/antigravity-cli"
+test "$(stat -c %a "$legacy_home/.gemini/antigravity-cli/antigravity-oauth-token")" = 600
+HOME="$legacy_home" sh "$migration"
+
+# Preserve differing existing destinations and unrelated legacy state; clean
+# an identical duplicate. Never follow a symlinked cache or token.
+mkdir -p "$legacy_home/.codex/antigravity-cli/cache"
+printf 'old settings\n' > "$legacy_home/.codex/antigravity-cli/settings.json"
+printf 'legacy token\n' > "$legacy_home/.codex/antigravity-cli/antigravity-oauth-token"
+printf 'old onboarding\n' > "$legacy_home/.codex/antigravity-cli/cache/onboarding.json"
+printf 'unrelated\n' > "$legacy_home/.codex/antigravity-cli/other-file"
+printf 'custom settings\n' > "$legacy_home/.gemini/antigravity-cli/settings.json"
+HOME="$legacy_home" sh "$migration"
+test "$(cat "$legacy_home/.gemini/antigravity-cli/settings.json")" = 'custom settings'
+test "$(cat "$legacy_home/.codex/antigravity-cli/settings.json")" = 'old settings'
+test "$(cat "$legacy_home/.gemini/antigravity-cli/antigravity-oauth-token")" = 'old token'
+test "$(cat "$legacy_home/.codex/antigravity-cli/antigravity-oauth-token")" = 'legacy token'
+test ! -e "$legacy_home/.codex/antigravity-cli/cache/onboarding.json"
+test -f "$legacy_home/.codex/antigravity-cli/other-file"
+
+# A symlinked source or destination subtree is never traversed.
+mkdir -p "$tmp/outside" "$tmp/migrate-linked/.codex/antigravity-cli"
+ln -s "$tmp/outside" "$tmp/migrate-linked/.gemini"
+printf 'external settings\n' > "$tmp/outside/settings.json"
+printf 'legacy settings\n' > "$tmp/migrate-linked/.codex/antigravity-cli/settings.json"
+HOME="$tmp/migrate-linked" sh "$migration"
+test -f "$tmp/migrate-linked/.codex/antigravity-cli/settings.json"
+test "$(cat "$tmp/outside/settings.json")" = 'external settings'
+
+# New project homes get a valid consumer-onboarding default from the
+# production skeleton; existing onboarding files must not be overwritten.
+onboarding_source="$here/skel/.gemini/antigravity-cli/cache/onboarding.json"
+onboarding_path=".gemini/antigravity-cli/cache/onboarding.json"
+jq -e '.consumerOnboardingComplete == true and
+  .enterpriseOnboardingComplete == false and
+  .onboardingComplete == true' "$onboarding_source" >/dev/null
+mkdir -p "$tmp/onboarding-fresh"
+(umask 077; rsync -r --ignore-existing "$here/skel/" "$tmp/onboarding-fresh/")
+cmp -s "$onboarding_source" "$tmp/onboarding-fresh/$onboarding_path"
+test "$(stat -c %a "$tmp/onboarding-fresh/$onboarding_path")" = 600
+
+mkdir -p "$tmp/onboarding-custom/.gemini/antigravity-cli/cache"
+printf '{"onboardingComplete":false}\n' > "$tmp/onboarding-custom/$onboarding_path"
+(umask 077; rsync -r --ignore-existing "$here/skel/" "$tmp/onboarding-custom/")
+test "$(cat "$tmp/onboarding-custom/$onboarding_path")" = '{"onboardingComplete":false}'
+
+echo 'Home volume seed and Antigravity migration tests passed.'
