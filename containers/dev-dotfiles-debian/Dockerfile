@@ -205,6 +205,7 @@ ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH} \
 COPY --chmod=0644 containers/dev-dotfiles-debian/podman-storage.conf /etc/containers/dev-podman-storage.conf
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
+COPY --chmod=0755 containers/dev-dotfiles-debian/migrate-antigravity-state.sh /usr/local/bin/dev-dotfiles-migrate-antigravity-state
 COPY containers/dev-dotfiles-debian/skel/ /usr/local/share/dev-dotfiles-debian/skel/
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
