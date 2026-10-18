@@ -30,7 +30,7 @@ jobs:
   launchers:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check launcher syntax and compatible image selection
         run: sh containers/dev-dotfiles-debian/test-launchers.sh
       - name: Check home seeding and single entrypoint wiring
