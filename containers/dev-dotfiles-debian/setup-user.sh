@@ -86,6 +86,7 @@ junie --version
   echo "curl -fsS http://host.docker.internal:11434/v1/models | jq ."
   echo "gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token"
   echo "gh auth login -h github.com -w -p https"
+  echo "gh auth login -h github.com -p https"
   echo "gh auth refresh -h github.com"
   echo "glab auth login"
 } >> "/home/${USER_NAME}/.bash_history"
@@ -137,6 +138,7 @@ cp "/home/${USER_NAME}/.bash_history" "/home/${USER_NAME}/.zsh_history"
     grep -Fqx "curl -fsS http://host.docker.internal:11434/v1/models | jq ." "$history_file" || { echo "Ollama check missing from $history_file"; false; };
     grep -Fqx "gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token" "$history_file" || { echo "GitHub token auth command missing from $history_file"; false; };
     grep -Fqx "gh auth login -h github.com -w -p https" "$history_file" || { echo "GitHub web auth command missing from $history_file"; false; };
+    grep -Fqx "gh auth login -h github.com -p https" "$history_file" || { echo "GitHub manual auth command missing from $history_file"; false; };
     grep -Fqx "gh auth refresh -h github.com" "$history_file" || { echo "GitHub auth refresh command missing from $history_file"; false; };
     grep -Fqx "glab auth login" "$history_file" || { echo "GitLab auth command missing from $history_file"; false; };
   done;
