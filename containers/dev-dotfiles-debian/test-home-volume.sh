@@ -116,4 +116,21 @@ HOME="$tmp/migrate-linked" sh "$migration"
 test -f "$tmp/migrate-linked/.codex/antigravity-cli/settings.json"
 test "$(cat "$tmp/outside/settings.json")" = 'external settings'
 
+# New project homes get a valid consumer-onboarding default from the
+# production skeleton; existing onboarding files must not be overwritten.
+onboarding_source="$here/skel/.gemini/antigravity-cli/cache/onboarding.json"
+onboarding_path=".gemini/antigravity-cli/cache/onboarding.json"
+jq -e '.consumerOnboardingComplete == true and
+  .enterpriseOnboardingComplete == false and
+  .onboardingComplete == true' "$onboarding_source" >/dev/null
+mkdir -p "$tmp/onboarding-fresh"
+(umask 077; rsync -r --ignore-existing "$here/skel/" "$tmp/onboarding-fresh/")
+cmp -s "$onboarding_source" "$tmp/onboarding-fresh/$onboarding_path"
+test "$(stat -c %a "$tmp/onboarding-fresh/$onboarding_path")" = 600
+
+mkdir -p "$tmp/onboarding-custom/.gemini/antigravity-cli/cache"
+printf '{"onboardingComplete":false}\n' > "$tmp/onboarding-custom/$onboarding_path"
+(umask 077; rsync -r --ignore-existing "$here/skel/" "$tmp/onboarding-custom/")
+test "$(cat "$tmp/onboarding-custom/$onboarding_path")" = '{"onboardingComplete":false}'
+
 echo 'Home volume seed and Antigravity migration tests passed.'
