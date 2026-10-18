@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   launchers:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - name: Check launcher syntax and compatible image selection
