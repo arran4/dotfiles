@@ -69,11 +69,11 @@ for engine in podman docker; do
   MOCK_SEED_LABEL=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_call "$engine pull ghcr.io/arran4/dev-dotfiles-debian:latest"
   assert_line 'ghcr.io/arran4/dev-dotfiles-debian:latest'
-  assert_line 'dev-agent-check-home'
+  assert_line 'dev-agent-check'
   assert_line 'DEV_HOME_VOLUME_INIT=1'
   assert_line 'DEV_LAUNCHER_COMMAND=run-dev-'"$engine"'.sh'
   assert_line 'DEV_OUTER_ENGINE='"$engine"
-  assert_line 'DEV_CONTAINER_NAME=dev-agent-check-home'
+  assert_line 'DEV_CONTAINER_NAME=dev-agent-check'
   assert_line 'TZ=Australia/Melbourne'
   assert_line 'DEV_PODMAN_SECURITY=off'
   assert_line 'DEV_DIND=1'
@@ -133,10 +133,18 @@ for engine in podman docker; do
   assert_no_call "$engine run "
 
   : > "$MOCK_LOG"
-  MOCK_LEGACY_CONTAINER=1 MOCK_SEED_LABEL=1 DEV_NEW_HOME=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
-  assert_line 'dev-agent-check-home'
-  assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
+  if MOCK_LEGACY_CONTAINER=1 MOCK_SEED_LABEL=1 DEV_NEW_HOME=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+    echo 'Expected DEV_NEW_HOME to refuse a conflicting canonical container name' >&2; exit 1
+  fi
+  grep -F 'DEV_NEW_HOME=1 cannot bypass the existing dev-agent-check' "$tmp/error" >/dev/null
   assert_no_call "$engine start "
+  assert_no_call "$engine pull "
+  assert_no_call "$engine run "
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_NEW_HOME=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  assert_line 'dev-agent-check'
+  assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
   assert_absent 'type=volume,src=dev-agent-check-gh,dst=/home/user/.config/gh'
 
   : > "$MOCK_LOG"
@@ -147,15 +155,20 @@ for engine in podman docker; do
   assert_no_call "$engine run "
 
   : > "$MOCK_LOG"
-  MOCK_HOME_CONTAINER=1 MOCK_IMAGE_PRESENT=0 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"
-  assert_call "$engine start -ai"
+  if MOCK_HOME_CONTAINER=1 MOCK_IMAGE_PRESENT=0 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+    echo 'Expected an old -home container to require an explicit rename' >&2; exit 1
+  fi
+  grep -F 'Existing old-named container dev-agent-check-home detected' "$tmp/error" >/dev/null
+  grep -F "$engine rename dev-agent-check-home dev-agent-check" "$tmp/error" >/dev/null
+  assert_no_call "$engine start "
   assert_no_call "$engine pull "
+  assert_no_call "$engine run "
 
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 SANDBOX_NAME=check DEV_IMAGE=dev-dotfiles-local:dev "$launcher" > "$tmp/output"
   assert_no_call "$engine pull "
   assert_line 'dev-dotfiles-local:dev'
-  assert_line 'dev-agent-check-home'
+  assert_line 'dev-agent-check'
   assert_line 'DEV_HOME_VOLUME_INIT=1'
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
   assert_absent 'DEV_FORGE_VOLUME_INIT=1'
@@ -233,7 +246,7 @@ for engine in podman docker; do
   assert_line '--privileged'
   assert_line 'DEV_LAUNCHER_COMMAND=run-dev-'"$engine"'.sh'
   assert_line 'DEV_OUTER_ENGINE='"$engine"
-  assert_line 'DEV_CONTAINER_NAME=dev-agent-project-home'
+  assert_line 'DEV_CONTAINER_NAME=dev-agent-project'
   assert_line 'DEV_DIND=1'
   assert_line 'DEV_DIND_PERSIST=0'
   assert_absent 'type=volume,src=dev-agent-project-docker,dst=/var/lib/docker'
