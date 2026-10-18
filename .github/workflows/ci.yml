@@ -50,9 +50,11 @@ on:
     - cron: '17 19 1 * *'
     - cron: '41 19 * * *'
 
+# Release runs never cancel each other (including manual dispatch and tag recovery).
+# Ordinary CI still supersedes older checks on the same ref.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ ((github.event_name == 'workflow_dispatch' && (startsWith(inputs.mode, 'release-') || inputs.mode == 'publish-tag')) || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) && format('release-{0}', github.run_id) || format('ci-{0}-{1}', github.event_name, github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ !((github.event_name == 'workflow_dispatch' && (startsWith(inputs.mode, 'release-') || inputs.mode == 'publish-tag')) || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) }}
 
 permissions:
   contents: write
@@ -208,6 +210,8 @@ jobs:
       - name: Unit Tests
         run: |
           ./test_slackpm_auth.sh
+      - name: Release safety regression tests
+        run: python3 -m unittest discover -s .github/scripts -p 'test_release_*.py'
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
       - name: Verify recurring chezmoi drift guards
@@ -247,8 +251,10 @@ jobs:
 
   docker-release:
     name: Docker release
-    needs: [route, discover, docker-build]
-    if: ${{ needs.discover.outputs.has_docker == 'true' && needs.route.outputs.run_release == 'true' }}
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    needs: [route, discover, docker-build, shell-check, gitleaks]
+    if: ${{ needs.discover.outputs.has_docker == 'true' && needs.route.outputs.run_release == 'true' && needs.shell-check.result == 'success' && needs.gitleaks.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -269,17 +275,14 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian
           labels: |
             org.opencontainers.image.description=Debian development container with dotfiles
+          # Only the immutable tag is produced during the build. Mutable aliases
+          # are promoted from its digest in a separate, serialized, version-checked job.
+          flavor: |
+            latest=false
           tags: |
-            type=ref,event=tag
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
-            type=semver,pattern=v{{version}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=semver,pattern=v{{major}}.{{minor}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=semver,pattern=v{{major}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=raw,value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=raw,value=latest,enable={{is_default_branch}}
-      - uses: docker/build-push-action@v6
+            type=raw,value=${{ github.ref_name }}
+      - id: push
+        uses: docker/build-push-action@v6
         with:
           context: .
           build-contexts: dotfiles=.
@@ -292,10 +295,55 @@ jobs:
             DOTFILES_RELEASE=${{ steps.meta.outputs.version }}
             DOTFILES_COMMIT=${{ github.sha }}
 
+  publish-image-aliases:
+    name: Promote safe GHCR moving aliases
+    needs: [route, docker-release]
+    if: ${{ needs.route.outputs.run_release == 'true' && needs.docker-release.result == 'success' && startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    # A non-cancelling FIFO queue prevents an older tag run from racing a newer one.
+    concurrency:
+      group: ${{ github.repository }}-dev-dotfiles-debian-moving-aliases
+      cancel-in-progress: false
+      queue: max
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Recheck remote versions and promote eligible aliases
+        shell: bash
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian
+          DIGEST: ${{ needs.docker-release.outputs.digest }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          test -n "$DIGEST"
+          # Compute *inside* the serialized job, immediately before mutation.
+          python3 .github/scripts/release_aliases.py "$RELEASE_TAG" > "$RUNNER_TEMP/release-aliases.txt"
+          mapfile -t aliases < "$RUNNER_TEMP/release-aliases.txt"
+          if (( ${#aliases[@]} == 0 )); then
+            echo "No moving image aliases are eligible for $RELEASE_TAG"
+            exit 0
+          fi
+          args=()
+          for alias in "${aliases[@]}"; do
+            args+=(--tag "$IMAGE:$alias")
+          done
+          docker buildx imagetools create "${args[@]}" "$IMAGE@$DIGEST"
+
   package-dotfiles:
     name: Package Dotfiles
-    needs: [route, discover]
-    if: ${{ needs.discover.outputs.has_packaging == 'true' && needs.route.outputs.run_release == 'true' }}
+    needs: [route, discover, shell-check, gitleaks]
+    if: ${{ needs.discover.outputs.has_packaging == 'true' && needs.route.outputs.run_release == 'true' && needs.shell-check.result == 'success' && needs.gitleaks.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -336,9 +384,14 @@ jobs:
 
   manual-release-tag:
     name: Prepare manual release tag
-    needs: route
-    if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
+    needs: [route, shell-check, gitleaks]
+    if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') && needs.shell-check.result == 'success' && needs.gitleaks.result == 'success' }}
     runs-on: ubuntu-latest
+    # Tag incrementing is a read-modify-write operation; keep it serialized.
+    concurrency:
+      group: ${{ github.repository }}-dotfiles-version-tag-creation
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: write
       actions: write
