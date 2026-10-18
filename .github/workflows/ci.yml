@@ -252,11 +252,14 @@ jobs:
 
   docker-release:
     name: Docker release
-    outputs:
-      digest: ${{ steps.push.outputs.digest }}
     needs: [route, discover, docker-build, shell-check, gitleaks]
     if: ${{ needs.discover.outputs.has_docker == 'true' && needs.route.outputs.run_release == 'true' && needs.shell-check.result == 'success' && needs.gitleaks.result == 'success' }}
     runs-on: ubuntu-latest
+    # Compute moving aliases and publish all eligible tags under one lock and push.
+    concurrency:
+      group: ${{ github.repository }}-dev-dotfiles-debian-publish
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
       packages: write
@@ -276,70 +279,45 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian
           labels: |
             org.opencontainers.image.description=Debian development container with dotfiles
-          # Only the immutable tag is produced during the build. Mutable aliases
-          # are promoted from its digest in a separate, serialized, version-checked job.
+          # The version tag is always emitted; moving aliases are selected
+          # immediately before the same build/push step, under the job lock.
           flavor: |
             latest=false
           tags: |
             type=raw,value=${{ github.ref_name }}
-      - id: push
-        uses: docker/build-push-action@v6
+      - name: Select safe image tags
+        id: image_tags
+        shell: bash
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Fail closed if remote tag discovery fails. Run inside the same
+          # serialization group as publication to avoid check/push races.
+          aliases="$(bash .github/scripts/release_aliases.sh "$RELEASE_TAG")"
+          {
+            echo 'tags<<EOF'
+            printf '%s:%s\n' "$IMAGE" "$RELEASE_TAG"
+            if [[ -n "$aliases" ]]; then
+              while IFS= read -r alias; do
+                printf '%s:%s\n' "$IMAGE" "$alias"
+              done <<< "$aliases"
+            fi
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
         with:
           context: .
           build-contexts: dotfiles=.
           file: containers/dev-dotfiles-debian/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.image_tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
           build-args: |
             DOTFILES_RELEASE=${{ steps.meta.outputs.version }}
             DOTFILES_COMMIT=${{ github.sha }}
-
-  publish-image-aliases:
-    name: Promote safe GHCR moving aliases
-    needs: [route, docker-release]
-    if: ${{ needs.route.outputs.run_release == 'true' && needs.docker-release.result == 'success' && startsWith(github.ref, 'refs/tags/v') }}
-    runs-on: ubuntu-latest
-    # A non-cancelling FIFO queue prevents an older tag run from racing a newer one.
-    concurrency:
-      group: ${{ github.repository }}-dev-dotfiles-debian-moving-aliases
-      cancel-in-progress: false
-      queue: max
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Recheck remote versions and promote eligible aliases
-        shell: bash
-        env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian
-          DIGEST: ${{ needs.docker-release.outputs.digest }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          test -n "$DIGEST"
-          # Compute *inside* the serialized job, immediately before mutation.
-          bash .github/scripts/release_aliases.sh "$RELEASE_TAG" > "$RUNNER_TEMP/release-aliases.txt"
-          mapfile -t aliases < "$RUNNER_TEMP/release-aliases.txt"
-          if (( ${#aliases[@]} == 0 )); then
-            echo "No moving image aliases are eligible for $RELEASE_TAG"
-            exit 0
-          fi
-          args=()
-          for alias in "${aliases[@]}"; do
-            args+=(--tag "$IMAGE:$alias")
-          done
-          docker buildx imagetools create "${args[@]}" "$IMAGE@$DIGEST"
 
   package-dotfiles:
     name: Package Dotfiles
