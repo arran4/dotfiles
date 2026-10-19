@@ -176,11 +176,13 @@ prune_updated_images() {
     if [ "$last" -gt 0 ] && [ "$now" -ge "$last" ] && [ $((now - last)) -lt 86400 ]; then
       exit 0
     fi
+    # Record the attempt before pruning: even a failed or interrupted prune
+    # must not be retried repeatedly within the same 24-hour window.
+    printf '%s\n' "$now" > "$last_file" || exit 1
     if podman image prune -f; then
-      printf '%s\n' "$now" > "$last_file" || exit 1
       rm -f "$pending_file" || exit 1
     else
-      echo 'Podman image prune failed; pending cleanup will be retried on the next launch.' >&2
+      echo 'Podman image prune failed; pending cleanup will be retried after 24 hours.' >&2
     fi
   ) 9>"$state_dir/podman-prune.lock"; then
     echo 'Could not record Podman prune state; the launcher will continue.' >&2
