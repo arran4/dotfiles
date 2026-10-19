@@ -356,7 +356,12 @@ for engine in podman docker; do
     MOCK_PRUNE_FAIL=1 MOCK_SEED_LABEL=1 MOCK_PULL_NEW_ID=yet-newer "$launcher" > "$tmp/output" 2> "$tmp/error"
     assert_call 'podman image prune -f'
     test -f "$state/podman-prune-pending"
-    test ! -e "$state/podman-prune-last"
+    test -f "$state/podman-prune-last"
+    : > "$MOCK_LOG"
+    MOCK_SEED_LABEL=1 DEV_PULL_MODE=never "$launcher" > "$tmp/output"
+    assert_no_call 'podman image prune -f'
+    # The queued cleanup is retried only after the failed attempt ages out.
+    printf '1\n' > "$state/podman-prune-last"
     : > "$MOCK_LOG"
     MOCK_SEED_LABEL=1 DEV_PULL_MODE=never "$launcher" > "$tmp/output"
     assert_call 'podman image prune -f'
