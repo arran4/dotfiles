@@ -45,7 +45,7 @@ case "$1:$2" in
     printf '%s\n' "$2" > "$MOCK_PULLED_IMAGE"
     printf '%s\n' "${MOCK_PULL_NEW_ID:-new-image}" > "$MOCK_IMAGE_ID_FILE"
     exit 0 ;;
-  image:prune) [ "${MOCK_PRUNE_FAIL:-0}" != 1 ] ;;
+  image:prune) [ "${MOCK_PRUNE_FAIL:-0}" != 1 ]; exit $? ;;
   run:*) printf '%s\n' "$@"; exit 0 ;;
   start:*) exit 0 ;;
 esac
