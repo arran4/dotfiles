@@ -123,16 +123,70 @@ if [ "$new_home" = 1 ] && podman container exists "$container"; then
 fi
 handle_existing_container "$container"
 
+# Only prune after an actual image ID change, not merely a successful
+# no-op pull. Remember updates deferred by the once-per-24-hour limit.
+image_updated=0
 if [ "$pull_mode" = always ] || { [ "$pull_mode" = missing ] && ! podman image exists "$image"; }; then
+  image_id_before=$(podman image inspect --format '{{.Id}}' "$image" 2>/dev/null || true)
   if ! podman pull "$image"; then
     echo "Could not pull development image $image. Check network access and registry permissions; use DEV_PULL_MODE=missing to permit a cached image. Existing containers and volumes were not changed." >&2
     exit 1
+  fi
+  image_id_after=$(podman image inspect --format '{{.Id}}' "$image" 2>/dev/null || true)
+  if [ -n "$image_id_after" ] && [ "$image_id_before" != "$image_id_after" ]; then
+    image_updated=1
   fi
 fi
 if ! podman image exists "$image"; then
   echo "Development image $image is missing locally. Build it from containers/dev-dotfiles-debian/Dockerfile, select a published image, or enable registry pulls with DEV_PULL_MODE=always; existing state was not changed." >&2
   exit 1
 fi
+
+# Prune dangling images across this user's rootless Podman store after a real
+# pull update, at most once every 24 hours across all project launchers.
+# Keep a pending marker when an update arrives during the cooldown, so a
+# subsequent launcher invocation can complete deferred maintenance.
+# No containers, named images, or volumes are explicitly pruned.
+prune_updated_images() {
+  state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dev-dotfiles-debian"
+  pending_file="$state_dir/podman-prune-pending"
+  last_file="$state_dir/podman-prune-last"
+  if [ "$image_updated" != 1 ] && [ ! -f "$pending_file" ]; then
+    return
+  fi
+  if ! command -v flock >/dev/null 2>&1; then
+    echo 'Skipping Podman image prune: flock is unavailable.' >&2
+    return
+  fi
+  if ! (umask 077; mkdir -p "$state_dir"); then
+    echo "Skipping Podman image prune: cannot create $state_dir." >&2
+    return
+  fi
+  if ! (
+    flock 9 || exit 1
+    if [ "$image_updated" = 1 ]; then
+      : > "$pending_file" || exit 1
+    fi
+    [ -f "$pending_file" ] || exit 0
+    now=$(date +%s) || exit 1
+    last=$(cat "$last_file" 2>/dev/null || true)
+    case "$last" in
+      ''|*[!0-9]*) last=0 ;;
+    esac
+    if [ "$last" -gt 0 ] && [ "$now" -ge "$last" ] && [ $((now - last)) -lt 86400 ]; then
+      exit 0
+    fi
+    if podman image prune -f; then
+      printf '%s\n' "$now" > "$last_file" || exit 1
+      rm -f "$pending_file" || exit 1
+    else
+      echo 'Podman image prune failed; pending cleanup will be retried on the next launch.' >&2
+    fi
+  ) 9>"$state_dir/podman-prune.lock"; then
+    echo 'Could not record Podman prune state; the launcher will continue.' >&2
+  fi
+}
+prune_updated_images
 
 seed_label=$(podman image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' "$image")
 if [ "$seed_label" = 1 ]; then
