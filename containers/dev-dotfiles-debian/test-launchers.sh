@@ -21,7 +21,15 @@ case "$1:$2" in
     exit $? ;;
   image:exists|image:inspect)
     if [ "${3:-}" = '--format' ]; then
-      printf '%s\n' "${MOCK_SEED_LABEL:-<no value>}"
+      if [ "${4:-}" = '{{.Id}}' ]; then
+        if [ -f "$MOCK_IMAGE_ID_FILE" ]; then
+          cat "$MOCK_IMAGE_ID_FILE"
+        else
+          printf '%s\n' 'old-image'
+        fi
+      else
+        printf '%s\n' "${MOCK_SEED_LABEL:-<no value>}"
+      fi
       exit 0
     fi
     if [ "${MOCK_IMAGE_PRESENT:-1}" = 1 ]; then
@@ -35,7 +43,9 @@ case "$1:$2" in
   pull:*)
     [ "${MOCK_PULL_FAIL:-0}" != 1 ] || exit 1
     printf '%s\n' "$2" > "$MOCK_PULLED_IMAGE"
+    printf '%s\n' "${MOCK_PULL_NEW_ID:-new-image}" > "$MOCK_IMAGE_ID_FILE"
     exit 0 ;;
+  image:prune) [ "${MOCK_PRUNE_FAIL:-0}" != 1 ] ;;
   run:*) printf '%s\n' "$@"; exit 0 ;;
   start:*) exit 0 ;;
 esac
@@ -48,6 +58,8 @@ ln -s container-mock "$tmp/bin/docker"
 export PATH="$tmp/bin:$PATH"
 export MOCK_LOG="$tmp/calls"
 export MOCK_PULLED_IMAGE="$tmp/pulled-image"
+export MOCK_IMAGE_ID_FILE="$tmp/image-id"
+export XDG_STATE_HOME="$tmp/state"
 # The ordinary layout tests run without host /dev/fuse. Nested-mode tests
 # separately exercise argument generation and failure on unsupported hosts.
 export DEV_PODMAN_SECURITY=off
@@ -291,5 +303,64 @@ for engine in podman docker; do
   grep -F 'Podman security must be' "$tmp/error" >/dev/null
   assert_no_call "$engine run "
 
+  if [ "$engine" = podman ]; then
+    state="$XDG_STATE_HOME/dev-dotfiles-debian"
+    rm -rf "$state"
+    printf 'old-image\n' > "$MOCK_IMAGE_ID_FILE"
+
+    # Pulling the same image ID must not trigger maintenance.
+    : > "$MOCK_LOG"
+    MOCK_SEED_LABEL=1 MOCK_PULL_NEW_ID=old-image "$launcher" > "$tmp/output"
+    assert_no_call 'podman image prune -f'
+    test ! -e "$state/podman-prune-pending"
+
+    # An actual update prunes once, then an unchanged pull does not.
+    : > "$MOCK_LOG"
+    MOCK_SEED_LABEL=1 MOCK_PULL_NEW_ID=new-image "$launcher" > "$tmp/output"
+    assert_call 'podman image prune -f'
+    test -f "$state/podman-prune-last"
+    test ! -e "$state/podman-prune-pending"
+
+    : > "$MOCK_LOG"
+    MOCK_SEED_LABEL=1 MOCK_PULL_NEW_ID=new-image "$launcher" > "$tmp/output"
+    assert_no_call 'podman image prune -f'
+
+    # Another update inside 24 hours is recorded, but cannot prune again.
+    : > "$MOCK_LOG"
+    MOCK_SEED_LABEL=1 MOCK_PULL_NEW_ID=newer-image "$launcher" > "$tmp/output"
+    assert_no_call 'podman image prune -f'
+    test -f "$state/podman-prune-pending"
+
+    # With no pull, a deferred update still waits for its 24-hour window.
+    : > "$MOCK_LOG"
+    MOCK_SEED_LABEL=1 DEV_PULL_MODE=never "$launcher" > "$tmp/output"
+    assert_no_call 'podman image prune -f'
+    printf '1\n' > "$state/podman-prune-last"
+    : > "$MOCK_LOG"
+    MOCK_SEED_LABEL=1 DEV_PULL_MODE=never "$launcher" > "$tmp/output"
+    assert_no_call 'podman pull '
+    assert_call 'podman image prune -f'
+    test ! -e "$state/podman-prune-pending"
+
+    # Failed pulls must not prune or queue an update.
+    rm -rf "$state"
+    : > "$MOCK_LOG"
+    if MOCK_PULL_FAIL=1 MOCK_SEED_LABEL=1 "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+      echo 'Expected a failed pull' >&2; exit 1
+    fi
+    assert_no_call 'podman image prune -f'
+    test ! -e "$state/podman-prune-pending"
+
+    # Prune failure is non-fatal and retried without another image update.
+    : > "$MOCK_LOG"
+    MOCK_PRUNE_FAIL=1 MOCK_SEED_LABEL=1 MOCK_PULL_NEW_ID=yet-newer "$launcher" > "$tmp/output" 2> "$tmp/error"
+    assert_call 'podman image prune -f'
+    test -f "$state/podman-prune-pending"
+    test ! -e "$state/podman-prune-last"
+    : > "$MOCK_LOG"
+    MOCK_SEED_LABEL=1 DEV_PULL_MODE=never "$launcher" > "$tmp/output"
+    assert_call 'podman image prune -f'
+    test ! -e "$state/podman-prune-pending"
+  fi
 done
 printf 'Development launcher tests passed.\n'
