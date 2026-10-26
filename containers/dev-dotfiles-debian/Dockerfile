@@ -209,6 +209,10 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/migrate-antigravity-state.sh /u
 COPY containers/dev-dotfiles-debian/skel/ /usr/local/share/dev-dotfiles-debian/skel/
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
+# Image-managed skills: Codex admin path and an independent source for agy home sync.
+COPY containers/dev-dotfiles-debian/agent-skills/ /etc/codex/skills/
+COPY containers/dev-dotfiles-debian/agent-skills/ /usr/local/share/dev-dotfiles-debian/agent-skills/
+COPY --chmod=0755 containers/dev-dotfiles-debian/sync-agent-skills.sh /usr/local/bin/dev-dotfiles-sync-agent-skills
 
 # Prepare the home as the non-root user, then archive and clear it as root in
 # the SAME layer. This avoids a temporary full home in an intermediate image
