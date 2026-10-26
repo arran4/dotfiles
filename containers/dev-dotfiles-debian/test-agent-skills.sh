@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 script="$repo_root/containers/dev-dotfiles-debian/sync-agent-skills.sh"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
@@ -19,7 +19,10 @@ printf '\n# user edit\n' >> "$DEV_AGY_SKILLS_HOME/arran-test/SKILL.md"
 printf '\n# v3\n' >> "$DEV_SKILLS_SOURCE/arran-test/SKILL.md"
 sh "$script"
 grep -Fqx '# user edit' "$DEV_AGY_SKILLS_HOME/arran-test/SKILL.md"
-! grep -Fqx '# v3' "$DEV_AGY_SKILLS_HOME/arran-test/SKILL.md"
+if grep -Fqx '# v3' "$DEV_AGY_SKILLS_HOME/arran-test/SKILL.md"; then
+  echo "Modified user skill was overwritten by image-managed content" >&2
+  exit 1
+fi
 mkdir -p "$DEV_AGY_SKILLS_HOME/other" "$DEV_SKILLS_SOURCE/other"
 printf 'user\n' > "$DEV_AGY_SKILLS_HOME/other/SKILL.md"
 printf 'image\n' > "$DEV_SKILLS_SOURCE/other/SKILL.md"
