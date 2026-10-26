@@ -301,6 +301,21 @@ jcode provider add host-ollama \
 jcode --provider-profile host-ollama auth-test
 ```
 
+### TXTAR command-line fixtures
+
+The image includes the official Go `txtar` CLI from `golang.org/x/exp/cmd/txtar`, built from pinned revision `v0.0.0-20260112195511-716be5621a96` using Debian's Go 1.24 toolchain. This is a **text** fixture/archive format, not a replacement for tar/zip and not suitable for binary files, symlinks or file modes. Unlike `go install @latest`, the Dockerfile builds the binary from a pinned module version to `/usr/local/bin/txtar` and keeps the build module temporary. The Go version requirement is intentional: newer x/exp revisions require newer toolchains.
+
+Examples:
+
+```sh
+txtar --list < testdata/example.txt
+mkdir -p /tmp/example-txtar && (cd /tmp/example-txtar && txtar --extract < /path/to/example.txt)
+# Archive a directory with an empty comment, without a prompt:
+: | txtar testdata/sample > /tmp/sample.txtar
+```
+
+**Security:** `txtar --extract` writes files and can overwrite existing paths. Review the list first, extract untrusted fixtures only into an empty isolated directory, do not use `--unsafe`, and be aware that extraction expands environment variables in entry paths. Build-time tests run `/usr/local/bin/dev-dotfiles-test-txtar` to check archive/list/extract round trips and reject parent-directory escapes; they do not prove all filesystem attacks are prevented. The `arran-txtar` skill (once #491 and this PR are available in a rebuilt image) teaches both Codex and `agy` these usage patterns.
+
 ## Installed tools and verification
 
 The single image uses `debian:${DEBIAN_RELEASE}-slim` (default `stable`), UID/GID `1000:1000`, zsh and passwordless sudo. The Dockerfile accepts `USER_NAME`, `USER_UID`, and `USER_GID`; the launchers assume default IDs. The build installs tools before applying chezmoi and snapshots the prepared home after setup. The archive lives outside `/home/user` so mounting a fresh home volume cannot hide it. The primary image labels its seeded-home capability; the release workflow builds this same Dockerfile. A successful merge is not proof that the revised `:latest` has been published.

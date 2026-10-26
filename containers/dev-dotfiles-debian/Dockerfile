@@ -178,6 +178,19 @@ RUN set -euxo pipefail \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
 
+# TXTAR CLI: pin a revision compatible with Debian Trixie's Go 1.24,
+# build to an explicit binary without using go install system-wide.
+# Upstream: golang.org/x/exp/cmd/txtar at v0.0.0-20260112195511-716be5621a96.
+RUN set -eux; \
+  tmp=$(mktemp -d); \
+  cd "$tmp"; \
+  GOTOOLCHAIN=local go mod init dev-dotfiles-txtar-build; \
+  GOTOOLCHAIN=local go get golang.org/x/exp/cmd/txtar@v0.0.0-20260112195511-716be5621a96; \
+  GOTOOLCHAIN=local CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/txtar golang.org/x/exp/cmd/txtar; \
+  cd /; \
+  rm -rf "$tmp"; \
+  command -v txtar
+
 # Nested rootless Podman needs subordinate IDs that fit inside a typical
 # 65536-ID rootless outer namespace, not useradd's default host-sized range.
 # The store is deliberately outside home/workspace and is user-owned before
@@ -209,6 +222,7 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/migrate-antigravity-state.sh /u
 COPY containers/dev-dotfiles-debian/skel/ /usr/local/share/dev-dotfiles-debian/skel/
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-txtar.sh /usr/local/bin/dev-dotfiles-test-txtar
 
 # Prepare the home as the non-root user, then archive and clear it as root in
 # the SAME layer. This avoids a temporary full home in an intermediate image
