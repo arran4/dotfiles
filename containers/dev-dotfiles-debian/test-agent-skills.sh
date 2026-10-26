@@ -25,4 +25,12 @@ printf 'user\n' > "$DEV_AGY_SKILLS_HOME/other/SKILL.md"
 printf 'image\n' > "$DEV_SKILLS_SOURCE/other/SKILL.md"
 sh "$script"
 grep -Fqx user "$DEV_AGY_SKILLS_HOME/other/SKILL.md"
+# Validate every bundled skill, including additions from separate PRs.
+for skill in "$repo_root"/containers/dev-dotfiles-debian/agent-skills/*; do
+  [ -f "$skill/SKILL.md" ] || continue
+  name=${skill##*/}
+  test "$(head -n 1 "$skill/SKILL.md")" = '---'
+  grep -Eq "^name: \"?$name\"?$" "$skill/SKILL.md"
+  grep -Eq '^description: .+' "$skill/SKILL.md"
+done
 echo 'Managed agent skill sync tests passed.'
