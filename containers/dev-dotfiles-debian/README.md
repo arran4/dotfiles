@@ -5,6 +5,7 @@ This directory builds the Debian-based `dev-dotfiles-debian` development image w
 ## Contents
 
 - [One image, two compatible storage layouts](#one-image-two-compatible-storage-layouts)
+- [Release an updated toolchain](#release-an-updated-toolchain)
 - [Start a project sandbox](#start-a-project-sandbox)
 - [Launcher settings](#launcher-settings)
 - [Manual Docker and Podman commands](#manual-docker-and-podman-commands)
@@ -25,6 +26,19 @@ This directory builds the Debian-based `dev-dotfiles-debian` development image w
 | Custom image built from the canonical Dockerfile | Same seeded-home behaviour when it has the label. An unlabelled custom image is rejected for new sandboxes; it is not assumed compatible. |
 
 A repository merge does **not** publish a new image. The default `ghcr.io/arran4/dev-dotfiles-debian:latest` follows the newest stable release; use a version-specific tag such as `:v0.2.42` to select a particular release. Prerelease and test images have separate tags and do not replace `:latest`. Re-publishing an older version through the current release process does not roll `:latest` or the major/minor aliases (`:vX` and `:vX.Y`) backwards. A locally cached image does not update automatically. Inspect a local image with `podman image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' ghcr.io/arran4/dev-dotfiles-debian:latest` (or substitute `docker`). Pull a newer release explicitly before creating a new seeded sandbox. The initializer checks the image's archive version and the marker in the persistent home, so a same-version restart is a no-op and a *new-image container recreation* applies changed seeded configuration. It does not blindly copy over credentials and sessions. See [Storage, upgrades, and migration](#storage-upgrades-and-migration) for the limitations and safety procedure.
+
+## Release an updated toolchain
+
+To pick up newer bundled programs and libraries such as Flutter, Antigravity (`agy`), Codex, and Debian packages without changing dotfiles, open **Actions → CI/CD → Run workflow**, select `main`, choose `release-patch`, and enable **force_release**. Leave `release_version_override` empty for the next version, or supply an unused explicit version. The equivalent CLI command is:
+
+```sh
+gh workflow run ci.yml --repo arran4/dotfiles --ref main \
+  -f mode=release-patch -f force_release=true
+```
+
+This creates a **new version tag even when the commit is already tagged**, then dispatches the normal checked release pipeline. It pulls the base image and disables Docker's build cache so tool installation runs again. Downloads still follow the Dockerfile's configured channels and version pins; force does not override an explicit pin. The default remains `force_release=false`, which skips unchanged source. Existing tags are never overwritten, and secret/configuration checks and moving-alias protections still apply. The parent run prepares the tag; follow the separate `publish-tag` run for the image and GitHub release result.
+
+For recovery of an existing version, dispatch `publish-tag` against that tag; `force_release=true` also enables a fresh image build there. Prefer a new patch release for routine toolchain refreshes so the new image has its own version. An older tag executes its own workflow revision, so the force input is available only on tags containing this workflow change. After publication, pull the image and recreate the outer container while preserving named volumes; a restart retains the old image. See [Storage, upgrades, and migration](#storage-upgrades-and-migration).
 
 ## Start a project sandbox
 

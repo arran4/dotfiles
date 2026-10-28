@@ -41,6 +41,11 @@ on:
         required: false
         default: ""
         type: string
+      force_release:
+        description: "Release unchanged source and refresh bundled tools (pull base image, rebuild without cache)"
+        required: false
+        default: false
+        type: boolean
       allow_prs:
         description: "Allow automation to open pull requests"
         required: false
@@ -207,12 +212,14 @@ jobs:
       - run: |
           shopt -s globstar
           shellcheck **/*.sh
-          shellcheck .github/scripts/release_aliases.sh .github/scripts/test_release_safety.sh
+          shellcheck .github/scripts/release_aliases.sh .github/scripts/test_release_safety.sh .github/scripts/prepare_release_tag.sh .github/scripts/test_manual_release.sh
       - name: Unit Tests
         run: |
           ./test_slackpm_auth.sh
       - name: Release safety regression tests
-        run: bash .github/scripts/test_release_safety.sh
+        run: |
+          bash .github/scripts/test_release_safety.sh
+          bash .github/scripts/test_manual_release.sh
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
       - name: Verify recurring chezmoi drift guards
@@ -245,6 +252,8 @@ jobs:
           build-contexts: dotfiles=.
           file: containers/dev-dotfiles-debian/Dockerfile
           push: false
+          pull: ${{ inputs.force_release == true }}
+          no-cache: ${{ inputs.force_release == true }}
           tags: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian:ci-${{ github.run_id }}
           build-args: |
             DOTFILES_RELEASE=ci-${{ github.run_id }}
@@ -312,6 +321,8 @@ jobs:
           build-contexts: dotfiles=.
           file: containers/dev-dotfiles-debian/Dockerfile
           push: true
+          pull: ${{ inputs.force_release == true }}
+          no-cache: ${{ inputs.force_release == true }}
           tags: ${{ steps.image_tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
@@ -385,64 +396,23 @@ jobs:
       - uses: arran4/git-tag-inc-action@v1
         with:
           mode: install
+      - name: Verify release tag preparation with installed git-tag-inc
+        run: RELEASE_TEST_REAL_TAG_INC=true bash .github/scripts/test_manual_release.sh
       - name: Compute and push tag
         id: release_tag
         shell: bash
-        run: |
-          set -euo pipefail
-
-          # If we have an override, validate and use it.
-          override_version="${{ inputs.release_version_override }}"
-          if [[ -n "$override_version" ]]; then
-            tag="v${override_version#v}"
-
-            if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc|test)\.[0-9]+)?$ ]]; then
-              echo "Invalid release version override format: $tag" >&2
-              exit 1
-            fi
-
-            if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
-              echo "Tag $tag already exists!" >&2
-              exit 1
-            fi
-
-            git tag "$tag"
-            git push origin "$tag"
-          else
-            mode="${{ inputs.mode }}"
-            rel_type="${mode#release-}"
-
-            # Capture the output and exit status
-            tag="$(git-tag-inc -print-version-only "$rel_type" 2>&1)" || ret=$?
-            if [[ "${ret:-0}" -ne 0 ]]; then
-              # Re-run with -dry to get the diagnostic message
-              full_out="$(git-tag-inc -dry "$rel_type" 2>&1)" || true
-              if echo "$full_out" | grep -q "Hash is the same for this and previous tag"; then
-                existing_tag=$(echo "$full_out" | grep -oP '\(v[^\)]+\)' | tr -d '()')
-                if [[ -z "$existing_tag" ]]; then
-                  existing_tag="an existing tag"
-                fi
-                echo "Already released as $existing_tag. Skipping tag creation."
-                tag=""
-              else
-                echo "Failed to compute release tag: $full_out" >&2
-                exit 1
-              fi
-            fi
-
-            if [[ -n "$tag" ]]; then
-              echo "Running dot_local/bin/executable_gh-release.sh with argument: $rel_type"
-              ./dot_local/bin/executable_gh-release.sh "$rel_type"
-            fi
-          fi
-
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+        env:
+          RELEASE_MODE: ${{ inputs.mode }}
+          RELEASE_VERSION_OVERRIDE: ${{ inputs.release_version_override }}
+          FORCE_RELEASE: ${{ inputs.force_release }}
+        run: bash .github/scripts/prepare_release_tag.sh
 
       - name: Dispatch release pipeline on tag
         if: ${{ steps.release_tag.outputs.tag != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release_tag.outputs.tag }}
+          FORCE_RELEASE: ${{ inputs.force_release }}
         run: |
           set -euo pipefail
-          gh workflow run ci.yml --ref "$RELEASE_TAG" -f mode=publish-tag
+          gh workflow run ci.yml --ref "$RELEASE_TAG" -f mode=publish-tag -f force_release="$FORCE_RELEASE"
