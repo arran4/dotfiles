@@ -99,6 +99,14 @@ fi
 body=$(job_body manual-release-tag)
 assert_has "tag creation queued" "$body" "queue: max"
 assert_has "tag creation not cancelled" "$body" "cancel-in-progress: false"
+assert_has "force flag reaches tag preparation and dispatch" "$body" "FORCE_RELEASE: \${{ inputs.force_release }}"
+assert_has "force flag forwarded to tag release run" "$body" "-f force_release=\"\$FORCE_RELEASE\""
+
+for job in docker-build docker-release; do
+  body=$(job_body "$job")
+  assert_has "$job pulls fresh base when forced" "$body" "pull: \${{ inputs.force_release == true }}"
+  assert_has "$job disables cache when forced" "$body" "no-cache: \${{ inputs.force_release == true }}"
+done
 
 front=$(sed '/^jobs:$/,$d' "$workflow")
 assert_has "release runs isolated from CI cancellation" "$front" "format('release-{0}', github.run_id)"
