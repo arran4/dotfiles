@@ -12,8 +12,13 @@ cleanup() {
   rm -rf "$tmp"
 }
 trap cleanup EXIT
-mkdir -p "$tmp/bin" "$tmp/work/dot_local/bin"
-cp "$root/dot_local/bin/executable_gh-release.sh" "$tmp/work/dot_local/bin/"
+mkdir -p "$tmp/bin" "$tmp/work/dot_local/bin" "$tmp/work/home/dot_local/bin"
+gh_release_src="$root/home/dot_local/bin/executable_gh-release.sh"
+if [[ ! -f "$gh_release_src" ]]; then
+  gh_release_src="$root/dot_local/bin/executable_gh-release.sh"
+fi
+cp "$gh_release_src" "$tmp/work/dot_local/bin/"
+cp "$gh_release_src" "$tmp/work/home/dot_local/bin/"
 
 # Substitute only git-tag-inc's external interface. The integration check can
 # also run with the real installed binary via RELEASE_TEST_REAL_TAG_INC=true.

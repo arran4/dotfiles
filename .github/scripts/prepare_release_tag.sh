@@ -47,7 +47,11 @@ else
   fi
 
   if [[ -n "$tag" ]]; then
-    ./dot_local/bin/executable_gh-release.sh "${tag_args[@]}"
+    release_script="./home/dot_local/bin/executable_gh-release.sh"
+    if [[ ! -x "$release_script" ]]; then
+      release_script="./dot_local/bin/executable_gh-release.sh"
+    fi
+    "$release_script" "${tag_args[@]}"
   fi
 fi
 

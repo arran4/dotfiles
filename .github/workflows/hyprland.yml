@@ -4,19 +4,25 @@ on:
   pull_request:
     paths:
       - 'dot_config/hypr/**'
+      - 'home/dot_config/hypr/**'
       - '.chezmoi.toml.tmpl'
+      - 'home/.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
       - '.github/scripts/test_hyprland_terminals.lua'
       - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
+      - 'home/dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   push:
     branches:
       - main
     paths:
       - 'dot_config/hypr/**'
+      - 'home/dot_config/hypr/**'
       - '.chezmoi.toml.tmpl'
+      - 'home/.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
       - '.github/scripts/test_hyprland_terminals.lua'
       - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
+      - 'home/dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   workflow_dispatch:
 
 permissions:
@@ -47,8 +53,8 @@ jobs:
           import sys
 
           paths = [
-              pathlib.Path('dot_config/hypr/hyprland.lua.tmpl'),
-              pathlib.Path('dot_config/hypr/special_workspaces.lua'),
+              pathlib.Path('home/dot_config/hypr/hyprland.lua.tmpl') if pathlib.Path('home/dot_config/hypr/hyprland.lua.tmpl').exists() else pathlib.Path('dot_config/hypr/hyprland.lua.tmpl'),
+              pathlib.Path('home/dot_config/hypr/special_workspaces.lua') if pathlib.Path('home/dot_config/hypr/special_workspaces.lua').exists() else pathlib.Path('dot_config/hypr/special_workspaces.lua'),
           ]
           sources = {path: path.read_text() for path in paths if path.exists()}
 
@@ -122,13 +128,17 @@ jobs:
 
       - name: Verify special workspace module layout
         run: |
-          test -f dot_config/hypr/special_workspaces.lua
+          hypr_tmpl="home/dot_config/hypr/hyprland.lua.tmpl"
+          [ -f "$hypr_tmpl" ] || hypr_tmpl="dot_config/hypr/hyprland.lua.tmpl"
+          special_src="home/dot_config/hypr/special_workspaces.lua"
+          [ -f "$special_src" ] || special_src="dot_config/hypr/special_workspaces.lua"
+          test -f "$special_src"
           test -f "$HOME/.config/hypr/special_workspaces.lua"
-          grep -Fq 'pcall(require, "special_workspaces")' dot_config/hypr/hyprland.lua.tmpl
-          ! grep -Fq '{{ template "hypr/special_workspaces.lua" . }}' dot_config/hypr/hyprland.lua.tmpl
-          ! grep -Fq 'special:anytype' dot_config/hypr/hyprland.lua.tmpl
-          ! grep -Fq 'special:anytype' dot_config/hypr/special_workspaces.lua
-          grep -Fq 'special:kjules' dot_config/hypr/special_workspaces.lua
+          grep -Fq 'pcall(require, "special_workspaces")' "$hypr_tmpl"
+          ! grep -Fq '{{ template "hypr/special_workspaces.lua" . }}' "$hypr_tmpl"
+          ! grep -Fq 'special:anytype' "$hypr_tmpl"
+          ! grep -Fq 'special:anytype' "$special_src"
+          grep -Fq 'special:kjules' "$special_src"
 
       - name: Test special workspace module
         run: |
@@ -187,7 +197,7 @@ jobs:
             },
           }
 
-          local special = dofile("dot_config/hypr/special_workspaces.lua")
+          local special = dofile(io.open("home/dot_config/hypr/special_workspaces.lua") and "home/dot_config/hypr/special_workspaces.lua" or "dot_config/hypr/special_workspaces.lua")
           assert(type(special) == "table")
           assert(type(special.setup) == "function")
           assert(type(special.workspace_for_window) == "function")
@@ -366,9 +376,11 @@ jobs:
           trap cleanup EXIT
 
           # Test rendering output
+          cliphist_tmpl="home/dot_local/bin/executable_cliphist-daemon.sh.tmpl"
+          [ -f "$cliphist_tmpl" ] || cliphist_tmpl="dot_local/bin/executable_cliphist-daemon.sh.tmpl"
           sed -e 's/{{ index . "wlPasteLocation" | default "wl-paste" }}/wl-paste/' \
               -e 's/{{ index . "cliphistLocation" | default "cliphist" }}/cliphist/' \
-              dot_local/bin/executable_cliphist-daemon.sh.tmpl > rendered_cliphist.sh
+              "$cliphist_tmpl" > rendered_cliphist.sh
           chmod +x rendered_cliphist.sh
 
           # Verify that it doesn't use killall
@@ -465,12 +477,16 @@ jobs:
 
       - name: Verify hypr-cheatsheet template
         run: |
-          if grep -q "caelestia:cheatsheet" dot_config/hypr/hyprland.lua.tmpl; then
+          hypr_tmpl="home/dot_config/hypr/hyprland.lua.tmpl"
+          [ -f "$hypr_tmpl" ] || hypr_tmpl="dot_config/hypr/hyprland.lua.tmpl"
+          cheatsheet_tmpl="home/dot_local/bin/executable_hypr-cheatsheet.tmpl"
+          [ -f "$cheatsheet_tmpl" ] || cheatsheet_tmpl="dot_local/bin/executable_hypr-cheatsheet.tmpl"
+          if grep -q "caelestia:cheatsheet" "$hypr_tmpl"; then
              echo "Error: caelestia:cheatsheet found in hyprland.lua.tmpl"
              exit 1
           fi
 
-          if ! grep -q "hypr-cheatsheet" dot_config/hypr/hyprland.lua.tmpl; then
+          if ! grep -q "hypr-cheatsheet" "$hypr_tmpl"; then
              echo "Error: hypr-cheatsheet binding not found in hyprland.lua.tmpl"
              exit 1
           fi
@@ -482,7 +498,7 @@ jobs:
             "rofiLocation": "/usr/bin/rofi"
           }
           EOF
-          ./bin/chezmoi execute-template --source=$PWD --override-data-file=rofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=rofi_mock.json < "$cheatsheet_tmpl" > test_cheatsheet.sh
           bash -n test_cheatsheet.sh
 
           # Test with wofi
@@ -491,7 +507,7 @@ jobs:
             "wofiLocation": "/usr/bin/wofi"
           }
           EOF
-          ./bin/chezmoi execute-template --source=$PWD --override-data-file=wofi_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=wofi_mock.json < "$cheatsheet_tmpl" > test_cheatsheet.sh
           bash -n test_cheatsheet.sh
 
           # Test with dmenu
@@ -500,7 +516,7 @@ jobs:
             "dmenuRunLocation": "/usr/bin/dmenu_run"
           }
           EOF
-          ./bin/chezmoi execute-template --source=$PWD --override-data-file=dmenu_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=dmenu_mock.json < "$cheatsheet_tmpl" > test_cheatsheet.sh
           bash -n test_cheatsheet.sh
           if grep -q "dmenu_run" test_cheatsheet.sh; then echo "Error: dmenu_run was evaluated"; exit 1; fi
 
@@ -508,7 +524,7 @@ jobs:
           cat << 'EOF' > no_launcher_mock.json
           {}
           EOF
-          ./bin/chezmoi execute-template --source=$PWD --override-data-file=no_launcher_mock.json < dot_local/bin/executable_hypr-cheatsheet.tmpl > test_cheatsheet.sh
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=no_launcher_mock.json < "$cheatsheet_tmpl" > test_cheatsheet.sh
           bash -n test_cheatsheet.sh
 
           rm test_cheatsheet.sh *_mock.json
@@ -652,29 +668,34 @@ jobs:
           }
           JSON
 
+          hypr_tmpl="home/dot_config/hypr/hyprland.lua.tmpl"
+          [ -f "$hypr_tmpl" ] || hypr_tmpl="dot_config/hypr/hyprland.lua.tmpl"
+          special_src="home/dot_config/hypr/special_workspaces.lua"
+          [ -f "$special_src" ] || special_src="dot_config/hypr/special_workspaces.lua"
+
           ./bin/chezmoi execute-template --source="$PWD" \
             --override-data-file="$test_dir/all-terminals.json" \
-            < dot_config/hypr/hyprland.lua.tmpl \
+            < "$hypr_tmpl" \
             > "$test_dir/all-terminals.lua"
           ./bin/chezmoi execute-template --source="$PWD" \
             --override-data-file="$test_dir/no-qterminal.json" \
-            < dot_config/hypr/hyprland.lua.tmpl \
+            < "$hypr_tmpl" \
             > "$test_dir/no-qterminal.lua"
 
           lua5.4 .github/scripts/test_hyprland_terminals.lua \
             "$test_dir/all-terminals.lua" \
             "$test_dir/no-qterminal.lua"
 
-          if rg -q "runtimeFallbackTerminals" dot_config/hypr/hyprland.lua.tmpl; then
+          if rg -q "runtimeFallbackTerminals" "$hypr_tmpl"; then
             echo "Failure: runtimeFallbackTerminals found"
             exit 1
           fi
-          if rg -q "terminalPriority" dot_config/hypr/special_workspaces.lua; then
+          if rg -q "terminalPriority" "$special_src"; then
             echo "Failure: terminalPriority found"
             exit 1
           fi
           if rg -q 'match = \{ class = "\^\([^"]*(qterminal|xterm|konsole|ghostty|foot|kitty|alacritty|wezterm)' \
-            dot_config/hypr/special_workspaces.lua; then
+            "$special_src"; then
             echo "Failure: manually maintained terminal-class regex found"
             exit 1
           fi

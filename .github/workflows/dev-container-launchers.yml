@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'dot_local/bin/executable_run-dev-*.sh'
+      - 'home/dot_local/bin/executable_run-dev-*.sh'
       - 'containers/dev-dotfiles-debian/Dockerfile'
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
       - 'containers/dev-dotfiles-debian/home-volume-seed.sh'
@@ -15,6 +16,7 @@ on:
     branches: [main]
     paths:
       - 'dot_local/bin/executable_run-dev-*.sh'
+      - 'home/dot_local/bin/executable_run-dev-*.sh'
       - 'containers/dev-dotfiles-debian/Dockerfile'
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
       - 'containers/dev-dotfiles-debian/home-volume-seed.sh'

@@ -42,7 +42,7 @@ For recovery of an existing version, dispatch `publish-tag` against that tag; `f
 
 ## Start a project sandbox
 
-Apply chezmoi-managed [`../../dot_local/bin/executable_run-dev-podman.sh`](../../dot_local/bin/executable_run-dev-podman.sh) and [`../../dot_local/bin/executable_run-dev-docker.sh`](../../dot_local/bin/executable_run-dev-docker.sh) to install `~/.local/bin/run-dev-podman.sh` and `~/.local/bin/run-dev-docker.sh`; include `~/.local/bin` in `PATH`. Run from the host project directory to bind-mount it at `/workspace`:
+Apply chezmoi-managed [`../../home/dot_local/bin/executable_run-dev-podman.sh`](../../home/dot_local/bin/executable_run-dev-podman.sh) and [`../../home/dot_local/bin/executable_run-dev-docker.sh`](../../home/dot_local/bin/executable_run-dev-docker.sh) to install `~/.local/bin/run-dev-podman.sh` and `~/.local/bin/run-dev-docker.sh`; include `~/.local/bin` in `PATH`. Run from the host project directory to bind-mount it at `/workspace`:
 
 ```sh
 cd ~/Documents/Projects/my-project
@@ -326,8 +326,8 @@ From the repository root:
 ```sh
 sh containers/dev-dotfiles-debian/test-home-volume.sh
 sh containers/dev-dotfiles-debian/test-launchers.sh
-sh -n dot_local/bin/executable_run-dev-docker.sh
-sh -n dot_local/bin/executable_run-dev-podman.sh
+sh -n home/dot_local/bin/executable_run-dev-docker.sh
+sh -n home/dot_local/bin/executable_run-dev-podman.sh
 ```
 
 The home-volume test covers first initialization, same-version restart, updated seed preservation, independent workspace and failed-upgrade retry. The launcher test mocks both engines to check seeded versus old published tags, published-home separation, disposable-by-default containers, explicit retained-container resumption, no-home/no-workspace options, local builds of the same Dockerfile and missing-image handling. CI and live rootless Podman/Docker lifecycle, mount ownership, versioned recreation, and credential migration must still be verified before replacing sandboxes or deleting old volumes. Keep documentation aligned with **actually published image capabilities and implemented scripts**, not merely merged code.
