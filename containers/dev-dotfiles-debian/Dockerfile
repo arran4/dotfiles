@@ -178,21 +178,28 @@ RUN set -euxo pipefail \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
 
-# Build the latest published versions directly with Go, not release archives.
-# GOTOOLCHAIN=auto permits newer Go compilers when required by modules.
-# @latest intentionally resolves anew on each rebuild; go version -m records it.
+# Install all development CLIs together using Go's module installer.
+# txtar uses 'module txtar', so it must be built inside a local checkout
+# until that upstream module path is corrected. Avoid a separate install layer.
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-release-clis.sh /usr/local/bin/dev-dotfiles-test-release-clis
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-txtar.sh /usr/local/bin/dev-dotfiles-test-txtar
 RUN set -eu; \
   export GOBIN=/usr/local/bin GOTOOLCHAIN=auto; \
   go install github.com/arran4/go-subcommand/cmd/gosubc@latest; \
   go install github.com/arran4/g2/cmd/g2@latest; \
   go install github.com/arran4/header/cmd/header@latest; \
   go install github.com/arran4/rntocase/cmd/rntocase@latest; \
-  for tool in gosubc g2 header rntocase; do \
+  tmp="$(mktemp -d)"; \
+  git clone --depth 1 --branch main https://github.com/arran4/txtar.git "$tmp/txtar"; \
+  git -C "$tmp/txtar" rev-parse HEAD; \
+  (cd "$tmp/txtar" && go install ./cmd/txtar); \
+  rm -rf -- "$tmp"; \
+  for tool in gosubc g2 header rntocase txtar; do \
     command -v "$tool"; \
     go version -m "/usr/local/bin/$tool"; \
-  done
-COPY --chmod=0755 containers/dev-dotfiles-debian/test-release-clis.sh /usr/local/bin/dev-dotfiles-test-release-clis
-RUN /usr/local/bin/dev-dotfiles-test-release-clis
+  done; \
+  /usr/local/bin/dev-dotfiles-test-release-clis; \
+  /usr/local/bin/dev-dotfiles-test-txtar
 
 # Nested rootless Podman needs subordinate IDs that fit inside a typical
 # 65536-ID rootless outer namespace, not useradd's default host-sized range.
