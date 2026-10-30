@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Fetch all PR conversation comments + reviews + review threads (inline threads)
-for the PR associated with the current git branch, by shelling out to:
+Fetch PR conversation comments + reviews + review threads (inline threads)
+for the PR associated with the current branch, using the canonical base URL.\nNote: the first 100 comments per individual review thread are returned.
 
   gh api graphql
 
@@ -120,15 +120,26 @@ def gh_pr_view_json(fields: str) -> dict[str, Any]:
     return _run_json(["gh", "pr", "view", "--json", fields])
 
 
+def parse_pr_url(url: str) -> tuple[str, str, int]:
+    """Use the PR base repository, not its potentially forked head repository."""
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    parts = parsed.path.strip("/").split("/")
+    if parsed.scheme != "https" or not parsed.netloc or len(parts) != 4 or parts[2] != "pull":
+        raise ValueError(f"Invalid GitHub pull request URL: {url}")
+    owner, repo, _, number_text = parts
+    if not owner or not repo or not number_text.isdecimal():
+        raise ValueError(f"Invalid GitHub pull request URL: {url}")
+    return owner, repo, int(number_text)
+
+
 def get_current_pr_ref() -> tuple[str, str, int]:
-    """
-    Resolve the PR for the current branch (whatever gh considers associated).
-    Works for cross-repo PRs too, by reading head repository owner/name.
-    """
-    pr = gh_pr_view_json("number,headRepositoryOwner,headRepository")
-    owner = pr["headRepositoryOwner"]["login"]
-    repo = pr["headRepository"]["name"]
-    number = int(pr["number"])
+    """Resolve canonical PR location from gh, including fork-based pull requests."""
+    pr = gh_pr_view_json("number,url")
+    owner, repo, number = parse_pr_url(str(pr["url"]))
+    if number != int(pr["number"]):
+        raise ValueError("gh pr view returned inconsistent PR number and URL")
     return owner, repo, number
 
 
