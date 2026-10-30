@@ -43,6 +43,7 @@ rm -rf /tmp/dotfiles
 
 flutter --version
 go version
+/usr/local/bin/dev-dotfiles-test-playwright
 /usr/local/bin/dev-dotfiles-test-release-clis
 git --version
 docker --version
