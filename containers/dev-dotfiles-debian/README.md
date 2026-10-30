@@ -323,6 +323,12 @@ The `agy` skill sync records the last installed content fingerprint for each ima
 
 Verify locally with `sh containers/dev-dotfiles-debian/test-agent-skills.sh`. Verify CLI discovery inside a built image with `codex` (use `/skills`) and `agy` (use `/skills` or invoke `/<skill-name>`); automated tests exercise installation/upgrades but do not execute paid agents. Do not treat filesystem presence as proof that an agent loaded the skill.
 
+### Playwright CLI and browser
+
+The image installs `@playwright/cli` globally alongside the other npm-based agent tools. `playwright-cli install-browser --with-deps --only-shell` installs the headless Chromium shell and Linux system dependencies at image-build time. `PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers` makes the browser shared by all image users instead of hiding it under root's home. This increases image size; only the headless shell is preinstalled.
+
+The `dev-dotfiles-test-playwright` smoke test opens a local loopback HTML fixture as the non-root user, verifies a live DOM snapshot, takes a screenshot and closes the session. It does not require access to any public site. Use `playwright-cli` directly, not a `$CODEX_HOME` path or an `npx` command that dynamically installs an arbitrary version. Headed operation requires a GUI and is not verified by the headless test.
+
 ## Installed tools and verification
 
 ### Go-built project CLIs for agent skills
