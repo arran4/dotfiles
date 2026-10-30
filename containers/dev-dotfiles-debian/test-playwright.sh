@@ -14,7 +14,7 @@ printf '%s\n' '<!doctype html><title>Agent browser smoke</title><h1>Agent browse
 python3 -m http.server 28765 --bind 127.0.0.1 --directory "$tmp" > "$tmp/server.log" 2>&1 &
 pid=$!
 ready=0
-for n in 1 2 3 4 5 6 7 8; do
+for _ in 1 2 3 4 5 6 7 8; do
   if curl -fsS http://127.0.0.1:28765/index.html >/dev/null 2>&1; then ready=1; break; fi
   sleep 1
 done
