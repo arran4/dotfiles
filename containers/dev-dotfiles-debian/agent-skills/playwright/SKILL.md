@@ -1,147 +1,38 @@
 ---
-name: "playwright"
-description: "Use when the task requires automating a real browser from the terminal (navigation, form filling, snapshots, screenshots, data extraction, UI-flow debugging) via `playwright-cli` or the bundled wrapper script."
+name: playwright
+description: Use installed Playwright CLI to interact with a real browser from Codex or agy, including navigation, snapshots, screenshots, forms, traces and UI regressions.
 ---
 
+# Playwright CLI — browser automation
 
-# Playwright CLI Skill
+**Tool:** `playwright-cli`, already installed globally in the Debian development image. Use `playwright-cli --help` to verify its current command surface. This is an interactive browser tool, not the `@playwright/test` framework.
 
-Drive a real browser from the terminal using `playwright-cli`. Prefer the bundled wrapper script so the CLI works even when it is not globally installed.
-Treat this skill as CLI-first automation. Do not pivot to `@playwright/test` unless the user explicitly asks for test files.
+## Start with a real page
 
-## Prerequisite check (required)
-
-Before proposing commands, check whether `npx` is available (the wrapper depends on it):
-
-```bash
-command -v npx >/dev/null 2>&1
+```sh
+playwright-cli open http://127.0.0.1:8080
+playwright-cli snapshot
+# Use a reference from that actual snapshot for the next action:
+playwright-cli click e5
+playwright-cli snapshot
+playwright-cli screenshot
+playwright-cli close
 ```
 
-If it is not available, pause and ask the user to install Node.js/npm (which provides `npx`). Provide these steps verbatim:
+Replace `e5` with an element reference from the most recent snapshot. After navigation or a DOM update, take another snapshot. Named sessions can be selected via `PLAYWRIGHT_CLI_SESSION=feature-check`.
 
-```bash
-# Verify Node/npm are installed
-node --version
-npm --version
+## Installation and prerequisites
 
-# If missing, install Node.js/npm, then:
-npm install -g @playwright/cli@latest
-playwright-cli --help
-```
+- The Debian image provides the CLI, Linux browser dependencies and Chromium headless shell, shared at `/opt/playwright-browsers`. Use the direct `playwright-cli` command from either Codex or agy; no Codex-specific `~/.codex/skills` path or runtime `npx --yes` download is required.
+- If running outside that image, check `command -v playwright-cli`. Respect the host's package-management policy; the official `playwright-cli install-browser` operation can install browsers if missing, but may download binaries and system packages.
+- Browser snapshots and screenshots need a launched browser. `playwright-cli --help` only proves executable availability. Headed mode (`--headed`) additionally requires a GUI and is not covered by container smoke tests.
 
-Once `npx` is present, proceed with the wrapper script. A global install of `playwright-cli` is optional.
+## Workflow
 
-## Skill path (set once)
+1. Start the target's local server or authorized URL; use a disposable browser session for testing.
+2. `open`, `snapshot`, interact using fresh element refs, and `snapshot` again.
+3. For UI bugs, capture a screenshot and console/network output or a trace as appropriate.
+4. Close the browser. Save artifacts only under `/tmp` or an explicitly requested output path, not in the repository by default.
+5. Report the exact URL, browser mode, interactions, actual observations and any missing capabilities.
 
-```bash
-export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-export PWCLI="$CODEX_HOME/skills/playwright/scripts/playwright_cli.sh"
-```
-
-User-scoped skills install under `$CODEX_HOME/skills` (default: `~/.codex/skills`).
-
-## Quick start
-
-Use the wrapper script:
-
-```bash
-"$PWCLI" open https://playwright.dev --headed
-"$PWCLI" snapshot
-"$PWCLI" click e15
-"$PWCLI" type "Playwright"
-"$PWCLI" press Enter
-"$PWCLI" screenshot
-```
-
-If the user prefers a global install, this is also valid:
-
-```bash
-npm install -g @playwright/cli@latest
-playwright-cli --help
-```
-
-## Core workflow
-
-1. Open the page.
-2. Snapshot to get stable element refs.
-3. Interact using refs from the latest snapshot.
-4. Re-snapshot after navigation or significant DOM changes.
-5. Capture artifacts (screenshot, pdf, traces) when useful.
-
-Minimal loop:
-
-```bash
-"$PWCLI" open https://example.com
-"$PWCLI" snapshot
-"$PWCLI" click e3
-"$PWCLI" snapshot
-```
-
-## When to snapshot again
-
-Snapshot again after:
-
-- navigation
-- clicking elements that change the UI substantially
-- opening/closing modals or menus
-- tab switches
-
-Refs can go stale. When a command fails due to a missing ref, snapshot again.
-
-## Recommended patterns
-
-### Form fill and submit
-
-```bash
-"$PWCLI" open https://example.com/form
-"$PWCLI" snapshot
-"$PWCLI" fill e1 "user@example.com"
-"$PWCLI" fill e2 "password123"
-"$PWCLI" click e3
-"$PWCLI" snapshot
-```
-
-### Debug a UI flow with traces
-
-```bash
-"$PWCLI" open https://example.com --headed
-"$PWCLI" tracing-start
-# ...interactions...
-"$PWCLI" tracing-stop
-```
-
-### Multi-tab work
-
-```bash
-"$PWCLI" tab-new https://example.com
-"$PWCLI" tab-list
-"$PWCLI" tab-select 0
-"$PWCLI" snapshot
-```
-
-## Wrapper script
-
-The wrapper script uses `npx --package @playwright/cli playwright-cli` so the CLI can run without a global install:
-
-```bash
-"$PWCLI" --help
-```
-
-Prefer the wrapper unless the repository already standardizes on a global install.
-
-## References
-
-Open only what you need:
-
-- CLI command reference: `references/cli.md`
-- Practical workflows and troubleshooting: `references/workflows.md`
-
-## Guardrails
-
-- Always snapshot before referencing element ids like `e12`.
-- Re-snapshot when refs seem stale.
-- Prefer explicit commands over `eval` and `run-code` unless needed.
-- When you do not have a fresh snapshot, use placeholder refs like `eX` and say why; do not bypass refs with `run-code`.
-- Use `--headed` when a visual check will help.
-- When capturing artifacts in this repo, use `output/playwright/` and avoid introducing new top-level artifact folders.
-- Default to CLI commands and workflows, not Playwright test specs.
+See `references/cli.md` and `references/workflows.md`. Avoid revealing cookies, tokens and private browser state in CI artifacts.
