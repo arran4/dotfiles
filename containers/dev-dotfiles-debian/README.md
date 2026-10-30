@@ -303,18 +303,22 @@ jcode --provider-profile host-ollama auth-test
 
 ### TXTAR command-line fixtures
 
-The image includes the official Go `txtar` CLI from `golang.org/x/exp/cmd/txtar`, built from pinned revision `v0.0.0-20260112195511-716be5621a96` using Debian's Go 1.24 toolchain. This is a **text** fixture/archive format, not a replacement for tar/zip and not suitable for binary files, symlinks or file modes. Unlike `go install @latest`, the Dockerfile builds the binary from a pinned module version to `/usr/local/bin/txtar` and keeps the build module temporary. The Go version requirement is intentional: newer x/exp revisions require newer toolchains.
+The image installs the **arran4/txtar** Go archive CLI from pinned published release `v0.0.9`, verifying `checksums.txt` and selecting the Linux amd64/arm64 asset for the build architecture. This is not `golang.org/x/exp/cmd/txtar`: the latter uses `--list`/`--extract` with stdin, while this CLI uses explicit subcommands. Installing a release binary avoids compiling its Go 1.25.3 source with Debian's older Go package.
 
 Examples:
 
 ```sh
-txtar --list < testdata/example.txt
-mkdir -p /tmp/example-txtar && (cd /tmp/example-txtar && txtar --extract < /path/to/example.txt)
-# Archive a directory with an empty comment, without a prompt:
-: | txtar testdata/sample > /tmp/sample.txtar
+txtar help
+txtar list testdata/example.txtar
+txtar cat -t testdata/example.txtar input/main.go
+mkdir -p /tmp/txtar-output
+txtar extract -d /tmp/txtar-output testdata/example.txtar
+txtar create -r testdata/example-dir > /tmp/new-fixture.txtar
 ```
 
-**Security:** `txtar --extract` writes files and can overwrite existing paths. Review the list first, extract untrusted fixtures only into an empty isolated directory, do not use `--unsafe`, and be aware that extraction expands environment variables in entry paths. Build-time tests run `/usr/local/bin/dev-dotfiles-test-txtar` to check archive/list/extract round trips and reject parent-directory escapes; they do not prove all filesystem attacks are prevented. The `arran-txtar` skill (once #491 and this PR are available in a rebuilt image) teaches both Codex and `agy` these usage patterns.
+TXTAR is a text-only format for human-inspectable multi-file fixtures, not a binary tar or zip replacement. `txtar extract` writes files and can overwrite existing paths. It currently skips simple unsafe names such as `../x` with a warning and exit status 0, rather than failing the whole operation; it does not establish security against existing symlinks or arbitrary untrusted archives. List/inspect archive paths and extract only into a fresh isolated `/tmp` directory. Avoid `create --follow` unless the user explicitly intended symlink dereferencing.
+
+The image's `/usr/local/bin/dev-dotfiles-test-txtar` smoke test exercises archive creation, listing, `cat -t`, extraction, comment modification and a skipped traversal entry. It is not a comprehensive adversarial security test. The separate `txtar-project` skill in dotfiles PR #527 describes full CLI usage for Codex and `agy`; skill discovery depends on #491. This installation PR intentionally ships **only the executable and test**, not a duplicate instruction skill.
 
 ## Installed tools and verification
 
