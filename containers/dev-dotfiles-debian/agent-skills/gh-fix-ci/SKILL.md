@@ -1,6 +1,6 @@
 ---
 name: "gh-fix-ci"
-description: "Use when a user asks to debug or fix failing GitHub PR checks that run in GitHub Actions; use `gh` to inspect checks and logs, summarize failure context, draft a fix plan, and implement only after explicit approval. Treat external providers (for example Buildkite) as out of scope and report only the details URL."
+description: "Use when a user asks to debug or fix failing GitHub PR checks that run in GitHub Actions; use `gh` to inspect checks and logs, summarize failure context, draft a fix plan, and implement when the user has requested a fix, otherwise report and propose a plan. Treat external providers (for example Buildkite) as out of scope and report only the details URL."
 ---
 
 
@@ -8,7 +8,7 @@ description: "Use when a user asks to debug or fix failing GitHub PR checks that
 
 ## Overview
 
-Use gh to locate failing PR checks, fetch GitHub Actions logs for actionable failures, summarize the failure snippet, then propose a fix plan and implement after explicit approval.
+Use gh to locate failing PR checks, fetch GitHub Actions logs for actionable failures, summarize the failure snippet, then fix actionable defects when the user requested a fix; otherwise report findings and propose a plan.
 - If a plan-oriented skill (for example `create-plan`) is available, use it; otherwise draft a concise plan inline and request approval before implementing.
 
 Prereq: authenticate with the standard GitHub CLI once (for example, run `gh auth login`), then confirm with `gh auth status` (repo + workflow scopes are typically required).
@@ -50,11 +50,13 @@ Prereq: authenticate with the standard GitHub CLI once (for example, run `gh aut
 5. Summarize failures for the user.
    - Provide the failing check name, run URL (if any), and a concise log snippet.
    - Call out missing logs explicitly.
-6. Create a plan.
-   - Use the `create-plan` skill to draft a concise plan and request approval.
-7. Implement after approval.
-   - Apply the approved plan, summarize diffs/tests, and ask about opening a PR.
-8. Recheck status.
+6. Decide whether to change code.
+   - If the user requested diagnosis only, report the cause, reproduction and suggested fixes without pushing.
+   - If the user requested a fix, work on that PR branch, use an isolated worktree when another agent may be editing it, and implement the smallest supported correction. Keep it in the existing PR rather than asking to open a duplicate PR.
+7. Verify locally and recheck GitHub CI after pushing the fix.
+   - Report exact changed files, commands and their results; distinguish pending/quota-blocked jobs from failing checks.
+8. Preserve review state.
+   - Keep an unverified PR draft; move it to ready for review once the fix is verified, leaving blockers documented if external checks remain.
    - After changes, suggest re-running the relevant tests and `gh pr checks` to confirm.
 
 ## Bundled Resources
