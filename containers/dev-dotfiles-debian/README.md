@@ -317,6 +317,23 @@ jcode --provider-profile host-ollama auth-test
 
 ## Installed tools and verification
 
+### Installed project CLIs for agent skills
+
+The Debian development image includes the following **real executables**, pinned to published GitHub releases rather than `go install @latest` or runtime downloads:
+
+| CLI | Source / pinned release | Tool-focused use |
+| --- | --- | --- |
+| `gosubc` | [go-subcommand v0.0.31](https://github.com/arran4/go-subcommand/releases/tag/v0.0.31) | Generate Go CLIs; validate commands; export templates |
+| `g2` | [g2 v0.0.106](https://github.com/arran4/g2/releases/tag/v0.0.106) | Overlay lint, ebuild inspection, metadata/Manifest checks |
+| `header` | [header v0.0.2](https://github.com/arran4/header/releases/tag/v0.0.2) | Discover metadata lint rules; extract, verify and inspect headers |
+| `rntocase` | [rntocase v0.3.1](https://github.com/arran4/rntocase/releases/tag/v0.3.1) | Dry-run and apply filename-case conversions |
+
+`install-release-cli.sh` downloads the **exact** Linux amd64/arm64 release asset and its release `checksums.txt`, checks for exactly one matching SHA256 line, verifies the archive with `sha256sum -c`, and extracts only the expected root-level executable to `/usr/local/bin`. Missing assets, unsupported architectures, unexpected tar layouts and bad hashes fail the image build. Versions are explicit Docker build arguments. Release checksums provide transport/artifact consistency; they are obtained from the same release and are not an independent signature or immutable external checksum pin.
+
+`test-release-clis.sh` runs twice during the canonical image build: after installing the tools, and later as the non-root configured user. It tests `gosubc template layout`, machine-readable `g2 lint list`, `header` lint rule discovery and `rntocase` dry-run without renaming a fixture. The commands need neither agent authentication nor network access. Each CLI's actual command support still depends on the installed release version; verify local `help` before using newer options.
+
+These binaries are **not** the corresponding agent skills: the separate `SKILL.md` PRs guide Codex and `agy` when to invoke them, while #491 provides global discovery. This tool-installation PR does not depend on those PRs being merged. The binaries installed into the image also do not imply that the revised image has been published to GHCR.
+
 The single image uses `debian:${DEBIAN_RELEASE}-slim` (default `stable`), UID/GID `1000:1000`, zsh and passwordless sudo. The Dockerfile accepts `USER_NAME`, `USER_UID`, and `USER_GID`; the launchers assume default IDs. The build installs tools before applying chezmoi and snapshots the prepared home after setup. The archive lives outside `/home/user` so mounting a fresh home volume cannot hide it. The primary image labels its seeded-home capability; the release workflow builds this same Dockerfile. A successful merge is not proof that the revised `:latest` has been published.
 
 Tools include Git, Git LFS, `git-credential-oauth`, `gh`, `glab`, zsh, fish, tmux, vim/Neovim, less, `git-delta`, kdiff3, ripgrep, fd, jq, ShellCheck, shfmt, clang, CMake, Ninja, Go, Node.js, Python, Java/Maven, Flutter, Podman, Docker CLI/daemon, Buildx and Compose. The image build verifies that `podman`, `docker`, and `dockerd` are present and executable, and the container-runtime smoke workflow checks them again from the built image. Agent CLIs include Codex, Antigravity (`agy`), Mini SWE Agent (`mini`), OpenCode, Claude Code, GitHub Copilot CLI and Qwen. `difftastic`, `zellij` and desktop Hyprland/KDE tools are not installed. Jules CLI is intentionally omitted because its installer introduced layer ownership incompatible with normal rootless Podman subordinate-ID mapping; the Dockerfile retains a disabled ownership-normalization recipe.
