@@ -178,28 +178,38 @@ RUN set -euxo pipefail \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
 
-# TXTAR CLI: install the user's independently released, checksum-verified
-# arran4/txtar executable, not the different golang.org/x/exp/cmd/txtar.
-# Release binaries avoid compiling a Go 1.25.3 module using Debian's older Go.
-ARG TXTAR_VERSION=0.0.9
-RUN set -eux; \
-  arch="$(dpkg --print-architecture)"; \
-  case "$arch" in amd64|arm64) ;; *) echo "Unsupported txtar release architecture: $arch" >&2; exit 1;; esac; \
-  asset="txtar_${TXTAR_VERSION}_linux_${arch}.tar.gz"; \
-  base="https://github.com/arran4/txtar/releases/download/v${TXTAR_VERSION}"; \
+# Build the latest published versions directly with Go, not release archives.
+# GOTOOLCHAIN=auto permits newer Go compilers when required by modules.
+# @latest intentionally resolves anew on each rebuild; go version -m records it.
+RUN set -eu; \
+  export GOBIN=/usr/local/bin GOTOOLCHAIN=auto; \
+  go install github.com/arran4/go-subcommand/cmd/gosubc@latest; \
+  go install github.com/arran4/g2/cmd/g2@latest; \
+  go install github.com/arran4/header/cmd/header@latest; \
+  go install github.com/arran4/rntocase/cmd/rntocase@latest; \
+  for tool in gosubc g2 header rntocase; do \
+    command -v "$tool"; \
+    go version -m "/usr/local/bin/$tool"; \
+  done
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-release-clis.sh /usr/local/bin/dev-dotfiles-test-release-clis
+RUN /usr/local/bin/dev-dotfiles-test-release-clis
+
+# TXTAR declares module txtar, not github.com/arran4/txtar.
+# Use latest main source and go install ./cmd/txtar inside its actual module.
+# Log the resolved commit and binary module metadata for traceability.
+RUN set -eu; \
+  export GOBIN=/usr/local/bin GOTOOLCHAIN=auto; \
   tmp="$(mktemp -d)"; \
-  cd "$tmp"; \
-  curl -fsSLo "$asset" "$base/$asset"; \
-  curl -fsSLo checksums.txt "$base/checksums.txt"; \
-  awk -v asset="$asset" '$2 == asset { print }' checksums.txt > expected.sha256; \
-  test "$(wc -l < expected.sha256)" -eq 1; \
-  sha256sum -c expected.sha256; \
-  tar -xzf "$asset" -C /usr/local/bin txtar; \
-  chmod 0755 /usr/local/bin/txtar; \
-  cd /; \
-  rm -rf "$tmp"; \
+  trap 'rm -rf -- "$tmp"' EXIT HUP INT TERM; \
+  git clone --depth 1 --branch main https://github.com/arran4/txtar.git "$tmp/txtar"; \
+  git -C "$tmp/txtar" rev-parse HEAD; \
+  cd "$tmp/txtar"; \
+  go install ./cmd/txtar; \
   command -v txtar; \
+  go version -m /usr/local/bin/txtar; \
   txtar help
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-txtar.sh /usr/local/bin/dev-dotfiles-test-txtar
+RUN /usr/local/bin/dev-dotfiles-test-txtar
 
 # Nested rootless Podman needs subordinate IDs that fit inside a typical
 # 65536-ID rootless outer namespace, not useradd's default host-sized range.
@@ -232,7 +242,10 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/migrate-antigravity-state.sh /u
 COPY containers/dev-dotfiles-debian/skel/ /usr/local/share/dev-dotfiles-debian/skel/
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
-COPY --chmod=0755 containers/dev-dotfiles-debian/test-txtar.sh /usr/local/bin/dev-dotfiles-test-txtar
+# Image-managed skills: Codex admin path and an independent source for agy home sync.
+COPY containers/dev-dotfiles-debian/agent-skills/ /etc/codex/skills/
+COPY containers/dev-dotfiles-debian/agent-skills/ /usr/local/share/dev-dotfiles-debian/agent-skills/
+COPY --chmod=0755 containers/dev-dotfiles-debian/sync-agent-skills.sh /usr/local/bin/dev-dotfiles-sync-agent-skills
 
 # Prepare the home as the non-root user, then archive and clear it as root in
 # the SAME layer. This avoids a temporary full home in an intermediate image

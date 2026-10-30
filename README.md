@@ -13,11 +13,11 @@ These are my [chezmoi](https://www.chezmoi.io/)-managed dotfiles, built up from 
 
 ## Using the dotfiles
 
-Clone the repository and run `./install`, or use chezmoi directly. When chezmoi reports `warning: config file template has changed`, rerun `chezmoi init --apply arran4` to regenerate the configuration from `.chezmoi.toml.tmpl`.
+Clone the repository and run `./install`, or use chezmoi directly. When chezmoi reports `warning: config file template has changed`, rerun `chezmoi init --apply arran4` to regenerate the configuration from `home/.chezmoi.toml.tmpl`.
 
-The setup includes shared Bash/Zsh prompts and aliases (`.chezmoitemplates/`), OS-aware templates (`.chezmoi.toml.tmpl`), a Git configuration selecting available editors and credential helpers, tmux and Vim/Neovim settings, Hyprland/Quickshell configurations, and one-time initialization scripts in `.chezmoiscripts/`. `.chezmoiignore` can skip optional executables when their dependencies are missing.
+The repository uses `.chezmoiroot` pointing to `home/`. The setup includes shared Bash/Zsh prompts and aliases (`home/.chezmoitemplates/`), OS-aware templates (`home/.chezmoi.toml.tmpl`), a Git configuration selecting available editors and credential helpers, tmux and Vim/Neovim settings, Hyprland/Quickshell configurations, and one-time initialization scripts in `home/.chezmoiscripts/`. `home/.chezmoiignore` can skip optional executables when their dependencies are missing.
 
-After applying, open a new terminal to check your prompt, aliases, and Git settings. `tmux` demonstrates the multiplexer configuration; inspect `.chezmoitemplates/` to understand the shared templates. Version checks during setup use a PATH derived from `.chezmoi.toml.tmpl` and warn when a configured tool is older than the minimum version or comparison fails.
+After applying, open a new terminal to check your prompt, aliases, and Git settings. `tmux` demonstrates the multiplexer configuration; inspect `home/.chezmoitemplates/` to understand the shared templates. Version checks during setup use a PATH derived from `home/.chezmoi.toml.tmpl` and warn when a configured tool is older than the minimum version or comparison fails.
 
 ## Containerised development environment
 
@@ -86,9 +86,9 @@ Run `ejson encrypt private_gitlab_oauth.ejson`. Store the private key where ejso
 
 ### Git templates and editor
 
-Chezmoi copies `dot_config/git/template` to `~/.config/git/template`; Git uses it to initialize new repositories. Edit the stub `README.md` and `.gitignore` in that *template directory* to customize newly initialized repositories. These are functional templates, not extra documentation guides to consolidate.
+Chezmoi copies `home/dot_config/git/template` to `~/.config/git/template`; Git uses it to initialize new repositories. Edit the stub `README.md` and `.gitignore` in that *template directory* to customize newly initialized repositories. These are functional templates, not extra documentation guides to consolidate.
 
-`dot_gitconfig.tmpl` selects an available default editor. On Windows it searches the `ProgramFiles`, `ProgramFiles(x86)`, and `SystemRoot` directories and prefers Notepad++, gVim, VS Code, IntelliJ, then Notepad. Other systems use Neovim or Vim when available. To override the default after applying the dotfiles:
+`home/dot_gitconfig.tmpl` selects an available default editor. On Windows it searches the `ProgramFiles`, `ProgramFiles(x86)`, and `SystemRoot` directories and prefers Notepad++, gVim, VS Code, IntelliJ, then Notepad. Other systems use Neovim or Vim when available. To override the default after applying the dotfiles:
 
 ```sh
 git config --global core.editor <command>

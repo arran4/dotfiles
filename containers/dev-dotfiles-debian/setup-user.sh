@@ -43,7 +43,7 @@ rm -rf /tmp/dotfiles
 
 flutter --version
 go version
-command -v txtar
+/usr/local/bin/dev-dotfiles-test-release-clis
 /usr/local/bin/dev-dotfiles-test-txtar
 git --version
 docker --version
@@ -104,7 +104,7 @@ cp "/home/${USER_NAME}/.bash_history" "/home/${USER_NAME}/.zsh_history"
   command -v qwen >/dev/null || { echo "qwen missing"; false; };
   command -v mini >/dev/null || { echo "mini missing"; false; };
   command -v junie >/dev/null || { echo "junie missing"; false; };
-  for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs txtar; do
+  for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs gosubc g2 header rntocase; do
     command -v "$tool" >/dev/null || { echo "$tool missing"; false; };
   done;
   command -v less >/dev/null || { echo "less missing"; false; };

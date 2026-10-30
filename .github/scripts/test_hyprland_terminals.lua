@@ -1,8 +1,23 @@
 local renderedCataloguePath = assert(arg[1], "rendered catalogue path is required")
 local renderedWithoutQterminalPath = assert(arg[2], "qterminal-absent render path is required")
 
+local function resolvePath(path)
+  local f = io.open(path, "r")
+  if f then
+    f:close()
+    return path
+  end
+  local homePath = "home/" .. path
+  f = io.open(homePath, "r")
+  if f then
+    f:close()
+    return homePath
+  end
+  return path
+end
+
 local function readFile(path)
-  local file = assert(io.open(path, "r"))
+  local file = assert(io.open(resolvePath(path), "r"))
   local content = file:read("*a")
   file:close()
   return content
@@ -202,7 +217,7 @@ local function newScenario(options)
     _G.hl.get_windows = function() return state.windows end
   end
 
-  local special = dofile("dot_config/hypr/special_workspaces.lua")
+  local special = dofile(resolvePath("dot_config/hypr/special_workspaces.lua"))
   special.setup({ terminal = options.terminal })
   return state, special
 end

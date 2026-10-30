@@ -61,7 +61,10 @@ assert_call() { grep -F -- "$1" "$MOCK_LOG" >/dev/null || { echo "Missing call: 
 assert_no_call() { if grep -F -- "$1" "$MOCK_LOG" >/dev/null; then echo "Unexpected call: $1" >&2; exit 1; fi; }
 
 for engine in podman docker; do
-  launcher="$root/dot_local/bin/executable_run-dev-${engine}.sh"
+  launcher="$root/home/dot_local/bin/executable_run-dev-${engine}.sh"
+  if [ ! -f "$launcher" ]; then
+    launcher="$root/dot_local/bin/executable_run-dev-${engine}.sh"
+  fi
   sh -n "$launcher"
   rm -f "$MOCK_PULLED_IMAGE"
 

@@ -22,7 +22,7 @@ seed_home() {
     DEV_HOME_SEED_VERSION_FILE="$tmp/version" sh "$seed_script"
 }
 
-if HOME="$tmp/home" DEV_HOME_SEED_ARCHIVE="$tmp/seed.tar" \
+if HOME="$tmp/home" DEV_HOME_VOLUME_INIT=0 DEV_HOME_SEED_ARCHIVE="$tmp/seed.tar" \
   DEV_HOME_SEED_VERSION_FILE="$tmp/version" \
   sh "$seed_script" > "$tmp/no-opt-in.log" 2>&1; then
   echo 'Seeding unexpectedly succeeded without opt-in' >&2
