@@ -17,7 +17,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
   TZ=Australia/Melbourne \
   SHELL=/usr/bin/zsh \
   LANG=en_US.UTF-8 \
-  LC_ALL=en_US.UTF-8
+  LC_ALL=en_US.UTF-8 \
+  PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
 
 # Keep the expensive tool installation separate from the dotfiles-dependent
 # home seed so changing dotfiles does not reinstall the entire toolchain.
@@ -172,6 +173,9 @@ RUN set -euxo pipefail \
   && npm install -g @anthropic-ai/claude-code \
   && npm install -g @githubnext/github-copilot-cli \
   && npm install -g @qwen-code/qwen-code \
+  && npm install -g @playwright/cli@latest \
+  && playwright-cli install-browser --with-deps --only-shell \
+  && playwright-cli --help >/dev/null \
   && GOBIN=/usr/local/bin go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
   && mv /usr/local/bin/server /usr/local/bin/CLIProxyAPI \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
@@ -224,6 +228,7 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/de
 COPY --chmod=0755 containers/dev-dotfiles-debian/migrate-antigravity-state.sh /usr/local/bin/dev-dotfiles-migrate-antigravity-state
 COPY containers/dev-dotfiles-debian/skel/ /usr/local/share/dev-dotfiles-debian/skel/
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-playwright.sh /usr/local/bin/dev-dotfiles-test-playwright
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
 # Image-managed skills: Codex admin path and an independent source for agy home sync.
 COPY containers/dev-dotfiles-debian/agent-skills/ /etc/codex/skills/
