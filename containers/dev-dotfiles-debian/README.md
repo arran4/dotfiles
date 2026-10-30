@@ -317,6 +317,23 @@ jcode --provider-profile host-ollama auth-test
 
 ## Installed tools and verification
 
+### Go-built project CLIs for agent skills
+
+The image builds and installs the **latest published Go module versions** of four CLI tools directly via `go install`, using `GOBIN=/usr/local/bin` and `GOTOOLCHAIN=auto`:
+
+```sh
+go install github.com/arran4/go-subcommand/cmd/gosubc@latest
+go install github.com/arran4/g2/cmd/g2@latest
+go install github.com/arran4/header/cmd/header@latest
+go install github.com/arran4/rntocase/cmd/rntocase@latest
+```
+
+This avoids release tarballs and arbitrary installer scripts. Go can automatically fetch a matching compiler when a module requires a newer version (the upstream module directives currently include Go 1.26).
+
+**`@latest` is deliberately not reproducible:** it resolves the latest published *module version*, which can change on each rebuild and may lag the default branch. The Dockerfile logs `go version -m /usr/local/bin/<tool>` for each built binary to expose resolved module versions. Use explicit `@vX.Y.Z` pins when reproducibility is required.
+
+`test-release-clis.sh` executes after installation and again from `setup-user.sh` as the unprivileged user, with real offline exercises of `gosubc template layout`, JSON `g2 lint list`, `header` lint rule discovery and an unchanged `rntocase` dry-run. This installs **executables**, not agent skills: Codex/`agy` discovery requires dotfiles #491. The image is not automatically published merely because this PR merges.
+
 The single image uses `debian:${DEBIAN_RELEASE}-slim` (default `stable`), UID/GID `1000:1000`, zsh and passwordless sudo. The Dockerfile accepts `USER_NAME`, `USER_UID`, and `USER_GID`; the launchers assume default IDs. The build installs tools before applying chezmoi and snapshots the prepared home after setup. The archive lives outside `/home/user` so mounting a fresh home volume cannot hide it. The primary image labels its seeded-home capability; the release workflow builds this same Dockerfile. A successful merge is not proof that the revised `:latest` has been published.
 
 Tools include Git, Git LFS, `git-credential-oauth`, `gh`, `glab`, zsh, fish, tmux, vim/Neovim, less, `git-delta`, kdiff3, ripgrep, fd, jq, ShellCheck, shfmt, clang, CMake, Ninja, Go, Node.js, Python, Java/Maven, Flutter, Podman, Docker CLI/daemon, Buildx and Compose. The image build verifies that `podman`, `docker`, and `dockerd` are present and executable, and the container-runtime smoke workflow checks them again from the built image. Agent CLIs include Codex, Antigravity (`agy`), Mini SWE Agent (`mini`), OpenCode, Claude Code, GitHub Copilot CLI and Qwen. `difftastic`, `zellij` and desktop Hyprland/KDE tools are not installed. Jules CLI is intentionally omitted because its installer introduced layer ownership incompatible with normal rootless Podman subordinate-ID mapping; the Dockerfile retains a disabled ownership-normalization recipe.

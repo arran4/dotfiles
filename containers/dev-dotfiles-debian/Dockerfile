@@ -178,6 +178,22 @@ RUN set -euxo pipefail \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
 
+# Build the latest published versions directly with Go, not release archives.
+# GOTOOLCHAIN=auto permits newer Go compilers when required by modules.
+# @latest intentionally resolves anew on each rebuild; go version -m records it.
+RUN set -eu; \
+  export GOBIN=/usr/local/bin GOTOOLCHAIN=auto; \
+  go install github.com/arran4/go-subcommand/cmd/gosubc@latest; \
+  go install github.com/arran4/g2/cmd/g2@latest; \
+  go install github.com/arran4/header/cmd/header@latest; \
+  go install github.com/arran4/rntocase/cmd/rntocase@latest; \
+  for tool in gosubc g2 header rntocase; do \
+    command -v "$tool"; \
+    go version -m "/usr/local/bin/$tool"; \
+  done
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-release-clis.sh /usr/local/bin/dev-dotfiles-test-release-clis
+RUN /usr/local/bin/dev-dotfiles-test-release-clis
+
 # Nested rootless Podman needs subordinate IDs that fit inside a typical
 # 65536-ID rootless outer namespace, not useradd's default host-sized range.
 # The store is deliberately outside home/workspace and is user-owned before
