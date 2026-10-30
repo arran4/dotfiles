@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - 'dot_config/foot/**'
+      - 'home/dot_config/foot/**'
       - '.github/workflows/foot.yml'
   push:
     branches:
       - main
     paths:
       - 'dot_config/foot/**'
+      - 'home/dot_config/foot/**'
       - '.github/workflows/foot.yml'
   workflow_dispatch:
 
@@ -26,4 +28,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y foot fonts-hack
 
       - name: Check Foot configuration
-        run: foot --check-config --config=dot_config/foot/foot.ini.tmpl
+        run: |
+          cfg="home/dot_config/foot/foot.ini.tmpl"
+          [ -f "$cfg" ] || cfg="dot_config/foot/foot.ini.tmpl"
+          foot --check-config --config="$cfg"

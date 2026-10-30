@@ -4,22 +4,30 @@ on:
   pull_request:
     paths:
       - 'dot_local/bin/executable_run-dev-*.sh'
+      - 'home/dot_local/bin/executable_run-dev-*.sh'
       - 'containers/dev-dotfiles-debian/Dockerfile'
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
       - 'containers/dev-dotfiles-debian/home-volume-seed.sh'
       - 'containers/dev-dotfiles-debian/test-home-volume.sh'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
+      - 'containers/dev-dotfiles-debian/agent-skills/**'
+      - 'containers/dev-dotfiles-debian/sync-agent-skills.sh'
+      - 'containers/dev-dotfiles-debian/test-agent-skills.sh'
       - 'containers/dev-dotfiles-debian/README.md'
       - '.github/workflows/dev-container-launchers.yml'
   push:
     branches: [main]
     paths:
       - 'dot_local/bin/executable_run-dev-*.sh'
+      - 'home/dot_local/bin/executable_run-dev-*.sh'
       - 'containers/dev-dotfiles-debian/Dockerfile'
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
       - 'containers/dev-dotfiles-debian/home-volume-seed.sh'
       - 'containers/dev-dotfiles-debian/test-home-volume.sh'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
+      - 'containers/dev-dotfiles-debian/agent-skills/**'
+      - 'containers/dev-dotfiles-debian/sync-agent-skills.sh'
+      - 'containers/dev-dotfiles-debian/test-agent-skills.sh'
       - 'containers/dev-dotfiles-debian/README.md'
       - '.github/workflows/dev-container-launchers.yml'
 
@@ -38,5 +46,9 @@ jobs:
           sh -n containers/dev-dotfiles-debian/entrypoint.sh
           sh -n containers/dev-dotfiles-debian/home-volume-seed.sh
           sh containers/dev-dotfiles-debian/test-home-volume.sh
+      - name: Check managed Codex and agy skills
+        run: |
+          sh -n containers/dev-dotfiles-debian/sync-agent-skills.sh
+          sh containers/dev-dotfiles-debian/test-agent-skills.sh
           grep -F 'ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]' containers/dev-dotfiles-debian/Dockerfile
           ! grep -Fq 'home-volume-entrypoint' containers/dev-dotfiles-debian/Dockerfile

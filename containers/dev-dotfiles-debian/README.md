@@ -5,6 +5,7 @@ This directory builds the Debian-based `dev-dotfiles-debian` development image w
 ## Contents
 
 - [One image, two compatible storage layouts](#one-image-two-compatible-storage-layouts)
+- [Release an updated toolchain](#release-an-updated-toolchain)
 - [Start a project sandbox](#start-a-project-sandbox)
 - [Launcher settings](#launcher-settings)
 - [Manual Docker and Podman commands](#manual-docker-and-podman-commands)
@@ -26,9 +27,22 @@ This directory builds the Debian-based `dev-dotfiles-debian` development image w
 
 A repository merge does **not** publish a new image. The default `ghcr.io/arran4/dev-dotfiles-debian:latest` follows the newest stable release; use a version-specific tag such as `:v0.2.42` to select a particular release. Prerelease and test images have separate tags and do not replace `:latest`. Re-publishing an older version through the current release process does not roll `:latest` or the major/minor aliases (`:vX` and `:vX.Y`) backwards. A locally cached image does not update automatically. Inspect a local image with `podman image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' ghcr.io/arran4/dev-dotfiles-debian:latest` (or substitute `docker`). Pull a newer release explicitly before creating a new seeded sandbox. The initializer checks the image's archive version and the marker in the persistent home, so a same-version restart is a no-op and a *new-image container recreation* applies changed seeded configuration. It does not blindly copy over credentials and sessions. See [Storage, upgrades, and migration](#storage-upgrades-and-migration) for the limitations and safety procedure.
 
+## Release an updated toolchain
+
+To pick up newer bundled programs and libraries such as Flutter, Antigravity (`agy`), Codex, and Debian packages without changing dotfiles, open **Actions → CI/CD → Run workflow**, select `main`, choose `release-patch`, and enable **force_release**. Leave `release_version_override` empty for the next version, or supply an unused explicit version. The equivalent CLI command is:
+
+```sh
+gh workflow run ci.yml --repo arran4/dotfiles --ref main \
+  -f mode=release-patch -f force_release=true
+```
+
+This creates a **new version tag even when the commit is already tagged**, then dispatches the normal checked release pipeline. It pulls the base image and disables Docker's build cache so tool installation runs again. Downloads still follow the Dockerfile's configured channels and version pins; force does not override an explicit pin. The default remains `force_release=false`, which skips unchanged source. Existing tags are never overwritten, and secret/configuration checks and moving-alias protections still apply. The parent run prepares the tag; follow the separate `publish-tag` run for the image and GitHub release result.
+
+For recovery of an existing version, dispatch `publish-tag` against that tag; `force_release=true` also enables a fresh image build there. Prefer a new patch release for routine toolchain refreshes so the new image has its own version. An older tag executes its own workflow revision, so the force input is available only on tags containing this workflow change. After publication, pull the image and recreate the outer container while preserving named volumes; a restart retains the old image. See [Storage, upgrades, and migration](#storage-upgrades-and-migration).
+
 ## Start a project sandbox
 
-Apply chezmoi-managed [`../../dot_local/bin/executable_run-dev-podman.sh`](../../dot_local/bin/executable_run-dev-podman.sh) and [`../../dot_local/bin/executable_run-dev-docker.sh`](../../dot_local/bin/executable_run-dev-docker.sh) to install `~/.local/bin/run-dev-podman.sh` and `~/.local/bin/run-dev-docker.sh`; include `~/.local/bin` in `PATH`. Run from the host project directory to bind-mount it at `/workspace`:
+Apply chezmoi-managed [`../../home/dot_local/bin/executable_run-dev-podman.sh`](../../home/dot_local/bin/executable_run-dev-podman.sh) and [`../../home/dot_local/bin/executable_run-dev-docker.sh`](../../home/dot_local/bin/executable_run-dev-docker.sh) to install `~/.local/bin/run-dev-podman.sh` and `~/.local/bin/run-dev-docker.sh`; include `~/.local/bin` in `PATH`. Run from the host project directory to bind-mount it at `/workspace`:
 
 ```sh
 cd ~/Documents/Projects/my-project
@@ -301,7 +315,32 @@ jcode provider add host-ollama \
 jcode --provider-profile host-ollama auth-test
 ```
 
+## Image-managed skills for Codex and Antigravity CLI
+
+Skills live in `containers/dev-dotfiles-debian/agent-skills/<name>/SKILL.md`; add or update each skill in its own PR. All skills use the Agent Skills frontmatter format (`name`, `description`) and are copied to Codex's container-admin path `/etc/codex/skills/`. The same source is distributed to Antigravity CLI at `~/.gemini/antigravity-cli/skills/` by `dev-dotfiles-sync-agent-skills` when a container starts. A Git repository's own `.agents/skills/` remains independent and takes no special container installation.
+
+The `agy` skill sync records the last installed content fingerprint for each image-managed skill under `~/.local/state/dev-dotfiles-debian/managed-skills/`. It refreshes an untouched managed skill after an image update but **does not overwrite** a pre-existing skill, a modified managed skill, or an unrelated user-installed skill; a warning identifies conflicts. Removed image skills are not deleted from persistent homes. This sync never needs network access or GitHub credentials. Codex admin skills live in the immutable image, so updating them requires pulling/rebuilding and recreating the outer container. An image build or git merge does not update existing published images.
+
+Verify locally with `sh containers/dev-dotfiles-debian/test-agent-skills.sh`. Verify CLI discovery inside a built image with `codex` (use `/skills`) and `agy` (use `/skills` or invoke `/<skill-name>`); automated tests exercise installation/upgrades but do not execute paid agents. Do not treat filesystem presence as proof that an agent loaded the skill.
+
 ## Installed tools and verification
+
+### Go-built project CLIs for agent skills
+
+The image builds and installs the **latest published Go module versions** of four CLI tools directly via `go install`, using `GOBIN=/usr/local/bin` and `GOTOOLCHAIN=auto`:
+
+```sh
+go install github.com/arran4/go-subcommand/cmd/gosubc@latest
+go install github.com/arran4/g2/cmd/g2@latest
+go install github.com/arran4/header/cmd/header@latest
+go install github.com/arran4/rntocase/cmd/rntocase@latest
+```
+
+This avoids release tarballs and arbitrary installer scripts. Go can automatically fetch a matching compiler when a module requires a newer version (the upstream module directives currently include Go 1.26).
+
+**`@latest` is deliberately not reproducible:** it resolves the latest published *module version*, which can change on each rebuild and may lag the default branch. The Dockerfile logs `go version -m /usr/local/bin/<tool>` for each built binary to expose resolved module versions. Use explicit `@vX.Y.Z` pins when reproducibility is required.
+
+`test-release-clis.sh` executes after installation and again from `setup-user.sh` as the unprivileged user, with real offline exercises of `gosubc template layout`, JSON `g2 lint list`, `header` lint rule discovery and an unchanged `rntocase` dry-run. This installs **executables**, not agent skills: Codex/`agy` discovery requires dotfiles #491. The image is not automatically published merely because this PR merges.
 
 The single image uses `debian:${DEBIAN_RELEASE}-slim` (default `stable`), UID/GID `1000:1000`, zsh and passwordless sudo. The Dockerfile accepts `USER_NAME`, `USER_UID`, and `USER_GID`; the launchers assume default IDs. The build installs tools before applying chezmoi and snapshots the prepared home after setup. The archive lives outside `/home/user` so mounting a fresh home volume cannot hide it. The primary image labels its seeded-home capability; the release workflow builds this same Dockerfile. A successful merge is not proof that the revised `:latest` has been published.
 
@@ -312,8 +351,8 @@ From the repository root:
 ```sh
 sh containers/dev-dotfiles-debian/test-home-volume.sh
 sh containers/dev-dotfiles-debian/test-launchers.sh
-sh -n dot_local/bin/executable_run-dev-docker.sh
-sh -n dot_local/bin/executable_run-dev-podman.sh
+sh -n home/dot_local/bin/executable_run-dev-docker.sh
+sh -n home/dot_local/bin/executable_run-dev-podman.sh
 ```
 
 The home-volume test covers first initialization, same-version restart, updated seed preservation, independent workspace and failed-upgrade retry. The launcher test mocks both engines to check seeded versus old published tags, published-home separation, disposable-by-default containers, explicit retained-container resumption, no-home/no-workspace options, local builds of the same Dockerfile and missing-image handling. CI and live rootless Podman/Docker lifecycle, mount ownership, versioned recreation, and credential migration must still be verified before replacing sandboxes or deleting old volumes. Keep documentation aligned with **actually published image capabilities and implemented scripts**, not merely merged code.

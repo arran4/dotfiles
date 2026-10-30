@@ -27,11 +27,11 @@ This repository stores dotfiles applied with [chezmoi](https://www.chezmoi.io/).
 
 - [`HYPRLAND_KEYBOARD_SHORTCUTS.md`](HYPRLAND_KEYBOARD_SHORTCUTS.md) is the human-readable shortcut summary.
 - When adding, removing, renaming, or changing the meaning of a binding, update the shortcut summary in the same change.
-- Check both `dot_config/hypr/hyprland.lua.tmpl` and `dot_config/hypr/special_workspaces.lua`; shortcuts are defined in both, including group-management submap and special-workspace keys.
+- Check both `home/dot_config/hypr/hyprland.lua.tmpl` and `home/dot_config/hypr/special_workspaces.lua`; shortcuts are defined in both, including group-management submap and special-workspace keys.
 
 ## Container-specific verification
 
-- Before changing or documenting the launchers, inspect **both** `dot_local/bin/executable_run-dev-podman.sh` and `dot_local/bin/executable_run-dev-docker.sh`; keep the README's defaults, supported environment settings and persistence claims consistent with their actual behaviour. A resumed named container does not pick up a new image or new mount options.
+- Before changing or documenting the launchers, inspect **both** `home/dot_local/bin/executable_run-dev-podman.sh` and `home/dot_local/bin/executable_run-dev-docker.sh`; keep the README's defaults, supported environment settings and persistence claims consistent with their actual behaviour. A resumed named container does not pick up a new image or new mount options.
 - Verify the published image separately from the optional, locally built project-home image. Do not imply that merging the experimental Dockerfile publishes it as `:latest`.
 - When changing persistence, test or explicitly document what survives stop/start versus container removal/recreation; do not recommend deleting volumes as part of a routine upgrade. Keep nested Docker data lifetime independent of the home and workspace lifetime.
 - For relevant container changes, run `sh containers/dev-dotfiles-debian/test-home-volume.sh`, syntax-check both launchers with `sh -n`, and run any applicable ShellCheck/configuration and image-build checks. State clearly which live Docker/Podman scenarios were or were not verified.

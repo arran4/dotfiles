@@ -1,0 +1,28 @@
+name: Agent skill - GitHub PR comment helper
+
+on:
+  pull_request:
+    paths:
+      - 'containers/dev-dotfiles-debian/agent-skills/gh-address-comments/**'
+      - '.github/workflows/agent-gh-address-comments-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'containers/dev-dotfiles-debian/agent-skills/gh-address-comments/**'
+      - '.github/workflows/agent-gh-address-comments-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  python-tests:
+    name: Review helper offline unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python source and fork-PR resolution
+        run: |
+          python3 -m compileall -q containers/dev-dotfiles-debian/agent-skills/gh-address-comments/scripts
+          python3 -m unittest discover \
+            -s containers/dev-dotfiles-debian/agent-skills/gh-address-comments/scripts \
+            -p 'test_*.py' -v
