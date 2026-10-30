@@ -1,37 +1,35 @@
 # Playwright CLI Workflows
 
-Use the wrapper script and snapshot often.
-Assume `PWCLI` is set and `pwcli` is an alias for `"$PWCLI"`.
-In this repo, run commands from `output/playwright/<label>/` to keep artifacts contained.
+Use `playwright-cli` directly and snapshot often. Save artifacts in a task-specific `/tmp` directory unless the user asks for an output folder.
 
 ## Standard interaction loop
 
 ```bash
-pwcli open https://example.com
-pwcli snapshot
-pwcli click e3
-pwcli snapshot
+playwright-cli open https://example.com
+playwright-cli snapshot
+playwright-cli click e3
+playwright-cli snapshot
 ```
 
 ## Form submission
 
 ```bash
-pwcli open https://example.com/form --headed
-pwcli snapshot
-pwcli fill e1 "user@example.com"
-pwcli fill e2 "password123"
-pwcli click e3
-pwcli snapshot
-pwcli screenshot
+playwright-cli open https://example.com/form --headed
+playwright-cli snapshot
+playwright-cli fill e1 "user@example.com"
+playwright-cli fill e2 "password123"
+playwright-cli click e3
+playwright-cli snapshot
+playwright-cli screenshot
 ```
 
 ## Data extraction
 
 ```bash
-pwcli open https://example.com
-pwcli snapshot
-pwcli eval "document.title"
-pwcli eval "el => el.textContent" e12
+playwright-cli open https://example.com
+playwright-cli snapshot
+playwright-cli eval "document.title"
+playwright-cli eval "el => el.textContent" e12
 ```
 
 ## Debugging and inspection
@@ -39,17 +37,17 @@ pwcli eval "el => el.textContent" e12
 Capture console messages and network activity after reproducing an issue:
 
 ```bash
-pwcli console warning
-pwcli network
+playwright-cli console warning
+playwright-cli network
 ```
 
 Record a trace around a suspicious flow:
 
 ```bash
-pwcli tracing-start
+playwright-cli tracing-start
 # reproduce the issue
-pwcli tracing-stop
-pwcli screenshot
+playwright-cli tracing-stop
+playwright-cli screenshot
 ```
 
 ## Sessions
@@ -57,21 +55,21 @@ pwcli screenshot
 Use sessions to isolate work across projects:
 
 ```bash
-pwcli --session marketing open https://example.com
-pwcli --session marketing snapshot
-pwcli --session checkout open https://example.com/checkout
+playwright-cli --session marketing open https://example.com
+playwright-cli --session marketing snapshot
+playwright-cli --session checkout open https://example.com/checkout
 ```
 
 Or set the session once:
 
 ```bash
 export PLAYWRIGHT_CLI_SESSION=checkout
-pwcli open https://example.com/checkout
+playwright-cli open https://example.com/checkout
 ```
 
 ## Configuration file
 
-By default, the CLI reads `playwright-cli.json` from the current directory. Use `--config` to point at a specific file.
+The CLI loads `.playwright/cli.config.json` automatically if present. Use `--config` to point at a specific file.
 
 Minimal example:
 
@@ -90,6 +88,6 @@ Minimal example:
 
 ## Troubleshooting
 
-- If an element ref fails, run `pwcli snapshot` again and retry.
+- If an element ref fails, run `playwright-cli snapshot` again and retry.
 - If the page looks wrong, re-open with `--headed` and resize the window.
 - If a flow depends on prior state, use a named `--session`.
