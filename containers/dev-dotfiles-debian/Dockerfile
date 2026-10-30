@@ -178,18 +178,28 @@ RUN set -euxo pipefail \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
 
-# TXTAR CLI: pin a revision compatible with Debian Trixie's Go 1.24,
-# build to an explicit binary without using go install system-wide.
-# Upstream: golang.org/x/exp/cmd/txtar at v0.0.0-20260112195511-716be5621a96.
+# TXTAR CLI: install the user's independently released, checksum-verified
+# arran4/txtar executable, not the different golang.org/x/exp/cmd/txtar.
+# Release binaries avoid compiling a Go 1.25.3 module using Debian's older Go.
+ARG TXTAR_VERSION=0.0.9
 RUN set -eux; \
-  tmp=$(mktemp -d); \
+  arch="$(dpkg --print-architecture)"; \
+  case "$arch" in amd64|arm64) ;; *) echo "Unsupported txtar release architecture: $arch" >&2; exit 1;; esac; \
+  asset="txtar_${TXTAR_VERSION}_linux_${arch}.tar.gz"; \
+  base="https://github.com/arran4/txtar/releases/download/v${TXTAR_VERSION}"; \
+  tmp="$(mktemp -d)"; \
   cd "$tmp"; \
-  GOTOOLCHAIN=local go mod init dev-dotfiles-txtar-build; \
-  GOTOOLCHAIN=local go get golang.org/x/exp/cmd/txtar@v0.0.0-20260112195511-716be5621a96; \
-  GOTOOLCHAIN=local CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/txtar golang.org/x/exp/cmd/txtar; \
+  curl -fsSLo "$asset" "$base/$asset"; \
+  curl -fsSLo checksums.txt "$base/checksums.txt"; \
+  awk -v asset="$asset" '$2 == asset { print }' checksums.txt > expected.sha256; \
+  test "$(wc -l < expected.sha256)" -eq 1; \
+  sha256sum -c expected.sha256; \
+  tar -xzf "$asset" -C /usr/local/bin txtar; \
+  chmod 0755 /usr/local/bin/txtar; \
   cd /; \
   rm -rf "$tmp"; \
-  command -v txtar
+  command -v txtar; \
+  txtar help
 
 # Nested rootless Podman needs subordinate IDs that fit inside a typical
 # 65536-ID rootless outer namespace, not useradd's default host-sized range.
