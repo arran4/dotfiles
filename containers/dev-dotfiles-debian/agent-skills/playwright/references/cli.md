@@ -1,102 +1,88 @@
 # Playwright CLI Reference
 
-Use the wrapper script unless the CLI is already installed globally:
-
-```bash
-export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
-export PWCLI="$CODEX_HOME/skills/playwright/scripts/playwright_cli.sh"
-"$PWCLI" --help
-```
-
-User-scoped skills install under `$CODEX_HOME/skills` (default: `~/.codex/skills`).
-
-Optional convenience alias:
-
-```bash
-alias pwcli="$PWCLI"
-```
+Use `playwright-cli` directly. The image provides the executable globally; this reference is not tied to `$CODEX_HOME` or agy's home directory.
 
 ## Core
 
 ```bash
-pwcli open https://example.com
-pwcli close
-pwcli snapshot
-pwcli click e3
-pwcli dblclick e7
-pwcli type "search terms"
-pwcli press Enter
-pwcli fill e5 "user@example.com"
-pwcli drag e2 e8
-pwcli hover e4
-pwcli select e9 "option-value"
-pwcli upload ./document.pdf
-pwcli check e12
-pwcli uncheck e12
-pwcli eval "document.title"
-pwcli eval "el => el.textContent" e5
-pwcli dialog-accept
-pwcli dialog-accept "confirmation text"
-pwcli dialog-dismiss
-pwcli resize 1920 1080
+playwright-cli open https://example.com
+playwright-cli close
+playwright-cli snapshot
+playwright-cli click e3
+playwright-cli dblclick e7
+playwright-cli type "search terms"
+playwright-cli press Enter
+playwright-cli fill e5 "user@example.com"
+playwright-cli drag e2 e8
+playwright-cli hover e4
+playwright-cli select e9 "option-value"
+playwright-cli upload ./document.pdf
+playwright-cli check e12
+playwright-cli uncheck e12
+playwright-cli eval "document.title"
+playwright-cli eval "el => el.textContent" e5
+playwright-cli dialog-accept
+playwright-cli dialog-accept "confirmation text"
+playwright-cli dialog-dismiss
+playwright-cli resize 1920 1080
 ```
 
 ## Navigation
 
 ```bash
-pwcli go-back
-pwcli go-forward
-pwcli reload
+playwright-cli go-back
+playwright-cli go-forward
+playwright-cli reload
 ```
 
 ## Keyboard
 
 ```bash
-pwcli press Enter
-pwcli press ArrowDown
-pwcli keydown Shift
-pwcli keyup Shift
+playwright-cli press Enter
+playwright-cli press ArrowDown
+playwright-cli keydown Shift
+playwright-cli keyup Shift
 ```
 
 ## Mouse
 
 ```bash
-pwcli mousemove 150 300
-pwcli mousedown
-pwcli mousedown right
-pwcli mouseup
-pwcli mouseup right
-pwcli mousewheel 0 100
+playwright-cli mousemove 150 300
+playwright-cli mousedown
+playwright-cli mousedown right
+playwright-cli mouseup
+playwright-cli mouseup right
+playwright-cli mousewheel 0 100
 ```
 
 ## Save as
 
 ```bash
-pwcli screenshot
-pwcli screenshot e5
-pwcli pdf
+playwright-cli screenshot
+playwright-cli screenshot e5
+playwright-cli pdf
 ```
 
 ## Tabs
 
 ```bash
-pwcli tab-list
-pwcli tab-new
-pwcli tab-new https://example.com/page
-pwcli tab-close
-pwcli tab-close 2
-pwcli tab-select 0
+playwright-cli tab-list
+playwright-cli tab-new
+playwright-cli tab-new https://example.com/page
+playwright-cli tab-close
+playwright-cli tab-close 2
+playwright-cli tab-select 0
 ```
 
 ## DevTools
 
 ```bash
-pwcli console
-pwcli console warning
-pwcli network
-pwcli run-code "await page.waitForTimeout(1000)"
-pwcli tracing-start
-pwcli tracing-stop
+playwright-cli console
+playwright-cli console warning
+playwright-cli network
+playwright-cli run-code "await page.waitForTimeout(1000)"
+playwright-cli tracing-start
+playwright-cli tracing-stop
 ```
 
 ## Sessions
@@ -104,13 +90,13 @@ pwcli tracing-stop
 Use a named session to isolate work:
 
 ```bash
-pwcli --session todo open https://demo.playwright.dev/todomvc
-pwcli --session todo snapshot
+playwright-cli --session todo open https://demo.playwright.dev/todomvc
+playwright-cli --session todo snapshot
 ```
 
 Or set an environment variable once:
 
 ```bash
 export PLAYWRIGHT_CLI_SESSION=todo
-pwcli open https://demo.playwright.dev/todomvc
+playwright-cli open https://demo.playwright.dev/todomvc
 ```
