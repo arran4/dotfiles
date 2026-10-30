@@ -317,22 +317,22 @@ jcode --provider-profile host-ollama auth-test
 
 ## Installed tools and verification
 
-### Installed project CLIs for agent skills
+### Go-built project CLIs for agent skills
 
-The Debian development image includes the following **real executables**, pinned to published GitHub releases rather than `go install @latest` or runtime downloads:
+The image builds and installs the **latest published Go module versions** of four CLI tools directly via `go install`, using `GOBIN=/usr/local/bin` and `GOTOOLCHAIN=auto`:
 
-| CLI | Source / pinned release | Tool-focused use |
-| --- | --- | --- |
-| `gosubc` | [go-subcommand v0.0.31](https://github.com/arran4/go-subcommand/releases/tag/v0.0.31) | Generate Go CLIs; validate commands; export templates |
-| `g2` | [g2 v0.0.106](https://github.com/arran4/g2/releases/tag/v0.0.106) | Overlay lint, ebuild inspection, metadata/Manifest checks |
-| `header` | [header v0.0.2](https://github.com/arran4/header/releases/tag/v0.0.2) | Discover metadata lint rules; extract, verify and inspect headers |
-| `rntocase` | [rntocase v0.3.1](https://github.com/arran4/rntocase/releases/tag/v0.3.1) | Dry-run and apply filename-case conversions |
+```sh
+go install github.com/arran4/go-subcommand/cmd/gosubc@latest
+go install github.com/arran4/g2/cmd/g2@latest
+go install github.com/arran4/header/cmd/header@latest
+go install github.com/arran4/rntocase/cmd/rntocase@latest
+```
 
-`install-release-cli.sh` downloads the **exact** Linux amd64/arm64 release asset and its release `checksums.txt`, checks for exactly one matching SHA256 line, verifies the archive with `sha256sum -c`, and extracts only the expected root-level executable to `/usr/local/bin`. Missing assets, unsupported architectures, unexpected tar layouts and bad hashes fail the image build. Versions are explicit Docker build arguments. Release checksums provide transport/artifact consistency; they are obtained from the same release and are not an independent signature or immutable external checksum pin.
+This avoids release tarballs and arbitrary installer scripts. Go can automatically fetch a matching compiler when a module requires a newer version (the upstream module directives currently include Go 1.26).
 
-`test-release-clis.sh` runs twice during the canonical image build: after installing the tools, and later as the non-root configured user. It tests `gosubc template layout`, machine-readable `g2 lint list`, `header` lint rule discovery and `rntocase` dry-run without renaming a fixture. The commands need neither agent authentication nor network access. Each CLI's actual command support still depends on the installed release version; verify local `help` before using newer options.
+**`@latest` is deliberately not reproducible:** it resolves the latest published *module version*, which can change on each rebuild and may lag the default branch. The Dockerfile logs `go version -m /usr/local/bin/<tool>` for each built binary to expose resolved module versions. Use explicit `@vX.Y.Z` pins when reproducibility is required.
 
-These binaries are **not** the corresponding agent skills: the separate `SKILL.md` PRs guide Codex and `agy` when to invoke them, while #491 provides global discovery. This tool-installation PR does not depend on those PRs being merged. The binaries installed into the image also do not imply that the revised image has been published to GHCR.
+`test-release-clis.sh` executes after installation and again from `setup-user.sh` as the unprivileged user, with real offline exercises of `gosubc template layout`, JSON `g2 lint list`, `header` lint rule discovery and an unchanged `rntocase` dry-run. This installs **executables**, not agent skills: Codex/`agy` discovery requires dotfiles #491. The image is not automatically published merely because this PR merges.
 
 The single image uses `debian:${DEBIAN_RELEASE}-slim` (default `stable`), UID/GID `1000:1000`, zsh and passwordless sudo. The Dockerfile accepts `USER_NAME`, `USER_UID`, and `USER_GID`; the launchers assume default IDs. The build installs tools before applying chezmoi and snapshots the prepared home after setup. The archive lives outside `/home/user` so mounting a fresh home volume cannot hide it. The primary image labels its seeded-home capability; the release workflow builds this same Dockerfile. A successful merge is not proof that the revised `:latest` has been published.
 

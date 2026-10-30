@@ -1,6 +1,6 @@
 #!/bin/sh
-# Offline functional smoke tests of the four released CLI binaries.
-# Run as an unprivileged user to catch runtime/permissions problems.
+# Offline functional smoke tests of the four Go-installed CLI binaries.
+# Run both after installation and as an unprivileged user during home seeding.
 set -eu
 
 for tool in gosubc g2 header rntocase; do
