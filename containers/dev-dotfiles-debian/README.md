@@ -315,6 +315,14 @@ jcode provider add host-ollama \
 jcode --provider-profile host-ollama auth-test
 ```
 
+## Image-managed skills for Codex and Antigravity CLI
+
+Skills live in `containers/dev-dotfiles-debian/agent-skills/<name>/SKILL.md`; add or update each skill in its own PR. All skills use the Agent Skills frontmatter format (`name`, `description`) and are copied to Codex's container-admin path `/etc/codex/skills/`. The same source is distributed to Antigravity CLI at `~/.gemini/antigravity-cli/skills/` by `dev-dotfiles-sync-agent-skills` when a container starts. A Git repository's own `.agents/skills/` remains independent and takes no special container installation.
+
+The `agy` skill sync records the last installed content fingerprint for each image-managed skill under `~/.local/state/dev-dotfiles-debian/managed-skills/`. It refreshes an untouched managed skill after an image update but **does not overwrite** a pre-existing skill, a modified managed skill, or an unrelated user-installed skill; a warning identifies conflicts. Removed image skills are not deleted from persistent homes. This sync never needs network access or GitHub credentials. Codex admin skills live in the immutable image, so updating them requires pulling/rebuilding and recreating the outer container. An image build or git merge does not update existing published images.
+
+Verify locally with `sh containers/dev-dotfiles-debian/test-agent-skills.sh`. Verify CLI discovery inside a built image with `codex` (use `/skills`) and `agy` (use `/skills` or invoke `/<skill-name>`); automated tests exercise installation/upgrades but do not execute paid agents. Do not treat filesystem presence as proof that an agent loaded the skill.
+
 ## Installed tools and verification
 
 ### Go-built project CLIs for agent skills
