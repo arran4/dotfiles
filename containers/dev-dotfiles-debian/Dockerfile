@@ -178,6 +178,22 @@ RUN set -euxo pipefail \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
 
+# Pin published CLI releases used by developer-tool skills. The release assets
+# include both amd64 and arm64 executables and a checksums.txt manifest.
+# Keep these tools separate from the image-managed SKILL.md installation (#491).
+ARG GOSUBC_VERSION=0.0.31
+ARG G2_VERSION=0.0.106
+ARG HEADER_VERSION=0.0.2
+ARG RNTOCASE_VERSION=0.3.1
+COPY --chmod=0755 containers/dev-dotfiles-debian/install-release-cli.sh /usr/local/bin/dev-dotfiles-install-release-cli
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-release-clis.sh /usr/local/bin/dev-dotfiles-test-release-clis
+RUN set -eu; \
+  /usr/local/bin/dev-dotfiles-install-release-cli gosubc "$GOSUBC_VERSION"; \
+  /usr/local/bin/dev-dotfiles-install-release-cli g2 "$G2_VERSION"; \
+  /usr/local/bin/dev-dotfiles-install-release-cli header "$HEADER_VERSION"; \
+  /usr/local/bin/dev-dotfiles-install-release-cli rntocase "$RNTOCASE_VERSION"; \
+  /usr/local/bin/dev-dotfiles-test-release-clis
+
 # Nested rootless Podman needs subordinate IDs that fit inside a typical
 # 65536-ID rootless outer namespace, not useradd's default host-sized range.
 # The store is deliberately outside home/workspace and is user-owned before
