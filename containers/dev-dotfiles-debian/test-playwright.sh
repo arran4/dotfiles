@@ -22,7 +22,7 @@ if [ "$ready" -ne 1 ]; then cat "$tmp/server.log" >&2; exit 1; fi
 (
   cd "$tmp"
   export PLAYWRIGHT_CLI_SESSION=dev-dotfiles-playwright-test
-  playwright-cli open http://127.0.0.1:28765/index.html
+  playwright-cli --config "$HOME/.playwright/cli.config.json" open http://127.0.0.1:28765/index.html
   playwright-cli snapshot > snapshot.txt
   grep -Fq 'Agent browser smoke' snapshot.txt
   playwright-cli screenshot > screenshot.txt
