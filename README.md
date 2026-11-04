@@ -105,8 +105,10 @@ that file does not yet exist. Git ignores a missing include.
 root runs, it copies Git `credential` and `url` sections pointing to
 non-public HTTPS hosts into that account's
 `~/.config/git/config.local`, preserving existing local entries and skipping
-duplicates. It does not prompt, read tokens, change Git remotes, or modify
-etckeeper. It prints no private hostnames. Run a full `chezmoi apply`
+duplicates. It deliberately excludes password, token and inline credential-helper
+values (which must be provisioned separately). It does not prompt, change Git remotes, or modify
+etckeeper. It prints no private hostnames. Unrecognised Git credential attributes are
+not migrated automatically and should be reviewed locally. Run a full `chezmoi apply`
 for each account after pulling this change; a targeted
 `chezmoi apply ~/.gitconfig` may not run migration scripts.
 
