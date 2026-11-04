@@ -52,10 +52,28 @@ awk '
       host = $0
       sub(/^\[(credential|url)[[:space:]]+"https:\/\//, "", host)
       sub(/[\/"].*$/, "", host)
-      if (!public_host(host) && !exists[$0]) keep = 1
+      if (!public_host(host) && !exists[$0] && index(host, "@") == 0) {
+        keep = 1
+        kind = ($0 ~ /^\[credential/) ? "credential" : "url"
+      }
     }
   }
-  keep { print }
+  keep && /^\[/ { print; next }
+  keep {
+    # Never carry arbitrary credential values (passwords, tokens, inline
+    # helpers, private comments) from legacy Git configurations into the new
+    # file. Transfer only known, non-secret host settings and rewrite keys.
+    line = $0
+    sub(/^[[:space:]]*/, "", line)
+    key = tolower(line)
+    sub(/[[:space:]]*=.*/, "", key)
+    if (kind == "credential" &&
+        (key == "usehttppath" || key == "gitlabauthmodes" ||
+         key == "provider")) print
+    else if (kind == "url" &&
+             (key == "insteadof" || key == "pushinsteadof") &&
+             line !~ /https?:\/\/[^\/[:space:]]+@/) print
+  }
 ' "$source_local" "$previous" > "$scratch"
 
 [ -s "$scratch" ] || exit 0
