@@ -2,7 +2,7 @@
 set -eu
 
 # The CI workflow applies chezmoi before running this regression test.
-template="dot_gitconfig.tmpl"
+template="home/dot_gitconfig.tmpl"
 rendered="${HOME}/.gitconfig"
 include_line='  path = ~/.config/git/config.local'
 

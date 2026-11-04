@@ -181,9 +181,16 @@ if [ -n "${DEV_LAUNCHER_COMMAND:-}" ] && [ -n "${DEV_OUTER_ENGINE:-}" ] && [ -n 
   printf '%s\n' '  The rm command above does not remove named volumes.'
 fi
 
+# Recover legacy Antigravity files before seeding defaults so a customized
+# legacy settings.json can win when ~/.gemini has no settings yet.
+/usr/local/bin/dev-dotfiles-migrate-antigravity-state
+
 # Recursively add container-only defaults without replacing existing user files.
 # The skeleton lives outside the seeded home to protect customized settings.
 (umask 077; rsync -r --ignore-existing /usr/local/share/dev-dotfiles-debian/skel/ "$HOME/")
+
+# Sync image-managed Antigravity CLI skills without overwriting personal edits.
+/usr/local/bin/dev-dotfiles-sync-agent-skills
 
 # Keep the host-Ollama default container-specific. Do not manage this through
 # the normal chezmoi source, because the same dotfiles are also applied directly

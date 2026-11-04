@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-migration_script=".chezmoiscripts/run_once_before_migrate_private_git_hosts.sh"
+migration_script="home/.chezmoiscripts/run_once_before_migrate_private_git_hosts.sh"
 temporary="$(mktemp -d)"
 trap 'rm -rf "$temporary"' EXIT HUP INT TERM
 

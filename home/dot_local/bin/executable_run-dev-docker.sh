@@ -13,7 +13,7 @@ workspace_mode=${DEV_WORKSPACE_MODE:-bind}
 home_mode=${DEV_HOME_MODE:-volume}
 
 usage() {
-  echo 'Usage: run-dev-podman.sh [--podman-security=nested|unconfined|privileged|off] [--persist-container|--ephemeral-container] [--no-home-volume] [--no-workspace-mount]' >&2
+  echo 'Usage: run-dev-docker.sh [--podman-security=nested|unconfined|privileged|off] [--persist-container|--ephemeral-container] [--no-home-volume] [--no-workspace-mount]' >&2
 }
 
 while [ "$#" -gt 0 ]; do
@@ -36,7 +36,7 @@ case "$container_persist" in
   0|1) ;;
   *) echo 'DEV_CONTAINER_PERSIST must be 0 or 1.' >&2; exit 2 ;;
 esac
-command -v podman >/dev/null 2>&1 || { echo 'podman is required.' >&2; exit 1; }
+command -v docker >/dev/null 2>&1 || { echo 'docker is required.' >&2; exit 1; }
 
 detect_host_timezone() {
   if [ -n "${DEV_TZ:-}" ]; then
@@ -76,6 +76,7 @@ new_home=${DEV_NEW_HOME:-0}
 dind=${DEV_DIND:-1}
 dind_persist=${DEV_DIND_PERSIST:-0}
 podman_persist=${DEV_PODMAN_PERSIST:-0}
+host_gateway=${DEV_DOCKER_HOST_GATEWAY:-0}
 pull_mode=${DEV_PULL_MODE:-}
 
 case "$image" in ghcr.io/arran4/dev-dotfiles-debian:*) published=1 ;; *) published=0 ;; esac
@@ -84,6 +85,7 @@ case "$home_mode" in volume|container) ;; *) echo 'DEV_HOME_MODE must be volume 
 case "$new_home" in 0|1) ;; *) echo 'DEV_NEW_HOME must be 0 or 1.' >&2; exit 2 ;; esac
 case "$dind:$dind_persist" in 0:0|1:0|1:1) ;; *) echo 'DEV_DIND and DEV_DIND_PERSIST must be 0 or 1; persistence requires DEV_DIND=1.' >&2; exit 2 ;; esac
 case "$podman_persist" in 0|1) ;; *) echo 'DEV_PODMAN_PERSIST must be 0 or 1.' >&2; exit 2 ;; esac
+case "$host_gateway" in 0|1) ;; *) echo 'DEV_DOCKER_HOST_GATEWAY must be 0 or 1.' >&2; exit 2 ;; esac
 case "$pull_mode" in
   '') if [ "$published" = 1 ]; then pull_mode=always; else pull_mode=never; fi ;;
   always|missing|never) ;;
@@ -95,37 +97,48 @@ esac
 # never delete them implicitly. Persistence is an explicit opt-in.
 handle_existing_container() {
   container=$1
-  if podman container exists "$container"; then
-    if [ "$(podman inspect --format '{{.State.Running}}' "$container")" = true ]; then
-      echo "Container $container is already running; use podman exec -it $container zsh to open another shell." >&2
+  if docker container inspect "$container" >/dev/null 2>&1; then
+    if [ "$(docker inspect --format '{{.State.Running}}' "$container")" = true ]; then
+      echo "Container $container is already running; use docker exec -it $container zsh to open another shell." >&2
       exit 1
     fi
     if [ "$container_persist" = 1 ]; then
       echo "Resuming persistent container $container." >&2
-      exec podman start -ai --detach-keys='' "$container"
+      exec docker start -ai "$container"
     fi
     echo "Stopped container $container exists from a persistent session. Remove it explicitly without removing named volumes, or rerun with --persist-container (DEV_CONTAINER_PERSIST=1) to resume it." >&2
     exit 1
   fi
 }
-handle_existing_container "dev-agent-${name}-home"
-if [ "$new_home" = 0 ]; then handle_existing_container "dev-agent-${name}"; fi
+# Both image layouts now use one predictable outer-container name. Historical
+# seeded containers used -home; they may contain writable-layer state, so do
+# not rename or replace them without an explicit user action.
+container="dev-agent-${name}"
+old_container="${container}-home"
+if docker container inspect "$old_container" >/dev/null 2>&1; then
+  echo "Existing old-named container $old_container detected. Resolve it explicitly before relaunching: ensure $container is unused, then run 'docker rename $old_container $container'. The named home volume is unaffected; no container was changed." >&2
+  exit 1
+fi
+if [ "$new_home" = 1 ] && docker container inspect "$container" >/dev/null 2>&1; then
+  echo "DEV_NEW_HOME=1 cannot bypass the existing $container under the unified naming scheme. Rename the old container explicitly or choose another SANDBOX_NAME. No container was changed." >&2
+  exit 1
+fi
+handle_existing_container "$container"
 
-if [ "$pull_mode" = always ] || { [ "$pull_mode" = missing ] && ! podman image exists "$image"; }; then
-  if ! podman pull "$image"; then
+if [ "$pull_mode" = always ] || { [ "$pull_mode" = missing ] && ! docker image inspect "$image" >/dev/null 2>&1; }; then
+  if ! docker pull "$image"; then
     echo "Could not pull development image $image. Check network access and registry permissions; use DEV_PULL_MODE=missing to permit a cached image. Existing containers and volumes were not changed." >&2
     exit 1
   fi
 fi
-if ! podman image exists "$image"; then
+if ! docker image inspect "$image" >/dev/null 2>&1; then
   echo "Development image $image is missing locally. Build it from containers/dev-dotfiles-debian/Dockerfile, select a published image, or enable registry pulls with DEV_PULL_MODE=always; existing state was not changed." >&2
   exit 1
 fi
 
-seed_label=$(podman image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' "$image")
+seed_label=$(docker image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' "$image")
 if [ "$seed_label" = 1 ]; then
   layout=home
-  container="dev-agent-${name}-home"
 else
   if [ "$published" != 1 ]; then
     echo "Image $image has no versioned home seed; select an image built from the canonical Dockerfile." >&2
@@ -136,24 +149,22 @@ else
     exit 1
   fi
   layout=legacy
-  container="dev-agent-${name}"
   if [ "$home_mode" != volume ]; then
     echo 'DEV_HOME_MODE=container requires a home-seed image; the cached published image uses legacy volumes.' >&2
     exit 2
   fi
 fi
 
-set -- run -it --name "$container" --detach-keys=''
+set -- run -it --name "$container"
 if [ "$container_persist" = 1 ]; then
   set -- "$@" --restart=no
 else
   set -- "$@" --rm
 fi
 set -- "$@" \
-  --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" \
-  --workdir /workspace \
-  --env DEV_LAUNCHER_COMMAND=run-dev-podman.sh \
-  --env DEV_OUTER_ENGINE=podman \
+  --hostname "agent-sandbox-${name}" --workdir /workspace \
+  --env DEV_LAUNCHER_COMMAND=run-dev-docker.sh \
+  --env DEV_OUTER_ENGINE=docker \
   --env DEV_CONTAINER_NAME="$container" \
   --env DEV_CONTAINER_PERSIST="$container_persist" \
   --env TZ="$container_tz" \
@@ -178,20 +189,23 @@ case "$workspace_mode" in
   volume) set -- "$@" --env DEV_VOLUME_INIT=1 --mount "type=volume,src=dev-agent-${name}-workspace,dst=/workspace" ;;
   container) ;;
 esac
+if [ "$host_gateway" = 1 ]; then
+  set -- "$@" --add-host host.docker.internal:host-gateway
+fi
 if [ "$podman_persist" = 1 ]; then
   set -- "$@" --env DEV_PODMAN_VOLUME_INIT=1 \
     --mount "type=volume,src=dev-agent-${name}-podman,dst=/var/lib/dev-podman"
 fi
 case "$podman_security" in
   nested|unconfined)
+    # A private rootless Podman needs nested user namespaces and FUSE overlay.
+    # Do not mount host runtime sockets. AppArmor is retained unless explicitly
+    # disabled; seccomp and SELinux label separation must allow nesting.
     if [ ! -c /dev/fuse ]; then
       echo 'Nested Podman requires host /dev/fuse. Enable FUSE or use --podman-security=off to launch without nested-Podman support.' >&2
       exit 1
     fi
-    # Private rootless Podman, no host runtime socket. Leave AppArmor intact
-    # unless unconfined is explicitly requested for a host that needs it.
-    set -- "$@" --device /dev/fuse --security-opt seccomp=unconfined \
-      --security-opt label=disable --security-opt unmask=ALL
+    set -- "$@" --device /dev/fuse --security-opt seccomp=unconfined --security-opt label=disable
     if [ "$podman_security" = unconfined ]; then
       set -- "$@" --security-opt apparmor=unconfined
     fi ;;
@@ -204,4 +218,4 @@ if [ "$dind" = 1 ]; then
     set -- "$@" --mount "type=volume,src=dev-agent-${name}-docker,dst=/var/lib/docker"
   fi
 fi
-exec podman "$@" "$image"
+exec docker "$@" "$image"

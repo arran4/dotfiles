@@ -30,7 +30,10 @@ chmod +x "$HOME/bin/curl"
 export PATH="$HOME/bin:$PATH"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-script_path="${script_dir}/dot_local/bin/executable_slackpm"
+script_path="${script_dir}/home/dot_local/bin/executable_slackpm"
+if [ ! -f "$script_path" ]; then
+    script_path="${script_dir}/dot_local/bin/executable_slackpm"
+fi
 
 mkdir -p "$HOME/.config/slackpm"
 token_file="$HOME/.config/slackpm/token"
