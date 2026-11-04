@@ -80,6 +80,12 @@ awk '
 install -d -m 700 "${HOME}/.config/git"
 if [ -e "$local_config" ]; then
   chmod 600 "$local_config"
+  if [ -s "$local_config" ]; then
+    case "$(tail -c 1 "$local_config" 2>/dev/null || true)" in
+      "") ;;
+      *) printf '\n' >> "$local_config" ;;
+    esac
+  fi
 else
   : > "$local_config"
 fi
