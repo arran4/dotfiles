@@ -14,6 +14,8 @@ for identity in user root; do
 [credential "https://git.priv.example.invalid"]
   gitLabAuthModes = pat
   # comment
+  password = illustrative-token-must-not-copy
+  helper = !echo illustrative-token-must-not-copy
 [url "https://git.priv.example.invalid/"]
   insteadOf = "git@git.priv.example.invalid:"
   insteadOf = "ssh://git@git.priv.example.invalid/"
@@ -29,6 +31,8 @@ OLD
   [ "$(grep -c '^\[credential "https://git.priv.example.invalid"\]' "$local_file")" -eq 1 ]
   [ "$(grep -c '^\[url "https://git.priv.example.invalid/"\]' "$local_file")" -eq 1 ]
   ! grep -q 'gitlab.com\|github.com' "$local_file"
+  ! grep -q 'illustrative-token-must-not-copy' "$local_file"
+  ! grep -q '^  helper =' "$local_file"
   [ "$(stat -c '%a' "$local_file")" = 600 ]
 
   HOME="$home" sh "$migration_script"
