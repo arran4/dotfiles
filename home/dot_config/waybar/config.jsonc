@@ -104,7 +104,7 @@
     "format": " {}",
     "return-type": "json",
     "max-length": 40,
-    "exec": "go-playerctl --player spotify --format '{\"text\": \"{{ markup_escape .artist }} - {{ markup_escape .title }}\", \"tooltip\": \"Spotify: {{ markup_escape .artist }} - {{ markup_escape .title }}\", \"alt\": \"{{ .status }}\", \"class\": \"{{ .status }}\"}' --follow metadata",
+    "exec": "go-playerctl --player spotify --format '{\"text\": \"{{ js (markup_escape .artist) }} - {{ js (markup_escape .title) }}\", \"tooltip\": \"Spotify: {{ js (markup_escape .artist) }} - {{ js (markup_escape .title) }}\", \"alt\": \"{{ js (default .status \\\"\\\") }}\", \"class\": \"{{ js (default .status \\\"\\\") }}\"}' --follow metadata",
     "on-click": "go-playerctl --player spotify play-pause",
     "on-click-right": "go-playerctl --player spotify next"
   },
