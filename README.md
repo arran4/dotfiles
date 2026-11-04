@@ -96,13 +96,13 @@ git config --global core.editor <command>
 
 ### Machine-local Git hosts and etckeeper
 
-The public Git template always includes `~/.config/git/config.local`, even when
-the file does not exist. Git ignores a missing include. Store machine-specific
-HTTPS remotes, rewrites and credential metadata there, not in the public
-`home/dot_gitconfig.tmpl`. This is a locally managed file, separate for the
-normal user and root (if root uses these dotfiles); the file is not copied by
-chezmoi. Existing machines should verify this file before applying template
-changes. Keep passwords, tokens and other secrets out of that Git config.
+The public Git template always includes `~/.config/git/config.local`, even
+when that file is absent. Git ignores a missing include. Place site-specific
+HTTPS host rewrites and nonsecret credential metadata in this local file, not
+in the public `home/dot_gitconfig.tmpl`. Manage it separately for each user
+account, including root where root uses these dotfiles; do not commit it or
+copy access tokens into it. Existing machines should verify it is populated
+before applying new Git template changes.
 
 For example, using a placeholder hostname (replace it **locally**):
 
