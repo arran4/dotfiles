@@ -43,6 +43,8 @@ rm -rf /tmp/dotfiles
 
 flutter --version
 go version
+test -f "$HOME/.playwright/cli.config.json"
+/usr/local/bin/dev-dotfiles-test-playwright
 /usr/local/bin/dev-dotfiles-test-release-clis
 /usr/local/bin/dev-dotfiles-test-txtar
 git --version
