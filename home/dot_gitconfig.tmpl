@@ -90,6 +90,7 @@
 [credential "https://source.developers.google.com"]
   provider = generic
 
+
 {{ if ne .chezmoi.os "windows" }}
 [color]
   branch = auto
@@ -182,8 +183,8 @@
 [include]
   path = ~/.local/share/git/config.local
 {{- end }}
-# Git ignores this include if the file is absent. Keep machine-specific
-# hosts and authentication overrides in this untracked local file.
+# Load machine-local host rewrites and credential metadata without embedding
+# private endpoint details in the public chezmoi source.
 [include]
   path = ~/.config/git/config.local
 {{- if stat (joinPath .chezmoi.homeDir ".gitconfig.d/config.local") }}
@@ -208,8 +209,8 @@
 [interactive "delta"]
   diffFilter = delta --color-only
 
-# Keep public GitHub, Gist and GitLab remotes on HTTPS. Site-specific
-# rewrites belong in ~/.config/git/config.local, not this shared template.
+# Keep GitHub, Gist and GitLab remotes on HTTPS. Shorthand, git:// and SSH
+# spellings are normalized to HTTPS so HTTP credential helpers stay authoritative.
 [url "https://github.com/"]
   insteadOf = "github:"
   insteadOf = "git://github.com/"
@@ -233,6 +234,7 @@
   insteadOf = "ssh://git@gitlab.com/"
   insteadOf = "git+ssh://git@gitlab.com/"
   insteadOf = "ssh+git://git@gitlab.com/"
+
 
 [http]
   cookiefile = ~/.cache/git/cookies

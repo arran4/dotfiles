@@ -13,7 +13,12 @@ if [ "$(grep -F -c 'exclude = ["scripts"]' "$config")" -lt 2 ]; then
   exit 1
 fi
 
-if grep -F 'include "{{ $themePath }}"' dot_gtkrc-2.0.tmpl >/dev/null; then
+gtk2_tmpl="home/dot_gtkrc-2.0.tmpl"
+if [ ! -f "$gtk2_tmpl" ]; then
+  gtk2_tmpl="dot_gtkrc-2.0.tmpl"
+fi
+
+if grep -F 'include "{{ $themePath }}"' "$gtk2_tmpl" >/dev/null; then
   echo "GTK2 template still emits KDE-owned theme include lines" >&2
   exit 1
 fi

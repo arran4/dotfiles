@@ -43,6 +43,10 @@ rm -rf /tmp/dotfiles
 
 flutter --version
 go version
+test -f "$HOME/.playwright/cli.config.json"
+/usr/local/bin/dev-dotfiles-test-playwright
+/usr/local/bin/dev-dotfiles-test-release-clis
+/usr/local/bin/dev-dotfiles-test-txtar
 git --version
 docker --version
 docker buildx version
@@ -86,6 +90,7 @@ junie --version
   echo "curl -fsS http://host.docker.internal:11434/v1/models | jq ."
   echo "gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token"
   echo "gh auth login -h github.com -w -p https"
+  echo "gh auth login -h github.com -p https"
   echo "gh auth refresh -h github.com"
   echo "glab auth login"
 } >> "/home/${USER_NAME}/.bash_history"
@@ -101,7 +106,7 @@ cp "/home/${USER_NAME}/.bash_history" "/home/${USER_NAME}/.zsh_history"
   command -v qwen >/dev/null || { echo "qwen missing"; false; };
   command -v mini >/dev/null || { echo "mini missing"; false; };
   command -v junie >/dev/null || { echo "junie missing"; false; };
-  for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs; do
+  for tool in rg grep sed awk find xargs fd bat jq yq xq tomlq xmlstarlet xmllint shellcheck shfmt sponge patch rsync file tar zip unzip dos2unix envsubst ps pgrep pkill lsof strace ip ss ping nc socat openssl traceroute git-lfs gosubc g2 header rntocase; do
     command -v "$tool" >/dev/null || { echo "$tool missing"; false; };
   done;
   command -v less >/dev/null || { echo "less missing"; false; };
@@ -137,6 +142,7 @@ cp "/home/${USER_NAME}/.bash_history" "/home/${USER_NAME}/.zsh_history"
     grep -Fqx "curl -fsS http://host.docker.internal:11434/v1/models | jq ." "$history_file" || { echo "Ollama check missing from $history_file"; false; };
     grep -Fqx "gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token" "$history_file" || { echo "GitHub token auth command missing from $history_file"; false; };
     grep -Fqx "gh auth login -h github.com -w -p https" "$history_file" || { echo "GitHub web auth command missing from $history_file"; false; };
+    grep -Fqx "gh auth login -h github.com -p https" "$history_file" || { echo "GitHub manual auth command missing from $history_file"; false; };
     grep -Fqx "gh auth refresh -h github.com" "$history_file" || { echo "GitHub auth refresh command missing from $history_file"; false; };
     grep -Fqx "glab auth login" "$history_file" || { echo "GitLab auth command missing from $history_file"; false; };
   done;

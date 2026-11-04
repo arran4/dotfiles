@@ -17,7 +17,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
   TZ=Australia/Melbourne \
   SHELL=/usr/bin/zsh \
   LANG=en_US.UTF-8 \
-  LC_ALL=en_US.UTF-8
+  LC_ALL=en_US.UTF-8 \
+  PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
 
 # Keep the expensive tool installation separate from the dotfiles-dependent
 # home seed so changing dotfiles does not reinstall the entire toolchain.
@@ -172,11 +173,37 @@ RUN set -euxo pipefail \
   && npm install -g @anthropic-ai/claude-code \
   && npm install -g @githubnext/github-copilot-cli \
   && npm install -g @qwen-code/qwen-code \
+  && npm install -g @playwright/cli@latest \
+  && playwright-cli install-browser --with-deps --only-shell \
+  && playwright-cli --help >/dev/null \
   && GOBIN=/usr/local/bin go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
   && mv /usr/local/bin/server /usr/local/bin/CLIProxyAPI \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
+
+# Install all development CLIs together using Go's module installer.
+# txtar uses 'module txtar', so it must be built inside a local checkout
+# until that upstream module path is corrected. Avoid a separate install layer.
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-release-clis.sh /usr/local/bin/dev-dotfiles-test-release-clis
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-txtar.sh /usr/local/bin/dev-dotfiles-test-txtar
+RUN set -eu; \
+  export GOBIN=/usr/local/bin GOTOOLCHAIN=auto; \
+  go install github.com/arran4/go-subcommand/cmd/gosubc@latest; \
+  go install github.com/arran4/g2/cmd/g2@latest; \
+  go install github.com/arran4/header/cmd/header@latest; \
+  go install github.com/arran4/rntocase/cmd/rntocase@latest; \
+  tmp="$(mktemp -d)"; \
+  git clone --depth 1 --branch main https://github.com/arran4/txtar.git "$tmp/txtar"; \
+  git -C "$tmp/txtar" rev-parse HEAD; \
+  (cd "$tmp/txtar" && go install ./cmd/txtar); \
+  rm -rf -- "$tmp"; \
+  for tool in gosubc g2 header rntocase txtar; do \
+    command -v "$tool"; \
+    go version -m "/usr/local/bin/$tool"; \
+  done; \
+  /usr/local/bin/dev-dotfiles-test-release-clis; \
+  /usr/local/bin/dev-dotfiles-test-txtar
 
 # Nested rootless Podman needs subordinate IDs that fit inside a typical
 # 65536-ID rootless outer namespace, not useradd's default host-sized range.
@@ -205,9 +232,15 @@ ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH} \
 COPY --chmod=0644 containers/dev-dotfiles-debian/podman-storage.conf /etc/containers/dev-podman-storage.conf
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
+COPY --chmod=0755 containers/dev-dotfiles-debian/migrate-antigravity-state.sh /usr/local/bin/dev-dotfiles-migrate-antigravity-state
 COPY containers/dev-dotfiles-debian/skel/ /usr/local/share/dev-dotfiles-debian/skel/
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-playwright.sh /usr/local/bin/dev-dotfiles-test-playwright
 COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
+# Image-managed skills: Codex admin path and an independent source for agy home sync.
+COPY containers/dev-dotfiles-debian/agent-skills/ /etc/codex/skills/
+COPY containers/dev-dotfiles-debian/agent-skills/ /usr/local/share/dev-dotfiles-debian/agent-skills/
+COPY --chmod=0755 containers/dev-dotfiles-debian/sync-agent-skills.sh /usr/local/bin/dev-dotfiles-sync-agent-skills
 
 # Prepare the home as the non-root user, then archive and clear it as root in
 # the SAME layer. This avoids a temporary full home in an intermediate image
@@ -217,6 +250,7 @@ RUN set -eu; \
   test -d "$home"; \
   install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
   runuser -u "$USER_NAME" -- sh -c 'cd "$HOME" && exec /usr/local/bin/dev-dotfiles-setup-user'; \
+  test ! -e "$home/.codex/antigravity-cli"; \
   test ! -L /workspace; \
   install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" /workspace; \
   if [ -d "$home/workspace" ] && [ ! -L "$home/workspace" ] && [ -z "$(ls -A "$home/workspace")" ]; then rmdir "$home/workspace"; fi; \
