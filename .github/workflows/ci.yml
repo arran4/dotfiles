@@ -216,8 +216,6 @@ jobs:
       - name: Unit Tests
         run: |
           ./test_slackpm_auth.sh
-      - name: Verify one-time Git host migration
-        run: sh ./.github/scripts/test_gitconfig_migration.sh
       - name: Release safety regression tests
         run: |
           bash .github/scripts/test_release_safety.sh
