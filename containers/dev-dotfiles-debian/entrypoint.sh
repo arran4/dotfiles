@@ -1,8 +1,42 @@
 #!/bin/sh
 set -eu
 
+# Published seeded images carry their prepared home outside /home/user. Seed
+# before creating runtime configuration so a new named home volume is populated
+# on first start and receives updated defaults after an image upgrade. During
+# the Dockerfile's setup-user step the archive has not been built yet, so the
+# same entrypoint continues to work without seeding at image build time.
+seed_archive=${DEV_HOME_SEED_ARCHIVE:-/usr/local/share/dev-dotfiles-debian/home-seed.tar}
+seed_version_file=${DEV_HOME_SEED_VERSION_FILE:-/usr/local/share/dev-dotfiles-debian/home-seed-version}
+if [ -e "$seed_archive" ] || [ -e "$seed_version_file" ]; then
+  if [ ! -f "$seed_archive" ] || [ ! -f "$seed_version_file" ]; then
+    echo 'Incomplete image home seed: archive and version file must both exist.' >&2
+    exit 1
+  fi
+  if [ "${DEV_HOME_VOLUME_INIT:-0}" != 1 ]; then
+    echo 'Seeded image requires DEV_HOME_VOLUME_INIT=1; do not bind-mount a host home at /home/user.' >&2
+    exit 1
+  fi
+  /usr/local/bin/dev-dotfiles-home-seed
+fi
+
 uid=$(id -u)
 gid=$(id -g)
+
+# Only change ownership of explicit volume mount-point roots, never recursively
+# chown an existing container store or a host checkout.
+if [ "${DEV_PODMAN_VOLUME_INIT:-0}" = 1 ]; then
+  sudo chown "$uid:$gid" /var/lib/dev-podman
+  sudo chmod 0700 /var/lib/dev-podman
+  unset DEV_PODMAN_VOLUME_INIT
+fi
+
+# Rootless Podman needs a private runtime directory even when systemd/logind
+# is not running inside this container. Never use a host-mounted runtime dir.
+if [ -f /etc/containers/dev-podman-storage.conf ]; then
+  export XDG_RUNTIME_DIR="/run/user/$uid"
+  sudo install -d -m 0700 -o "$uid" -g "$gid" "$XDG_RUNTIME_DIR"
+fi
 
 # Fresh named volumes can be owned by root depending on the container engine.
 # Persistent-volume invocations opt into fixing only the mount-point roots.
@@ -74,9 +108,143 @@ if [ "${DEV_DIND:-0}" = "1" ]; then
   done
 fi
 
+# Report runtime versions and creation-time settings on every start. The
+# launcher environment and outer-container privileges/mounts cannot be changed
+# by merely stopping and restarting an existing named container.
+printf '%s\n' 'Development container runtime modes:'
+printf '  Podman: %s\n' "$(podman --version 2>/dev/null || printf '%s' 'unavailable')"
+printf '  Docker CLI: %s\n' "$(docker --version 2>/dev/null || printf '%s' 'unavailable')"
+printf '  Docker daemon: %s\n' "$(dockerd --version 2>/dev/null || printf '%s' 'unavailable')"
+if [ -n "${DEV_LAUNCHER_COMMAND:-}" ]; then
+  printf '  Launcher: %s\n' "$DEV_LAUNCHER_COMMAND"
+fi
+printf '  DEV_PODMAN_SECURITY=%s\n' "${DEV_PODMAN_SECURITY:-not supplied}"
+printf '  DEV_DIND=%s\n' "${DEV_DIND:-not supplied}"
+printf '  DEV_DIND_PERSIST=%s\n' "${DEV_DIND_PERSIST:-not supplied}"
+
+case "${DEV_PODMAN_SECURITY:-unknown}" in
+  nested)
+    printf '%s\n' '  Nested Podman: enabled (rootless nested mode)'
+    podman_switch=off
+    ;;
+  unconfined)
+    printf '%s\n' '  Nested Podman: enabled (rootless, AppArmor unconfined)'
+    podman_switch=nested
+    ;;
+  privileged)
+    printf '%s\n' '  Nested Podman: enabled (privileged outer container)'
+    podman_switch=nested
+    ;;
+  off)
+    printf '%s\n' '  Nested Podman: disabled by launcher security mode (Podman remains installed)'
+    podman_switch=nested
+    ;;
+  *)
+    printf '  Nested Podman: launcher mode unknown (%s)\n' "${DEV_PODMAN_SECURITY:-not supplied}"
+    podman_switch=nested
+    ;;
+esac
+
+current_podman_security=${DEV_PODMAN_SECURITY:-nested}
+current_dind=${DEV_DIND:-0}
+current_dind_persist=${DEV_DIND_PERSIST:-0}
+
+if [ "$current_dind" = 1 ]; then
+  if [ "$current_dind_persist" = 1 ]; then
+    printf '%s\n' '  Docker-in-Docker: enabled (persistent /var/lib/docker)'
+    dind_persist_switch=0
+  else
+    printf '%s\n' '  Docker-in-Docker: enabled (outer-container writable layer)'
+    dind_persist_switch=1
+  fi
+  dind_switch=0
+  dind_switch_persist=0
+else
+  printf '%s\n' '  Docker-in-Docker: disabled'
+  dind_switch=1
+  dind_switch_persist="$current_dind_persist"
+  dind_persist_switch=0
+fi
+
+if [ -n "${DEV_LAUNCHER_COMMAND:-}" ] && [ -n "${DEV_OUTER_ENGINE:-}" ] && [ -n "${DEV_CONTAINER_NAME:-}" ]; then
+  printf '%s\n' '  Runtime-mode changes require outer-container recreation; restart alone is not enough:'
+  printf '%s\n' '    exit'
+  printf '    %s rm %s\n' "$DEV_OUTER_ENGINE" "$DEV_CONTAINER_NAME"
+  printf '  Toggle Docker-in-Docker:\n'
+  printf '    DEV_DIND=%s DEV_DIND_PERSIST=%s DEV_PODMAN_SECURITY=%s %s\n' "$dind_switch" "$dind_switch_persist" "$current_podman_security" "$DEV_LAUNCHER_COMMAND"
+  printf '  Switch nested Podman mode:\n'
+  printf '    DEV_DIND=%s DEV_DIND_PERSIST=%s DEV_PODMAN_SECURITY=%s %s\n' "$current_dind" "$current_dind_persist" "$podman_switch" "$DEV_LAUNCHER_COMMAND"
+  if [ "$current_dind" = 1 ]; then
+    printf '  Toggle Docker storage persistence:\n'
+    printf '    DEV_DIND=1 DEV_DIND_PERSIST=%s DEV_PODMAN_SECURITY=%s %s\n' "$dind_persist_switch" "$current_podman_security" "$DEV_LAUNCHER_COMMAND"
+  fi
+  printf '%s\n' '  The rm command above does not remove named volumes.'
+fi
+
+# Recover legacy Antigravity files before seeding defaults so a customized
+# legacy settings.json can win when ~/.gemini has no settings yet.
+/usr/local/bin/dev-dotfiles-migrate-antigravity-state
+
+# Recursively add container-only defaults without replacing existing user files.
+# The skeleton lives outside the seeded home to protect customized settings.
+(umask 077; rsync -r --ignore-existing /usr/local/share/dev-dotfiles-debian/skel/ "$HOME/")
+
+# Sync image-managed Antigravity CLI skills without overwriting personal edits.
+/usr/local/bin/dev-dotfiles-sync-agent-skills
+
+# Keep the host-Ollama default container-specific. Do not manage this through
+# the normal chezmoi source, because the same dotfiles are also applied directly
+# on hosts where host.docker.internal is not the correct Ollama address.
+opencode_config="$HOME/.config/opencode/opencode.json"
+if [ ! -e "$opencode_config" ]; then
+  mkdir -p "$(dirname "$opencode_config")"
+  cat > "$opencode_config" <<'EOF'
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (host)",
+      "options": {
+        "baseURL": "http://host.docker.internal:11434/v1"
+      },
+      "models": {
+        "qwen2.5-coder:7b": {
+          "name": "Qwen2.5 Coder 7B"
+        }
+      }
+    }
+  },
+  "model": "ollama/qwen2.5-coder:7b"
+}
+EOF
+fi
+
 echo "Checking GitHub CLI authentication status..."
+if [ -n "${GH_TOKEN:-}" ]; then
+  echo "GitHub authentication source: GH_TOKEN environment token (takes precedence over stored credentials)."
+elif [ -n "${GITHUB_TOKEN:-}" ]; then
+  echo "GitHub authentication source: GITHUB_TOKEN environment token (used when GH_TOKEN is unset; takes precedence over stored credentials)."
+elif [ -f "$HOME/.config/gh/hosts.yml" ]; then
+  echo "GitHub authentication source: stored GitHub CLI credentials (token or web/device login)."
+else
+  echo "GitHub authentication source: none detected."
+fi
+
 if ! gh auth status -h github.com; then
-  echo "Not authenticated with GitHub CLI. You may want to run: gh auth login -h github.com -w -p https"
+  echo "GitHub CLI could not verify authentication; this can also be caused by API rate limits or network failures."
+  echo "Before reauthorizing, diagnose with:"
+  echo "  gh api /user --jq .login"
+  echo "  gh api /rate_limit --jq '{core: .resources.core, graphql: .resources.graphql}'"
+  echo "  gh auth status -h github.com --json hosts"
+  echo "Supported authentication modes:"
+  echo "  Per-container token: set GH_TOKEN/GITHUB_TOKEN, or place a token in ~/.config/gh/container-token and run:"
+  echo "    gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token"
+  echo "  Web/device OAuth:"
+  echo "    gh auth login -h github.com -w -p https"
+  echo "Environment tokens take precedence over stored credentials; unset them to test or use a stored login."
+  echo "For verified invalid credentials, see recovery and concurrent-container guidance:"
+  echo "  https://github.com/arran4/dotfiles/blob/main/containers/dev-dotfiles-debian/README.md#github-cli-authentication"
 fi
 
 exec /usr/bin/zsh -l "$@"

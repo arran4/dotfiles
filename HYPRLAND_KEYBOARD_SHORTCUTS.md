@@ -4,9 +4,9 @@ This is the human-readable summary of the Hyprland shortcuts configured by this 
 
 The source of truth remains:
 
-- [`dot_config/hypr/hyprland.lua.tmpl`](dot_config/hypr/hyprland.lua.tmpl) for the main bindings.
-- [`dot_config/hypr/special_workspaces.lua`](dot_config/hypr/special_workspaces.lua) for special workspaces and window-group bindings.
-- [`dot_local/bin/executable_hypr-cheatsheet.tmpl`](dot_local/bin/executable_hypr-cheatsheet.tmpl) for the runtime cheatsheet populated from `hyprctl binds`.
+- [`home/dot_config/hypr/hyprland.lua.tmpl`](home/dot_config/hypr/hyprland.lua.tmpl) for the main bindings.
+- [`home/dot_config/hypr/special_workspaces.lua`](home/dot_config/hypr/special_workspaces.lua) for special workspaces and window-group bindings.
+- [`home/dot_local/bin/executable_hypr-cheatsheet.tmpl`](home/dot_local/bin/executable_hypr-cheatsheet.tmpl) for the runtime cheatsheet populated from `hyprctl binds`.
 
 > **Maintenance:** when a Hyprland binding is added, removed, renamed, or changes meaning, update this document in the same change. `AGENTS.md` also carries this instruction for coding agents/LLMs.
 

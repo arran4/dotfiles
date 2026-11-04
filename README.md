@@ -1,251 +1,102 @@
 # arran4 dotfiles
 
-I have maintained a consistent dot file since I think 2004ish perhaps a bit earlier. This repo represents a complete
-rewrite. (I have another repo for my older dot configs which earliest commit was 2007ish.. But I had been using it via
-diff+ssh, rcs, svn, and finally git. But I didn't port RCS into SVN so I had lost earlier history.) --- Anyway. Enjoy.
+These are my [chezmoi](https://www.chezmoi.io/)-managed dotfiles, built up from configurations I have used since roughly 2004. They include personal and historical choices that may not suit another machine; copy or adapt the pieces you want rather than applying the entire repository without inspecting it.
 
-I have a lot of things here that was specific to a particular place and time which are probably no longer relevant,
-porting them to chezmoi was I guess for my own interest sake.
+## Contents
 
-# Usage
+- [Using the dotfiles](#using-the-dotfiles)
+- [Containerised development environment](#containerised-development-environment)
+- [Development tools](#development-tools)
+- [Flatpak applications](#flatpak-applications)
+- [Credentials and Git](#credentials-and-git)
+- [Desktop and shell notes](#desktop-and-shell-notes)
 
-I recommend you copy and paste the good stuff out into your own chezmoi config rather than just mine there is a lot of
-config here which is specific to me or specific to a particular situation I had been in in the past.
+## Using the dotfiles
 
-Using chezmoi https://www.chezmoi.io/
+Clone the repository and run `./install`, or use chezmoi directly. When chezmoi reports `warning: config file template has changed`, rerun `chezmoi init --apply arran4` to regenerate the configuration from `home/.chezmoi.toml.tmpl`.
 
-If chezmoi prints `warning: config file template has changed`, rerun `chezmoi init --apply arran4` to regenerate the configuration
-from `.chezmoi.toml.tmpl`.
+The repository uses `.chezmoiroot` pointing to `home/`. The setup includes shared Bash/Zsh prompts and aliases (`home/.chezmoitemplates/`), OS-aware templates (`home/.chezmoi.toml.tmpl`), a Git configuration selecting available editors and credential helpers, tmux and Vim/Neovim settings, Hyprland/Quickshell configurations, and one-time initialization scripts in `home/.chezmoiscripts/`. `home/.chezmoiignore` can skip optional executables when their dependencies are missing.
 
-# Notes
-
-I don't think it's a good idea just to apply my dot files on to your system as there are a lot of configuration options
-and scripts I have put in intentionally, these could go unnoticed or taken for granted (which will make switching to
-other systems harder.) Saying that please pick out what you like / want. I am also happy to take suggestions in the form
-of PR or issues.
-
-
-# Benefits
-
-Using these dotfiles provides a quick way to bootstrap a consistent development
-environment across multiple platforms. Everything is driven by
-[chezmoi](https://www.chezmoi.io/) so you can apply or customize the configuration
-with a single command.
-
-Highlights include:
-
-- Zsh and Bash setups with a shared prompt and a library of useful aliases (see `.chezmoitemplates`).
-- `.gitconfig.tmpl` that wires in the best available editor, color output and credential helpers.
-- Minimal tmux config with mouse mode and zsh as the default shell.
-- Quickshell configuration derived from [caelestia-dots/shell](https://github.com/caelestia-dots/shell) with Nix-only pieces stripped.
-- Example `.vimrc` and support files for Vim or Neovim.
-- OS-aware templates (`.chezmoi.toml.tmpl`) that select paths and tools based on your platform.
-- Scripts for one-time tasks located in `.chezmoiscripts/` that run automatically on the first apply.
-- Conditional `.chezmoiignore` rules skip local executables like
-  `gh-release.sh` when dependencies such as the GitHub CLI (`gh`) are absent.
-
-Feel free to copy individual pieces or adapt the whole setup to suit your needs.
-
-## Dev Tools
-
-### Cross-Platform
-
-| Tool | Installation Command |
-|---|---|
-| golangci-lint | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` |
-| gcm | See [Git Credential Manager](https://github.com/git-ecosystem/git-credential-manager) |
-| CLIProxyAPI | `go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest && mv $HOME/go/bin/server $HOME/.local/bin/CLIProxyAPI` |
-
-### Debian/Ubuntu
-
-| Tool | Installation Command |
-|---|---|
-| gh | `(type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)) && sudo mkdir -p -m 755 /etc/apt/keyrings && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && sudo mkdir -p -m 755 /etc/apt/sources.list.d && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && sudo apt update && sudo apt install gh -y` |
-| glab | `sudo apt update && sudo apt install glab` |
-
-### Gentoo
-
-| Tool | Installation Command |
-|---|---|
-| gh | `sudo emerge dev-vcs/gh` |
-| glab | `sudo emerge dev-vcs/glab` |
-
-### Arch
-
-| Tool | Installation Command |
-|---|---|
-| gh | `sudo pacman -S github-cli` |
-| glab | `sudo pacman -S glab` |
-
-### Mac OS X
-
-| Tool | Installation Command |
-|---|---|
-| gh | `brew install gh` |
-| glab | `brew install glab` |
-
-### Windows
-
-| Tool | Installation Command |
-|---|---|
-| gh | `winget install --id GitHub.cli` |
-| glab | `winget install --id GitLab.glab` |
+After applying, open a new terminal to check your prompt, aliases, and Git settings. `tmux` demonstrates the multiplexer configuration; inspect `home/.chezmoitemplates/` to understand the shared templates. Version checks during setup use a PATH derived from `home/.chezmoi.toml.tmpl` and warn when a configured tool is older than the minimum version or comparison fails.
 
 ## Containerised development environment
 
-The development image under [`containers/dev-dotfiles-debian`](containers/dev-dotfiles-debian/README.md) is published as
-`ghcr.io/arran4/dev-dotfiles-debian:latest`. It can be run with either Podman or Docker. For full-access AI agents,
-treat the outer container as the security boundary and mount only the repository the agent should be able to modify.
-Rootless Podman is preferred because its `keep-id` user namespace mode maps the invoking host user directly to the
-container's `user` account.
+**Start here:** [`containers/dev-dotfiles-debian/README.md`](containers/dev-dotfiles-debian/README.md) is the *single operational guide* for the Debian coding-agent container. It contains the Docker and Podman commands, local image build, Linux launch scripts, volumes and upgrades, GitHub authentication, Docker-in-Docker, host Ollama, and tests. Container-specific operating instructions are intentionally **not duplicated** in this root README.
 
-The copy/paste commands are deliberately single-line `sh -c` invocations. Project naming is derived inside that POSIX
-shell from the current directory, so the caller does not need shell-specific assignment or export syntax. To override
-the derived project name, prefix a command with `env SANDBOX_NAME=my-project`.
+The repository currently provides both a published original image, `ghcr.io/arran4/dev-dotfiles-debian:latest`, and a separately built, opt-in project-home image, `dev-dotfiles-home-volume:trial`. The experimental implementation was merged in [PR #464](https://github.com/arran4/dotfiles/pull/464), but the merger did not by itself publish the trial image as `:latest`. Select the image and matching launch instructions using [Choose the right image](containers/dev-dotfiles-debian/README.md#choose-the-right-image). Do not switch an existing sandbox's image or volume layout without following the [storage and migration guidance](containers/dev-dotfiles-debian/README.md#storage-upgrades-and-migration).
 
-### Podman (recommended)
+On Linux, the repo supplies chezmoi-installed host commands `run-dev-podman.sh` and `run-dev-docker.sh` for the **locally built trial image**. See [Start a project sandbox](containers/dev-dotfiles-debian/README.md#start-a-project-sandbox) for build and invocation, and [Launcher settings](containers/dev-dotfiles-debian/README.md#launcher-settings) for the options. For the published original image, use the [legacy manual command](containers/dev-dotfiles-debian/README.md#currently-published-image-legacy-mounts). Avoid mounting your host home, credentials, or container-engine socket into an unrestricted agent sandbox.
 
-From the repository that the agent should be allowed to modify:
+## Development tools
 
-```sh
-sh -c 'workspace=$(pwd -P); raw=${SANDBOX_NAME:-$(basename "$workspace")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec podman run --rm -it --pull=always --name "dev-agent-${name}" --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" --env DEV_FORGE_VOLUME_INIT=1 --workdir /workspace --mount type=bind,src="$workspace",dst=/workspace,rw --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
-```
+| Platform | Tool | Installation |
+| --- | --- | --- |
+| Cross-platform | golangci-lint | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` |
+| Cross-platform | Git Credential Manager | See [Git Credential Manager](https://github.com/git-ecosystem/git-credential-manager). |
+| Cross-platform | CLIProxyAPI | `go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest && mv "$HOME/go/bin/server" "$HOME/.local/bin/CLIProxyAPI"` |
+| Debian/Ubuntu | GitHub CLI | See the [GitHub CLI Debian installation guide](https://github.com/cli/cli/blob/trunk/docs/install_linux.md). |
+| Debian/Ubuntu | GitLab CLI | `sudo apt update && sudo apt install glab` |
+| Gentoo | GitHub/GitLab CLI | `sudo emerge dev-vcs/gh dev-vcs/glab` |
+| Arch | GitHub/GitLab CLI | `sudo pacman -S github-cli glab` |
+| macOS | GitHub/GitLab CLI | `brew install gh glab` |
+| Windows | GitHub/GitLab CLI | `winget install --id GitHub.cli` / `winget install --id GitLab.glab` |
 
-### Docker
+The development container includes its own toolchain; see its [installed tools](containers/dev-dotfiles-debian/README.md#installed-tools-and-verification) rather than treating these host installation examples as container setup instructions.
 
-The same OCI image can be used with Docker. Prefer Docker's rootless mode when available. For a conventional Docker
-setup where the host account is UID/GID `1000`, matching the image defaults, the equivalent command is:
+## Flatpak applications
 
-```sh
-sh -c 'workspace=$(pwd -P); raw=${SANDBOX_NAME:-$(basename "$workspace")}; name=$(printf "%s" "$raw" | tr "[:upper:]" "[:lower:]" | sed -e "s/[^a-z0-9-]/-/g" -e "s/-\\{2,\\}/-/g" -e "s/^-//" -e "s/-$//"); name=${name:-default-project}; exec docker run --rm -it --pull=always --name "dev-agent-${name}" --hostname "agent-sandbox-${name}" --env DEV_FORGE_VOLUME_INIT=1 --workdir /workspace --mount type=bind,src="$workspace",dst=/workspace,rw --mount type=volume,src="dev-agent-${name}-codex",dst=/home/user/.codex --mount type=volume,src="dev-agent-${name}-agy",dst=/home/user/.gemini --mount type=volume,src="dev-agent-${name}-gh",dst=/home/user/.config/gh --mount type=volume,src="dev-agent-${name}-glab",dst=/home/user/.config/glab-cli ghcr.io/arran4/dev-dotfiles-debian:latest'
-```
+Apps used in this environment include AuthPass (`app.authpass.AuthPass`), Bitwarden (`com.bitwarden.desktop`), Beeper (`com.beeper.Beeper`), Dropbox (`com.dropbox.Client`), Chrome (`com.google.Chrome`), RustDesk (`com.rustdesk.RustDesk`), Spotify (`com.spotify.Client`), Steam (`com.valvesoftware.Steam`), FluffyChat (`im.fluffychat.Fluffychat`), nheko (`im.nheko.Nheko`), Element (`im.riot.Riot`), Anytype (`io.anytype.anytype`), Ente Auth (`io.ente.auth`), RSS Guard (`io.github.martinrotter.rssguard`), Picocrypt (`io.github.picocrypt.Picocrypt`), Speech Note (`net.mkiol.SpeechNote`), ImHex (`net.werwolv.ImHex`), Drawy (`org.kde.drawy`), Marknote (`org.kde.marknote`), LibreOffice (`org.libreoffice.LibreOffice`), LocalSend (`org.localsend.localsend_app`), Firefox (`org.mozilla.firefox`), Thunderbird (`org.mozilla.thunderbird`), and Signal (`org.signal.Signal`).
 
-The `gh` and `glab` configuration directories are isolated from the host and persisted in per-project named volumes.
-Authenticate once inside a new sandbox with `gh auth login` and/or `glab auth login`; later disposable container runs
-with the same derived project name reuse that CLI state without resetting or modifying the host clients.
+To install them from Flathub:
 
-Docker rootless mode maps files owned by the host user to container UID `0`, rather than providing Podman's
-`--userns=keep-id` behaviour. If that makes the bind-mounted repository unwritable, run the rootless Docker container
-with `--user 0:0 --env HOME=/home/user`. Do not use that workaround with a rootful Docker daemon, because it would run
-the agent as real container root and can leave root-owned files in the mounted repository.
-
-Once inside either container, the agents can be run with their own inner restrictions disabled:
-
-```sh
-codex --dangerously-bypass-approvals-and-sandbox
-```
-
-```sh
-agy --dangerously-skip-permissions
-```
-
-For container commands that differ only by engine name, Podman and Docker should be treated as alternatives. Do not
-blindly copy engine-specific flags between them: in particular, `--userns=keep-id` is a Podman feature. The detailed
-container README contains the security boundary and credential-handling guidance.
-
-## Flatpak Apps
-
-I use the following flatpak applications in this environment:
-- AuthPass (`app.authpass.AuthPass`)
-- Bitwarden (`com.bitwarden.desktop`)
-- Beeper (`com.beeper.Beeper`)
-- Dropbox (`com.dropbox.Client`)
-- Google Chrome (`com.google.Chrome`)
-- RustDesk (`com.rustdesk.RustDesk`)
-- Spotify (`com.spotify.Client`)
-- Steam (`com.valvesoftware.Steam`)
-- FluffyChat (`im.fluffychat.Fluffychat`)
-- nheko (`im.nheko.Nheko`)
-- Element (`im.riot.Riot`)
-- Anytype (`io.anytype.anytype`)
-- Ente Auth (`io.ente.auth`)
-- RSS Guard (`io.github.martinrotter.rssguard`)
-- Picocrypt (`io.github.picocrypt.Picocrypt`)
-- Speech Note (`net.mkiol.SpeechNote`)
-- ImHex (`net.werwolv.ImHex`)
-- Drawy (`org.kde.drawy`)
-- Marknote (`org.kde.marknote`)
-- LibreOffice (`org.libreoffice.LibreOffice`)
-- LocalSend (`org.localsend.localsend_app`)
-- Firefox (`org.mozilla.firefox`)
-- Thunderbird (`org.mozilla.thunderbird`)
-- Signal Desktop (`org.signal.Signal`)
-
-You can install them automatically with this one-liner:
 ```sh
 flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
 ```
 
-### Try it out
+## Credentials and Git
 
-1. Clone the repository and run `./install`.
-2. Version checks run during setup using a PATH built from the `paths` defined in `.chezmoi.toml.tmpl` and warn only when a tool is older than the listed minimum version or the comparison fails.
-3. Open a new terminal and check the prompt, aliases and git settings.
-4. Start `tmux` to see the multiplexer configuration.
-5. Inspect `.chezmoitemplates` to learn how the templates are structured.
+### Application-specific tokens
 
-## Encrypting credentials with ejson
+For scripts requiring secure tokens that should not be globally exported (e.g. `slackpm`), standard behavior is to store the token in an application-specific file with strict `600` or `400` permissions. For example, `slackpm` will fallback to loading its token from `~/.config/slackpm/token` if the `$SLACK_TOKEN` environment variable is not explicitly set.
 
-Use ejson to store secrets such as a GitLab OAuth client ID. Create an encrypted
-file named `private_gitlab_oauth.ejson`:
+Do not mount the host's password store or entire credential directory into dev containers. Keep credential files scoped and private.
 
-1. Install [ejson](https://github.com/Shopify/ejson).
-2. Generate a keypair and save the secret key:
+To safely create this file without leaking your token to your shell history, create an empty file under a strict umask first, then edit it. Verify the permissions after saving, as some text editors may replace the file entirely:
 
-   ```sh
-   ejson keygen -w
-   ```
+```sh
+mkdir -p ~/.config/slackpm
+chmod 700 ~/.config/slackpm
+(umask 077 && touch ~/.config/slackpm/token)
+# Open ~/.config/slackpm/token in your preferred editor and paste your token
+ls -l ~/.config/slackpm/token # Verify it is still -rw-------
+```
 
-   Note the printed public key and keep the private key in the output path.
-3. Create `private_gitlab_oauth.ejson` containing your public key and OAuth client ID:
+### Encrypt credentials with ejson
 
-   ```json
-   {
-     "_public_key": "<public key>",
-     "gitlab_oauth_client_id": "<your client ID>"
-   }
-   ```
+Use [ejson](https://github.com/Shopify/ejson) to store encrypted values such as a GitLab OAuth client ID. Generate a keypair with `ejson keygen -w`, retain the private key securely, and create `private_gitlab_oauth.ejson` with your generated public key:
 
-4. Encrypt the file:
+```json
+{
+  "_public_key": "<public key>",
+  "gitlab_oauth_client_id": "<your client ID>"
+}
+```
 
-   ```sh
-   ejson encrypt private_gitlab_oauth.ejson
-   ```
+Run `ejson encrypt private_gitlab_oauth.ejson`. Store the private key where ejson can read it when applying the dotfiles. Change the JSON field names to fit the secrets you need. Do not commit an unencrypted secret or its private key.
 
-Store the private key where `ejson` can read it when applying your dotfiles.
-Feel free to change the JSON keys to suit whichever credentials you need to
-encrypt.
+### Git templates and editor
 
-## Git template files
+Chezmoi copies `home/dot_config/git/template` to `~/.config/git/template`; Git uses it to initialize new repositories. Edit the stub `README.md` and `.gitignore` in that *template directory* to customize newly initialized repositories. These are functional templates, not extra documentation guides to consolidate.
 
-Git initialises new repositories using the contents of
-`~/.config/git/template`. `chezmoi` copies everything under
-`dot_config/git/template` into this directory. Update the stub `README.md` and
-`.gitignore` files there to provide your own defaults for new repositories,
-then run `chezmoi apply` to install them.
-
-## KDE setup
-
-Chezmoi includes a run-once script that sets KDE's super user command to `sudo` when `kwriteconfig6` is present. If you install KDE after applying these dotfiles, run `chezmoi apply` again to trigger the script.
-
-## Git editor selection
-
-`dot_gitconfig.tmpl` chooses a default editor based on what is installed. On
-Windows it searches the directories pointed to by the `ProgramFiles`,
-`ProgramFiles(x86)` and `SystemRoot` environment variables. GUI tools are
-preferred: `notepad++`, `gvim`, Visual Studio Code (`code`), IntelliJ
-(`idea64`) and finally plain `notepad`. Other systems use `neovim` or `vim`
-when available.
-If you want a different editor, override the setting after applying the
-dotfiles:
+`home/dot_gitconfig.tmpl` selects an available default editor. On Windows it searches the `ProgramFiles`, `ProgramFiles(x86)`, and `SystemRoot` directories and prefers Notepad++, gVim, VS Code, IntelliJ, then Notepad. Other systems use Neovim or Vim when available. To override the default after applying the dotfiles:
 
 ```sh
 git config --global core.editor <command>
+```
 
-## SSH configuration
+### SSH configuration
 
-The default SSH configuration adds keys to your agent, stores passphrases in the
-macOS keychain and limits authentication to the specified identities:
+The default SSH configuration adds keys to the agent and uses platform-appropriate keychain options and configured identities. On macOS, a host entry may use:
 
 ```sshconfig
 Host *
@@ -254,8 +105,7 @@ Host *
   IdentitiesOnly yes
 ```
 
-To disable or override these options, create another `Host` block with your
-preferred values. For example:
+For an exception, add a more specific `Host` block with the options that the target needs, for example:
 
 ```sshconfig
 Host legacy.example.com
@@ -264,18 +114,19 @@ Host legacy.example.com
   IdentitiesOnly no
 ```
 
-## Foot terminal emulator
+## Desktop and shell notes
 
-These dotfiles include a template for [foot](https://codeberg.org/dnkl/foot), a
-fast Wayland terminal. Install foot from your package manager and apply the
-configuration:
+### Hyprland shortcuts
 
-```sh
-chezmoi apply
-```
+See the [Hyprland keyboard shortcut reference](HYPRLAND_KEYBOARD_SHORTCUTS.md) when you need the full bindings table. This is a separate on-demand *reference sheet*, not a competing setup guide; the binding configuration remains the source of truth. Coding-agent maintenance instructions for it are in [`AGENTS.md`](AGENTS.md).
 
-To make foot the default terminal on systems that support `update-alternatives`,
-run:
+### KDE setup
+
+Chezmoi includes a run-once script that sets KDE's superuser command to `sudo` if `kwriteconfig6` is present. If you install KDE after applying these dotfiles, run `chezmoi apply` again to trigger the script.
+
+### Foot terminal
+
+The dotfiles include a [foot](https://codeberg.org/dnkl/foot) Wayland terminal template. Install foot using your package manager, then apply with `chezmoi apply`. On systems using `update-alternatives`, set it as the terminal with:
 
 ```sh
 sudo update-alternatives --set x-terminal-emulator /usr/bin/foot
