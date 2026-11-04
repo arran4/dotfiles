@@ -8,14 +8,20 @@ LABEL org.opencontainers.image.description="Debian development container with do
 ARG USER_NAME=user
 ARG USER_UID=1000
 ARG USER_GID=1000
-ARG GEMINI_CLI_PACKAGE=gemini-cli
-ARG CODEX_CLI_PACKAGE=codex-cli
+ARG CODEX_RELEASE=latest
 ARG FLUTTER_CHANNEL=stable
+ARG DOTFILES_RELEASE=unknown
+ARG DOTFILES_COMMIT=unknown
 
 ENV DEBIAN_FRONTEND=noninteractive \
-  TZ=Etc/UTC \
-  SHELL=/usr/bin/zsh
+  TZ=Australia/Melbourne \
+  SHELL=/usr/bin/zsh \
+  LANG=en_US.UTF-8 \
+  LC_ALL=en_US.UTF-8 \
+  PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
 
+# Keep the expensive tool installation separate from the dotfiles-dependent
+# home seed so changing dotfiles does not reinstall the entire toolchain.
 RUN set -euxo pipefail \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -29,23 +35,54 @@ RUN set -euxo pipefail \
   && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
   && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
   && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+  && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   jq \
+  xmlstarlet \
+  libxml2-utils \
   gh \
   git \
+  git-lfs \
+  git-credential-oauth \
   openssh-client \
   sudo \
+  bash \
+  bash-completion \
   zsh \
+  fish \
   vim \
+  neovim \
+  less \
+  bat \
+  git-delta \
   kdiff3 \
+  coreutils \
+  grep \
+  sed \
+  gawk \
+  findutils \
   diffutils \
+  file \
+  patch \
+  rsync \
+  moreutils \
+  shellcheck \
+  shfmt \
   ripgrep \
   fd-find \
   fzf \
   tmux \
   htop \
+  btop \
   tree \
+  procps \
+  psmisc \
+  lsof \
+  strace \
+  time \
+  util-linux \
+  bsdextrautils \
   build-essential \
   clang \
   clang-format \
@@ -70,89 +107,165 @@ RUN set -euxo pipefail \
   python3-venv \
   golang \
   default-jdk \
+  maven \
   nodejs \
-  npm \
+  docker.io \
+  docker-cli \
+  docker-buildx \
+  docker-compose \
+  podman \
+  uidmap \
+  fuse-overlayfs \
+  slirp4netns \
+  passt \
+  crun \
+  iptables \
+  tar \
+  gzip \
+  bzip2 \
+  zip \
   unzip \
-  hugo \
+  7zip \
   xz-utils \
+  dos2unix \
+  gettext-base \
+  iproute2 \
+  iputils-ping \
+  netcat-openbsd \
+  socat \
+  openssl \
+  traceroute \
+  bind9-dnsutils \
+  uptimed \
+  hugo \
   ca-certificates \
   locales \
+  tzdata \
+  && command -v podman \
+  && podman --version \
+  && command -v docker \
+  && docker --version \
+  && command -v dockerd \
+  && dockerd --version \
+  && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
+  && ln -sf /usr/bin/batcat /usr/local/bin/bat \
   && GLAB_LATEST_URL=$(curl -sL https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases | jq -r '.[0].assets.links[] | select(.name | test("deb")) | .url' | grep -i "$(dpkg --print-architecture)" | head -n 1) \
   && curl -sL "$GLAB_LATEST_URL" -o glab.deb \
   && dpkg -i glab.deb \
   && rm glab.deb \
-  && rm -rf /var/lib/apt/lists/*
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN set -euxo pipefail \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends locales \
   && sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
-  && locale-gen
-
-# Make UTF-8 the default for every process
-ENV LANG=en_US.UTF-8 \
-    LC_ALL=en_US.UTF-8
-
-RUN set -euxo pipefail \
+  && locale-gen \
+  && rm -rf /var/lib/apt/lists/* \
   && groupadd --gid "${USER_GID}" "${USER_NAME}" \
   && useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --shell /usr/bin/zsh "${USER_NAME}" \
   && mkdir -p /etc/sudoers.d \
   && echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER_NAME} \
-  && chmod 0440 /etc/sudoers.d/${USER_NAME}
-
-RUN set -euxo pipefail \
-  && python3 -m pip install --no-cache-dir --break-system-packages \
-    "${GEMINI_CLI_PACKAGE}" \
-    "${CODEX_CLI_PACKAGE}" \
-    "mini-swe-agent"
-
-RUN set -euxo pipefail \
-  && npm install -g @google/jules
-
-RUN set -euxo pipefail \
-  && npm install -g opencode-ai
-
-RUN set -euxo pipefail \
-  && npm install -g @anthropic-ai/claude-code
-
-RUN set -euxo pipefail \
-  && npm install -g @githubnext/github-copilot-cli
-
-RUN set -euxo pipefail \
-  && bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source qwenchat || true
-
-RUN set -euxo pipefail \
-  && go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
-  && mv /root/go/bin/server /usr/local/bin/CLIProxyAPI
-
-RUN set -euxo pipefail \
-  && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin
-
-RUN set -euxo pipefail \
+  && chmod 0440 /etc/sudoers.d/${USER_NAME} \
+  && python3 -m pip install --no-cache-dir --break-system-packages "mini-swe-agent" "yq" \
+  && curl -fsSL https://chatgpt.com/codex/install.sh \
+    | CODEX_HOME=/opt/codex \
+      CODEX_INSTALL_DIR=/usr/local/bin \
+      CODEX_NON_INTERACTIVE=1 \
+      CODEX_RELEASE="${CODEX_RELEASE}" \
+      sh \
+  && codex --version \
+  && npm install -g opencode-ai \
+  && npm install -g @anthropic-ai/claude-code \
+  && npm install -g @githubnext/github-copilot-cli \
+  && npm install -g @qwen-code/qwen-code \
+  && npm install -g @playwright/cli@latest \
+  && playwright-cli install-browser --with-deps --only-shell \
+  && playwright-cli --help >/dev/null \
+  && GOBIN=/usr/local/bin go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest \
+  && mv /usr/local/bin/server /usr/local/bin/CLIProxyAPI \
+  && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
 
-ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH}
+# Install all development CLIs together using Go's module installer.
+# txtar uses 'module txtar', so it must be built inside a local checkout
+# until that upstream module path is corrected. Avoid a separate install layer.
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-release-clis.sh /usr/local/bin/dev-dotfiles-test-release-clis
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-txtar.sh /usr/local/bin/dev-dotfiles-test-txtar
+RUN set -eu; \
+  export GOBIN=/usr/local/bin GOTOOLCHAIN=auto; \
+  go install github.com/arran4/go-subcommand/cmd/gosubc@latest; \
+  go install github.com/arran4/g2/cmd/g2@latest; \
+  go install github.com/arran4/header/cmd/header@latest; \
+  go install github.com/arran4/rntocase/cmd/rntocase@latest; \
+  tmp="$(mktemp -d)"; \
+  git clone --depth 1 --branch main https://github.com/arran4/txtar.git "$tmp/txtar"; \
+  git -C "$tmp/txtar" rev-parse HEAD; \
+  (cd "$tmp/txtar" && go install ./cmd/txtar); \
+  rm -rf -- "$tmp"; \
+  for tool in gosubc g2 header rntocase txtar; do \
+    command -v "$tool"; \
+    go version -m "/usr/local/bin/$tool"; \
+  done; \
+  /usr/local/bin/dev-dotfiles-test-release-clis; \
+  /usr/local/bin/dev-dotfiles-test-txtar
 
-COPY --from=dotfiles . /tmp/dotfiles
-RUN set -euxo pipefail \
-  && chown -R "${USER_UID}:${USER_GID}" /tmp/dotfiles
+# Nested rootless Podman needs subordinate IDs that fit inside a typical
+# 65536-ID rootless outer namespace, not useradd's default host-sized range.
+# The store is deliberately outside home/workspace and is user-owned before
+# any optional persistence volume is mounted on it.
+RUN set -eu; \
+  sed -i "/^${USER_NAME}:/d" /etc/subuid /etc/subgid; \
+  printf '%s:10000:32768\n' "$USER_NAME" >> /etc/subuid; \
+  printf '%s:10000:32768\n' "$USER_NAME" >> /etc/subgid; \
+  install -d -m 0700 -o "$USER_UID" -g "$USER_GID" /var/lib/dev-podman
+
+# Jules CLI is intentionally disabled. Its npm installer can preserve high
+# UID/GID values from its downloaded payload, which makes the resulting image
+# impossible to unpack with a normal rootless Podman subordinate-ID range.
+# If Jules is re-enabled, normalize the installed payload ownership as part of
+# the same layer so those archive owners are not published in the image.
+# RUN set -euxo pipefail \
+#   && npm install -g @google/jules \
+#   && chown -h root:root /usr/local/bin/jules \
+#   && chown -R root:root "$(npm root -g)/@google/jules" \
+#   && jules version
+
+ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH} \
+  CONTAINERS_STORAGE_CONF=/etc/containers/dev-podman-storage.conf
+
+COPY --chmod=0644 containers/dev-dotfiles-debian/podman-storage.conf /etc/containers/dev-podman-storage.conf
+COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
+COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
+COPY --chmod=0755 containers/dev-dotfiles-debian/migrate-antigravity-state.sh /usr/local/bin/dev-dotfiles-migrate-antigravity-state
+COPY containers/dev-dotfiles-debian/skel/ /usr/local/share/dev-dotfiles-debian/skel/
+COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
+COPY --chmod=0755 containers/dev-dotfiles-debian/test-playwright.sh /usr/local/bin/dev-dotfiles-test-playwright
+COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/bin/dev-dotfiles-home-seed
+# Image-managed skills: Codex admin path and an independent source for agy home sync.
+COPY containers/dev-dotfiles-debian/agent-skills/ /etc/codex/skills/
+COPY containers/dev-dotfiles-debian/agent-skills/ /usr/local/share/dev-dotfiles-debian/agent-skills/
+COPY --chmod=0755 containers/dev-dotfiles-debian/sync-agent-skills.sh /usr/local/bin/dev-dotfiles-sync-agent-skills
+
+# Prepare the home as the non-root user, then archive and clear it as root in
+# the SAME layer. This avoids a temporary full home in an intermediate image
+# layer and avoids switching Dockerfile USER/WORKDIR for build-only operations.
+RUN set -eu; \
+  home=$(getent passwd "$USER_NAME" | cut -d: -f6); \
+  test -d "$home"; \
+  install -d -m 0755 /usr/local/share/dev-dotfiles-debian; \
+  runuser -u "$USER_NAME" -- sh -c 'cd "$HOME" && exec /usr/local/bin/dev-dotfiles-setup-user'; \
+  test ! -e "$home/.codex/antigravity-cli"; \
+  test ! -L /workspace; \
+  install -d -o "$(id -u "$USER_NAME")" -g "$(id -g "$USER_NAME")" /workspace; \
+  if [ -d "$home/workspace" ] && [ ! -L "$home/workspace" ] && [ -z "$(ls -A "$home/workspace")" ]; then rmdir "$home/workspace"; fi; \
+  if [ ! -e "$home/workspace" ] && [ ! -L "$home/workspace" ]; then ln -s /workspace "$home/workspace"; fi; \
+  find /usr/local/share/dev-dotfiles-debian/skel -type f -printf './%P\n' > /tmp/dev-dotfiles-skel-excludes; \
+  tar -C "$home" --exclude-from=/tmp/dev-dotfiles-skel-excludes -cf /usr/local/share/dev-dotfiles-debian/home-seed.tar .; \
+  rm /tmp/dev-dotfiles-skel-excludes; \
+  digest=$(sha256sum /usr/local/share/dev-dotfiles-debian/home-seed.tar | cut -d ' ' -f 1); \
+  printf '%s:%s:%s\n' "$DOTFILES_RELEASE" "$DOTFILES_COMMIT" "$digest" > /usr/local/share/dev-dotfiles-debian/home-seed-version; \
+  find "$home" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+
+ENV DEV_HOME_SEED_ARCHIVE=/usr/local/share/dev-dotfiles-debian/home-seed.tar \
+  DEV_HOME_SEED_VERSION_FILE=/usr/local/share/dev-dotfiles-debian/home-seed-version
+LABEL io.github.arran4.dev-dotfiles.home-seed="1"
 
 USER ${USER_NAME}
-WORKDIR /home/${USER_NAME}
-
-RUN yes "" | sh -c "chezmoi init --source /tmp/dotfiles --apply --force --no-tty --debug "; \
-  rm -rf /tmp/dotfiles
-
-RUN set -euxo pipefail \
-  && flutter --version \
-  && go version \
-  && git --version
-
-RUN set -euxo pipefail \
-  && curl -fsSL https://junie.jetbrains.com/install.sh | bash \
-  && junie --version
-
-ENTRYPOINT ["/usr/bin/zsh", "-l"]
+WORKDIR /workspace
+ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]

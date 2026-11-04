@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+ws=$(hyprctl activeworkspace -j | awk -F'id":' '{print $2}' | cut -d',' -f1 | tr -d '[:space:]')
+img="$HOME/Pictures/wallpapers/${ws}.jpg"
+[ -f "$img" ] || img="$HOME/Pictures/wallpapers/default.jpg"
+
+swaybg -m fill "$img" &

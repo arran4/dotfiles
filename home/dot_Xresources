@@ -1,0 +1,66 @@
+URxvt*font: xft:JetBrains Mono:size=11,\
+            xft:Hack:size=11,\
+            xft:Go Mono:size=11,\
+            xft:B612 Mono:size=11,\
+            xft:DejaVu Sans Mono:size=11,\
+            xft:Liberation Mono:size=11,\
+            xft:monospace:size=11,\
+            fixed
+URxvt*letterSpace: -1
+
+URxvt.depth: 32
+URxvt*reverseVideo: False
+URxvt*background: [90]#002b36
+URxvt*foreground: #839496
+
+URxvt*saveLines: 65535
+URxvt.secondaryScroll: False
+URxvt*scrollstyle: plain
+
+URxvt.perl-ext-common: default,eval,matcher,tabbed,fullscreen
+URxvt.url-launcher: /usr/bin/xdg-open
+URxvt.matcher.launcher: /usr/bin/xdg-open
+URxvt.matcher.button: 1
+URxvt.keysym.Control-Insert: eval:selection_to_clipboard
+URxvt.keysym.Shift-Insert: eval:paste_clipboard
+URxvt.keysym.F11: perl:fullscreen:switch
+
+Rxvt*reverseVideo: True
+Rxvt*saveLines: 65535
+
+XTerm*faceName: Hack
+XTerm*faceSize: 11
+XTerm*renderFont: true
+XTerm*forceXftHeight: false
+XTerm*forceBoxChars: true
+XTerm*font: fixed
+
+XTerm*reverseVideo: False
+XTerm*background: #05070a
+XTerm*foreground: #f0f6fc
+XTerm*cursorColor: #ffffff
+XTerm*selectToClipboard: true
+XTerm*boldColors: true
+XTerm*saveLines: 65535
+
+XTerm*color0:  #0d1117
+XTerm*color1:  #ff5f56
+XTerm*color2:  #63e67a
+XTerm*color3:  #f5c451
+XTerm*color4:  #4da3ff
+XTerm*color5:  #c678dd
+XTerm*color6:  #45d4dc
+XTerm*color7:  #d8dee9
+XTerm*color8:  #6e7681
+XTerm*color9:  #ff7b72
+XTerm*color10: #7ee787
+XTerm*color11: #ffd866
+XTerm*color12: #79c0ff
+XTerm*color13: #d2a8ff
+XTerm*color14: #7de3ea
+XTerm*color15: #ffffff
+
+XTerm*VT100.translations: #override \
+    Ctrl <Key>Insert: copy-selection(CLIPBOARD) \n\
+    Shift <Key>Insert: insert-selection(CLIPBOARD) \n\
+    <Key>F11: fullscreen(toggle)

@@ -1,0 +1,50 @@
+# Managed by chezmoi.
+# Prefer compatibility for remote systems while keeping Foot's native
+# Wayland rendering and the terminal conventions used elsewhere here.
+
+[main]
+term=xterm-256color
+# Match the XTerm configuration and use a font known to be installed by these
+# dotfiles. Avoid broad fontconfig fallbacks that can resolve to proportional
+# Noto Sans on systems where the requested family is unavailable.
+font=Hack:size=11
+pad=6x6
+selection-target=clipboard
+
+[scrollback]
+lines=65535
+
+[url]
+launch=xdg-open ${url}
+
+# Use the long-supported [colors] section rather than the newer light/dark
+# variants so this configuration also works with packaged Foot versions that
+# reject [colors-dark].
+[colors]
+background=05070a
+foreground=f0f6fc
+# Keep the terminal translucent while preserving the dark theme.
+alpha=0.85
+regular0=0d1117
+regular1=ff5f56
+regular2=63e67a
+regular3=f5c451
+regular4=4da3ff
+regular5=c678dd
+regular6=45d4dc
+regular7=d8dee9
+bright0=6e7681
+bright1=ff7b72
+bright2=7ee787
+bright3=ffd866
+bright4=79c0ff
+bright5=d2a8ff
+bright6=7de3ea
+bright7=ffffff
+urls=79c0ff
+
+[key-bindings]
+clipboard-copy=Control+Insert Control+Shift+c XF86Copy
+clipboard-paste=Shift+Insert Control+Shift+v XF86Paste
+primary-paste=none
+fullscreen=F11

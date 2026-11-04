@@ -1,5 +1,7 @@
 # Agent rules for generation:
-# https://arran4.com/post/2026/006-Github-CI-and-Deploy/
+# https://arran4.github.io/blog/post/2026/042-simplified-github-ci-release-safe/
+# Release safety details:
+# https://arran4.github.io/blog/post/2026/041-release-safe-single-owner-github-ci/
 name: CI/CD
 
 on:
@@ -32,12 +34,18 @@ on:
           - release-test
           - release-rc
           - release-alpha
+          - publish-tag
           - monthly-maintenance
       release_version_override:
         description: "Optional explicit release version (for example 2.4.0 or 2.4.0-rc.2)"
         required: false
         default: ""
         type: string
+      force_release:
+        description: "Release unchanged source and refresh bundled tools (pull base image, rebuild without cache)"
+        required: false
+        default: false
+        type: boolean
       allow_prs:
         description: "Allow automation to open pull requests"
         required: false
@@ -47,9 +55,11 @@ on:
     - cron: '17 19 1 * *'
     - cron: '41 19 * * *'
 
+# Release runs never cancel each other (including manual dispatch and tag recovery).
+# Ordinary CI still supersedes older checks on the same ref.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ ((github.event_name == 'workflow_dispatch' && (startsWith(inputs.mode, 'release-') || inputs.mode == 'publish-tag')) || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) && format('release-{0}', github.run_id) || format('ci-{0}-{1}', github.event_name, github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ !((github.event_name == 'workflow_dispatch' && (startsWith(inputs.mode, 'release-') || inputs.mode == 'publish-tag')) || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))) }}
 
 permissions:
   contents: write
@@ -67,6 +77,7 @@ jobs:
       run_pr_meta_checks: ${{ steps.route.outputs.run_pr_meta_checks }}
       run_cleanup: ${{ steps.route.outputs.run_cleanup }}
       run_release: ${{ steps.route.outputs.run_release }}
+      run_docker_build: ${{ steps.route.outputs.run_docker_build }}
       is_monthly: ${{ steps.route.outputs.is_monthly }}
       is_nightly: ${{ steps.route.outputs.is_nightly }}
     steps:
@@ -79,13 +90,14 @@ jobs:
           run_pr_meta_checks=false
           run_cleanup=false
           run_release=false
+          run_docker_build=false
           is_monthly=false
           is_nightly=false
 
           case "${{ github.event_name }}" in
             push)
               run_code_checks=true
-              if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+              if [[ "${{ github.ref }}" == refs/tags/v* || "${{ github.ref }}" == refs/tags/test-* ]]; then
                 run_release=true
               fi
               ;;
@@ -94,18 +106,29 @@ jobs:
                 run_cleanup=true
               else
                 run_pr_meta_checks=true
-                if [[ "${{ github.event.pull_request.head.repo.full_name || '' }}" != "${{ github.repository }}" ]]; then
-                  run_code_checks=true
-                fi
+                # Run docker build on PRs modifying relevant files
+                run_docker_build=true
+                run_code_checks=true # Run checks for all PRs
               fi
               ;;
             release)
-              run_release=true
+              run_release=false
               ;;
             workflow_dispatch)
               run_code_checks=true
+              if [[ "${{ inputs.mode }}" == "build" ]]; then
+                run_docker_build=true
+              fi
               if [[ "${{ inputs.mode }}" == release-* ]]; then
-                run_release=true
+                run_release=false # The release-* mode computes and pushes the tag, then explicitly dispatches the tag release run
+              fi
+              if [[ "${{ inputs.mode }}" == "publish-tag" ]]; then
+                if [[ "${{ github.ref }}" == refs/tags/v* || "${{ github.ref }}" == refs/tags/test-* ]]; then
+                  run_release=true
+                else
+                  echo "publish-tag must be dispatched against a release tag ref" >&2
+                  exit 1
+                fi
               fi
               if [[ "${{ inputs.mode }}" == "monthly-maintenance" ]]; then
                 is_monthly=true
@@ -129,6 +152,10 @@ jobs:
           echo "run_pr_meta_checks=$run_pr_meta_checks" >> "$GITHUB_OUTPUT"
           echo "run_cleanup=$run_cleanup" >> "$GITHUB_OUTPUT"
           echo "run_release=$run_release" >> "$GITHUB_OUTPUT"
+          if [[ "$run_release" == "true" ]]; then
+            run_docker_build=true
+          fi
+          echo "run_docker_build=$run_docker_build" >> "$GITHUB_OUTPUT"
           echo "is_monthly=$is_monthly" >> "$GITHUB_OUTPUT"
           echo "is_nightly=$is_nightly" >> "$GITHUB_OUTPUT"
 
@@ -141,7 +168,7 @@ jobs:
       has_docker: ${{ steps.detect.outputs.has_docker }}
       has_packaging: ${{ steps.detect.outputs.has_packaging }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - id: detect
         shell: bash
@@ -166,10 +193,10 @@ jobs:
     if: ${{ needs.route.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -179,14 +206,24 @@ jobs:
     if: ${{ needs.route.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install ShellCheck and zsh
         run: sudo apt-get update && sudo apt-get install -y shellcheck zsh
       - run: |
           shopt -s globstar
           shellcheck **/*.sh
+          shellcheck .github/scripts/release_aliases.sh .github/scripts/test_release_safety.sh .github/scripts/prepare_release_tag.sh .github/scripts/test_manual_release.sh
+      - name: Unit Tests
+        run: |
+          ./test_slackpm_auth.sh
+      - name: Release safety regression tests
+        run: |
+          bash .github/scripts/test_release_safety.sh
+          bash .github/scripts/test_manual_release.sh
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
+      - name: Verify recurring chezmoi drift guards
+        run: sh ./.github/scripts/test_chezmoi_drift.sh
       - name: Verify shell configuration parses
         run: |
           for f in ~/.bashrc ~/.bash_profile ~/.bash_login ~/.bash_logout ~/.profile; do
@@ -203,10 +240,10 @@ jobs:
   docker-build:
     name: Build dev-dotfiles-debian image
     needs: [route, discover]
-    if: ${{ needs.discover.outputs.has_docker == 'true' && needs.route.outputs.run_release == 'true' }}
+    if: ${{ needs.discover.outputs.has_docker == 'true' && needs.route.outputs.run_docker_build == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
@@ -215,18 +252,28 @@ jobs:
           build-contexts: dotfiles=.
           file: containers/dev-dotfiles-debian/Dockerfile
           push: false
+          pull: ${{ inputs.force_release == true }}
+          no-cache: ${{ inputs.force_release == true }}
           tags: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian:ci-${{ github.run_id }}
+          build-args: |
+            DOTFILES_RELEASE=ci-${{ github.run_id }}
+            DOTFILES_COMMIT=${{ github.sha }}
 
   docker-release:
     name: Docker release
-    needs: [route, discover, docker-build]
-    if: ${{ needs.discover.outputs.has_docker == 'true' && needs.route.outputs.run_release == 'true' }}
+    needs: [route, discover, docker-build, shell-check, gitleaks]
+    if: ${{ needs.discover.outputs.has_docker == 'true' && needs.route.outputs.run_release == 'true' && needs.shell-check.result == 'success' && needs.gitleaks.result == 'success' }}
     runs-on: ubuntu-latest
+    # Compute moving aliases and publish all eligible tags under one lock and push.
+    concurrency:
+      group: ${{ github.repository }}-dev-dotfiles-debian-publish
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -241,33 +288,55 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian
           labels: |
             org.opencontainers.image.description=Debian development container with dotfiles
+          # The version tag is always emitted; moving aliases are selected
+          # immediately before the same build/push step, under the job lock.
+          flavor: |
+            latest=false
           tags: |
-            type=ref,event=tag
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
-            type=semver,pattern=v{{version}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=semver,pattern=v{{major}}.{{minor}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=semver,pattern=v{{major}},value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=raw,value=${{ inputs.release_version_override }},enable=${{ inputs.release_version_override != '' }}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.ref_name }}
+      - name: Select safe image tags
+        id: image_tags
+        shell: bash
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/dev-dotfiles-debian
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Fail closed if remote tag discovery fails. Run inside the same
+          # serialization group as publication to avoid check/push races.
+          aliases="$(bash .github/scripts/release_aliases.sh "$RELEASE_TAG")"
+          {
+            echo 'tags<<EOF'
+            printf '%s:%s\n' "$IMAGE" "$RELEASE_TAG"
+            if [[ -n "$aliases" ]]; then
+              while IFS= read -r alias; do
+                printf '%s:%s\n' "$IMAGE" "$alias"
+              done <<< "$aliases"
+            fi
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v6
         with:
           context: .
           build-contexts: dotfiles=.
           file: containers/dev-dotfiles-debian/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          pull: ${{ inputs.force_release == true }}
+          no-cache: ${{ inputs.force_release == true }}
+          tags: ${{ steps.image_tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
+          build-args: |
+            DOTFILES_RELEASE=${{ steps.meta.outputs.version }}
+            DOTFILES_COMMIT=${{ github.sha }}
 
   package-dotfiles:
     name: Package Dotfiles
-    needs: [route, discover]
-    if: ${{ needs.discover.outputs.has_packaging == 'true' && needs.route.outputs.run_release == 'true' }}
+    needs: [route, discover, shell-check, gitleaks]
+    if: ${{ needs.discover.outputs.has_packaging == 'true' && needs.route.outputs.run_release == 'true' && needs.shell-check.result == 'success' && needs.gitleaks.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Apply configuration
@@ -282,10 +351,10 @@ jobs:
           path: dotfiles.zip
           retention-days: 1
 
-  publish-draft:
-    name: Publish draft release assets
-    needs: [package-dotfiles, docker-release]
-    if: ${{ needs.route.outputs.run_release == 'true' }}
+  publish-release:
+    name: Publish GitHub release
+    needs: [route, package-dotfiles, docker-release]
+    if: ${{ startsWith(github.ref, 'refs/tags/') && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Collect artifacts
@@ -293,26 +362,57 @@ jobs:
         with:
           path: dist-release
           pattern: dotfiles-*
-      - name: Publish draft GitHub release
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          draft: true
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-test') || contains(github.ref, 'test-') }}
           files: dist-release/dotfiles-archive/dotfiles.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  promote-release:
-    name: Promote draft to published
-    needs: [publish-draft]
-    if: ${{ github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-')) }}
+
+  manual-release-tag:
+    name: Prepare manual release tag
+    needs: [route, shell-check, gitleaks]
+    if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') && needs.shell-check.result == 'success' && needs.gitleaks.result == 'success' }}
     runs-on: ubuntu-latest
+    # Tag incrementing is a read-modify-write operation; keep it serialized.
+    concurrency:
+      group: ${{ github.repository }}-dotfiles-version-tag-creation
+      cancel-in-progress: false
+      queue: max
+    permissions:
+      contents: write
+      actions: write
     steps:
-      - name: Promote release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Configure Git
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/v* ]]; then
-            gh release edit "${{ github.ref_name }}" --draft=false
-          else
-            echo "Promotion step placeholder (gh api patch release draft=false)"
-          fi
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+      - uses: arran4/git-tag-inc-action@v1
+        with:
+          mode: install
+      - name: Verify release tag preparation with installed git-tag-inc
+        run: RELEASE_TEST_REAL_TAG_INC=true bash .github/scripts/test_manual_release.sh
+      - name: Compute and push tag
+        id: release_tag
+        shell: bash
+        env:
+          RELEASE_MODE: ${{ inputs.mode }}
+          RELEASE_VERSION_OVERRIDE: ${{ inputs.release_version_override }}
+          FORCE_RELEASE: ${{ inputs.force_release }}
+        run: bash .github/scripts/prepare_release_tag.sh
+
+      - name: Dispatch release pipeline on tag
+        if: ${{ steps.release_tag.outputs.tag != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release_tag.outputs.tag }}
+          FORCE_RELEASE: ${{ inputs.force_release }}
+        run: |
+          set -euo pipefail
+          gh workflow run ci.yml --ref "$RELEASE_TAG" -f mode=publish-tag -f force_release="$FORCE_RELEASE"

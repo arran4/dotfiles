@@ -1,0 +1,37 @@
+#!perl
+
+sub command_exists {
+  my ($command) = @_;
+  return system("sh", "-c", "command -v $command >/dev/null 2>&1") == 0;
+}
+
+sub toggle_fullscreen {
+  my ($self) = @_;
+
+  if ($ENV{HYPRLAND_INSTANCE_SIGNATURE} && command_exists("hyprctl")) {
+    system("hyprctl", "dispatch", "fullscreen", "0");
+    return;
+  }
+
+  if (command_exists("wmctrl")) {
+    system("wmctrl", "-r", ":ACTIVE:", "-b", "toggle,fullscreen");
+    return;
+  }
+
+  warn "urxvt fullscreen: no supported fullscreen controller found (hyprctl or wmctrl)\n";
+}
+
+sub on_action {
+  my ($self, $action) = @_;
+  return () unless $action eq "switch";
+  toggle_fullscreen($self);
+  return ();
+}
+
+# Keep compatibility with older fullscreen snippets that dispatch user commands.
+sub on_user_command {
+  my ($self, $command) = @_;
+  return () unless $command eq "fullscreen:switch";
+  toggle_fullscreen($self);
+  return ();
+}

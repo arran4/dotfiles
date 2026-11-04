@@ -1,0 +1,743 @@
+name: Hyprland validation
+
+on:
+  pull_request:
+    paths:
+      - 'dot_config/hypr/**'
+      - 'home/dot_config/hypr/**'
+      - '.chezmoi.toml.tmpl'
+      - 'home/.chezmoi.toml.tmpl'
+      - '.github/workflows/hyprland.yml'
+      - '.github/scripts/test_hyprland_terminals.lua'
+      - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
+      - 'home/dot_local/bin/executable_cliphist-daemon.sh.tmpl'
+  push:
+    branches:
+      - main
+    paths:
+      - 'dot_config/hypr/**'
+      - 'home/dot_config/hypr/**'
+      - '.chezmoi.toml.tmpl'
+      - 'home/.chezmoi.toml.tmpl'
+      - '.github/workflows/hyprland.yml'
+      - '.github/scripts/test_hyprland_terminals.lua'
+      - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
+      - 'home/dot_local/bin/executable_cliphist-daemon.sh.tmpl'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+
+      - name: Render dotfiles
+        run: |
+          yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source="$PWD" --apply
+
+      - name: Check Hyprland Lua syntax
+        run: |
+          find "$HOME/.config/hypr" -name '*.lua' -print0 | xargs -0 -r luac5.4 -p
+
+      - name: Validate Hyprland Lua dispatcher API usage
+        shell: python
+        run: |
+          import pathlib
+          import re
+          import sys
+
+          paths = [
+              pathlib.Path('home/dot_config/hypr/hyprland.lua.tmpl') if pathlib.Path('home/dot_config/hypr/hyprland.lua.tmpl').exists() else pathlib.Path('dot_config/hypr/hyprland.lua.tmpl'),
+              pathlib.Path('home/dot_config/hypr/special_workspaces.lua') if pathlib.Path('home/dot_config/hypr/special_workspaces.lua').exists() else pathlib.Path('dot_config/hypr/special_workspaces.lua'),
+          ]
+          sources = {path: path.read_text() for path in paths if path.exists()}
+
+          allowed_top_level = {
+              'exec_cmd',
+              'focus',
+              'global',
+              'layout',
+              'window',
+              'workspace',
+          }
+          allowed_window = {
+              'alter_zorder',
+              'close',
+              'cycle_next',
+              'drag',
+              'float',
+              'fullscreen',
+              'kill',
+              'move',
+              'resize',
+              'signal',
+          }
+          allowed_workspace = {
+              'toggle_special',
+          }
+
+          errors = []
+          for path, source in sources.items():
+              for match in re.finditer(r'hl\.dsp\.layout\.([A-Za-z_]\w*)', source):
+                  errors.append(
+                      f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                      f'invalid nested layout dispatcher hl.dsp.layout.{match.group(1)}; '
+                      'use hl.dsp.layout("message")'
+                  )
+
+              for namespace, allowed in (
+                  ('window', allowed_window),
+                  ('workspace', allowed_workspace),
+              ):
+                  pattern = rf'hl\.dsp\.{namespace}\.([A-Za-z_]\w*)'
+                  for match in re.finditer(pattern, source):
+                      method = match.group(1)
+                      if method not in allowed:
+                          errors.append(
+                              f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                              f'unknown/unreviewed dispatcher hl.dsp.{namespace}.{method}'
+                          )
+
+              for match in re.finditer(r'hl\.dsp\.([A-Za-z_]\w*)', source):
+                  name = match.group(1)
+                  if name not in allowed_top_level:
+                      errors.append(
+                          f'{path}:{source.count(chr(10), 0, match.start()) + 1}: '
+                          f'unknown/unreviewed top-level dispatcher hl.dsp.{name}'
+                      )
+
+              forbidden = {
+                  'hl.dsp.window.toggle_floating': 'use hl.dsp.window.float({ action = "toggle" })',
+                  'hl.dsp.layout.toggle_split': 'use hl.dsp.layout("togglesplit")',
+              }
+              for token, replacement in forbidden.items():
+                  if token in source:
+                      errors.append(f'{path}: forbidden {token}; {replacement}')
+
+          if errors:
+              print('\n'.join(errors), file=sys.stderr)
+              sys.exit(1)
+
+          print('Hyprland Lua dispatcher API usage is valid')
+
+      - name: Verify special workspace module layout
+        run: |
+          hypr_tmpl="home/dot_config/hypr/hyprland.lua.tmpl"
+          [ -f "$hypr_tmpl" ] || hypr_tmpl="dot_config/hypr/hyprland.lua.tmpl"
+          special_src="home/dot_config/hypr/special_workspaces.lua"
+          [ -f "$special_src" ] || special_src="dot_config/hypr/special_workspaces.lua"
+          test -f "$special_src"
+          test -f "$HOME/.config/hypr/special_workspaces.lua"
+          grep -Fq 'pcall(require, "special_workspaces")' "$hypr_tmpl"
+          ! grep -Fq '{{ template "hypr/special_workspaces.lua" . }}' "$hypr_tmpl"
+          ! grep -Fq 'special:anytype' "$hypr_tmpl"
+          ! grep -Fq 'special:anytype' "$special_src"
+          grep -Fq 'special:kjules' "$special_src"
+
+      - name: Test special workspace module
+        run: |
+          lua5.4 - <<'LUA'
+          local routes = {}
+          local handlers = {}
+          local rules = {}
+          local workspace_rules = {}
+          local binds = {}
+          local execs = {}
+          local existing = {
+            { class = "BeeperTexts", title = "Beeper" },
+            { class = "org.kde.konsole", title = "shell" },
+            { class = "Spotify", title = "Spotify" },
+            { class = "org.kde.kjules", title = "kJules" },
+          }
+
+          _G.hl = {
+            on = function(event, callback)
+              if handlers[event] then
+                local old = handlers[event]
+                handlers[event] = function(...) old(...); callback(...) end
+              else
+                handlers[event] = callback
+              end
+            end,
+            get_windows = function()
+              return existing
+            end,
+            window_rule = function(rule)
+              table.insert(rules, rule)
+            end,
+            workspace_rule = function(rule)
+              table.insert(workspace_rules, rule)
+            end,
+            bind = function(keys, action)
+              binds[keys] = action
+            end,
+            exec_cmd = function(...)
+              table.insert(execs, {...})
+            end,
+            dispatch = function(action)
+              table.insert(routes, action)
+            end,
+            dsp = {
+              window = {
+                move = function(options)
+                  return options
+                end,
+              },
+              workspace = {
+                toggle_special = function(name)
+                  return { special = name }
+                end,
+              },
+            },
+          }
+
+          local special = dofile(io.open("home/dot_config/hypr/special_workspaces.lua") and "home/dot_config/hypr/special_workspaces.lua" or "dot_config/hypr/special_workspaces.lua")
+          assert(type(special) == "table")
+          assert(type(special.setup) == "function")
+          assert(type(special.workspace_for_window) == "function")
+          special.setup({ terminal = { path = "/usr/bin/xterm", classes = { "xterm", "org.kde.konsole", "footclient" } } })
+
+          assert(#rules == 6, "music, Beeper, terminal, KMagMux, kJules and which_browser static rules should be registered")
+          assert(rules[1].workspace == "special:music")
+          assert(rules[2].workspace == "special:beeper")
+          assert(rules[3].workspace == "special:terminal")
+          assert(rules[4].workspace == "special:kmagmux")
+          assert(rules[5].workspace == "special:kjules")
+          assert(rules[6].workspace == "special:which_browser")
+          assert(rules[2].match.class:find("BeeperTexts", 1, true))
+          assert(rules[3].match.class:find([=[org\.kde\.konsole]=], 1, true))
+          assert(rules[3].match.class:find("footclient", 1, true))
+          assert(rules[4].match.class:find([=[org\.kde\.kmagmux]=], 1, true))
+          assert(rules[5].match.class:find("org.kde.kjules", 1, true))
+          assert(rules[6].match.class:find("com\\.arran4\\.whichbrowser\\.which_browser", 1, true))
+
+          assert(#workspace_rules == 7, "all seven named special workspaces should be persistent")
+          local persistent = {}
+          for _, rule in ipairs(workspace_rules) do
+            persistent[rule.workspace] = true
+          end
+          assert(persistent["special:music"])
+          assert(persistent["special:beeper"])
+          assert(persistent["special:terminal"])
+          assert(persistent["special:scratchpad"])
+          assert(persistent["special:kmagmux"])
+          assert(persistent["special:kjules"])
+          assert(persistent["special:which_browser"])
+          assert(not persistent["special:anytype"])
+
+          assert(binds["SUPER + M"].special == "music")
+          assert(binds["SUPER + B"].special == "beeper")
+          assert(binds["SUPER + grave"].special == "terminal")
+          assert(binds["SUPER + T"].special == "terminal")
+          assert(binds["SUPER + D"].special == "scratchpad")
+          assert(binds["SUPER + I"].special == "kmagmux")
+          assert(binds["SUPER + J"].special == "kjules")
+
+          assert(type(binds["SUPER + SHIFT + J"]) == "function")
+          local pre_execs = #execs
+          binds["SUPER + SHIFT + J"]()
+          assert(#execs == pre_execs + 1)
+          assert(execs[#execs][1] == "kjules --new-session")
+
+          assert(special.workspace_for_window({ class = "Beeper" }) == "beeper")
+          assert(special.workspace_for_window({ class = "org.kde.konsole" }) == "terminal")
+          assert(special.workspace_for_window({ class = "Spotify" }) == "music")
+          assert(special.workspace_for_window({ class = "kmagmux" }) == "kmagmux")
+          assert(special.workspace_for_window({ class = "org.kde.kmagmux" }) == "kmagmux")
+          assert(special.workspace_for_window({ class = "org.kde.kjules" }) == "kjules")
+          assert(special.workspace_for_window({ class = "Anytype" }) == nil)
+          assert(special.workspace_for_window({ class = "firefox", title = "Beeper - search" }) == nil)
+
+          assert(#routes == 4, "existing routed windows should be reconciled on setup")
+          assert(routes[1].workspace == "special:beeper")
+          assert(routes[2].workspace == "special:terminal")
+          assert(routes[3].workspace == "special:music")
+          assert(routes[4].workspace == "special:kjules")
+          assert(routes[1].follow == false)
+          assert(routes[1].window == existing[1])
+
+          assert(type(handlers["window.open"]) == "function")
+          assert(type(handlers["window.class"]) == "function")
+          assert(type(handlers["hyprland.start"]) == "function")
+
+          handlers["window.open"]({ class = "xterm", title = "shell" })
+          assert(routes[#routes].workspace == "special:terminal")
+
+          handlers["window.class"]({ class = "com.beeper.Beeper", title = "Beeper" })
+          assert(routes[#routes].workspace == "special:beeper")
+
+          handlers["window.open"]({ class = "kmagmux", title = "KMagMux" })
+          assert(routes[#routes].workspace == "special:kmagmux")
+
+          handlers["window.open"]({ class = "kjules", title = "kJules" })
+          assert(routes[#routes].workspace == "special:kjules")
+
+          handlers["window.open"]({ class = "com.arran4.whichbrowser.which_browser", title = "Which Browser?" })
+          assert(routes[#routes].workspace == "special:which_browser")
+
+          local before = #routes
+          handlers["window.open"]({ class = "Anytype", title = "Anytype" })
+          assert(#routes == before, "Anytype must no longer be captured by a special workspace")
+          handlers["window.open"]({ class = "firefox", title = "Beeper - search" })
+          assert(#routes == before, "ordinary browser windows mentioning Beeper must not be captured")
+
+          local pre_hyprland_execs = #execs
+          handlers["hyprland.start"]()
+          local hyprland_execs = {}
+          for i = pre_hyprland_execs + 1, #execs do
+            table.insert(hyprland_execs, execs[i])
+          end
+          local autostart_count = 0
+          local has_term, has_spotify, has_beeper = false, false, false
+          for _, cmd in ipairs(hyprland_execs) do
+            if type(cmd[2]) == "table" and cmd[2].workspace then
+              autostart_count = autostart_count + 1
+              if cmd[1] == "/usr/bin/xterm" and cmd[2].workspace == "special:terminal silent" then has_term = true end
+              if cmd[1] == "flatpak run com.spotify.Client" and cmd[2].workspace == "special:music silent" then has_spotify = true end
+              if cmd[1] == "flatpak run com.beeper.Beeper" and cmd[2].workspace == "special:beeper silent" then has_beeper = true end
+            end
+          end
+          assert(autostart_count == 3, "only terminal, Spotify and Beeper should autostart from special workspace config")
+          assert(has_term and has_spotify and has_beeper, "missing expected autostart application")
+
+          print("Hyprland special workspace module tests passed")
+          LUA
+
+      - name: Test cliphist daemon script
+        run: |
+          # Test script with test doubles
+          export HYPRLAND_INSTANCE_SIGNATURE="test_instance_$$"
+          export XDG_RUNTIME_DIR="/tmp/test_xdg_runtime_$$"
+          mkdir -p "$XDG_RUNTIME_DIR"
+
+          mock_bin_dir="/tmp/test_mock_bin_$$"
+          mkdir -p "$mock_bin_dir"
+
+          # Create a real compiled executable for the wl-paste mock
+          # This ensures /proc/$pid/exe resolves to the mock binary, not bash
+          wl_paste_mock="$mock_bin_dir/wl-paste"
+          mock_log="$mock_bin_dir/mock.log"
+          cat << 'CCODE' > "$mock_bin_dir/mock_wl_paste.c"
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <unistd.h>
+          #include <signal.h>
+
+          volatile sig_atomic_t keep_running = 1;
+
+          void handle_sigterm(int sig) {
+              (void)sig;
+              keep_running = 0;
+          }
+
+          int main(int argc, char *argv[]) {
+              FILE *f = fopen(getenv("MOCK_LOG"), "a");
+              if (f) {
+                  for (int i = 0; i < argc; i++) {
+                      fprintf(f, "%s ", argv[i]);
+                  }
+                  fprintf(f, "\n");
+                  fclose(f);
+              }
+
+              signal(SIGTERM, handle_sigterm);
+
+              while (keep_running) {
+                  sleep(1);
+              }
+              return 0;
+          }
+          CCODE
+
+          export MOCK_LOG="$mock_log"
+          gcc -Wall -Wextra -Werror "$mock_bin_dir/mock_wl_paste.c" -o "$wl_paste_mock"
+          export PATH="$mock_bin_dir:$PATH"
+
+          # Ensure background procs die when workflow exits
+          # Collect PIDs explicitly
+          cleanup() {
+            local pids=""
+            if [ -d "$XDG_RUNTIME_DIR/wl-paste" ]; then
+                for pid_file in $(find "$XDG_RUNTIME_DIR/wl-paste" -name "*.pid"); do
+                    pids="$pids $(cat $pid_file)"
+                done
+            fi
+            for p in $pids; do
+                kill -9 $p 2>/dev/null || true
+            done
+            rm -rf "$XDG_RUNTIME_DIR" "$mock_bin_dir" rendered_cliphist.sh
+          }
+          trap cleanup EXIT
+
+          # Test rendering output
+          cliphist_tmpl="home/dot_local/bin/executable_cliphist-daemon.sh.tmpl"
+          [ -f "$cliphist_tmpl" ] || cliphist_tmpl="dot_local/bin/executable_cliphist-daemon.sh.tmpl"
+          sed -e 's/{{ index . "wlPasteLocation" | default "wl-paste" }}/wl-paste/' \
+              -e 's/{{ index . "cliphistLocation" | default "cliphist" }}/cliphist/' \
+              "$cliphist_tmpl" > rendered_cliphist.sh
+          chmod +x rendered_cliphist.sh
+
+          # Verify that it doesn't use killall
+          if grep -q killall rendered_cliphist.sh; then
+              echo "Error: helper uses killall"
+              exit 1
+          fi
+
+          if grep -q pkill rendered_cliphist.sh; then
+              echo "Error: helper uses pkill"
+              exit 1
+          fi
+
+          # Run twice concurrently to test race conditions and double spawn, bounded by timeout
+          timeout 5s bash -c './rendered_cliphist.sh & ./rendered_cliphist.sh & wait'
+
+          PID_DIR="${XDG_RUNTIME_DIR}/wl-paste/$HYPRLAND_INSTANCE_SIGNATURE"
+
+          # Wait to ensure they are up
+          sleep 0.5
+          pid1=$(cat "$PID_DIR/text.pid")
+          pid2=$(cat "$PID_DIR/image.pid")
+
+          if ps -p "$pid1" > /dev/null && ps -p "$pid2" > /dev/null; then
+              echo "PIDs are running."
+          else
+              echo "PIDs are NOT running."
+              exit 1
+          fi
+
+          # Check mock log for arguments
+          if ! grep -q "wl-paste --watch cliphist store" "$mock_log"; then
+              echo "Arguments for text watcher incorrect."
+              cat "$mock_log"
+              exit 1
+          fi
+
+          if ! grep -q "wl-paste --type image --watch cliphist store" "$mock_log"; then
+              echo "Arguments for image watcher incorrect."
+              cat "$mock_log"
+              exit 1
+          fi
+
+          # Run again to ensure it kills old ones
+          timeout 5s ./rendered_cliphist.sh
+          sleep 0.5
+          if ps -p "$pid1" > /dev/null || ps -p "$pid2" > /dev/null; then
+              echo "Old PIDs were NOT killed."
+              exit 1
+          else
+              echo "Old PIDs were killed successfully."
+          fi
+
+          # Test with wrong executable taking over PID
+          echo "Testing fake PID takeover"
+          pid3=$(cat "$PID_DIR/text.pid")
+          kill "$pid3"
+          sleep 0.5
+
+          # Spawn a fake process using sleep directly
+          sleep 10 &
+          fake_pid=$!
+          echo "$fake_pid" > "$PID_DIR/text.pid"
+
+          timeout 5s ./rendered_cliphist.sh
+          sleep 0.5
+
+          if ps -p "$fake_pid" > /dev/null; then
+              echo "Fake PID survived."
+          else
+              echo "Fake PID was killed! FAIL"
+              exit 1
+          fi
+          kill "$fake_pid"
+
+          # Test disjoint signatures
+          export HYPRLAND_INSTANCE_SIGNATURE="test_instance_2_$$"
+          timeout 5s ./rendered_cliphist.sh
+          sleep 0.5
+          PID_DIR2="${XDG_RUNTIME_DIR}/wl-paste/$HYPRLAND_INSTANCE_SIGNATURE"
+          pid4=$(cat "$PID_DIR2/text.pid")
+
+          # Restore original signature
+          export HYPRLAND_INSTANCE_SIGNATURE="test_instance_$$"
+          timeout 5s ./rendered_cliphist.sh
+          sleep 0.5
+
+          if ps -p "$pid4" > /dev/null; then
+             echo "Disjoint signature process survived"
+          else
+             echo "Disjoint signature process was killed"
+             exit 1
+          fi
+
+      - name: Verify hypr-cheatsheet template
+        run: |
+          hypr_tmpl="home/dot_config/hypr/hyprland.lua.tmpl"
+          [ -f "$hypr_tmpl" ] || hypr_tmpl="dot_config/hypr/hyprland.lua.tmpl"
+          cheatsheet_tmpl="home/dot_local/bin/executable_hypr-cheatsheet.tmpl"
+          [ -f "$cheatsheet_tmpl" ] || cheatsheet_tmpl="dot_local/bin/executable_hypr-cheatsheet.tmpl"
+          if grep -q "caelestia:cheatsheet" "$hypr_tmpl"; then
+             echo "Error: caelestia:cheatsheet found in hyprland.lua.tmpl"
+             exit 1
+          fi
+
+          if ! grep -q "hypr-cheatsheet" "$hypr_tmpl"; then
+             echo "Error: hypr-cheatsheet binding not found in hyprland.lua.tmpl"
+             exit 1
+          fi
+
+          echo "Mocking chezmoi rendering for bash syntax check..."
+          # Test with rofi
+          cat << 'EOF' > rofi_mock.json
+          {
+            "rofiLocation": "/usr/bin/rofi"
+          }
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=rofi_mock.json < "$cheatsheet_tmpl" > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+
+          # Test with wofi
+          cat << 'EOF' > wofi_mock.json
+          {
+            "wofiLocation": "/usr/bin/wofi"
+          }
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=wofi_mock.json < "$cheatsheet_tmpl" > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+
+          # Test with dmenu
+          cat << 'EOF' > dmenu_mock.json
+          {
+            "dmenuRunLocation": "/usr/bin/dmenu_run"
+          }
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=dmenu_mock.json < "$cheatsheet_tmpl" > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+          if grep -q "dmenu_run" test_cheatsheet.sh; then echo "Error: dmenu_run was evaluated"; exit 1; fi
+
+          # Test with no launcher
+          cat << 'EOF' > no_launcher_mock.json
+          {}
+          EOF
+          ./bin/chezmoi execute-template --source=$PWD --override-data-file=no_launcher_mock.json < "$cheatsheet_tmpl" > test_cheatsheet.sh
+          bash -n test_cheatsheet.sh
+
+          rm test_cheatsheet.sh *_mock.json
+
+      - name: Execute rendered Hyprland config with API mock
+        run: |
+          lua5.4 - <<'LUA'
+          local handlers = {}
+          local hyprland_execs = {}
+
+          local mock_dsp = setmetatable({}, {
+            __index = function(_, key)
+              return function(...) return { dsp = key, args = {...} } end
+            end,
+          })
+
+          local registered_curves = { default = true }
+
+          local function validate_config_keys(tbl, path)
+            path = path or ""
+            local forbidden_keys = {
+              ["dwindle.pseudotile"] = "dwindle.pseudotile is obsolete",
+              ["misc.vfr"] = "misc.vfr is obsolete; use debug.vfr",
+              ["animations.bezier"] = "animations.bezier is obsolete; use hl.curve",
+            }
+            for key, value in pairs(tbl) do
+              local current = path == "" and tostring(key) or (path .. "." .. tostring(key))
+              if forbidden_keys[current] then
+                error("Forbidden/obsolete config key: " .. current)
+              end
+              if type(value) == "table" then
+                validate_config_keys(value, current)
+              end
+            end
+          end
+
+          _G.hl = {
+            monitor = function(opts) assert(type(opts) == "table") end,
+            config = function(opts)
+              assert(type(opts) == "table")
+              validate_config_keys(opts)
+            end,
+            env = function(...) end,
+            curve = function(name, opts)
+              assert(type(name) == "string" and name ~= "")
+              assert(type(opts) == "table")
+              registered_curves[name] = true
+            end,
+            animation = function(opts)
+              assert(type(opts) == "table")
+              if opts.bezier then
+                assert(registered_curves[opts.bezier], "unregistered curve " .. tostring(opts.bezier))
+              end
+            end,
+            gesture = function(opts) assert(type(opts) == "table") end,
+            bind = function(keys, action, opts)
+              assert(type(keys) == "string")
+              assert(action ~= nil)
+            end,
+            window_rule = function(opts) assert(type(opts) == "table") end,
+            layer_rule = function(opts) assert(type(opts) == "table") end,
+            workspace_rule = function(opts) assert(type(opts) == "table") end,
+            dispatch = function(...) end,
+            exec_cmd = function(...)
+              table.insert(hyprland_execs, {...})
+            end,
+            get_windows = function() return {} end,
+            on = function(event, callback)
+              assert(type(event) == "string")
+              assert(type(callback) == "function")
+              if not handlers[event] then handlers[event] = {} end
+              table.insert(handlers[event], callback)
+            end,
+            dsp = setmetatable({
+              window = mock_dsp,
+              workspace = mock_dsp,
+              layout = function(...) return { dsp = "layout", args = {...} } end,
+            }, {
+              __index = function(_, key)
+                return function(...) return { dsp = key, args = {...} } end
+              end,
+            }),
+          }
+
+          dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
+
+          local expected_cliphist = os.getenv("HOME") .. "/.local/bin/cliphist-daemon.sh"
+          local function count_cliphist_execs()
+            local count = 0
+            for _, cmd in ipairs(hyprland_execs) do
+              if cmd[1] == expected_cliphist then count = count + 1 end
+            end
+            return count
+          end
+
+          assert(handlers["hyprland.start"], "hyprland.start handler must be registered")
+          assert(handlers["config.reloaded"], "config.reloaded handler must be registered")
+
+          for _, hook in ipairs(handlers["hyprland.start"]) do
+            hook()
+          end
+          assert(count_cliphist_execs() == 1, "cliphist daemon must be launched by absolute path on hyprland.start")
+
+          for _, hook in ipairs(handlers["config.reloaded"]) do
+            hook()
+          end
+          assert(count_cliphist_execs() == 2, "cliphist daemon must be restarted on config.reloaded")
+
+          print("Rendered Hyprland config executed successfully with special_workspaces.lua")
+          LUA
+
+      - name: Verify terminal catalogue and special workspace behavior
+        run: |
+          test_dir="$(mktemp -d)"
+          trap 'rm -rf "$test_dir"' EXIT
+
+          cat > "$test_dir/all-terminals.json" <<'JSON'
+          {
+            "qterminalLocation": "/test/bin/qterminal",
+            "xtermLocation": "/test/bin/xterm",
+            "rxvtUnicodeLocation": "/test/bin/rxvt-unicode",
+            "urxvtLocation": "/test/bin/urxvt",
+            "konsoleLocation": "/test/bin/konsole",
+            "ghosttyLocation": "/test/bin/ghostty",
+            "footLocation": "/test/bin/foot",
+            "kittyLocation": "/test/bin/kitty",
+            "alacrittyLocation": "/test/bin/alacritty",
+            "weztermLocation": "/test/bin/wezterm",
+            "terminatorLocation": "/test/bin/terminator",
+            "xfce4TerminalLocation": "/test/bin/xfce4-terminal",
+            "gnomeTerminalLocation": "/test/bin/gnome-terminal",
+            "mateTerminalLocation": "/test/bin/mate-terminal",
+            "lxterminalLocation": "/test/bin/lxterminal"
+          }
+          JSON
+
+          cat > "$test_dir/no-qterminal.json" <<'JSON'
+          {
+            "qterminalLocation": "",
+            "xtermLocation": "/test/bin/xterm"
+          }
+          JSON
+
+          hypr_tmpl="home/dot_config/hypr/hyprland.lua.tmpl"
+          [ -f "$hypr_tmpl" ] || hypr_tmpl="dot_config/hypr/hyprland.lua.tmpl"
+          special_src="home/dot_config/hypr/special_workspaces.lua"
+          [ -f "$special_src" ] || special_src="dot_config/hypr/special_workspaces.lua"
+
+          ./bin/chezmoi execute-template --source="$PWD" \
+            --override-data-file="$test_dir/all-terminals.json" \
+            < "$hypr_tmpl" \
+            > "$test_dir/all-terminals.lua"
+          ./bin/chezmoi execute-template --source="$PWD" \
+            --override-data-file="$test_dir/no-qterminal.json" \
+            < "$hypr_tmpl" \
+            > "$test_dir/no-qterminal.lua"
+
+          lua5.4 .github/scripts/test_hyprland_terminals.lua \
+            "$test_dir/all-terminals.lua" \
+            "$test_dir/no-qterminal.lua"
+
+          if rg -q "runtimeFallbackTerminals" "$hypr_tmpl"; then
+            echo "Failure: runtimeFallbackTerminals found"
+            exit 1
+          fi
+          if rg -q "terminalPriority" "$special_src"; then
+            echo "Failure: terminalPriority found"
+            exit 1
+          fi
+          if rg -q 'match = \{ class = "\^\([^"]*(qterminal|xterm|konsole|ghostty|foot|kitty|alacritty|wezterm)' \
+            "$special_src"; then
+            echo "Failure: manually maintained terminal-class regex found"
+            exit 1
+          fi
+          test ! -e patch.diff
+
+      - name: Verify missing special workspace module is non-fatal
+        run: |
+          mv "$HOME/.config/hypr/special_workspaces.lua" "$HOME/.config/hypr/special_workspaces.lua.disabled"
+
+          lua5.4 - <<'LUA'
+          local mock_dsp = setmetatable({}, {
+            __index = function(_, key)
+              return function(...) return { dsp = key, args = {...} } end
+            end,
+          })
+
+          _G.hl = {
+            monitor = function(...) end,
+            config = function(...) end,
+            env = function(...) end,
+            curve = function(...) end,
+            animation = function(...) end,
+            gesture = function(...) end,
+            bind = function(...) end,
+            window_rule = function(...) end,
+            layer_rule = function(...) end,
+            workspace_rule = function(...) end,
+            dispatch = function(...) end,
+            exec_cmd = function(...) end,
+            get_windows = function() return {} end,
+            on = function(...) end,
+            dsp = setmetatable({
+              window = mock_dsp,
+              workspace = mock_dsp,
+              layout = function(...) return { dsp = "layout", args = {...} } end,
+            }, {
+              __index = function(_, key)
+                return function(...) return { dsp = key, args = {...} } end
+              end,
+            }),
+          }
+
+          dofile(os.getenv("HOME") .. "/.config/hypr/hyprland.lua")
+          print("Rendered Hyprland config survives a missing special_workspaces.lua")
+          LUA

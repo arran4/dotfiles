@@ -1,0 +1,7 @@
+{{- if and (eq .chezmoi.os "linux") (lookPath "flatpak") -}}
+{{- $firefoxFlatpak := trim (output "sh" "-c" "flatpak info org.mozilla.firefox >/dev/null 2>&1 && printf installed || true") -}}
+{{- if eq $firefoxFlatpak "installed" -}}
+#!/bin/sh
+exec flatpak run org.mozilla.firefox "$@"
+{{ end -}}
+{{- end -}}

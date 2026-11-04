@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Fallback menu command if template variable is not set correctly or wofi/rofi not installed
+{{- if ne (index . "rofiLocation" | default "") "" }}
+MENU_CMD=( "{{ .rofiLocation }}" "-dmenu" "-i" "-p" "Cheatsheet" )
+{{- else if ne (index . "wofiLocation" | default "") "" }}
+MENU_CMD=( "{{ .wofiLocation }}" "-S" "dmenu" "-i" "-p" "Cheatsheet" )
+{{- else if ne (index . "dmenuRunLocation" | default "") "" }}
+MENU_CMD=( "dmenu" "-i" "-p" "Cheatsheet" )
+{{- else }}
+MENU_CMD=( "wofi" "-S" "dmenu" "-i" "-p" "Cheatsheet" )
+{{- end }}
+
+if [ ${#MENU_CMD[@]} -eq 0 ]; then
+    MENU_CMD=( "dmenu" "-i" "-p" "Cheatsheet" )
+fi
+
+# Fetch and parse bindings
+hyprctl binds -j | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+
+for b in data:
+    modmask = b.get("modmask", 0)
+    mods = []
+    if modmask & 64: mods.append("SUPER")
+    if modmask & 8: mods.append("ALT")
+    if modmask & 4: mods.append("CTRL")
+    if modmask & 1: mods.append("SHIFT")
+    mod_str = "+".join(mods)
+    key = b.get("key", "")
+    dispatcher = b.get("dispatcher", "")
+    arg = b.get("arg", "")
+    out = f"{mod_str}+{key}" if mod_str else key
+    print(f"{out:<25} -> {dispatcher} {arg}")
+' | sort | "${MENU_CMD[@]}" > /dev/null

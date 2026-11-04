@@ -1,0 +1,34 @@
+name: Foot validation
+
+on:
+  pull_request:
+    paths:
+      - 'dot_config/foot/**'
+      - 'home/dot_config/foot/**'
+      - '.github/workflows/foot.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'dot_config/foot/**'
+      - 'home/dot_config/foot/**'
+      - '.github/workflows/foot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Foot and configured font
+        run: sudo apt-get update && sudo apt-get install -y foot fonts-hack
+
+      - name: Check Foot configuration
+        run: |
+          cfg="home/dot_config/foot/foot.ini.tmpl"
+          [ -f "$cfg" ] || cfg="dot_config/foot/foot.ini.tmpl"
+          foot --check-config --config="$cfg"
