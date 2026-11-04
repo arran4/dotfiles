@@ -114,6 +114,37 @@ Host legacy.example.com
 
 ## Desktop and shell notes
 
+### Caelestia shell ownership and legacy checkout recovery
+
+Caelestia Shell is installed by the system package manager, not by the
+old chezmoi-managed Git checkout under `~/.config/quickshell`. Personal
+Caelestia configuration remains under `~/.config/caelestia`.
+
+The temporary automatic cleanup for old Caelestia Git checkouts has been
+retired. An account that never ran that migration may still have the old
+`~/.config/quickshell` checkout. This does not require resetting your
+dotfiles; inspect it and move it aside only if it is the legacy checkout:
+
+```sh
+git -C ~/.config/quickshell remote -v
+git -C ~/.config/quickshell status --short
+```
+
+If that directory really is the old `caelestia-dots/shell` checkout,
+preserve any local changes and back up the entire directory first:
+
+```sh
+backup="$HOME/.config/quickshell.legacy.$(date +%Y%m%d-%H%M%S)"
+test -d "$HOME/.config/quickshell" && test ! -e "$backup" && mv -- "$HOME/.config/quickshell" "$backup"
+```
+
+Do **not** move a different Quickshell configuration or delete the backup
+until you have verified the package-owned Caelestia shell launches with
+`caelestia shell -d` and that your own configurations still work. Repeat
+the inspection separately under any other affected user account; do not
+assume all accounts shared the same checkout. The permanent
+`.github/workflows/caelestia-ownership.yml` regression guard remains.
+
 ### Hyprland shortcuts
 
 See the [Hyprland keyboard shortcut reference](HYPRLAND_KEYBOARD_SHORTCUTS.md) when you need the full bindings table. This is a separate on-demand *reference sheet*, not a competing setup guide; the binding configuration remains the source of truth. Coding-agent maintenance instructions for it are in [`AGENTS.md`](AGENTS.md).
