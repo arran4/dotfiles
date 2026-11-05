@@ -23,9 +23,7 @@ After applying, open a new terminal to check your prompt, aliases, and Git setti
 
 **Start here:** [`containers/dev-dotfiles-debian/README.md`](containers/dev-dotfiles-debian/README.md) is the *single operational guide* for the Debian coding-agent container. It contains the Docker and Podman commands, local image build, Linux launch scripts, volumes and upgrades, GitHub authentication, Docker-in-Docker, host Ollama, and tests. Container-specific operating instructions are intentionally **not duplicated** in this root README.
 
-The repository currently provides both a published original image, `ghcr.io/arran4/dev-dotfiles-debian:latest`, and a separately built, opt-in project-home image, `dev-dotfiles-home-volume:trial`. The experimental implementation was merged in [PR #464](https://github.com/arran4/dotfiles/pull/464), but the merger did not by itself publish the trial image as `:latest`. Select the image and matching launch instructions using [Choose the right image](containers/dev-dotfiles-debian/README.md#choose-the-right-image). Do not switch an existing sandbox's image or volume layout without following the [storage and migration guidance](containers/dev-dotfiles-debian/README.md#storage-upgrades-and-migration).
-
-On Linux, the repo supplies chezmoi-installed host commands `run-dev-podman.sh` and `run-dev-docker.sh` for the **locally built trial image**. See [Start a project sandbox](containers/dev-dotfiles-debian/README.md#start-a-project-sandbox) for build and invocation, and [Launcher settings](containers/dev-dotfiles-debian/README.md#launcher-settings) for the options. For the published original image, use the [legacy manual command](containers/dev-dotfiles-debian/README.md#currently-published-image-legacy-mounts). Avoid mounting your host home, credentials, or container-engine socket into an unrestricted agent sandbox.
+The canonical published development image is `ghcr.io/arran4/dev-dotfiles-debian:latest`, incorporating the seeded persistent home architecture (labeled `io.github.arran4.dev-dotfiles.home-seed=1`). On container creation, the Linux launch scripts (`run-dev-podman.sh` and `run-dev-docker.sh`) automatically detect image capabilities and initialize the persistent project-home volume. For manual container commands, local image builds, launcher settings, and migration instructions, see [`containers/dev-dotfiles-debian/README.md`](containers/dev-dotfiles-debian/README.md). Avoid mounting your host home, credentials, or container-engine socket into an unrestricted agent sandbox.
 
 ## Development tools
 
@@ -115,6 +113,37 @@ Host legacy.example.com
 ```
 
 ## Desktop and shell notes
+
+### Caelestia shell ownership and legacy checkout recovery
+
+Caelestia Shell is installed by the system package manager, not by the
+old chezmoi-managed Git checkout under `~/.config/quickshell`. Personal
+Caelestia configuration remains under `~/.config/caelestia`.
+
+The temporary automatic cleanup for old Caelestia Git checkouts has been
+retired. An account that never ran that migration may still have the old
+`~/.config/quickshell` checkout. This does not require resetting your
+dotfiles; inspect it and move it aside only if it is the legacy checkout:
+
+```sh
+git -C ~/.config/quickshell remote -v
+git -C ~/.config/quickshell status --short
+```
+
+If that directory really is the old `caelestia-dots/shell` checkout,
+preserve any local changes and back up the entire directory first:
+
+```sh
+backup="$HOME/.config/quickshell.legacy.$(date +%Y%m%d-%H%M%S)"
+test -d "$HOME/.config/quickshell" && test ! -e "$backup" && mv -- "$HOME/.config/quickshell" "$backup"
+```
+
+Do **not** move a different Quickshell configuration or delete the backup
+until you have verified the package-owned Caelestia shell launches with
+`caelestia shell -d` and that your own configurations still work. Repeat
+the inspection separately under any other affected user account; do not
+assume all accounts shared the same checkout. The permanent
+`.github/workflows/caelestia-ownership.yml` regression guard remains.
 
 ### Hyprland shortcuts
 
