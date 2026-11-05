@@ -60,13 +60,20 @@ urlencode() {
   done
 }
 
-# Generate URL
-# We capture the output of playerctl. If it fails, the query will be empty.
-{{- $playerctlCmd := "playerctl" }}
-{{- if lookPath "go-playerctl" }}
-{{-   $playerctlCmd = "go-playerctl" }}
-{{- end }}
-QUERY=$({{ $playerctlCmd }} metadata --format '{{ "{{" }} artist {{ "}}" }} - {{ "{{" }} title {{ "}}" }}. Full song lyrics, meaning, context and analysis' -p spotify 2>/dev/null)
+# Generate URL from Spotify metadata using go-playerctl (or playerctl fallback)
+if exists "go-playerctl"; then
+  QUERY=$(go-playerctl --player spotify --format '{{ "{{" }} .artist {{ "}}" }} - {{ "{{" }} .title {{ "}}" }}. Full song lyrics, meaning, context and analysis' metadata 2>/dev/null)
+elif exists "playerctl"; then
+  QUERY=$(playerctl -p spotify metadata --format '{{ "{{" }} artist {{ "}}" }} - {{ "{{" }} title {{ "}}" }}. Full song lyrics, meaning, context and analysis' 2>/dev/null)
+else
+  echo "Error: Neither go-playerctl nor playerctl found." >&2
+  exit 1
+fi
+
+if [ -z "$QUERY" ]; then
+  echo "Error: Could not retrieve Spotify metadata (is Spotify running?)." >&2
+  exit 1
+fi
 METADATA=$(urlencode "$QUERY")
 URL="https://www.perplexity.ai/search?q=$METADATA"
 
