@@ -11,5 +11,23 @@ Filter standard input through col \-bx, then pass the result to nvimpager \-. In
 .TP
 \fBMANPAGER\fR
 May be set to this helper by chezmoi\-generated shell configuration.
+.SH REQUIREMENTS
+Requires col and nvimpager available on PATH, plus a terminal
+capable of displaying nvimpager. The helper expects formatted
+manual-page text on standard input.
+.SH OPERATION
+col -bx removes backspace-based formatting before the output is
+piped into nvimpager -. The helper uses exec, so it replaces itself
+with the pipeline rather than retaining a separate wrapper process.
+.SH EXAMPLES
+.nf
+man git | manpager-nvimpager
+export MANPAGER=manpager-nvimpager
+man git
+.fi
+.SH TROUBLESHOOTING
+If manual rendering appears broken, verify both programs with
+command -v and compare direct man output. This wrapper does
+not download, format or discover manual pages on its own.
 .SH SEE ALSO
 man(1)
