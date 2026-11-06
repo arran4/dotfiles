@@ -9,5 +9,26 @@ hypr\-cheatsheet \- show the current Hyprland bindings in a menu
 Read the active bindings from hyprctl binds \-j and display a sorted summary using a detected rofi, wofi or dmenu interface. This is a read\-only runtime view; selecting an entry does not execute the binding.
 .SH NOTES
 Unlike the static hyprland\-keys(7) reference, the runtime view reflects only shortcuts registered by the currently running Hyprland instance.
+.SH REQUIREMENTS
+Needs a running Hyprland session and hyprctl, Python 3, sort,
+and a menu program (rofi, wofi or dmenu). The chezmoi template
+chooses a menu at generation time. The fallback path expects wofi.
+.SH OPERATION
+The command requests JSON using hyprctl binds -j. Python converts
+modifier bitmasks to readable combinations and prints dispatcher
+and argument values. Sorted rows feed the chosen dmenu interface.
+The selected row is discarded: this is a reference viewer,
+not a command launcher.
+.SH EXAMPLES
+.nf
+hyprctl binds -j
+hypr-cheatsheet
+man hyprland-keys
+.fi
+.SH TROUBLESHOOTING
+If no menu appears, check that the generated menu executable is
+installed and can start within the same Wayland session. If
+bindings are missing, inspect hyprctl binds -j before changing
+the static manual: the active compositor configuration wins.
 .SH SEE ALSO
 hyprland\-keys(7), hyprctl(1)
