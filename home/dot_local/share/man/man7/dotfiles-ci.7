@@ -1,0 +1,127 @@
+.TH "DOTFILES-CI" "7" "November 2026" "arran4/dotfiles" "Miscellaneous"
+.SH NAME
+dotfiles-ci \- GitHub Actions pipelines, release publication and credential checklist
+.SH DESCRIPTION
+The repository defines its main build, verification and release workflow
+in .github/workflows/ci.yml. It runs on main/master pushes,
+pull requests, selected version tags, schedules and manual dispatch.
+The workflow routes each event to the required checks, image build,
+release packaging, and tag publication tasks. It is not a general
+purpose signing or secret provisioning system.
+.SH WORKFLOW MODES
+.TP
+\fBlint-fix\fR
+Default manual dispatch mode. Runs the nightly maintenance path and
+checks.
+.TP
+\fBbuild\fR
+Run code checks and the container build without publishing.
+.TP
+\fBrelease-patch, release-minor, release-major\fR
+Prepare the requested stable version tag from main, then dispatch
+the release workflow on that tag.
+.TP
+\fBrelease-test, release-rc, release-alpha\fR
+Prepare a prerelease/test version tag for the corresponding release
+path. Prereleases do not advance the stable latest image alias.
+.TP
+\fBpublish-tag\fR
+Recover or publish an existing release tag. Dispatch against that
+tag, not main. The workflow requires a v* or test-* ref.
+.TP
+\fBmonthly-maintenance\fR
+Run the monthly maintenance path. Scheduled runs also invoke
+monthly and nightly branches independently.
+.PP
+Optional dispatch inputs include release_version_override,
+force_release and allow_prs. force_release requests a fresh pull
+and uncached image build; it cannot override pinned Dockerfile
+dependencies.
+.SH CREDENTIALS, KEYS AND PERMISSIONS
+The current ci.yml uses the ephemeral GitHub Actions-provided
+\fBGITHUB_TOKEN\fR for the secret scanner, GitHub Release publishing
+and GHCR docker/login-action. Its manual tag-dispatch step uses
+\fBGH_TOKEN\fR populated from github.token. These are generated for
+the workflow run and are not secret values kept in Git history.
+.PP
+The workflow declares permissions including contents:write,
+pull-requests:write, checks:write, packages:write and
+security-events:write. Some jobs override those permissions,
+for example the Docker publish job needs packages:write and
+the tag-preparation job needs contents:write plus actions:write.
+Repository Actions settings, fork event restrictions, branch/tag
+rules and package visibility can still prevent writes.
+.PP
+No additional manually defined secrets are directly referenced in
+the currently inspected ci.yml. Do not assume that all current or
+future workflows are credential-free: inspect ALL workflows and
+GitHub Actions Environments, repository/organization Secrets and
+Variables, branch/tag restrictions, package credentials and any
+deploy or signing keys before restoring, forking or migrating a
+pipeline. Git cloning and copying YAML do not copy GitHub-hosted
+secret values or deployment keys.
+.PP
+When a pipeline acquires an external credential, document its
+\fBname, purpose, scope, source, provisioning location, expiration
+or rotation procedure and failure symptoms\fR. Never commit the
+credential value, paste it into README/man pages, print it in CI
+logs or distribute it in rendered dotfiles or archives. Keep
+credentials scoped to the consuming environment.
+.SH HOW RELEASE PUBLISHING WORKS
+Code checks (including ShellCheck, chezmoi smoke application and
+gitleaks) gate the release. A tag build publishes the development
+container to GHCR and packages the chezmoi rendered release ZIP.
+The publish-release job creates GitHub Release assets from
+successful release artifacts. The release ZIP may contain runner
+specific generated settings: use chezmoi init for real machine
+bootstrap instead of treating it as a portable configured home.
+.PP
+A successful PR merge or main-branch CI run alone does not publish
+a new container release. The latest image tag advances only with
+a qualifying stable release. An old retained development container
+cannot update its creation-time mounts or image merely by restarting.
+.SH EXAMPLES
+.nf
+gh auth status
+gh workflow list --repo arran4/dotfiles
+gh workflow run ci.yml --repo arran4/dotfiles --ref main \
+  -f mode=build
+gh workflow run ci.yml --repo arran4/dotfiles --ref main \
+  -f mode=release-patch
+gh workflow run ci.yml --repo arran4/dotfiles --ref main \
+  -f mode=release-patch -f force_release=true
+gh workflow run ci.yml --repo arran4/dotfiles --ref v1.2.3 \
+  -f mode=publish-tag
+gh run list --repo arran4/dotfiles --workflow ci.yml
+.fi
+.PP
+The v1.2.3 tag above is a placeholder: replace it with an existing
+release tag that actually belongs to this repository.
+.SH TROUBLESHOOTING
+For failed publication, inspect the tag/ref and job logs, then
+check repository workflow token permissions and GHCR package access.
+A release-* dispatch prepares and pushes a tag; a separate
+publish-tag dispatch performs publication. A failure between them
+may require explicit publish-tag recovery.
+.PP
+For cloning or migration, record which credentials and permissions
+must be recreated outside the repository before assuming the CI is
+operational. Do not diagnose failed authentication by printing secret
+values. Local gh auth and GitHub Actions GITHUB_TOKEN are distinct
+credential contexts.
+.SH FILES
+.TP
+\fB.github/workflows/ci.yml\fR
+Workflow routes, permissions and release jobs.
+.TP
+\fB.github/scripts/prepare_release_tag.sh\fR
+Tag preparation for manual release dispatch.
+.TP
+\fB.github/scripts/release_aliases.sh\fR
+Published container alias calculation.
+.TP
+\fBcontainers/dev-dotfiles-debian/README.md\fR
+Development container lifecycle, updates, auth and migration.
+.SH SEE ALSO
+gh-release.sh(1), gh-pr.sh(1), run-dev-podman.sh(1),
+run-dev-docker.sh(1)
