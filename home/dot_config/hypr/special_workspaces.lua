@@ -26,6 +26,7 @@ local classRoutes = {
     ["beeper"] = true,
     ["beepertexts"] = true,
     ["com.beeper.beeper"] = true,
+    ["com.automattic.beeper"] = true,
   },
   terminal = {}, -- Populated dynamically in setup with the preferred terminal only.
   kmagmux = {
@@ -379,9 +380,9 @@ function M.setup(options)
     end
 
     if name == "beeper" then
-      -- Beeper can close its main window to the tray. Re-running the Flatpak
-      -- asks the existing single-instance app to present a window again.
-      hl.exec_cmd("flatpak run com.beeper.Beeper", { workspace = "special:beeper silent" })
+      -- Beeper can hide its window in the tray. The wrapper prefers the
+      -- per-user FlatPark build and falls back to existing legacy AppImages.
+      hl.exec_cmd("beeper-launch", { workspace = "special:beeper silent" })
       return
     end
 
@@ -466,7 +467,7 @@ function M.setup(options)
     workspace = "special:music",
   })
   hl.window_rule({
-    match = { class = "^(Beeper|beeper|BeeperTexts|beepertexts|com.beeper.Beeper|com.beeper.beeper)$" },
+    match = { class = "^(Beeper|beeper|BeeperTexts|beepertexts|com\\.beeper\\.Beeper|com\\.beeper\\.beeper|com\\.automattic\\.Beeper|com\\.automattic\\.beeper)$" },
     workspace = "special:beeper",
   })
   if not smartManagedWorkspaces then
@@ -556,7 +557,7 @@ function M.setup(options)
       end
     end
     hl.exec_cmd("flatpak run com.spotify.Client", { workspace = "special:music silent" })
-    hl.exec_cmd("flatpak run com.beeper.Beeper", { workspace = "special:beeper silent" })
+    hl.exec_cmd("beeper-launch", { workspace = "special:beeper silent" })
     if smartManagedWorkspaces then
       launchManagedApplication("kjules")
     else

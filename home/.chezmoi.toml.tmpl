@@ -741,11 +741,11 @@
         {{- end -}}
 {{- end -}}
 {{- if eq $flatpakLocation "" -}}
-        {{- writeToStdout "Beeper needs the per-user FlatPark remote (one-time): flatpak --user remote-add --if-not-exists --no-enumerate --no-use-for-deps flatpark https://dl.flatpark.org/flatpark.flatpakrepo; then: flatpak --user install flatpark com.automattic.Beeper\n" -}}
+        {{- writeToStdout "Beeper FlatPark unavailable; an existing beeper-appimage or beeper executable can be used as a fallback. One-time remote setup: flatpak --user remote-add --if-not-exists --no-enumerate --no-use-for-deps flatpark https://dl.flatpark.org/flatpark.flatpakrepo; then: flatpak --user install flatpark com.automattic.Beeper\n" -}}
 {{- else -}}
-        {{- $beeperInstalled := trim (output "sh" "-c" "flatpak --user info com.automattic.Beeper >/dev/null 2>&1 && printf installed || true") -}}
+        {{- $beeperInstalled := trim (output "sh" "-c" "flatpak info --user com.automattic.Beeper >/dev/null 2>&1 && printf installed || true") -}}
         {{- if ne $beeperInstalled "installed" -}}
-                {{- writeToStdout "Beeper is missing (per-user FlatPark com.automattic.Beeper). Add FlatPark once: flatpak --user remote-add --if-not-exists --no-enumerate --no-use-for-deps flatpark https://dl.flatpark.org/flatpark.flatpakrepo; then install: flatpak --user install flatpark com.automattic.Beeper\n" -}}
+                {{- writeToStdout "Beeper FlatPark missing (per-user com.automattic.Beeper). Hyprland can fall back to an existing beeper-appimage or beeper executable. Add FlatPark once: flatpak --user remote-add --if-not-exists --no-enumerate --no-use-for-deps flatpark https://dl.flatpark.org/flatpark.flatpakrepo; then install: flatpak --user install flatpark com.automattic.Beeper\n" -}}
         {{- end -}}
 {{- end -}}
 

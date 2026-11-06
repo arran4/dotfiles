@@ -1,0 +1,31 @@
+#!/bin/sh
+# Launch the Beeper build selected for this desktop, preferring FlatPark.
+set -u
+
+app_id=com.automattic.Beeper
+
+if command -v flatpak >/dev/null 2>&1 && flatpak info --user "$app_id" >/dev/null 2>&1; then
+  if flatpak run --user "$app_id" "$@"; then
+    exit 0
+  fi
+  printf '%s\n' "Beeper: FlatPark launch of $app_id failed; trying a legacy executable." >&2
+fi
+
+# Transitional fallback for older AppImage installations.
+for executable in beeper-appimage beeper; do
+  if command -v "$executable" >/dev/null 2>&1; then
+    exec "$executable" "$@"
+  fi
+done
+
+# An older dotfiles setup could place an ignored AppImage at ~/bin/beeper.
+if [ -n "${HOME:-}" ] && [ -x "$HOME/bin/beeper" ]; then
+  exec "$HOME/bin/beeper" "$@"
+fi
+
+message="Beeper unavailable. Install FlatPark Beeper (com.automattic.Beeper) as a user Flatpak; see man beeper-launch or the dotfiles README."
+printf '%s\n' "$message" >&2
+if command -v notify-send >/dev/null 2>&1; then
+  notify-send "Beeper not installed" "$message" >/dev/null 2>&1 || true
+fi
+exit 127

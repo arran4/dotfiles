@@ -1,0 +1,55 @@
+.TH "BEEPER-LAUNCH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+beeper-launch \- prefer FlatPark Beeper with a temporary AppImage fallback
+.SH SYNOPSIS
+.nf
+\fBbeeper-launch\fR [BEEPER-ARG...]
+.fi
+.SH DESCRIPTION
+The Hyprland special-workspace configuration uses this wrapper on
+session startup and for Super+B when no Beeper window is mapped.
+The wrapper first checks the \fBper-user\fR Flatpak installation
+of com.automattic.Beeper; if installed it starts this exact app ID
+with flatpak run --user and passes any supplied arguments.
+.PP
+If the Flatpak is absent or launching it fails, the wrapper tries
+legacy executables named beeper-appimage and beeper on PATH, then an
+executable at ~/bin/beeper. This fallback is for migration only;
+an old AppImage is not the preferred installation.
+.PP
+When no supported installation is available, the wrapper writes a
+diagnostic to standard error, optionally shows a desktop notification,
+and exits with status 127. No software is installed automatically.
+.SH REQUIREMENTS
+A user-scoped Flatpak with the FlatPark remote and
+com.automattic.Beeper installed is preferred. The remote registration
+is a one-time operation. Beeper's runtime may additionally require
+a per-user Flathub remote. See the root dotfiles README for setup.
+The fallback requires an executable AppImage in a known path.
+.SH EXAMPLES
+.nf
+flatpak info --user com.automattic.Beeper
+beeper-launch
+flatpak run --user com.automattic.Beeper
+command -v beeper-appimage
+command -v beeper
+.fi
+.SH HYPRLAND INTEGRATION
+Super+B toggles or activates special:beeper; it reuses an existing
+window when possible and otherwise calls beeper-launch. Startup
+also runs the wrapper once into that special workspace.
+Known Beeper window classes are routed to special:beeper,
+including com.automattic.Beeper and legacy Beeper/BeeperTexts
+classes. A browser window whose title mentions Beeper should not
+be captured.
+.SH TROUBLESHOOTING
+If no window appears, run beeper-launch in a terminal and inspect
+its diagnostic output. Check the per-user installation rather than
+a system-wide flatpak list. Flatpak and AppImage installations can
+have different user configuration or login state.
+.PP
+A successful chezmoi apply does not install Beeper. The chezmoi
+config template warns when the preferred FlatPark installation
+is missing and provides setup instructions.
+.SH SEE ALSO
+hyprland-keys(7), flatpak(1)
