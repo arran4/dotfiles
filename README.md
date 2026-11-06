@@ -101,9 +101,10 @@ man gh-release.sh
 man run-dev-podman.sh
 man hyprland-keys
 man dotfiles-ci
+man agent-skills
 ```
 
-The last command opens the full Hyprland keyboard reference. Quick reminders: `Super+Return` opens a terminal; `Super+G` enters group-management mode; `Super+/` opens the runtime cheatsheet; and `Super+Shift+S` is a conditional Caelestia screenshot binding. The full manual includes fallback and conditional shortcuts. The active bindings are best checked with `hypr-cheatsheet` or `hyprctl binds -j`.
+The `hyprland-keys` manual opens the full Hyprland keyboard reference. `agent-skills` lists the eight image-managed Codex and Antigravity skills and points to their canonical `SKILL.md` instructions. Quick reminders: `Super+Return` opens a terminal; `Super+G` enters group-management mode; `Super+/` opens the runtime cheatsheet; and `Super+Shift+S` is a conditional Caelestia screenshot binding. The full manual includes fallback and conditional shortcuts. The active bindings are best checked with `hypr-cheatsheet` or `hyprctl binds -j`.
 
 ## Notes and history
 
