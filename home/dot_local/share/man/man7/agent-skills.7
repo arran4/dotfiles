@@ -1,0 +1,109 @@
+.TH "AGENT-SKILLS" "7" "November 2026" "arran4/dotfiles" "Miscellaneous"
+.SH NAME
+agent-skills \- index of bundled Codex and Antigravity task skills
+.SH DESCRIPTION
+The Debian development image bundles task-specific instructions for
+coding agents. Each skill has its own SKILL.md with canonical workflow,
+requirements, safety constraints and examples. This page is a short
+human-readable discovery index, NOT a replacement for the skill files.
+.PP
+The list below represents skills in the repository source. A running
+container may contain an older published image, local user edits or
+additional skills from outside this repository. Verify the actual
+agent environment before assuming a skill is available.
+.SH BUNDLED SKILLS
+.SS "g2-overlay"
+Gentoo overlay tooling: inspect, lint and verify ebuilds, Manifests,
+USE flags, caches and overlay structure. Prefer narrow read-only
+checks before using any mutation or repair operations.
+.SS "gh-address-comments"
+Address actionable GitHub PR review threads and conversation comments,
+using gh and the bundled fetch_comments.py helper. Keep review-thread
+resolution tied to verified fixes.
+.SS "gh-fix-ci"
+Inspect failing GitHub Actions PR checks and logs using gh and the
+bundled inspect_pr_checks.py helper; distinguish diagnosis-only
+requests from requests to change code.
+.SS "gosubc"
+Generate, inspect, validate and format Go command declarations,
+export templates, produce man pages and manage skills through the
+gosubc CLI. Verify the installed generator revision before using
+flags or modifying generated code.
+.SS "header-metadata"
+Inspect, lint and verify website metadata with the header CLI,
+including OpenGraph, Twitter metadata, canonical references,
+redirects, linked images and social-card generation.
+.SS "playwright"
+Browser automation with the installed playwright-cli: open pages,
+take snapshots, interact with current element references, capture
+screenshots and traces, and reproduce interface regressions.
+.SS "rntocase-safe"
+Safely preview and apply batch filename-case transformations with
+rntocase. Inspect dry runs and collisions before changing files.
+.SS "txtar-project"
+Operate arran4/txtar to inspect, generate, extract and modify
+TXTAR fixtures. Distinguish its subcommand interface from the
+unrelated golang.org/x/exp/cmd/txtar executable.
+.SH INSTALLATION AND AUTHORITATIVE SOURCES
+The source catalog is under:
+.PP
+.nf
+containers/dev-dotfiles-debian/agent-skills/<name>/SKILL.md
+.fi
+.PP
+The container Dockerfile copies bundled skills into Codex's
+image-managed directory:
+.PP
+.nf
+/etc/codex/skills/<name>/SKILL.md
+.fi
+.PP
+It also copies the catalog to
+/usr/local/share/dev-dotfiles-debian/agent-skills, from which
+dev-dotfiles-sync-agent-skills refreshes Antigravity's user-scoped
+skills at:
+.PP
+.nf
+~/.gemini/antigravity-cli/skills/<name>/SKILL.md
+.fi
+.PP
+The Antigravity sync keeps user-edited or unrelated skills intact,
+using per-skill content fingerprints stored in
+~/.local/state/dev-dotfiles-debian/managed-skills. Skills removed
+from the image are not deleted automatically from persistent homes.
+Codex's image-owned skills change when the container image is
+rebuilt and relaunched, not merely when the Git repository is edited.
+.SH EXAMPLES
+.nf
+man agent-skills
+find /etc/codex/skills -maxdepth 2 -name SKILL.md
+find "$HOME/.gemini/antigravity-cli/skills" \
+  -maxdepth 2 -name SKILL.md
+less /etc/codex/skills/g2-overlay/SKILL.md
+less "$HOME/.gemini/antigravity-cli/skills/g2-overlay/SKILL.md"
+dev-dotfiles-sync-agent-skills
+.fi
+.PP
+The last command refreshes only eligible image-managed Antigravity
+skills from the image catalog; it will not overwrite local edits.
+Treat this man page as documentation, not as an executable skill
+manager. For invocation details, consult each SKILL.md and the
+installed agent's own skill-discovery interface.
+.SH TROUBLESHOOTING
+If a skill exists in the Git checkout but not in Codex, check the
+actual published image revision and whether the container was
+recreated. A persistent outer container retains its original
+image. If a skill does not update in Antigravity, check for a
+locally edited skill or conflicting user-owned path; the sync
+script deliberately preserves them.
+.PP
+When a skill requires external CLI tools, network access or GitHub
+authentication, consult its SKILL.md before using it. Having the
+skill instructions installed does not itself grant those permissions.
+.SH MAINTENANCE
+On adding, removing or renaming a directory under
+containers/dev-dotfiles-debian/agent-skills, update this catalog,
+the corresponding SKILL.md metadata and the agent-skills test.
+Avoid duplicating the complete SKILL.md here.
+.SH SEE ALSO
+dotfiles-ci(7), run-dev-podman.sh(1), run-dev-docker.sh(1)
