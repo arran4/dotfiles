@@ -29,3 +29,19 @@ More than one matching touchpad, no matching touchpad or an unusual
 device name may cause incorrect selection or failure. The helper
 does not remember or restore the previous device state. On
 Hyprland/Wayland, configure the actual input device instead.
+.SH REQUIREMENTS
+Requires X11, xinput, grep and sed, and a device name containing
+the case-sensitive text TouchPad. Native Wayland/Hyprland input
+devices must be managed differently.
+.SH EXAMPLES
+.nf
+xinput list --short
+disable-touchpad.sh
+xinput enable DEVICE_ID
+.fi
+.PP
+Replace DEVICE_ID with the number reported by xinput.
+.SH LIMITATIONS
+More than one matching device or an unusual device name can cause
+incorrect selection or failure. The helper does not remember the
+old state or provide a separate re-enable command.
