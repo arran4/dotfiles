@@ -74,5 +74,38 @@ SECURITY: DEV_DIND=1 is the default and causes the launcher to use a privileged 
 Resuming a persistent outer container uses its original image and mounts. Pulling a newer image alone does not upgrade that already\-created container.
 .PP
 The two launchers use the same image definition, but select their corresponding host container engines.
+.SH REQUIREMENTS
+Requires the host Podman engine, registry access and available storage.
+Launch from the directory of the intended project. Nested Podman
+may require /dev/fuse and compatible host security policy.
+.SH STARTUP AND STORAGE
+The current directory determines the project name and is normally
+mounted at /workspace. The launcher checks the image's home-seed
+label, prepares a persistent project-home volume and overlays new
+seeded dotfiles while preserving known agent login files. New outer
+containers are disposable; a retained stopped container resumes its
+original image and mount settings.
+.PP
+Docker-in-Docker defaults to enabled, making the outer container
+privileged. The nested daemon is private; no host engine socket is
+mounted. Named volumes survive removal of the outer container.
+.SH OPERATIONAL EXAMPLES
+.nf
+cd ~/Documents/Projects/example
+DEV_DIND=0 run-dev-podman.sh
+DEV_PULL_MODE=missing run-dev-podman.sh
+run-dev-podman.sh --persist-container
+DEV_WORKSPACE_MODE=volume run-dev-podman.sh
+DEV_DIND=0 DEV_PODMAN_SECURITY=off run-dev-podman.sh
+podman ps -a
+podman volume ls
+.fi
+.SH TROUBLESHOOTING AND RECOVERY
+A retained container cannot change image, privileges or mounts on
+restart. Back up writable-layer data before explicitly removing an
+old outer container; never remove named volumes as a routine upgrade
+step. Check image labels and old authentication-volume layouts before
+migrating. Full instructions are in
+containers/dev-dotfiles-debian/README.md.
 .SH SEE ALSO
 run\-dev\-docker.sh(1)
