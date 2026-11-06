@@ -28,5 +28,19 @@ Missing go-playerctl or a clipboard utility exits 127. Missing
 media or a URL using another scheme exits 1. If copying appears
 successful but pasting fails, inspect the graphical session and
 the chosen clipboard utility.
+.SH REQUIREMENTS
+Requires go-playerctl, a media player publishing xesam:url over
+MPRIS, and a usable clipboard command: wl-copy, xclip or xsel.
+The helper tries those clipboard programs in that order.
+.SH EXAMPLES
+.nf
+go-playerctl metadata xesam:url
+copy-song-url.sh
+.fi
+.SH FAILURE MODES
+Missing go-playerctl or all clipboard utilities causes exit 127.
+Missing or non-HTTP(S) URLs cause exit 1. The URL is printed to
+stdout as well as copied to the clipboard; avoid recording it in
+public logs if it contains private access data.
 .SH SEE ALSO
 go\-playerctl(1)
