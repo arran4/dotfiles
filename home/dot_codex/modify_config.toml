@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""Preserve Codex settings while making question navigation work in Konsole."""
+import os
+from pathlib import Path
+import re
+import sys
+
+SEED = Path(
+    os.environ.get(
+        "CODEX_DOTFILES_SEED_PATH",
+        "/usr/local/share/dev-dotfiles-debian/skel/.codex/config.toml",
+    )
+)
+BINDINGS = {
+    "edit_queued_message": "alt-up",
+    "prompt_stack_back": "alt-down",
+}
+
+source = sys.stdin.read()
+# In the development image, chezmoi runs before the default skeleton is copied
+# with rsync --ignore-existing. Preserve those defaults when creating the file.
+if not source and SEED.is_file():
+    source = SEED.read_text()
+
+lines = source.splitlines(keepends=True)
+sections = [
+    i
+    for i, line in enumerate(lines)
+    if re.match(r"^\s*\[\[?[^\[\]]+\]\]?\s*(?:#.*)?$", line)
+]
+chat_headers = [
+    i
+    for i in sections
+    if re.match(r"^\s*\[tui\.keymap\.chat\]\s*(?:#.*)?$", lines[i])
+]
+if len(chat_headers) > 1:
+    raise SystemExit("duplicate [tui.keymap.chat] headers in Codex config")
+
+if not chat_headers:
+    # Avoid conflicting with an existing inline/dotted definition of the table.
+    if re.search(r"^\s*(?:chat|tui\.keymap\.chat)\s*=", source, re.MULTILINE):
+        raise SystemExit("Codex config uses an inline/dotted chat table; update manually")
+    separator = "" if not source or source.endswith("\n\n") else (
+        "\n" if source.endswith("\n") else "\n\n"
+    )
+    sys.stdout.write(
+        source
+        + separator
+        + "[tui.keymap.chat]\n"
+        + "".join(f'{key} = "{value}"\n' for key, value in BINDINGS.items())
+    )
+    raise SystemExit(0)
+
+header = chat_headers[0]
+end = next((i for i in sections if i > header), len(lines))
+for key, value in BINDINGS.items():
+    matching = [
+        i
+        for i in range(header + 1, end)
+        if re.match(r"^\s*" + key + r"\s*=", lines[i])
+    ]
+    if len(matching) > 1:
+        raise SystemExit(f"duplicate {key} assignments in Codex config")
+    replacement = f'{key} = "{value}"\n'
+    if matching:
+        i = matching[0]
+        tail = lines[i].split("=", 1)[1].split("#", 1)[0].strip()
+        # Existing keymaps can use a multi-line list of alternatives.
+        if tail.startswith("[") and "]" not in tail:
+            j = i + 1
+            while j < end and "]" not in lines[j].split("#", 1)[0]:
+                j += 1
+            if j == end:
+                raise SystemExit(f"unterminated binding array for {key}")
+            lines[i : j + 1] = [replacement]
+            end -= j - i
+        else:
+            lines[i] = replacement
+    else:
+        lines.insert(header + 1, replacement)
+        end += 1
+
+sys.stdout.write("".join(lines))
