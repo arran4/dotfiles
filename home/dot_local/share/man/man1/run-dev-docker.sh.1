@@ -77,5 +77,35 @@ SECURITY: DEV_DIND=1 is the default and causes the launcher to use a privileged 
 Resuming a persistent outer container uses its original image and mounts. Pulling a newer image alone does not upgrade that already\-created container.
 .PP
 The two launchers use the same image definition, but select their corresponding host container engines.
+.SH REQUIREMENTS
+Requires the host Docker engine, registry access and storage for image
+and volumes. Launch from the directory of the intended project.
+Rootless Docker filesystem permissions may differ from Podman.
+.SH STARTUP AND STORAGE
+The launcher derives the project name from the working directory,
+checks the selected image's home-seed label, and prepares separate
+home and workspace storage. New outer containers are disposable;
+retained containers are resumed with the old image and mounts.
+.PP
+Docker-in-Docker is enabled by default and makes the outer container
+privileged, but the host Docker socket is never mounted.
+.SH OPERATIONAL EXAMPLES
+.nf
+cd ~/Documents/Projects/example
+DEV_DIND=0 run-dev-docker.sh
+DEV_PULL_MODE=missing run-dev-docker.sh
+run-dev-docker.sh --persist-container
+DEV_DOCKER_HOST_GATEWAY=1 run-dev-docker.sh
+DEV_DIND=0 run-dev-docker.sh --podman-security=off
+docker ps -a
+docker volume ls
+.fi
+.SH TROUBLESHOOTING AND RECOVERY
+If an older image persists, check whether a retained container was
+resumed rather than recreated. Back up writable-layer-only files
+before explicitly removing that outer container; never remove named
+volumes during routine updates. The host gateway option is a
+creation-time setting. Consult containers/dev-dotfiles-debian/README.md
+for legacy storage migration and credentials.
 .SH SEE ALSO
 run\-dev\-podman.sh(1)
