@@ -31,6 +31,13 @@ if ! printf '%s\n' "$repo" | LC_ALL=C grep -Eq '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+
   exit 2
 fi
 
+# Refuse a publicly readable source, even if its name looks private.
+private="$(gh api --hostname github.com "repos/$repo" --jq .private 2>/dev/null || true)"
+if [ "$private" != true ]; then
+  echo 'Git host defaults source must be an accessible private GitHub repository.' >&2
+  exit 1
+fi
+
 umask 077
 scratch="$(mktemp "${TMPDIR:-/tmp}/dotfiles-git-hosts.XXXXXXXX")"
 trap 'rm -f "$scratch"' EXIT HUP INT TERM
