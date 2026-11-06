@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import tomllib
 
-MODIFIER = Path(__file__).resolve().parents[1] / "home/dot_codex/modify_config.toml"
+MODIFIER = Path(__file__).resolve().parents[2] / "home/dot_codex/modify_config.toml"
 BINDINGS = {
     "edit_queued_message": "alt-up",
     "prompt_stack_back": "alt-down",
