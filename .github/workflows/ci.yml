@@ -213,8 +213,6 @@ jobs:
           shopt -s globstar
           shellcheck **/*.sh
           shellcheck .github/scripts/release_aliases.sh .github/scripts/test_release_safety.sh .github/scripts/prepare_release_tag.sh .github/scripts/test_manual_release.sh
-      - name: Unit Tests
-        run: |
       - name: Release safety regression tests
         run: |
           bash .github/scripts/test_release_safety.sh
