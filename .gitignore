@@ -1,2 +1,6 @@
 bin/chezmoi
 
+# Never commit machine-local Git host overrides into the public chezmoi source.
+/home/dot_config/git/config.local
+/home/dot_config/git/hosts.defaults
+/home/dot_config/git/private_config.local

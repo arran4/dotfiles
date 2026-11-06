@@ -92,6 +92,103 @@ Chezmoi copies `home/dot_config/git/template` to `~/.config/git/template`; Git u
 git config --global core.editor <command>
 ```
 
+### Private Git host defaults, local overrides and etckeeper
+
+The public Git template loads two **optional** files, in order. Both may be
+absent without breaking Git: `~/.config/git/hosts.defaults` is a reusable
+private baseline for your machines, while `~/.config/git/config.local` holds
+machine-specific changes and takes precedence for single-valued settings.
+Neither file is committed to the public dotfiles source. Both must contain
+connection metadata only, never passwords, tokens or inline credential helpers.
+
+**New machines:** The old-host migration below cannot populate an empty machine.
+Instead, keep a nonsecret Git-config host baseline at `git/hosts.defaults` in
+a **separate private GitHub repository**, accessible through your authenticated
+`gh` account. The conventional repository name is `<your-gh-user>/private-git-hosts`.
+This private repository and its file must be created and seeded **once** on a
+trusted machine; dotfiles will not create or publish it automatically. You can
+select another private repository with `OWNER/REPO` or `DOTFILES_GIT_HOSTS_REPO`.
+Example host entries (placeholders, stored only in the private repository):
+
+```gitconfig
+[credential "https://git.example.invalid"]
+  useHttpPath = true
+  gitLabAuthModes = pat
+[url "https://git.example.invalid/"]
+  insteadOf = git@git.example.invalid:
+  insteadOf = ssh://git@git.example.invalid/
+```
+
+After installing these dotfiles and authenticating the GitHub CLI on a **trusted**
+new machine, bootstrap the defaults with one command (no host list to type):
+
+```sh
+gh auth login -h github.com
+~/.local/bin/sync-private-git-hosts.sh
+# Or fetch from an explicitly named private repository:
+~/.local/bin/sync-private-git-hosts.sh OWNER/REPO
+```
+
+The command requests `git/hosts.defaults` using authenticated GitHub API
+access. It confirms the source repository is private, validates the Git syntax,
+and checks an allowlist of nonsecret host keys,
+rejects credential-bearing URLs and executable helpers, and installs the file
+atomically with permission 0600. Re-running it updates **only** the defaults
+file; `config.local` is never overwritten. Missing authentication, missing
+private source, invalid data or network failure leave the existing defaults
+untouched. It is **opt-in**: `chezmoi apply` never fetches private data as a
+side effect, and applying dotfiles to untrusted containers does not grant them
+private repository access. Do not expose `gh` authentication to untrusted agents.
+
+Root uses its own config and credentials. When its host baseline should match
+the user's, inspect the downloaded defaults first and explicitly install a
+root-owned copy from the trusted user's account:
+
+```sh
+sudo install -d -m 700 /root/.config/git
+sudo install -m 600 "$HOME/.config/git/hosts.defaults" /root/.config/git/hosts.defaults
+```
+
+Do not run `sudo gh auth login` merely to bootstrap root. Machine-specific
+root overrides still belong in `/root/.config/git/config.local`.
+Remember that Git include precedence does not automatically override every
+multi-valued `insteadOf` entry: review duplicate URL rewrites when migrating
+existing machines.
+
+**Existing machines — one-time upgrade:** A temporary chezmoi
+`run_once_before_migrate_private_git_hosts.sh` script checks the *existing*
+`~/.gitconfig` **before** chezmoi replaces it. For both normal-user and
+root runs, it copies Git `credential` and `url` sections pointing to
+non-public HTTPS hosts into each account's local `config.local`, preserving
+existing entries and skipping duplicates. It deliberately excludes passwords,
+tokens, inline credential helpers and arbitrary comments. It does not prompt,
+change Git remotes or modify etckeeper, and prints no private hostnames.
+Unrecognised Git credential attributes must be reviewed locally. Back up
+the old `~/.gitconfig` and run a **full** `chezmoi apply` per account; a
+targeted apply of `~/.gitconfig` may skip migration scripts.
+
+The migration only works if legacy private settings still exist in the old
+`~/.gitconfig`. If they were already removed, recover from a local backup
+or use the private defaults import instead. The migration script is temporary
+and has a separate deferred cleanup PR; the two local files remain supported.
+
+The shared default file and machine-local override must remain outside chezmoi
+source control. Avoid putting them in agent container mounts, logs or PRs.
+Directory mode 0700 and file mode 0600 are recommended.
+
+For Gentoo etckeeper, the `/etc` repository's remote and authentication
+are machine-local. A repository-local HTTPS credential helper may override
+an interactive global OAuth helper; provision its token separately outside
+`/etc` so etckeeper cannot commit it. Root-owned credential stores can be
+plaintext unless an encrypted noninteractive backend is configured. Test
+unattended push without exposing secrets:
+
+```sh
+sudo env GIT_TERMINAL_PROMPT=0 git -C /etc push --dry-run origin HEAD
+```
+
+Do not switch etckeeper's HTTPS remote to SSH as a workaround.
+
 ### SSH configuration
 
 The default SSH configuration adds keys to the agent and uses platform-appropriate keychain options and configured identities. On macOS, a host entry may use:
