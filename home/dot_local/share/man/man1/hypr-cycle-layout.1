@@ -7,5 +7,24 @@ hypr\-cycle\-layout \- switch between Master and Dwindle Hyprland layouts
 .fi
 .SH DESCRIPTION
 Read the current general:layout option and switch between master and dwindle. If the current layout is neither, select master.
+.SH REQUIREMENTS
+Requires an active Hyprland instance, hyprctl and awk.
+.SH OPERATION
+The current general:layout value is obtained using hyprctl
+getoption. Master changes to dwindle, dwindle to master,
+and any unrecognised layout is reset to master. This modifies
+the running compositor immediately; it does not rewrite the
+configuration file.
+.SH EXAMPLES
+.nf
+hyprctl getoption general:layout
+hypr-cycle-layout
+hyprctl getoption general:layout
+.fi
+.SH TROUBLESHOOTING
+If hyprctl cannot connect, verify HYPRLAND_INSTANCE_SIGNATURE
+and that the command runs inside the correct graphical session.
+For the keyboard shortcut assigned to this helper, consult
+hyprland-keys(7).
 .SH SEE ALSO
 hyprland\-keys(7), hyprctl(1)
