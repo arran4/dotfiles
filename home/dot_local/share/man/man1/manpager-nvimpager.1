@@ -29,5 +29,21 @@ man git
 If manual rendering appears broken, verify both programs with
 command -v and compare direct man output. This wrapper does
 not download, format or discover manual pages on its own.
+.SH REQUIREMENTS
+Requires col and nvimpager in PATH, and an interactive terminal.
+The script expects formatted manual text on standard input.
+.SH OPERATION
+The col -bx filter removes backspace and overstrike formatting,
+then nvimpager - displays the resulting text. This wrapper neither
+searches for nor downloads manual pages.
+.SH EXAMPLES
+.nf
+man git | manpager-nvimpager
+export MANPAGER=manpager-nvimpager
+man git
+.fi
+.SH TROUBLESHOOTING
+If rendering fails, check command -v col and command -v nvimpager.
+Test each program independently before changing MANPAGER.
 .SH SEE ALSO
 man(1)
