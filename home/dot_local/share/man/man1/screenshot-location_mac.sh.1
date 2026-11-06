@@ -9,3 +9,18 @@ screenshot\-location_mac.sh \- configure a macOS screenshot destination
 Create a Screenshots/mac screenshots directory in the home directory and set the com.apple.screencapture location preference to it using defaults.
 .SH NOTES
 This macOS\-only helper uses mkdir without \-p: it can fail if the directory already exists or its parent is absent.
+.SH REQUIREMENTS
+Requires macOS and defaults. The script invokes mkdir without -p,
+so ~/Screenshots must exist and the target directory must not
+already exist.
+.SH EXAMPLES
+.nf
+mkdir -p "$HOME/Screenshots"
+screenshot-location_mac.sh
+defaults read com.apple.screencapture location
+.fi
+.SH OPERATION AND CAVEATS
+Creates the directory "mac screenshots" and writes its full
+path to the com.apple.screencapture location preference.
+A second invocation may fail because the directory exists.
+Existing screenshots are not moved or deleted.
