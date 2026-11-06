@@ -14,5 +14,27 @@ Scopes the managed watcher processes; defaults to default outside Hyprland.
 .TP
 \fBXDG_RUNTIME_DIR\fR
 Preferred directory for per\-instance PID and lock state.
+.SH REQUIREMENTS
+Requires Bash, wl-paste, cliphist, flock, readlink, a writable runtime
+directory and a Wayland clipboard session. Chezmoi resolves the
+executable paths at template rendering time.
+.SH LIFECYCLE
+The helper takes a per-instance file lock, examines text.pid and
+image.pid, and checks /proc/PID/exe before terminating a recorded
+watcher. This prevents killing unrelated processes solely on the
+basis of a reused PID. It starts separate text and image clipboard
+watchers, both feeding cliphist store. Re-running the helper
+restarts the watchers for the same Hyprland instance.
+.SH EXAMPLES
+.nf
+cliphist-daemon.sh
+ls "$XDG_RUNTIME_DIR/wl-paste/$HYPRLAND_INSTANCE_SIGNATURE"
+.fi
+.SH PRIVACY AND TROUBLESHOOTING
+PID and lock state lives below XDG_RUNTIME_DIR/wl-paste/<instance>,
+or a per-user /tmp fallback. If history stops updating, inspect this
+directory and verify wl-paste and cliphist are installed. This
+command does not clear clipboard history; copied secrets may remain
+in the history managed by cliphist.
 .SH SEE ALSO
 hyprland\-keys(7)
