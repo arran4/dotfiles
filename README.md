@@ -73,6 +73,12 @@ The outer container is ephemeral by default; named home/workspace volumes can pe
 
 See `man run-dev-podman.sh` and `man run-dev-docker.sh` for options and environment variables. The [development container guide](containers/dev-dotfiles-debian/README.md) covers image building, upgrades, auth, persistent volumes and further operating details.
 
+## CI and release credentials
+
+The repository has a GitHub Actions pipeline for checks, tag-based releases, GitHub Release archives and GHCR development images. For the documented modes, recovery procedures, required token permissions and a **key/secret inventory checklist**, see `man dotfiles-ci` (section 7) or [the CI workflow](.github/workflows/ci.yml).
+
+The current workflow uses GitHub's per-run `GITHUB_TOKEN`; it does not embed pipeline secrets in this repository. When setting up a fresh repository or recovering CI, also review Actions permissions, GitHub-hosted secrets and variables, environment settings, deploy/signing keys where applicable, package access, and tag protections. Those settings **do not follow a Git clone**. Never place secret values in documentation or generated config.
+
 ## Useful commands and configurations
 
 Many custom helpers are installed in `~/.local/bin`, with local manuals in `~/.local/share/man/man1`. The command name is the man-page name:
@@ -94,6 +100,7 @@ man gh-pr.sh
 man gh-release.sh
 man run-dev-podman.sh
 man hyprland-keys
+man dotfiles-ci
 ```
 
 The last command opens the full Hyprland keyboard reference. Quick reminders: `Super+Return` opens a terminal; `Super+G` enters group-management mode; `Super+/` opens the runtime cheatsheet; and `Super+Shift+S` is a conditional Caelestia screenshot binding. The full manual includes fallback and conditional shortcuts. The active bindings are best checked with `hypr-cheatsheet` or `hyprctl binds -j`.
