@@ -1,63 +1,40 @@
 # Development container (Docker and Podman)
 
-This directory builds the Debian-based `dev-dotfiles-debian` development image with dotfiles, compilers, GitHub/GitLab clients, and coding agents. **This README is the single operational guide** for Docker/Podman startup, persistence, upgrades, and troubleshooting. Repository and agent-maintenance rules live in [`../../AGENTS.md`](../../AGENTS.md).
+The [Dockerfile](Dockerfile) builds a Debian-based development image with chezmoi-managed dotfiles, CLI tools, coding agents and optional nested container engines. Docker and Podman use the **same image**: `ghcr.io/arran4/dev-dotfiles-debian:latest`. This page documents image-specific operation and recovery; start with the [root README](../../README.md) for the personal machine bootstrap.
 
-## Contents
+## Start a project
 
-- [One image, two compatible storage layouts](#one-image-two-compatible-storage-layouts)
-- [Release an updated toolchain](#release-an-updated-toolchain)
-- [Start a project sandbox](#start-a-project-sandbox)
-- [Launcher settings](#launcher-settings)
-- [Manual Docker and Podman commands](#manual-docker-and-podman-commands)
-- [Storage, upgrades, and migration](#storage-upgrades-and-migration)
-- [GitHub CLI authentication](#github-cli-authentication)
-- [Docker-in-Docker](#docker-in-docker)
-- [Local AI and host Ollama](#local-ai-and-host-ollama)
-- [Installed tools and verification](#installed-tools-and-verification)
-
-## One image, two compatible storage layouts
-
-**There is one canonical build definition:** [`Dockerfile`](Dockerfile). Both local builds and CI releases use this file; there is no second Dockerfile or separate home-volume image to build. The normal image is `ghcr.io/arran4/dev-dotfiles-debian:latest`. The *new* primary Dockerfile applies chezmoi during the image build, archives the prepared `/home/user` outside its runtime mount, records a seed version, and labels the result `io.github.arran4.dev-dotfiles.home-seed=1`. On container creation the normal Docker/Podman launchers inspect the **actual local image**, rather than inferring capability from its tag:
-
-| Actual image capability | Launcher behaviour for a new sandbox |
-| --- | --- |
-| Home-seed label `1` | Mount one per-project `dev-agent-<name>-project-home` volume at `/home/user`, set `DEV_HOME_VOLUME_INIT=1`, and initialize it from the image archive on first start. `/workspace` is independent. |
-| Historical published image without the label | Keep the compatible `-codex`, `-agy`, `-gh`, `-glab` volumes and `DEV_FORGE_VOLUME_INIT=1`; do not hide the baked home beneath an empty whole-home mount. |
-| Custom image built from the canonical Dockerfile | Same seeded-home behaviour when it has the label. An unlabelled custom image is rejected for new sandboxes; it is not assumed compatible. |
-
-A repository merge does **not** publish a new image. The default `ghcr.io/arran4/dev-dotfiles-debian:latest` follows the newest stable release; use a version-specific tag such as `:v0.2.42` to select a particular release. Prerelease and test images have separate tags and do not replace `:latest`. Re-publishing an older version through the current release process does not roll `:latest` or the major/minor aliases (`:vX` and `:vX.Y`) backwards. A locally cached image does not update automatically. Inspect a local image with `podman image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' ghcr.io/arran4/dev-dotfiles-debian:latest` (or substitute `docker`). Pull a newer release explicitly before creating a new seeded sandbox. The initializer checks the image's archive version and the marker in the persistent home, so a same-version restart is a no-op and a *new-image container recreation* applies changed seeded configuration. It does not blindly copy over credentials and sessions. See [Storage, upgrades, and migration](#storage-upgrades-and-migration) for the limitations and safety procedure.
-
-## Release an updated toolchain
-
-To pick up newer bundled programs and libraries such as Flutter, Antigravity (`agy`), Codex, and Debian packages without changing dotfiles, open **Actions → CI/CD → Run workflow**, select `main`, choose `release-patch`, and enable **force_release**. Leave `release_version_override` empty for the next version, or supply an unused explicit version. The equivalent CLI command is:
-
-```sh
-gh workflow run ci.yml --repo arran4/dotfiles --ref main \
-  -f mode=release-patch -f force_release=true
-```
-
-This creates a **new version tag even when the commit is already tagged**, then dispatches the normal checked release pipeline. It pulls the base image and disables Docker's build cache so tool installation runs again. Downloads still follow the Dockerfile's configured channels and version pins; force does not override an explicit pin. The default remains `force_release=false`, which skips unchanged source. Existing tags are never overwritten, and secret/configuration checks and moving-alias protections still apply. The parent run prepares the tag; follow the separate `publish-tag` run for the image and GitHub release result.
-
-For recovery of an existing version, dispatch `publish-tag` against that tag; `force_release=true` also enables a fresh image build there. Prefer a new patch release for routine toolchain refreshes so the new image has its own version. An older tag executes its own workflow revision, so the force input is available only on tags containing this workflow change. After publication, pull the image and recreate the outer container while preserving named volumes; a restart retains the old image. See [Storage, upgrades, and migration](#storage-upgrades-and-migration).
-
-## Start a project sandbox
-
-Apply chezmoi-managed [`../../home/dot_local/bin/executable_run-dev-podman.sh`](../../home/dot_local/bin/executable_run-dev-podman.sh) and [`../../home/dot_local/bin/executable_run-dev-docker.sh`](../../home/dot_local/bin/executable_run-dev-docker.sh) to install `~/.local/bin/run-dev-podman.sh` and `~/.local/bin/run-dev-docker.sh`; include `~/.local/bin` in `PATH`. Run from the host project directory to bind-mount it at `/workspace`:
+Install the chezmoi-managed host launchers (or inspect their source in [Podman](../../home/dot_local/bin/executable_run-dev-podman.sh) and [Docker](../../home/dot_local/bin/executable_run-dev-docker.sh)), then run one from the project directory:
 
 ```sh
 cd ~/Documents/Projects/my-project
 run-dev-podman.sh
-# Or: run-dev-docker.sh
+# Alternatively: run-dev-docker.sh
 ```
 
-Both launchers default to `ghcr.io/arran4/dev-dotfiles-debian:latest`; they use an existing local image offline and pull only when it is missing. To adopt a *newly released image* rather than a cached old one, explicitly pull it **before creating a new sandbox**:
+New outer containers are **ephemeral by default**, while the per-project home volume and host checkout persist. The usual image is pulled on **each new launch**: `DEV_PULL_MODE` defaults to `always` for published images and `never` for local builds; `missing` accepts a cached image. A stopped persistent container resumes its original image, regardless of new pulls.
+
+For the full list of supported flags, environment variables, defaults and examples, consult:
 
 ```sh
-podman pull ghcr.io/arran4/dev-dotfiles-debian:latest
-# Or: docker pull ghcr.io/arran4/dev-dotfiles-debian:latest
+man run-dev-podman.sh
+man run-dev-docker.sh
 ```
 
-For an optional local development image, build the **same Dockerfile**, from the repository root:
+Common overrides:
+
+```sh
+SANDBOX_NAME=another-project run-dev-podman.sh
+DEV_DIND=0 run-dev-podman.sh
+DEV_PULL_MODE=missing run-dev-podman.sh
+run-dev-podman.sh --persist-container
+```
+
+The current project directory is normally bind-mounted at `/workspace`; `DEV_WORKSPACE_MODE=volume` makes it an independent named volume, and `--no-workspace-mount` keeps it in the outer writable layer. For a disposable home use `--no-home-volume`, which requires a seeded image. Docker and Podman have **separate** container and volume stores.
+
+### Build the current image locally
+
+The repository deliberately has one Dockerfile and no separate home-volume trial image:
 
 ```sh
 podman build --build-context dotfiles=. \
@@ -66,196 +43,99 @@ podman build --build-context dotfiles=. \
 DEV_IMAGE=dev-dotfiles-local:dev run-dev-podman.sh
 ```
 
-For Docker use `docker build` and `run-dev-docker.sh`. No separate trial build is part of the supported setup. Historical `dev-agent-<name>-trial` containers and their `-home` volumes are not removed by the new launcher; if you have one, back up and migrate its data explicitly before retiring it.
+Use `docker build` and `run-dev-docker.sh` for Docker. A custom image must have the seeded-home label: `io.github.arran4.dev-dotfiles.home-seed=1`. A published image without that label uses a legacy compatibility layout; an unlabelled custom image is not accepted.
 
-The launchers make the **outer container disposable by default** with `--rm`. The default seeded layout still mounts the named per-project `dev-agent-<name>-project-home` volume, and the default workspace remains the host checkout bind-mounted at `/workspace`; those survive independently of the outer container. When the shell exits, the disposable container is removed and no longer pins its image. Use `--persist-container` or `DEV_CONTAINER_PERSIST=1` only when writable-layer state must survive and the same stopped container should be resumed. `--ephemeral-container` overrides an environment persistence setting for one invocation. No launcher bind-mounts host credentials or passes the host Docker/Podman socket.
+## Image release and update
 
-Both seeded and historical image layouts now name the **outer container** `dev-agent-<name>` (without `-home`). The seeded **named volume** remains `dev-agent-<name>-project-home`; this naming change does not move or delete home, workspace, authentication, or nested-Docker volumes. Existing stopped containers are **never silently deleted** because they may hold writable-layer state. A normal launch refuses an existing stopped `dev-agent-<name>`; `--persist-container` explicitly resumes it, and a running container prints the `exec` command for another shell.
+`:latest` follows the newest stable published image, not every commit merged to `main`. A release also publishes version-specific tags; prereleases do not replace `:latest`. A successful CI run or PR merge alone does not publish an image, and an image cached locally will not update without a pull.
 
-**Existing `-home` containers require a one-time explicit name change.** Both launchers refuse to silently resume, replace, or rename a historical `dev-agent-<name>-home` container, even in persistent mode. If you intend to retain its writable layer, ensure `dev-agent-<name>` is unused, then rename it with the matching engine:
+When the repository is unchanged but bundled tools need updating, dispatch a fresh patch release and forced rebuild:
+
+```sh
+gh workflow run ci.yml --repo arran4/dotfiles --ref main \
+  -f mode=release-patch -f force_release=true
+```
+
+This prepares a new version tag, then dispatches `publish-tag` to build and publish the image and release assets. It refreshes unpinned downloads by pulling the base image and rebuilding without cache; explicit Dockerfile pins are still honoured. To recover an existing release, dispatch `publish-tag` on the relevant tag and use `force_release=true` if a rebuild is necessary. Old tags run the workflow revision they contain. Existing tags are never overwritten, and older releases cannot move stable aliases backwards.
+
+To upgrade a **disposable** seeded sandbox: back up important files in its home volume, exit, then rerun the launcher with the same project name to pull the current image. The named home volume remains. To upgrade a **persistent** outer container: first back up writable-layer-only data, stop and remove **only the outer container** (never use `--volumes`), then relaunch. Restarting a retained container cannot change its image, mounts, timezone or privileges. Validate the new home before removing backups.
+
+## Persistence and migration
+
+| Path or resource | Default lifecycle |
+| --- | --- |
+| Outer `dev-agent-<name>` container | Disposable (`--rm`); retained when `DEV_CONTAINER_PERSIST=1` |
+| `/home/user` | Named `dev-agent-<name>-project-home` volume on seeded images |
+| `/workspace` | Host checkout bind mount; optionally a named `-workspace` volume |
+| Nested `/var/lib/docker` | Outer writable layer; `-docker` volume only with `DEV_DIND_PERSIST=1` |
+| Nested Podman data | Optional `-podman` volume with `DEV_PODMAN_PERSIST=1` |
+| `/usr/local/share/dev-dotfiles-debian/home-seed.tar` | Prepared home archive in the image, outside the mounted home |
+| `~/.dev-dotfiles-seed-version` | Last successfully applied seed version for the current home |
+
+The Dockerfile applies chezmoi when building and archives the prepared home separately. For a new seeded volume, `DEV_HOME_VOLUME_INIT=1` initializes it; later image versions overlay matching seeded files. An unchanged seed is a no-op, and absent files are not removed. Known Codex, Antigravity, GitHub/GitLab session files and shell history are excluded from seed upgrades, but **other locally edited dotfiles or secrets could be overwritten**. The marker only advances after successful extraction. The initializer cannot verify that `/home/user` is a safe named volume: **never mount the host home there**.
+
+### Older sandboxes
+
+Historical published images without a home seed use four separate agent/auth volumes (`-codex`, `-agy`, `-gh`, `-glab`) rather than a whole-home volume. The new layout **does not import them automatically**. Back up the old container writable layer and each volume, create a distinct seeded sandbox with a different `SANDBOX_NAME` when appropriate, and selectively transfer credentials and configurations with a separate migration container. Verify ownership and login before deleting any old storage. Do not overlay the old agent mounts on the new whole-home mount; this hides seeded files.
+
+Earlier outer containers named `dev-agent-<name>-home` need an explicit rename to `dev-agent-<name>` before reuse, provided that destination name is free:
 
 ```sh
 podman rename dev-agent-my-project-home dev-agent-my-project
 # Or: docker rename dev-agent-my-project-home dev-agent-my-project
 ```
 
-This preserves the container and its existing mounts; the separate `-project-home` volume name stays unchanged. You can stop the old container before renaming if preferred. If `dev-agent-<name>` already belongs to a legacy sandbox, back up and deliberately rename or remove that legacy container first, **without removing its volumes**; do not merge the two layouts. For a disposable `--rm` container, exit it and recreate it with the updated launcher instead. `DEV_NEW_HOME=1` still requires a seeded image, but **no longer bypasses a conflicting existing container name**. For a separate parallel sandbox choose an explicit distinct `SANDBOX_NAME`, which also creates a distinct set of project volumes. A retained container keeps its original image and mounts until recreated; Docker and Podman keep independent container and volume stores.
+The current launchers intentionally refuse to rename, overwrite or delete old containers automatically; stopped named containers can contain the only copy of writable-layer state. The `-project-home` volume is unchanged by a rename. The old `-trial` containers and `-home` trial volumes are likewise not cleaned automatically. `DEV_NEW_HOME=1` does not override an existing container-name conflict. Never delete an old volume until the new environment is verified.
 
-### Launcher settings
+## Security and nested engines
 
-Set environment variables on invocation, e.g. `SANDBOX_NAME=my-project DEV_WORKSPACE_MODE=volume run-dev-podman.sh`:
+Both launchers default to `DEV_DIND=1` (Docker-in-Docker with a private daemon), which makes the **outer container privileged**. Rootless host Podman constrains that privilege differently from rootful Docker; neither should be treated as an untrusted-code isolation boundary without reviewing privileges and mounts. Use `DEV_DIND=0` when Docker-in-Docker is unnecessary.
 
-| Setting | Default | Effect |
-| --- | --- | --- |
-| `SANDBOX_NAME` | Current directory basename | Normalized lowercase per-project name for containers/volumes. |
-| `DEV_CONTAINER_PERSIST` | `0` | `0` creates the outer container with `--rm`; `1` retains and resumes it. CLI equivalents are `--ephemeral-container` and `--persist-container`. |
-| `DEV_IMAGE` | `ghcr.io/arran4/dev-dotfiles-debian:latest` | Selects the published image or a local build of the **same Dockerfile**; a custom image must already exist and advertise the home-seed capability. |
-| `DEV_NEW_HOME` | `0` | `1` requires an image with the home-seed capability. It no longer bypasses an existing container with the canonical name; use a distinct `SANDBOX_NAME` for parallel sandboxes. |
-| `DEV_WORKSPACE_MODE` | `bind` | `bind` = current host checkout at `/workspace`; `volume` = persistent `-workspace` volume; `container` = outer container writable layer. `--no-workspace-mount` selects `container` for one invocation. |
-| `DEV_HOME_MODE` | `volume` | On seeded images, `volume` mounts the persistent project home; `container` uses the outer writable layer. `--no-home-volume` selects `container` for one invocation. Historical published images require their legacy mounts. |
-| `DEV_TZ` | Host timezone when detectable; otherwise `Australia/Melbourne` | Overrides the timezone passed into a newly created container. Without an override the launchers use host `TZ`, then `/etc/timezone`, then the `/etc/localtime` zoneinfo symlink before falling back to Melbourne. |
-| `DEV_PODMAN_SECURITY` | `nested` | Controls outer-container permissions for nested rootless Podman: `nested`, `unconfined`, `privileged`, or `off`. Podman is installed in the image independently of this setting. |
-| `DEV_DIND` | `1` | Nested Docker is enabled by default using a private daemon; set `0` to disable it. The host daemon socket is never mounted. |
-| `DEV_DIND_PERSIST` | `0` | With `DEV_DIND=1`, `1` mounts a separate persistent `-docker` volume at `/var/lib/docker`. |
-| `DEV_DOCKER_HOST_GATEWAY` | `0` | Docker launcher only: `1` adds native Linux's `host.docker.internal:host-gateway` mapping. |
+Nested rootless Podman defaults to `DEV_PODMAN_SECURITY=nested`, requiring host `/dev/fuse`. `unconfined` relaxes AppArmor; `privileged` broadens access; `off` removes nested-Podman setup. No launcher mounts the host Docker or Podman daemon socket. **Do not mount the host credential directories or container-engine sockets into an unrestricted agent environment.**
 
-Timezone selection is container-creation state. A default disposable launch gets the current detected or overridden timezone each time; a retained container created with `DEV_CONTAINER_PERSIST=1` resumes with its existing `TZ` value, so changing `DEV_TZ` for that container requires recreation while preserving any named volumes. The image includes `tzdata` and defaults to `Australia/Melbourne`, which also covers manual launches that do not pass `TZ`. For an explicit launcher override, use e.g. `DEV_TZ=Europe/London run-dev-podman.sh`.
+With DIND enabled, `DEV_DIND_PERSIST=1` retains its images in a separate named `-docker` volume; otherwise its image store disappears with a disposable outer container. A local smoke check for the nested daemon is `docker info` inside the running sandbox. Launcher startup also reports effective engine settings and versions. Changes to creation-time permissions require recreating a persistent outer container.
 
-Neither launcher takes positional arguments. Options may be combined, for example `run-dev-podman.sh --no-home-volume --no-workspace-mount` for a clean session whose project home and workspace both live only in the disposable outer container. A named workspace volume is shared by old and new layouts *only when deliberately selected* with `DEV_WORKSPACE_MODE=volume` and the same project name; it is never imported into home. With `DEV_CONTAINER_PERSIST=0`, `DEV_HOME_MODE=container` and `DEV_WORKSPACE_MODE=container` are discarded when the shell exits; with `DEV_CONTAINER_PERSIST=1`, they survive in the retained container writable layer. Podman uses rootless `--userns=keep-id:uid=1000,gid=1000`; Docker omits that flag. Check host bind-mount ownership against the image's default UID/GID `1000:1000`, especially for rootless Docker.
+## Authentication
 
-## Manual Docker and Podman commands
-
-The launchers are preferred because they check the actual local image, preserve named volumes, and guard against deleting old retained containers. This manual example matches the default disposable lifecycle and requires a *verified seeded* published image, not an older `:latest` cache. Run from the checkout you intend to edit and choose a project name with no existing conflicting container.
+Each seeded project home stores GitHub CLI configuration under `~/.config/gh`. Historical images use the separate `-gh` volume. Prefer one credential model for each sandbox:
 
 ```sh
-name=my-project
-workspace=$(pwd -P)
-podman run -it --rm --name "dev-agent-${name}" \
-  --userns=keep-id:uid=1000,gid=1000 --hostname "agent-sandbox-${name}" \
-  --env DEV_HOME_VOLUME_INIT=1 --workdir /workspace \
-  --mount "type=bind,src=${workspace},dst=/workspace,rw" \
-  --mount "type=volume,src=dev-agent-${name}-project-home,dst=/home/user" \
-  ghcr.io/arran4/dev-dotfiles-debian:latest
+# Interactive web/device login
+gh auth login -h github.com -w -p https
+gh api /user --jq .login
+
+# Or inject GH_TOKEN / GITHUB_TOKEN in the container's environment
+# (do not echo them or commit them)
 ```
 
-For Docker, substitute `docker run` and omit `--userns`. To use a named workspace instead of a bind mount, replace the workspace mount with `--mount "type=volume,src=dev-agent-${name}-workspace,dst=/workspace"` and add `--env DEV_VOLUME_INIT=1`. Omit that mount entirely for a workspace only in the outer container writable layer. A seeded home can likewise use the writable layer if the home mount is omitted; retain `DEV_HOME_VOLUME_INIT=1`. With `--rm`, anything kept only in the outer writable layer is deliberately discarded at exit; omit `--rm` only when intentionally retaining the whole container. `/workspace` is independent of home, not a symlink into it; `~/workspace` may link **to** `/workspace`. The home initializer does not populate `/workspace`.
+Environment tokens override stored web/device credentials, with `GH_TOKEN` taking precedence over `GITHUB_TOKEN`. For an existing stored OAuth login that requires additional scope, `gh auth refresh -h github.com -s workflow` is supported; it does not refresh environment tokens.
 
-**Historical images:** Older published images do not have a home archive and need four legacy mounts: `/home/user/.codex` (`-codex`), `/home/user/.gemini` (`-agy`), `/home/user/.config/gh` (`-gh`) and `/home/user/.config/glab-cli` (`-glab`), with `DEV_FORGE_VOLUME_INIT=1`. Both launchers retain these named mounts for an unseeded local published image. A historical stopped `dev-agent-<name>` is resumed only when persistence is explicitly requested; disposable mode refuses to delete it automatically. Never manually set `DEV_HOME_VOLUME_INIT=1` or mount a whole home on an unseeded image: the underlying home files would be hidden.
-
-## Storage, upgrades, and migration
-
-| Path | Lifetime and purpose |
-| --- | --- |
-| `/home/user` | On a new seeded sandbox, `dev-agent-<name>-project-home` by default. Historical published sandboxes persist only four separately mounted agent/forge paths. |
-| `/workspace` | Host bind mount, independent `-workspace` volume, or outer-container writable layer regardless of home layout. |
-| `/var/lib/docker` | Nested Docker's outer-container writable layer by default; `-docker` volume only with `DEV_DIND_PERSIST=1`. |
-| `/usr/local/share/dev-dotfiles-debian/home-seed.tar` | Prepared home archive baked into the single Dockerfile's image, outside `/home/user`. |
-| `/usr/local/share/dev-dotfiles-debian/home-seed-version` | Seed version based on build/release identifier and archive digest. |
-| `~/.dev-dotfiles-seed-version` | Version successfully applied to the current home. |
-
-**Disposable versus retained containers:** The launchers now create the outer container with `--rm` by default, so its writable layer disappears when the shell exits. Bind mounts and named volumes have independent lifetimes and are not removed by that normal container cleanup. `DEV_CONTAINER_PERSIST=1` instead retains the named container; stop/start then preserves its writable layer, including an unmapped workspace and non-persistent nested Docker data. A persistent home does not make an unmapped workspace persistent across disposable recreation, and a retained container's image/mount settings do not change on restart.
-
-**Seed initialization and upgrades:** `DEV_HOME_VOLUME_INIT=1` applies the prepared archive on first start; an identical version skips reapplication. Recreating the named container with a newer *seeded* image and the same home volume overlays matching seeded paths; paths absent from the new archive remain. Known GitHub/GitLab/Codex/Gemini authentication/session files and shell history are excluded from subsequent overlay extraction. **Other locally edited seeded dotfiles may be overwritten; not every third-party secret is excluded. Back up custom configuration before upgrading.** The version marker advances only after successful extraction. The initializer does not prove that the target is a named volume: **never bind-mount your host home onto `/home/user`**. Restart alone does not run a newer image even if `:latest` has moved.
-
-**Upgrade a seeded-home sandbox:** Back up custom configuration first. Under the default disposable lifecycle, exit the current session, pull the new published image, and rerun from the same project directory and name; the retained `dev-agent-<name>-project-home` and any independent `-workspace`/`-docker` volumes are reused while the new outer container gets the selected image. For a sandbox created with `DEV_CONTAINER_PERSIST=1`, back up any writable-layer-only data, stop and remove *only* the appropriate outer container (`dev-agent-<name>` or an unmigrated `dev-agent-<name>-home`) without `--volumes` or `-v`, then rerun. Verify the result before removing backups. Docker and Podman volumes are not interchangeable across engines.
-
-**Legacy-to-seeded-home migration:** The new `-project-home` volume does **not** import existing legacy `-codex`, `-agy`, `-gh`, or `-glab` volumes or a legacy container's unmounted home. A parallel *fresh start* now requires a distinct `SANDBOX_NAME` (hence separate volumes); `DEV_NEW_HOME=1` cannot bypass an existing container with the canonical name and is not an automated migration. To transfer credentials/configuration, stop the legacy container, back up its writable layer and volumes, initialize a new home sandbox, then copy selected old volume contents into the corresponding home subdirectories using a separate migration container. Check ownership, unmounted shell configuration, project data, and authentication before removing old state. Never nest legacy agent mounts under the new whole-home mount: they hide seeded files. Avoid running both containers against the same writable workspace unless intended. Keyring-backed logins may require reauthentication.
-
-**Earlier trial-to-seeded-home migration:** Historical `dev-agent-<name>-trial` containers and `dev-agent-<name>-home` *trial volumes* are not removed or reused by the single-Dockerfile launchers. Back up and transfer selected trial data explicitly before retiring those containers and volumes. The new published `-project-home` volume uses a distinct name to prevent accidental data mixing.
-
-**Deliberate cleanup:** Check exact container names, image layouts and mount sources before deleting anything. Do not run old five-volume cleanup commands against a whole-home sandbox or remove a `-project-home`/historical `-home` volume while it contains the only copy of credentials or work.
-
-## GitHub CLI authentication
-
-The container supports two independent GitHub authentication styles: **per-container tokens** and **stored web/device OAuth login**. Neither is mandatory or automatically converted into the other. In a seeded-home sandbox stored `gh` configuration lives under `/home/user/.config/gh` in the per-project `-project-home` volume. Old published sandboxes retain their `-gh` volume; historical trials retain their old `-home` volume. **Persistent credentials do not guarantee permanently valid tokens.** Signing in from many containers may create distinct OAuth authorizations and revoke older tokens. Agents for one account share API rate limits. An `gh auth status` failure may reflect rate limiting or connectivity rather than expiry; see [GitHub CLI issue #14053](https://github.com/cli/cli/issues/14053).
-
-### Diagnose first; do not expose secrets
-
-Inside the affected container:
+To diagnose without exposing credentials:
 
 ```sh
-for name in GH_TOKEN GITHUB_TOKEN; do
-  if [ -n "$(printenv "$name" 2>/dev/null)" ]; then
-    printf '%s is set (value hidden)\n' "$name"
-  fi
-done
-
 gh api /user --jq .login
 gh api /rate_limit --jq '{core: .resources.core, graphql: .resources.graphql}'
 gh auth status -h github.com --json hosts
 ```
 
-`GH_TOKEN` and `GITHUB_TOKEN` override persisted login for GitHub.com; `GH_TOKEN` has precedence when both are set. This makes environment-token injection suitable for container-specific or headless credentials without disturbing a stored web/device login. A successful `/user` request confirms authentication for that request even if `gh auth status` reports an error. A rate-limit `403` or `429` warrants reducing calls and observing reset/retry time, not reauthorizing. An HTTP `401` with the intended token is consistent with invalid credentials; DNS, TLS, and `5xx` errors are different problems. Never publish `gh auth token`, `gh auth status --show-token`, `hosts.yml`, raw secrets or verbose HTTP traces. Multiple tokens for one user do not supply independent API quotas; see the [GitHub CLI environment reference](https://cli.github.com/manual/gh_help_environment) and [GitHub REST rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
+A failed `gh auth status` is not itself proof that credentials expired. Distinguish 401 from rate limits (403/429), DNS/TLS and upstream failures. Avoid unnecessary reauthorization across many project homes. Do not print `gh auth token`, `hosts.yml` or raw HTTP traces. Shared auth volumes expose the same permissions to all participating agents; sharing the whole seeded home is more intrusive still. See [GitHub CLI authentication](https://cli.github.com/manual/gh_auth_login) and [environment tokens](https://cli.github.com/manual/gh_help_environment).
 
-### Sign in or recover: token or web/device
+## Coding agents and local AI
 
-Only after confirming that authentication is needed, choose the credential model for that sandbox.
+The image includes Codex, Antigravity (`agy`), OpenCode, Claude Code, GitHub Copilot CLI, Qwen and Mini SWE Agent, plus common CLI build tools (Go, Java, Python, Node, Flutter, Git, `gh`, `glab`, tmux, Vim/Neovim, Podman, Docker, ShellCheck and more). Hyprland/KDE desktop tools, `difftastic` and `zellij` are not part of the image.
 
-**Per-container token:** For a token supplied by the container/session environment, set `GH_TOKEN` (preferred) or `GITHUB_TOKEN`; no `gh auth login` is required. This is also the GitHub CLI-recommended approach for fine-grained personal access tokens. If a token generator instead writes a private one-shot file inside the sandbox, the seeded shell history includes a stored-token alternative that never puts the token value in shell history:
+**Codex:** A fresh image-seeded `~/.codex/config.toml` sets model `gpt-6.1-sol` at high reasoning effort with `approval_policy = "never"` and `sandbox_mode = "danger-full-access"`. That disables the inner approval/sandbox mechanisms: **the outer container's trust boundary and mount choices matter**. The TUI defaults to normal scrollback (`alternate_screen = "never"`) and raw transcript output; modify `~/.codex/config.toml` or use `/raw` if desired. Existing user config is preserved on initial skeleton creation; seed updates have the caveats above.
 
-```sh
-gh auth login -h github.com -p https --with-token < ~/.config/gh/container-token
-rm -f ~/.config/gh/container-token
-gh api /user --jq .login
-```
+**Antigravity:** The container stores its settings under `~/.gemini/antigravity-cli/`, not the former `~/.codex/antigravity-cli/`. A guarded entrypoint migration moves only eligible settings, onboarding and OAuth files when destinations are missing; it rejects symlinks and preserves conflicting state for manual inspection. Defaults for fresh homes are supplied from `skel/.gemini/antigravity-cli/`. Recreating an outer container with a new image (not restarting an old one) runs the updated migration. Don't delete either agent home wholesale.
 
-The supplied token itself must already have the repository permissions/scopes required for the work. For classic personal access tokens, GitHub CLI documents `repo`, `read:org`, and `gist` as minimum scopes for `--with-token`; include `workflow` when the token must modify GitHub Actions workflows. Do not type a raw token directly into a shell command or leave the one-shot token file behind after a successful import.
-
-**Web/device OAuth:** The existing interactive flow remains supported and is also seeded in shell history:
-
-```sh
-gh auth login -h github.com -w -p https
-gh api /user --jq .login
-```
-
-For an existing stored login needing reauthorization or additional scope, run `gh auth refresh -h github.com -s workflow` and verify `/user`. This does **not** apply to `GH_TOKEN`/`GITHUB_TOKEN` credentials and does **not** guarantee an automatically rotating OAuth refresh token. Do not reauthenticate all running sandboxes in a loop, attempt `offline_access`, or automatically reauthenticate on startup. Revoked tokens may require new authorization. For headless device login, enter the CLI code in a host browser at <https://github.com/login/device>; `xdg-open` failure alone does not mean login failed. See [login](https://cli.github.com/manual/gh_auth_login), [environment tokens](https://cli.github.com/manual/gh_help_environment), [refresh](https://cli.github.com/manual/gh_auth_refresh), and [token expiration and revocation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/token-expiration-and-revocation).
-
-### Shared authentication: explicit trust trade-off
-
-For *legacy* sandboxes, trusted projects may replace their per-project `-gh` mount in a manual command with `--mount "type=volume,src=dev-agent-shared-gh,dst=/home/user/.config/gh"`. Authenticate once from a container using that volume. Never mount host credentials or share the volume with less-trusted sandboxes; every agent sharing it receives the same permissions and can change the saved login. Avoid concurrent `gh auth login`, `refresh`, and `logout` against the same volume. Sharing does not create separate API quotas or import existing per-project logins. A seeded sandbox's *whole home* is **not** equivalent to sharing only its `gh` configuration; do not casually share a home volume between projects. A shared `gh` mount in a manual seeded command would hide the home configuration beneath it; change mounts only after safeguarding state and recreating the container.
-
-## Docker-in-Docker
-
-Both launchers enable a **nested Docker daemon by default** (`DEV_DIND=1`), never the host socket. The outer container therefore becomes `--privileged`: rootless Podman confines that privilege to the invoking user's namespace, while rootful Docker's privileged mode grants broad host-level capabilities and reduces isolation. Set `DEV_DIND=0` when that trade-off is not wanted. Never pass `/var/run/docker.sock`, `/run/docker.sock`, or the host Podman socket into the sandbox. The entrypoint refuses a non-removable preexisting socket mount.
-
-```sh
-# Normal launcher use: nested Podman and nested Docker are both enabled.
-run-dev-podman.sh
-
-# Explicitly disable nested Docker:
-DEV_DIND=0 run-dev-podman.sh
-
-# Keep nested Docker data across outer-container recreation:
-DEV_DIND_PERSIST=1 run-dev-podman.sh
-```
-
-For Docker use `run-dev-docker.sh`. For manual commands add `--privileged --env DEV_DIND=1`, and optionally `--mount "type=volume,src=dev-agent-${name}-docker,dst=/var/lib/docker"`. The extra volume is **not required for ordinary nested Docker**, but with the default disposable outer container, `/var/lib/docker` otherwise disappears at the end of every session. Set `DEV_DIND_PERSIST=1` when nested Docker images and layers should survive. A `--tmpfs` mount is stop-volatile and requires separate size/storage-driver testing. Home and workspace volumes never store nested Docker images.
-
-At every start, launcher-created containers print the installed Podman, Docker CLI and Docker daemon versions, the effective `DEV_PODMAN_SECURITY`, `DEV_DIND` and `DEV_DIND_PERSIST` values, and human-readable runtime status. The banner also prints the exact launcher/environment setting needed to switch DIND, nested-Podman mode, or Docker persistence. Disposable containers naturally pick up changed creation settings on the next launch. A container retained with `DEV_CONTAINER_PERSIST=1` must still be removed without removing its named volumes before privileges, mounts, or container environment can change; a plain `start` cannot retrofit them. The startup banner uses the matching launcher automatically.
-
-To verify nested Docker inside the container without pulling an inner base image:
-
-```sh
-docker info
-
-tmp=$(mktemp -d)
-cat > "$tmp/main.go" <<'EOF'
-package main
-func main() {}
-EOF
-CGO_ENABLED=0 go build -o "$tmp/smoke" "$tmp/main.go"
-cat > "$tmp/Dockerfile" <<'EOF'
-FROM scratch
-COPY smoke /smoke
-ENTRYPOINT ["/smoke"]
-EOF
-docker build -t dev-dind-smoke "$tmp"
-docker run --rm dev-dind-smoke
-rm -rf "$tmp"
-```
-
-This checks the nested build, image store and runtime without accessing an inner registry.
-
-## Local AI and host Ollama
-
-**Codex CLI:** Fresh project homes default to `gpt-6.1-sol` with `model_reasoning_effort = "high"` and unrestricted execution (`approval_policy = "never"` and `sandbox_mode = "danger-full-access"`) through the container-only image skeleton at `skel/.codex/config.toml`. This bypasses Codex approvals and its *inner* sandbox; the outer development container remains the security boundary. Only use this with deliberately limited project mounts and credentials, never an unrestricted host home or host container-engine socket. The default container TUI also uses normal terminal scrollback (`[tui] alternate_screen = "never"`) and copy-friendly raw transcript output (`raw_output_mode = true`). These are separate presentation settings, not non-interactive command execution or an append-only log: inline-mode redraws can still occur. To return to the alternate-screen TUI, set `alternate_screen = "auto"` (or `"always"`) and `raw_output_mode = false` under `[tui]` in `~/.codex/config.toml`; to change only raw formatting during a session, use `/raw` or `Alt+R`. For a one-off inline session irrespective of your default, use `codex --no-alt-screen`. The entrypoint installs the skeleton file only when absent, preserving existing `~/.codex/config.toml` across restarts and image upgrades. For existing containers, add the two full-access keys at the top level of that file manually (alongside `model = "gpt-6.1-sol"` and `model_reasoning_effort = "high"` if necessary); preserve existing personal settings. Per-session CLI flags or project configuration may override these defaults. A merged commit does not update a published image or an existing home.
-
-The container can use a host Ollama server without embedding its daemon or models. The entrypoint seeds `~/.config/opencode/opencode.json` only when absent, defaulting to `ollama/qwen2.5-coder:7b` at `http://host.docker.internal:11434/v1`. A changed home seed can overlay matching configuration files on recreation; back up custom agent settings and third-party credentials before seed upgrades.
-
-**Antigravity CLI:** Settings belong under `~/.gemini/antigravity-cli/`, not `~/.codex/antigravity-cli/`. The container entrypoint first migrates eligible `settings.json`, `cache/onboarding.json`, and `antigravity-oauth-token` files from the misplaced Codex subtree **only when the corresponding correct destination is missing**, preserving existing Antigravity settings and credentials. It then supplies missing container defaults from the skeleton: `/workspace` in `settings.json` and a `cache/onboarding.json` with `consumerOnboardingComplete = true`, `enterpriseOnboardingComplete = false`, and `onboardingComplete = true`. Both are written only when the corresponding destination is missing; existing settings, real onboarding state, and credentials are preserved. This seeds the observed consumer-onboarding completion state for new project homes, but does **not** guarantee that Antigravity will suppress every prompt. If a prompt persists when `~/.gemini/antigravity-cli/cache/onboarding.json` already exists, verify that the file is valid JSON with `jq -e . ~/.gemini/antigravity-cli/cache/onboarding.json` and identify the specific prompt before assuming that seeding is the remedy. Files already at the correct destination are never overwritten: byte-identical legacy copies are removed, but conflicting or unexpected files are left for inspection. Migration skips symlinked source files, target files, and relevant directory paths. Moved files get `0600` permissions. The image archive excludes both skeleton settings and onboarding files, protecting customized settings and onboarding state across home-seed upgrades. To run the migration in existing containers, publish/use the new image and recreate their outer containers while **preserving named volumes**; restarting an old image or merging this PR alone does not run it. Review any remaining `~/.codex/antigravity-cli/` before manually removing that obsolete subtree. Never delete `~/.codex` or `~/.gemini` as a whole.
-
-On the host, pull the model and expose Ollama on the bridge:
+**Host Ollama:** OpenCode is seeded for `ollama/qwen2.5-coder:7b` at `http://host.docker.internal:11434/v1` when its config is missing. On the host:
 
 ```sh
 ollama pull qwen2.5-coder:7b
 OLLAMA_HOST=0.0.0.0:11434 ollama serve
 ```
 
-For systemd-managed Ollama, set `Environment="OLLAMA_HOST=0.0.0.0:11434"` under `[Service]` in a service override, then run `sudo systemctl daemon-reload && sudo systemctl restart ollama`. Listening on `0.0.0.0` exposes port 11434 on host interfaces; restrict it with firewall rules for your trusted network. The local Ollama server does not require an API key by default.
-
-Podman normally supplies `host.docker.internal` and `host.containers.internal`; Docker Desktop supplies the former. On **native Linux Docker**, set `DEV_DOCKER_HOST_GATEWAY=1` at container creation or add `--add-host host.docker.internal:host-gateway` to a manual command. This flag cannot be added to an existing container via `start`.
-
-Inside the container:
+Binding `0.0.0.0` exposes the service on host interfaces: restrict port 11434 to trusted networks. Native Linux Docker needs `DEV_DOCKER_HOST_GATEWAY=1` at container creation; Podman and Docker Desktop commonly provide the host alias already. Inside:
 
 ```sh
 getent hosts host.docker.internal
@@ -263,110 +143,31 @@ curl -fsS http://host.docker.internal:11434/v1/models | jq .
 opencode --auto
 ```
 
-The generated OpenCode configuration is equivalent to:
+### Image-managed agent skills and browser
 
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "provider": {
-    "ollama": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "Ollama (host)",
-      "options": {"baseURL": "http://host.docker.internal:11434/v1"},
-      "models": {"qwen2.5-coder:7b": {"name": "Qwen2.5 Coder 7B"}}
-    }
-  },
-  "model": "ollama/qwen2.5-coder:7b"
-}
-```
+`agent-skills/<name>/SKILL.md` is the source for managed Codex and Antigravity skills. Codex receives image-owned skills under `/etc/codex/skills`; Antigravity syncs them to `~/.gemini/antigravity-cli/skills` without overwriting modified or unrelated user skills. Removed image skills are not automatically deleted from persistent homes. Updating Codex's image-owned skills requires a new image; inspect `/skills` inside a running agent, not just the filesystem.
 
-The OpenCode `tools` setting is a top-level map, not a model-level `"tools": true` boolean. If local-model tool calls are unreliable, examine the Ollama context window before changing tool settings.
+The image also ships `playwright-cli` with a shared headless Chromium shell, intended for automation. Headed operation needs additional GUI support. The smoke test verifies a local fixture without requiring a public website.
 
-### Optional additional agents
+### Additional project CLIs
 
-These agents are **not baked into the image**. Install only where required. For seeded homes, user-space installs under `/home/user` survive container recreation, while installs in the outer system layer do not. Prefer isolated Python installs over system-wide `pip`.
+The image installs Go-built `gosubc`, `g2`, `header`, and `rntocase` at their latest published module versions, with `GOBIN=/usr/local/bin` and `GOTOOLCHAIN=auto`. This is intentionally not reproducibly pinned: `@latest` may change between builds and lag source branches. The Dockerfile logs resolved build information.
 
-**Aider:** `pipx install aider-chat` (or `uv tool install --force --python python3.12 --with pip aider-chat@latest` as appropriate). Point the Ollama transport at the host endpoint **without** `/v1`:
+`txtar` is built from the latest main-branch source instead, because its current module path does not match the public GitHub import path. It records the Git revision and runs a smoke test for archive commands. These installed executables are distinct from agent skills.
 
-```sh
-export OLLAMA_API_BASE=http://host.docker.internal:11434
-aider --model ollama_chat/qwen2.5-coder:7b
-```
-
-**Zero (`Gitlawb/zero`):** review its upstream installer before running `curl -fsSL https://raw.githubusercontent.com/Gitlawb/zero/main/scripts/install.sh | bash`, then:
-
-```sh
-zero setup ollama \
-  --base-url http://host.docker.internal:11434/v1 \
-  --model qwen2.5-coder:7b
-zero providers list
-zero models list
-zero doctor
-```
-
-**jcode (`1jehuang/jcode`):** review its installer before running `curl -fsSL https://jcode.sh/install | bash`, then configure a no-auth local profile:
-
-```sh
-jcode provider add host-ollama \
-  --base-url http://host.docker.internal:11434/v1 \
-  --model qwen2.5-coder:7b \
-  --no-api-key \
-  --set-default
-jcode --provider-profile host-ollama auth-test
-```
-
-## Image-managed skills for Codex and Antigravity CLI
-
-Skills live in `containers/dev-dotfiles-debian/agent-skills/<name>/SKILL.md`; add or update each skill in its own PR. All skills use the Agent Skills frontmatter format (`name`, `description`) and are copied to Codex's container-admin path `/etc/codex/skills/`. The same source is distributed to Antigravity CLI at `~/.gemini/antigravity-cli/skills/` by `dev-dotfiles-sync-agent-skills` when a container starts. A Git repository's own `.agents/skills/` remains independent and takes no special container installation.
-
-The `agy` skill sync records the last installed content fingerprint for each image-managed skill under `~/.local/state/dev-dotfiles-debian/managed-skills/`. It refreshes an untouched managed skill after an image update but **does not overwrite** a pre-existing skill, a modified managed skill, or an unrelated user-installed skill; a warning identifies conflicts. Removed image skills are not deleted from persistent homes. This sync never needs network access or GitHub credentials. Codex admin skills live in the immutable image, so updating them requires pulling/rebuilding and recreating the outer container. An image build or git merge does not update existing published images.
-
-Verify locally with `sh containers/dev-dotfiles-debian/test-agent-skills.sh`. Verify CLI discovery inside a built image with `codex` (use `/skills`) and `agy` (use `/skills` or invoke `/<skill-name>`); automated tests exercise installation/upgrades but do not execute paid agents. Do not treat filesystem presence as proof that an agent loaded the skill.
-
-### Playwright CLI and browser
-
-The image installs `@playwright/cli` globally alongside the other npm-based agent tools. `playwright-cli install-browser --with-deps --only-shell` installs the headless Chromium shell and Linux system dependencies at image-build time. `PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers` makes the browser shared by all image users instead of hiding it under root's home. This increases image size; only the headless shell is preinstalled.
-
-The `dev-dotfiles-test-playwright` smoke test opens a local loopback HTML fixture as the non-root user, verifies a live DOM snapshot, takes a screenshot and closes the session. It does not require access to any public site. Use `playwright-cli` directly, not a `$CODEX_HOME` path or an `npx` command that dynamically installs an arbitrary version. Headed operation requires a GUI and is not verified by the headless test.
-
-## Installed tools and verification
-
-### Go-built project CLIs for agent skills
-
-The image builds and installs the **latest published Go module versions** of four CLI tools directly via `go install`, using `GOBIN=/usr/local/bin` and `GOTOOLCHAIN=auto`:
-
-```sh
-go install github.com/arran4/go-subcommand/cmd/gosubc@latest
-go install github.com/arran4/g2/cmd/g2@latest
-go install github.com/arran4/header/cmd/header@latest
-go install github.com/arran4/rntocase/cmd/rntocase@latest
-```
-
-This avoids release tarballs and arbitrary installer scripts. Go can automatically fetch a matching compiler when a module requires a newer version (the upstream module directives currently include Go 1.26).
-
-**`@latest` is deliberately not reproducible:** it resolves the latest published *module version*, which can change on each rebuild and may lag the default branch. The Dockerfile logs `go version -m /usr/local/bin/<tool>` for each built binary to expose resolved module versions. Use explicit `@vX.Y.Z` pins when reproducibility is required.
-
-`test-release-clis.sh` executes after installation and again from `setup-user.sh` as the unprivileged user, with real offline exercises of `gosubc template layout`, JSON `g2 lint list`, `header` lint rule discovery and an unchanged `rntocase` dry-run. This installs **executables**, not agent skills: Codex/`agy` discovery requires dotfiles #491. The image is not automatically published merely because this PR merges.
-
-### TXTAR CLI installed with Go
-
-The image also installs the latest main-branch source of [arran4/txtar](https://github.com/arran4/txtar) using Go. Its binary has subcommands (create, list, cat, extract, add, append, delete, comment, description), and is not the different Go experimental txtar binary.
-
-Because its go.mod currently declares module txtar instead of module github.com/arran4/txtar, direct go install with the GitHub package path and @latest is not valid. The existing Go-install Dockerfile step handles all five CLIs together. For TXTAR only, it shallow-clones current main and runs GOBIN=/usr/local/bin GOTOOLCHAIN=auto go install ./cmd/txtar inside that checkout; the temporary checkout is then deleted. It records the Git revision and Go build info. This follows latest source, not latest tag, so rebuild results may change.
-
-The dev-dotfiles-test-txtar smoke script runs in the same install layer as the other CLI smoke tests, and again as the nonroot image user. It covers create, list, cat, extract, comments and a skipped parent-traversal member. This does not establish a full security sandbox for untrusted archives. The separately approved TXTAR skill (former PR #527) and managed skills foundation (#491) have already merged.
-
-The single image uses `debian:${DEBIAN_RELEASE}-slim` (default `stable`), UID/GID `1000:1000`, zsh and passwordless sudo. The Dockerfile accepts `USER_NAME`, `USER_UID`, and `USER_GID`; the launchers assume default IDs. The build installs tools before applying chezmoi and snapshots the prepared home after setup. The archive lives outside `/home/user` so mounting a fresh home volume cannot hide it. The primary image labels its seeded-home capability; the release workflow builds this same Dockerfile. A successful merge is not proof that the revised `:latest` has been published.
-
-Tools include Git, Git LFS, `git-credential-oauth`, `gh`, `glab`, zsh, fish, tmux, vim/Neovim, less, `git-delta`, kdiff3, ripgrep, fd, jq, ShellCheck, shfmt, clang, CMake, Ninja, Go, Node.js, Python, Java/Maven, Flutter, Podman, Docker CLI/daemon, Buildx and Compose. The image build verifies that `podman`, `docker`, and `dockerd` are present and executable, and the container-runtime smoke workflow checks them again from the built image. Agent CLIs include Codex, Antigravity (`agy`), Mini SWE Agent (`mini`), OpenCode, Claude Code, GitHub Copilot CLI and Qwen. `difftastic`, `zellij` and desktop Hyprland/KDE tools are not installed. Jules CLI is intentionally omitted because its installer introduced layer ownership incompatible with normal rootless Podman subordinate-ID mapping; the Dockerfile retains a disabled ownership-normalization recipe.
+## Verification
 
 From the repository root:
 
 ```sh
 sh containers/dev-dotfiles-debian/test-home-volume.sh
 sh containers/dev-dotfiles-debian/test-launchers.sh
-sh -n home/dot_local/bin/executable_run-dev-docker.sh
+sh containers/dev-dotfiles-debian/test-agent-skills.sh
+sh containers/dev-dotfiles-debian/test-release-clis.sh
+sh containers/dev-dotfiles-debian/test-txtar.sh
+sh containers/dev-dotfiles-debian/test-playwright.sh
 sh -n home/dot_local/bin/executable_run-dev-podman.sh
+sh -n home/dot_local/bin/executable_run-dev-docker.sh
 ```
 
-The home-volume test covers first initialization, same-version restart, updated seed preservation, independent workspace and failed-upgrade retry. The launcher test mocks both engines to check seeded versus old published tags, published-home separation, disposable-by-default containers, explicit retained-container resumption, no-home/no-workspace options, local builds of the same Dockerfile and missing-image handling. CI and live rootless Podman/Docker lifecycle, mount ownership, versioned recreation, and credential migration must still be verified before replacing sandboxes or deleting old volumes. Keep documentation aligned with **actually published image capabilities and implemented scripts**, not merely merged code.
+These scripts exercise seeded homes, lifecycle decisions, agent skills, installed CLIs and browser setup. They are not a substitute for live host engine, credential and upgrade tests. In particular, check mounts, UID/GID 1000:1000, DIND security, auth survival and published-image labels before destroying or replacing an existing sandbox.
