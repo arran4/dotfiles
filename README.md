@@ -29,7 +29,31 @@ For Hyprland, the Lua configuration loads `local.lua` if present, then checks ho
 My Flatpak selections are an install reference, not an exhaustive inventory of what is active today. The existing Flathub command is system-scoped; the separate FlatPark commands below are intentionally per-user. I have not normalised those scopes.
 
 ```sh
-flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
+flatpak install -y flathub \
+  app.authpass.AuthPass \
+  com.beeper.Beeper \
+  com.bitwarden.desktop \
+  com.dropbox.Client \
+  com.google.Chrome \
+  com.rustdesk.RustDesk \
+  com.spotify.Client \
+  com.valvesoftware.Steam \
+  im.fluffychat.Fluffychat \
+  im.nheko.Nheko \
+  im.riot.Riot \
+  io.anytype.anytype \
+  io.ente.auth \
+  io.github.martinrotter.rssguard \
+  io.github.picocrypt.Picocrypt \
+  net.mkiol.SpeechNote \
+  net.werwolv.ImHex \
+  org.kde.drawy \
+  org.kde.marknote \
+  org.libreoffice.LibreOffice \
+  org.localsend.localsend_app \
+  org.mozilla.firefox \
+  org.mozilla.thunderbird \
+  org.signal.Signal
 ```
 
 FlatPark, added for an explicitly selected Beeper build (not for general dependency resolution):
