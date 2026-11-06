@@ -72,6 +72,8 @@ Install Beeper from that remote:
 flatpak --user install flatpark com.automattic.Beeper
 ```
 
+Hyprland uses `beeper-launch` for `Super+B` and session autostart. The launcher prefers the per-user FlatPark build and temporarily falls back to an installed `beeper-appimage`, `beeper`, or `~/bin/beeper` AppImage. Chezmoi warns if FlatPark Beeper is missing; see `man beeper-launch` for diagnostics.
+
 FlatPark's Beeper application ID is `com.automattic.Beeper` (case-sensitive; **Automattic** with two `t`s). Its Freedesktop runtime is supplied through Flathub, which may also need to be configured **per user** even if system-wide Flathub is already installed. The `--no-enumerate` and `--no-use-for-deps` flags prevent general application discovery and automatic dependency resolution through FlatPark. The other listed applications remain system-wide Flathub installs.
 
 ### Development tools
