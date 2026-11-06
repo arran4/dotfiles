@@ -9,6 +9,9 @@ on:
       - 'home/.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
       - '.github/scripts/test_hyprland_terminals.lua'
+      - '.github/scripts/test_beeper_launch.sh'
+      - 'home/dot_local/bin/executable_beeper-launch'
+      - 'home/dot_config/caelestia/shell.json.tmpl'
       - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
       - 'home/dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   push:
@@ -21,6 +24,9 @@ on:
       - 'home/.chezmoi.toml.tmpl'
       - '.github/workflows/hyprland.yml'
       - '.github/scripts/test_hyprland_terminals.lua'
+      - '.github/scripts/test_beeper_launch.sh'
+      - 'home/dot_local/bin/executable_beeper-launch'
+      - 'home/dot_config/caelestia/shell.json.tmpl'
       - 'dot_local/bin/executable_cliphist-daemon.sh.tmpl'
       - 'home/dot_local/bin/executable_cliphist-daemon.sh.tmpl'
   workflow_dispatch:
@@ -140,6 +146,9 @@ jobs:
           ! grep -Fq 'special:anytype' "$special_src"
           grep -Fq 'special:kjules' "$special_src"
 
+      - name: Test Beeper launcher priority and fallback
+        run: sh .github/scripts/test_beeper_launch.sh
+
       - name: Test special workspace module
         run: |
           lua5.4 - <<'LUA'
@@ -211,6 +220,7 @@ jobs:
           assert(rules[5].workspace == "special:kjules")
           assert(rules[6].workspace == "special:which_browser")
           assert(rules[2].match.class:find("BeeperTexts", 1, true))
+          assert(rules[2].match.class:find([=[com\.automattic\.Beeper]=], 1, true))
           assert(rules[3].match.class:find([=[org\.kde\.konsole]=], 1, true))
           assert(rules[3].match.class:find("footclient", 1, true))
           assert(rules[4].match.class:find([=[org\.kde\.kmagmux]=], 1, true))
@@ -246,6 +256,7 @@ jobs:
           assert(execs[#execs][1] == "kjules --new-session")
 
           assert(special.workspace_for_window({ class = "Beeper" }) == "beeper")
+          assert(special.workspace_for_window({ class = "com.automattic.Beeper" }) == "beeper")
           assert(special.workspace_for_window({ class = "org.kde.konsole" }) == "terminal")
           assert(special.workspace_for_window({ class = "Spotify" }) == "music")
           assert(special.workspace_for_window({ class = "kmagmux" }) == "kmagmux")
@@ -269,7 +280,7 @@ jobs:
           handlers["window.open"]({ class = "xterm", title = "shell" })
           assert(routes[#routes].workspace == "special:terminal")
 
-          handlers["window.class"]({ class = "com.beeper.Beeper", title = "Beeper" })
+          handlers["window.class"]({ class = "com.automattic.Beeper", title = "Beeper" })
           assert(routes[#routes].workspace == "special:beeper")
 
           handlers["window.open"]({ class = "kmagmux", title = "KMagMux" })
@@ -300,7 +311,7 @@ jobs:
               autostart_count = autostart_count + 1
               if cmd[1] == "/usr/bin/xterm" and cmd[2].workspace == "special:terminal silent" then has_term = true end
               if cmd[1] == "flatpak run com.spotify.Client" and cmd[2].workspace == "special:music silent" then has_spotify = true end
-              if cmd[1] == "flatpak run com.beeper.Beeper" and cmd[2].workspace == "special:beeper silent" then has_beeper = true end
+              if cmd[1] == "beeper-launch" and cmd[2].workspace == "special:beeper silent" then has_beeper = true end
             end
           end
           assert(autostart_count == 3, "only terminal, Spotify and Beeper should autostart from special workspace config")
