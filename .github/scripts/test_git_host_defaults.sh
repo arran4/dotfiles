@@ -10,6 +10,8 @@ cat > "$testdir/bin/gh" <<'MOCK'
 #!/bin/sh
 case "$*" in
   *'user --jq .login'*) printf '%s\n' example-user ;;
+  *'repos/example-user/private-git-hosts --jq .private'*|*'repos/other/private-hosts --jq .private'*)
+    if [ "${GH_PUBLIC:-}" = 1 ]; then echo false; else echo true; fi ;;
   *'repos/example-user/private-git-hosts/contents/git/hosts.defaults'*|*'repos/other/private-hosts/contents/git/hosts.defaults'*)
     if [ "${GH_FAIL:-}" = 1 ]; then exit 1; fi
     cat "$GH_FIXTURE"
@@ -55,6 +57,8 @@ OVERRIDE
   [ "$(cat "$home/.config/git/config.local")" = "$original" ]
 
   before="$(sha256sum "$defaults" | cut -d' ' -f1)"
+  HOME="$home" GH_PUBLIC=1 sh "$script" other/private-hosts >/dev/null 2>&1 && exit 1
+  [ "$(sha256sum "$defaults" | cut -d' ' -f1)" = "$before" ]
   HOME="$home" GH_FAIL=1 sh "$script" other/private-hosts >/dev/null 2>&1 && exit 1
   [ "$(sha256sum "$defaults" | cut -d' ' -f1)" = "$before" ]
 
