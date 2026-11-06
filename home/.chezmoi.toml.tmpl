@@ -702,7 +702,6 @@
 
 {{- $flatpakApps := list
   "app.authpass.AuthPass"
-  "com.beeper.Beeper"
   "com.bitwarden.desktop"
   "com.dropbox.Client"
   "com.google.Chrome"
@@ -739,6 +738,14 @@
         {{- end -}}
         {{- if gt (len $missingApps) 0 -}}
                 {{- writeToStdout (printf "Missing flatpak apps, run: flatpak install -y flathub %s\n" (join " " $missingApps)) -}}
+        {{- end -}}
+{{- end -}}
+{{- if eq $flatpakLocation "" -}}
+        {{- writeToStdout "Beeper needs the per-user FlatPark remote (one-time): flatpak --user remote-add --if-not-exists --no-enumerate --no-use-for-deps flatpark https://dl.flatpark.org/flatpark.flatpakrepo; then: flatpak --user install flatpark com.automattic.Beeper\n" -}}
+{{- else -}}
+        {{- $beeperInstalled := trim (output "sh" "-c" "flatpak --user info com.automattic.Beeper >/dev/null 2>&1 && printf installed || true") -}}
+        {{- if ne $beeperInstalled "installed" -}}
+                {{- writeToStdout "Beeper is missing (per-user FlatPark com.automattic.Beeper). Add FlatPark once: flatpak --user remote-add --if-not-exists --no-enumerate --no-use-for-deps flatpark https://dl.flatpark.org/flatpark.flatpakrepo; then install: flatpak --user install flatpark com.automattic.Beeper\n" -}}
         {{- end -}}
 {{- end -}}
 
