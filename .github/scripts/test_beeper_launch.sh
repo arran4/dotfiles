@@ -20,7 +20,7 @@ case "$1" in
     ;;
   run)
     [ "$2" = "--user" ] && [ "$3" = "com.automattic.Beeper" ] || exit 9
-    printf 'flatpak:%s\n' "$4" >> "$BEEPER_TEST_LOG"
+    printf 'flatpak:%s\n' "${4:-<none>}" >> "$BEEPER_TEST_LOG"
     [ "${FLATPAK_RUN_FAIL:-0}" != 1 ]
     ;;
   *) exit 9 ;;
@@ -44,6 +44,11 @@ chmod +x "$tmp/bin"/*
 FLATPAK_INSTALLED=1 sh "$launcher" one
 grep -Fqx 'flatpak:one' "$BEEPER_TEST_LOG"
 ! grep -q '^appimage:' "$BEEPER_TEST_LOG"
+
+# Hyprland invokes the launcher without arguments.
+: > "$BEEPER_TEST_LOG"
+FLATPAK_INSTALLED=1 sh "$launcher"
+grep -Fqx 'flatpak:<none>' "$BEEPER_TEST_LOG"
 
 # Missing Flatpak should use the legacy AppImage.
 : > "$BEEPER_TEST_LOG"
