@@ -9,3 +9,23 @@ disable\-touchpad.sh \- disable a touchpad with xinput
 Find an XInput device whose name contains TouchPad and set its Device Enabled property to 0. This is an X11/XInput helper, not a Wayland touchpad configuration method.
 .SH NOTES
 The device match is name\-based. Review xinput list before using on an unfamiliar X11 machine.
+.SH REQUIREMENTS
+Requires X11, xinput, grep and sed. The script searches for
+a device name containing the exact case-sensitive text TouchPad.
+It does not work as a touchpad-management interface in a native
+Wayland session.
+.SH EXAMPLES
+.nf
+xinput list --short
+disable-touchpad.sh
+xinput list-props DEVICE_ID
+xinput enable DEVICE_ID
+.fi
+.PP
+Replace DEVICE_ID with a device number obtained from xinput.
+The final command re-enables a disabled device using xinput.
+.SH LIMITATIONS
+More than one matching touchpad, no matching touchpad or an unusual
+device name may cause incorrect selection or failure. The helper
+does not remember or restore the previous device state. On
+Hyprland/Wayland, configure the actual input device instead.
