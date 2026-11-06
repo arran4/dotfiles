@@ -28,3 +28,20 @@ open-in-firefox --private-window https://example.org
 If this command is missing after installing Firefox Flatpak,
 regenerate or reapply the chezmoi configuration so the template
 can detect the newly available application.
+.SH REQUIREMENTS
+Requires Linux, Flatpak, and the org.mozilla.firefox Flatpak
+installed when the chezmoi template is rendered. This executable
+is conditional and may not exist on every system.
+.SH OPERATION
+The wrapper forwards all arguments verbatim to
+flatpak run org.mozilla.firefox. It does not install Firefox,
+select a native Firefox binary, or dynamically recreate itself.
+.SH EXAMPLES
+.nf
+flatpak info org.mozilla.firefox
+open-in-firefox https://example.org
+open-in-firefox --private-window https://example.org
+.fi
+.SH TROUBLESHOOTING
+If the wrapper is missing after installing the Firefox Flatpak,
+rerun chezmoi init --apply so the template detects the application.
