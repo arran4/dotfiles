@@ -132,7 +132,8 @@ gh auth login -h github.com
 ```
 
 The command requests `git/hosts.defaults` using authenticated GitHub API
-access. It validates the Git syntax and an allowlist of nonsecret host keys,
+access. It confirms the source repository is private, validates the Git syntax,
+and checks an allowlist of nonsecret host keys,
 rejects credential-bearing URLs and executable helpers, and installs the file
 atomically with permission 0600. Re-running it updates **only** the defaults
 file; `config.local` is never overwritten. Missing authentication, missing
