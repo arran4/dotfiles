@@ -9,6 +9,9 @@ on:
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
       - 'containers/dev-dotfiles-debian/home-volume-seed.sh'
       - 'containers/dev-dotfiles-debian/test-home-volume.sh'
+      - 'containers/dev-dotfiles-debian/skel/.codex/config.toml'
+      - 'home/dot_codex/modify_config.toml'
+      - '.github/scripts/test_codex_keymap.py'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
       - 'containers/dev-dotfiles-debian/agent-skills/**'
       - 'containers/dev-dotfiles-debian/sync-agent-skills.sh'
@@ -24,6 +27,9 @@ on:
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
       - 'containers/dev-dotfiles-debian/home-volume-seed.sh'
       - 'containers/dev-dotfiles-debian/test-home-volume.sh'
+      - 'containers/dev-dotfiles-debian/skel/.codex/config.toml'
+      - 'home/dot_codex/modify_config.toml'
+      - '.github/scripts/test_codex_keymap.py'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
       - 'containers/dev-dotfiles-debian/agent-skills/**'
       - 'containers/dev-dotfiles-debian/sync-agent-skills.sh'
@@ -46,6 +52,8 @@ jobs:
           sh -n containers/dev-dotfiles-debian/entrypoint.sh
           sh -n containers/dev-dotfiles-debian/home-volume-seed.sh
           sh containers/dev-dotfiles-debian/test-home-volume.sh
+      - name: Check Codex keymap config migration
+        run: python3 .github/scripts/test_codex_keymap.py
       - name: Check managed Codex and agy skills
         run: |
           sh -n containers/dev-dotfiles-debian/sync-agent-skills.sh

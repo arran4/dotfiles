@@ -132,6 +132,9 @@ _viminfo
 {{ if eq .chezmoi.os "windows" }}
 .local/bin
 {{ end }}
+{{ if or (eq .chezmoi.os "windows") (not (lookPath "python3")) }}
+.codex/config.toml
+{{ end }}
 .local/include
 .local/lib
 {{ if ne .chezmoi.os "linux" }}
