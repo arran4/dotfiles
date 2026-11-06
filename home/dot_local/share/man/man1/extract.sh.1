@@ -14,5 +14,29 @@ extract.sh one.zip two.tar.gz
 .fi
 .SH NOTES
 Review archive contents and trustworthiness before extracting them into a directory with important files.
+.SH REQUIREMENTS
+Requires the extractor appropriate to the suffix: tar for tar
+archives, unzip for zip, rar for rar, 7z for 7z, and bunzip2,
+gunzip or uncompress for standalone compressed inputs. It chooses
+the command by filename extension rather than file contents.
+.SH PROCESSING AND LIMITATIONS
+Files are processed in argument order. Archive members are extracted
+relative to the current working directory, not beside the archive.
+Standalone .gz and .bz2 inputs pass through gunzip or bunzip2, which
+normally replace the compressed input on successful decompression.
+.PP
+An unknown suffix or nonexistent input prints a diagnostic without
+necessarily making the command fail. A failed actual extractor
+stops processing because the script enables set -e.
+.SH SAFE EXTRACTION
+.nf
+mkdir -p /tmp/archive-review
+cd /tmp/archive-review
+extract.sh ~/Downloads/example.tar.gz
+.fi
+.PP
+Inspect archive members before extraction. Untrusted archives may
+include parent-directory traversal, absolute paths or symlinks, and
+multiple archives may overwrite each other's output files.
 .SH SEE ALSO
 compress.sh(1)
