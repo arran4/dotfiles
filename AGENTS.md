@@ -4,11 +4,11 @@ This repository stores dotfiles applied with [chezmoi](https://www.chezmoi.io/).
 
 ## Documentation ownership
 
-- **Human-facing setup and operations belong in the existing `README.md`.** The root `README.md` is the entry point and links to substantial component guides; `containers/dev-dotfiles-debian/README.md` is the single operational source for the development container. When changing Docker, Podman, authentication, persistence, launch scripts, image building, release behaviour, or local AI, update the corresponding section in that container README **in the same change**.
-- **Instructions for coding agents belong in this `AGENTS.md`** (or a scoped `AGENTS.md` if there is a concrete need for directory-specific instructions). Keep implementation constraints, verification steps and documentation maintenance policy here, rather than in a new topical `*.md` guide.
-- Do not create a separate Markdown guide for each feature, issue, PR, or experiment. First extend the appropriate README section or this AGENTS file, consolidate duplicated instructions, and update existing links. Create another Markdown file only for a distinct functional format (such as a template), or a substantial standalone reference whose purpose and discovery path are explained from the README. Never use an extra Markdown file merely because an agent needs to read it.
-- Avoid copying whole container launch commands into the root README; link to the canonical container instructions. Distinguish *repository-merged* features from *published image* features, and do not write prospective PR status as current fact. If an old documentation file is removed, fix links in scripts, READMEs, CI, and other maintained files. Preserve operational details when consolidating; do not delete safety or migration guidance just to reduce the file count.
-- The root `HYPRLAND_KEYBOARD_SHORTCUTS.md` is an on-demand, human-readable shortcut reference linked from the root README. Keep it synchronized with the actual bindings, rather than treating it as a competing general documentation guide.
+- The root `README.md` is the first-stop personal bootstrap guide, historical orientation and configuration showcase. Keep copyable setup commands where they are genuinely useful; do not add generic tutorials or resolved migration instructions.
+- Install user-facing command references as section 1 man pages under `home/dot_local/share/man/man1/`; use section 7 for configuration references under `home/dot_local/share/man/man7/`. Update relevant man pages in the same PR as changes to documented scripts.
+- `man hyprland-keys` is the human-readable shortcut summary, stored in `home/dot_local/share/man/man7/hyprland-keys.7`. Maintain it when bindings change; the Lua configuration remains authoritative. Put only a useful shortcut selection in the root README.
+- The existing `containers/dev-dotfiles-debian/README.md` remains the canonical operational guide for the image and launchers; its usage, persistence, security, authentication and migration instructions must reflect real code. The root README gives short commands and points to it or to `man run-dev-podman.sh` and `man run-dev-docker.sh`.
+- Coding-agent implementation rules belong here. Avoid creating topical Markdown files for individual issues, experiments or PRs. Preserve truly necessary recovery and safety details while consolidating; do not copy whole command manuals into the root README.
 
 ## Style
 
@@ -25,9 +25,9 @@ This repository stores dotfiles applied with [chezmoi](https://www.chezmoi.io/).
 
 ## Hyprland keyboard shortcuts
 
-- [`HYPRLAND_KEYBOARD_SHORTCUTS.md`](HYPRLAND_KEYBOARD_SHORTCUTS.md) is the human-readable shortcut summary.
-- When adding, removing, renaming, or changing the meaning of a binding, update the shortcut summary in the same change.
-- Check both `home/dot_config/hypr/hyprland.lua.tmpl` and `home/dot_config/hypr/special_workspaces.lua`; shortcuts are defined in both, including group-management submap and special-workspace keys.
+- Maintain `home/dot_local/share/man/man7/hyprland-keys.7` in the same change as any keybinding addition, removal or meaning change.
+- Check both `home/dot_config/hypr/hyprland.lua.tmpl` and `home/dot_config/hypr/special_workspaces.lua`; the latter includes group-management submaps and special workspaces.
+- Check the runtime `hypr-cheatsheet` display for compatibility where Hyprland is available.
 
 ## Container-specific verification
 

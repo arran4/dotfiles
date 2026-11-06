@@ -1,0 +1,11 @@
+.TH "CODEX-NOTIFY" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+codex\-notify \- send a Codex attention notification
+.SH SYNOPSIS
+.nf
+\fBcodex\-notify [approval|question|complete|attention]\fR
+.fi
+.SH DESCRIPTION
+Show a short notification for Codex approval, question, completion or general attention events. This internal libexec hook uses notify\-send, kdialog or macOS osascript when available, falling back to a terminal bell.
+.SH NOTES
+Normally invoked by Codex hooks, not directly by the user.

@@ -1,0 +1,15 @@
+.TH "MANPAGER-NVIMPAGER" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+manpager\-nvimpager \- render man output through nvimpager
+.SH SYNOPSIS
+.nf
+\fBmanpager\-nvimpager\fR
+.fi
+.SH DESCRIPTION
+Filter standard input through col \-bx, then pass the result to nvimpager \-. Intended as a MANPAGER helper in the shell environment.
+.SH ENVIRONMENT
+.TP
+\fBMANPAGER\fR
+May be set to this helper by chezmoi\-generated shell configuration.
+.SH SEE ALSO
+man(1)

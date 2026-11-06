@@ -1,0 +1,16 @@
+.TH "COMPRESS.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+compress.sh \- create a compressed archive using its filename extension
+.SH SYNOPSIS
+.nf
+\fBcompress.sh ARCHIVE FILE...\fR
+.fi
+.SH DESCRIPTION
+Choose tar, zip or rar based on ARCHIVE suffix and archive the remaining FILE arguments. Recognised suffixes: .tar, .tar.bz2, .tar.xz, .tar.gz, .tgz, .zip and .rar. Unrecognised suffixes currently produce no diagnostic.
+.SH EXAMPLES
+.nf
+compress.sh backup.tar.gz Documents/Projects
+compress.sh files.zip file1 file2
+.fi
+.SH SEE ALSO
+extract.sh(1)

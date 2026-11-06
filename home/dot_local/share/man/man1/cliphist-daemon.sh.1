@@ -1,0 +1,18 @@
+.TH "CLIPHIST-DAEMON.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+cliphist\-daemon.sh \- manage clipboard watchers for a Hyprland instance
+.SH SYNOPSIS
+.nf
+\fBcliphist\-daemon.sh\fR
+.fi
+.SH DESCRIPTION
+Start wl\-paste clipboard watchers feeding cliphist. Use an instance\-specific lock and PID directory under XDG_RUNTIME_DIR (with a per\-user /tmp fallback), and restart only watchers matching the expected executable path. Typically launched by desktop configuration rather than interactively.
+.SH ENVIRONMENT
+.TP
+\fBHYPRLAND_INSTANCE_SIGNATURE\fR
+Scopes the managed watcher processes; defaults to default outside Hyprland.
+.TP
+\fBXDG_RUNTIME_DIR\fR
+Preferred directory for per\-instance PID and lock state.
+.SH SEE ALSO
+hyprland\-keys(7)

@@ -1,0 +1,349 @@
+.TH "HYPRLAND-KEYS" "7" "November 2026" "arran4/dotfiles" "Miscellaneous"
+.SH NAME
+hyprland-keys \- personal Hyprland keyboard shortcut reference
+.SH DESCRIPTION
+A static reference for the bindings in this repository. Actual availability depends on machine configuration and running programs. Use hypr-cheatsheet(1) to inspect the active bindings with hyprctl binds -j.
+.PP
+Super denotes the Meta/Windows key. Caelestia bindings appear only in the corresponding Quickshell profile; fallback bindings depend on the installed tools.
+.SH LAUNCHERS, APPLICATIONS, AND SPECIAL WORKSPACES
+.TP
+\fBSuper (release)\fR
+Open the Caelestia launcher  Caelestia only; a plain Super tap/release.
+.TP
+\fBSuper+Return\fR
+Open a terminal  Uses the preferred detected terminal.
+.TP
+\fBCtrl+Super+T\fR
+Open an additional terminal  Direct terminal launcher.
+.TP
+\fBSuper+T\fR
+Open a normal terminal  On modern Hyprland; deliberately outside the special terminal workspace.
+.TP
+\fBSuper+grave\fR
+Toggle/open the special terminal workspace  grave is the backtick key.
+.TP
+\fBSuper+M\fR
+Toggle/open Spotify special workspace  Routes/launches Spotify.
+.TP
+\fBSuper+B\fR
+Toggle/open Beeper special workspace  Routes/launches Beeper.
+.TP
+\fBSuper+D\fR
+Toggle the scratchpad special workspace  Does not automatically launch an application.
+.TP
+\fBSuper+I\fR
+Toggle/open KMagMux special workspace  Routes/activates KMagMux.
+.TP
+\fBSuper+J\fR
+Toggle/open kJules special workspace  Routes/activates kJules.
+.TP
+\fBSuper+Shift+J\fR
+Start a new kJules session  Runs kjules \-\-new\-session.
+.TP
+\fBSuper+Shift+\-\fR
+Toggle/open which_browser special workspace  Uses physical code:20 for the \-/_ key because the shifted underscore keysym bind can register without firing.
+.TP
+\fBSuper+A\fR
+Open Anytype  Only when Anytype is configured.
+.TP
+\fBSuper+.\fR
+Open the Plasma emoji picker  Only when plasma\-emojier is available.
+.TP
+\fBSuper+V\fR
+Open clipboard history  Prefers Caelestia clipboard; otherwise cliphist/clipse fallbacks.
+.TP
+\fBSuper+F5\fR
+Set/change wallpaper  Runs set\-wallpaper.
+.SH CAELESTIA / SHELL CONTROLS
+.PP
+These bindings are only present in the Quickshell/Caelestia profile.
+.TP
+\fBSuper+Alt+Delete\fR
+Open the Caelestia session/power menu.
+.TP
+\fBSuper+N\fR
+Open the notification sidebar.
+.TP
+\fBSuper+Shift+N\fR
+Clear notifications.
+.TP
+\fBSuper+K\fR
+Open Caelestia showall.
+.TP
+\fBSuper+L\fR
+Lock through Caelestia.
+.TP
+\fBSuper+Alt+L\fR
+Start the Caelestia shell daemon.
+.TP
+\fBCtrl+Super+Shift+R\fR
+Kill the Caelestia shell on key release.
+.TP
+\fBCtrl+Super+Alt+R\fR
+Kill and restart the Caelestia shell on key release.
+.TP
+\fBSuper+/\fR
+Open the runtime Hyprland cheatsheet.
+.TP
+\fBSuper+Shift+/ (Super+?)\fR
+Open the runtime Hyprland cheatsheet; uses physical slash\-key code:61 so the shifted shortcut fires reliably under Wayland.
+.PP
+Without the Caelestia profile, Super+L invokes the configured lock command instead.
+.SH WINDOWS AND LAYOUT
+.TP
+\fBSuper+Shift+Q\fR
+Ask the focused window to terminate with signal 15.
+.TP
+\fBSuper+Shift+W\fR
+Close the focused window.
+.TP
+\fBSuper+Ctrl+Alt+Escape\fR
+Force\-kill the focused window.
+.TP
+\fBSuper+F\fR
+Toggle fullscreen.
+.TP
+\fBSuper+Shift+Space\fR
+Toggle floating.
+.TP
+\fBSuper+Alt+Space\fR
+Toggle floating.
+.TP
+\fBSuper+Y\fR
+Toggle the current Dwindle split between vertical and horizontal.
+.TP
+\fBSuper+Shift+Y\fR
+Cycle the whole Hyprland tiling layout between Dwindle and Master.
+.TP
+\fBAlt+Tab\fR
+Cycle to the next window and raise it.
+.TP
+\fBAlt+Shift+Tab\fR
+Cycle to the previous window.
+.SS Focus a neighbouring window
+.TP
+\fBSuper+Left or Super+H\fR
+Left
+.TP
+\fBSuper+Right\fR
+Right
+.TP
+\fBSuper+Up\fR
+Up
+.TP
+\fBSuper+Down\fR
+Down
+.SS Move the focused window
+.TP
+\fBSuper+Shift+Left or Super+Shift+H\fR
+Left
+.TP
+\fBSuper+Shift+Right or Super+Shift+L\fR
+Right
+.TP
+\fBSuper+Shift+Up or Super+Shift+K\fR
+Up
+.TP
+\fBSuper+Shift+Down\fR
+Down
+.SH WORKSPACES
+.TP
+\fBSuper+1 … Super+9\fR
+Focus workspace 1 … 9.
+.TP
+\fBSuper+0\fR
+Focus an empty workspace.
+.TP
+\fBSuper+Shift+1 … Super+Shift+9\fR
+Move the focused window to workspace 1 … 9.
+.TP
+\fBSuper+Shift+0\fR
+Move the focused window to an empty workspace.
+.TP
+\fBSuper+Ctrl+Left\fR
+Focus the previous workspace.
+.TP
+\fBSuper+Ctrl+Right\fR
+Focus the next workspace.
+.TP
+\fBSuper+Shift+Ctrl+Left\fR
+Move the focused window to the previous workspace.
+.TP
+\fBSuper+Shift+Ctrl+Right\fR
+Move the focused window to the next workspace.
+.PP
+Relative workspace moves use the window\-relocation helper when available: the moved window remains temporarily "picked up" until Super is released.
+.SH WINDOW GROUPS / TABS
+.TP
+\fBSuper+Ctrl+Up\fR
+Previous window/tab in the current group.
+.TP
+\fBSuper+Ctrl+Down\fR
+Next window/tab in the current group.
+.TP
+\fBSuper+G\fR
+Enter one\-shot group\-management mode.
+.PP
+After pressing Super+G, use one of these keys. The action exits group\-management mode afterwards unless cancelled.
+.TP
+\fBH or Left\fR
+Group with the left neighbour.
+.TP
+\fBJ or Down\fR
+Group with the lower neighbour.
+.TP
+\fBK or Up\fR
+Group with the upper neighbour.
+.TP
+\fBL or Right\fR
+Group with the right neighbour.
+.TP
+\fBE\fR
+Extract the window from its group.
+.TP
+\fBN\fR
+Next window in the group.
+.TP
+\fBP\fR
+Previous window in the group.
+.TP
+\fBF\fR
+Move the window forward in the group.
+.TP
+\fBB\fR
+Move the window backward in the group.
+.TP
+\fBT\fR
+Toggle window grouping.
+.TP
+\fBEscape\fR
+Cancel group\-management mode.
+.SH SCREENSHOTS
+.SS Caelestia profile
+.TP
+\fBPrint\fR
+Run the Caelestia screenshot flow.
+.TP
+\fBSuper+Shift+S\fR
+Invoke Caelestia screenshot\-freeze selection.
+.TP
+\fBSuper+Shift+Alt+S\fR
+Invoke the Caelestia screenshot action.
+.SS Non\-Caelestia fallback
+.PP
+These require the configured screenshot tools. The same logical bindings are used with either hyprshot or the grim/slurp fallback.
+.TP
+\fBSuper+Print\fR
+Capture a window.
+.TP
+\fBShift+Print\fR
+Capture the screen.
+.TP
+\fBSuper+Shift+Print\fR
+Capture a selected region.
+.TP
+\fBSuper+Ctrl+Print\fR
+Capture a window.
+.SH SCREEN RECORDING
+.PP
+These bindings are present when wf\-recorder and slurp are configured.
+.TP
+\fBSuper+Shift+R\fR
+Record a selected region.
+.TP
+\fBSuper+Alt+R\fR
+Start a normal/full\-output recording.
+.TP
+\fBSuper+Ctrl+R\fR
+Record a selected window.
+.SH AUDIO, MEDIA, AND BRIGHTNESS
+.PP
+The volume keys and, in the Caelestia profile, brightness keys share the same modifier\-to\-step mapping. Hold the listed modifier combination while pressing the corresponding raise/lower key.
+.TP
+\fBNone\fR
+1%
+.TP
+\fBShift\fR
+2%
+.TP
+\fBCtrl\fR
+5%
+.TP
+\fBAlt\fR
+10%
+.TP
+\fBCtrl+Shift\fR
+15%
+.TP
+\fBAlt+Shift\fR
+20%
+.TP
+\fBCtrl+Alt\fR
+25%
+.PP
+Ctrl+Shift+Alt is intentionally not bound, so there is no 50% single\-key jump.
+.TP
+\fBXF86AudioRaiseVolume / XF86AudioLowerVolume\fR
+Raise/lower output volume using the selected step.  Repeats while held; raise is capped at 150%; works while locked.
+.TP
+\fBXF86MonBrightnessUp / XF86MonBrightnessDown\fR
+Raise/lower brightness using the selected step.  Caelestia only; repeats while held; works while locked.
+.TP
+\fBXF86AudioMute\fR
+Toggle output mute.
+.TP
+\fBSuper+Shift+M\fR
+Toggle output mute.
+.TP
+\fBCtrl+Super+Space\fR
+Play/pause media.  Caelestia only.
+.TP
+\fBCtrl+Super+=\fR
+Next media item.  Caelestia only.
+.TP
+\fBCtrl+Super+\-\fR
+Previous media item.  Caelestia only.
+.TP
+\fBXF86AudioPlay / XF86AudioPause\fR
+Play/pause media.  Caelestia handles these in that profile; playerctl is the fallback.
+.TP
+\fBXF86AudioNext\fR
+Next media item.  Caelestia or playerctl fallback.
+.TP
+\fBXF86AudioPrev\fR
+Previous media item.  Caelestia or playerctl fallback.
+.TP
+\fBXF86AudioStop\fR
+Stop media.  Caelestia only.
+.SH MOUSE BINDINGS RELATED TO KEYBOARD MODIFIERS
+.PP
+These are not keyboard shortcuts, but they share the same Super\-based interaction model.
+.TP
+\fBSuper+Left mouse button\fR
+Drag/move a window.
+.TP
+\fBSuper+Right mouse button\fR
+Resize a window.
+.TP
+\fBSuper+mouse wheel up\fR
+Move the focused window to the previous workspace.
+.TP
+\fBSuper+mouse wheel down\fR
+Move the focused window to the next workspace.
+.SH RUNTIME VERIFICATION
+.PP
+Super+/ or Super+? runs hypr\-cheatsheet, which reads the bindings currently registered by Hyprland with:
+.nf
+hyprctl binds -j
+.fi
+.PP
+That runtime view shows what is active on the current host. This Markdown file explains the shortcuts and their purpose, including conditional bindings that may not be active on every machine.
+.SH FILES
+.TP
+\fBhome/dot_config/hypr/hyprland.lua.tmpl\fR
+Primary configuration.
+.TP
+\fBhome/dot_config/hypr/special_workspaces.lua\fR
+Special-workspace and group-management bindings.
+.SH SEE ALSO
+hypr-cheatsheet(1), hyprctl(1)

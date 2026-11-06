@@ -1,0 +1,18 @@
+.TH "EXTRACT.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+extract.sh \- extract one or more archive files
+.SH SYNOPSIS
+.nf
+\fBextract.sh ARCHIVE...\fR
+.fi
+.SH DESCRIPTION
+Extract archives by filename suffix, using tar, unzip, unrar\-compatible rar, 7z and standard decompression utilities as available. Supports .tar.bz2, .tar.gz, .tar.xz, .tbz2, .tgz, .tar, .bz2, .gz, .zip, .rar, .7z and .Z. Files are extracted into the current working directory. Invalid files and unsupported formats produce diagnostic text.
+.SH EXAMPLES
+.nf
+extract.sh download.tar.xz
+extract.sh one.zip two.tar.gz
+.fi
+.SH NOTES
+Review archive contents and trustworthiness before extracting them into a directory with important files.
+.SH SEE ALSO
+compress.sh(1)

@@ -1,0 +1,81 @@
+.TH "RUN-DEV-DOCKER.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+run\-dev\-docker.sh \- launch the project development image through Docker
+.SH SYNOPSIS
+.nf
+\fBrun\-dev\-docker.sh [OPTIONS]\fR
+.fi
+.SH DESCRIPTION
+Run the published Debian development image as a project\-specific sandbox using the current working directory as /workspace. The launcher chooses a sandbox name, pulls the published image by default, inspects its seeded\-home capability, and sets up project home and workspace storage. It does not mount the host home directory or host container\-engine socket. For supported image layouts, upgrades and auth persistence, see containers/dev\-dotfiles\-debian/README.md in this repository.
+.PP
+Outer containers are ephemeral by default, while configured named volumes survive container removal. A stopped older persistent container is not silently deleted or replaced. The published image may have changed since the last run.
+.SH OPTIONS
+.TP
+\fB\-\-podman\-security=nested|unconfined|privileged|off\fR
+Control support for rootless Podman inside the sandbox. The default is nested; unconfined relaxes AppArmor, privileged grants more access, and off skips nested Podman setup.
+.TP
+\fB\-\-persist\-container\fR
+Keep the outer container after it stops and resume an existing stopped container by name.
+.TP
+\fB\-\-ephemeral\-container\fR
+Remove new outer containers on exit (default). Existing stopped containers are never removed automatically.
+.TP
+\fB\-\-no\-home\-volume\fR
+Do not mount the per\-project persistent /home/user volume; requires a home\-seed image.
+.TP
+\fB\-\-no\-workspace\-mount\fR
+Do not mount the current working directory into /workspace.
+.SH ENVIRONMENT
+.TP
+\fBSANDBOX_NAME\fR
+Override the per\-project container name, normally derived from the current directory.
+.TP
+\fBDEV_IMAGE\fR
+Override the default ghcr.io/arran4/dev\-dotfiles\-debian:latest image.
+.TP
+\fBDEV_PULL_MODE\fR
+always, missing or never. Published images default to always; local images default to never.
+.TP
+\fBDEV_CONTAINER_PERSIST\fR
+0 (default) or 1, equivalent to the outer container persistence flags.
+.TP
+\fBDEV_WORKSPACE_MODE\fR
+bind (default), volume or container. A bind mount maps the current directory to /workspace.
+.TP
+\fBDEV_HOME_MODE\fR
+volume (default) or container; the latter needs a seeded image.
+.TP
+\fBDEV_NEW_HOME\fR
+0 (default) or 1. Cannot bypass an existing container or force a legacy image into the seeded layout.
+.TP
+\fBDEV_PODMAN_SECURITY\fR
+nested (default), unconfined, privileged or off.
+.TP
+\fBDEV_DIND\fR
+1 (default) enables Docker\-in\-Docker and makes the outer container privileged. Use 0 to disable this capability.
+.TP
+\fBDEV_DIND_PERSIST\fR
+1 makes Docker\-in\-Docker data persistent (requires DEV_DIND=1).
+.TP
+\fBDEV_PODMAN_PERSIST\fR
+1 mounts a persistent nested\-Podman data volume.
+.TP
+\fBDEV_TZ\fR
+Explicit container time zone; otherwise detected from the host.
+.TP
+\fBDEV_DOCKER_HOST_GATEWAY\fR
+1 adds the host.docker.internal host\-gateway mapping; 0 by default.
+.SH EXAMPLES
+.nf
+cd ~/Documents/Projects/example
+run\-dev\-docker.sh
+DEV_DIND=0 run\-dev\-docker.sh \-\-podman\-security=off
+.fi
+.SH NOTES
+SECURITY: DEV_DIND=1 is the default and causes the launcher to use a privileged outer container. Do not describe this configuration as a strict sandbox for untrusted code. Review trust boundaries and consider DEV_DIND=0 when nested Docker is not needed.
+.PP
+Resuming a persistent outer container uses its original image and mounts. Pulling a newer image alone does not upgrade that already\-created container.
+.PP
+The two launchers use the same image definition, but select their corresponding host container engines.
+.SH SEE ALSO
+run\-dev\-podman.sh(1)

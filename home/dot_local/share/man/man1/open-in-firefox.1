@@ -1,0 +1,11 @@
+.TH "OPEN-IN-FIREFOX" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+open\-in\-firefox \- launch Firefox installed as a Flatpak
+.SH SYNOPSIS
+.nf
+\fBopen\-in\-firefox [FIREFOX\-ARG...]\fR
+.fi
+.SH DESCRIPTION
+Forward all arguments to flatpak run org.mozilla.firefox. The chezmoi template creates this executable only when Linux, flatpak and the Firefox Flatpak are detected during template rendering.
+.SH NOTES
+This wrapper is conditional and might not exist on hosts without the Firefox Flatpak.

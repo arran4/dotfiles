@@ -1,5 +1,5 @@
 {{- /* Logic to find paths */ -}}
-{{- $manpaths := list -}}
+{{- $manpaths := list (joinPath .chezmoi.homeDir ".local/share/man") -}}
 {{- range $path := (index . "paths") -}}
   {{- $candidates := list (joinPath $path "../share/man") (joinPath $path "../man") -}}
   {{- range $candidate := $candidates -}}

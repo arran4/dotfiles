@@ -1,0 +1,15 @@
+.TH "GH-RELEASE.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+gh\-release.sh \- calculate and push a version tag for GitHub Actions publishing
+.SH SYNOPSIS
+.nf
+\fBgh\-release.sh [GIT\-TAG\-INC\-ARGS...]\fR
+.fi
+.SH DESCRIPTION
+Use git\-tag\-inc to calculate the next version and create its tag, then push the tag to origin. If the current commit has already been released, recognise the unchanged\-commit diagnostic and skip tagging. GitHub Actions, not this script, creates the GitHub release and its assets.
+.SH NOTES
+The helper retries a failed git push once. If both attempts fail it removes the locally created tag.
+.PP
+Release modes, force rebuilds, and publish\-tag recovery are handled by .github/workflows/ci.yml; this script is only the tagging path.
+.SH SEE ALSO
+git\-tag\-inc(1), git(1)
