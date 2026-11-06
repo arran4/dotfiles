@@ -9,3 +9,19 @@ whatsmyip.sh \- report the publicly observed IPv4 and IPv6 addresses
 Query ipv4.icanhazip.com and ipv6.icanhazip.com using curl, wget or dig fallbacks. Print IPv4 and IPv6 results separately, displaying Unavailable if either request fails.
 .SH NOTES
 Addresses are obtained through external network services and may reflect a VPN, proxy, or NAT egress address rather than a local interface.
+.SH REQUIREMENTS
+Requires outbound network access and one of curl, wget or dig.
+It prefers curl, then wget, then dig, for separate IPv4 and IPv6
+lookups. DNS, VPN and proxy settings affect the result.
+.SH EXAMPLES
+.nf
+whatsmyip.sh
+curl -4 https://ipv4.icanhazip.com
+curl -6 https://ipv6.icanhazip.com
+.fi
+.SH OPERATION AND TROUBLESHOOTING
+The two address families are requested independently. If one
+fails it prints Unavailable while still reporting the other.
+An IPv6 failure can indicate missing IPv6 routing, not a
+problem with IPv4. The reported addresses represent the
+remote service's observation of the network egress.

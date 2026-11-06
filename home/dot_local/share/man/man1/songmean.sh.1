@@ -13,5 +13,26 @@ Read the current Spotify track artist and title through go\-playerctl (or player
 Browser command used if no browser argument is supplied.
 .SH NOTES
 When the browser argument is chrome, the helper resolves an available Chrome/Chromium executable. A browser must be installed.
+.SH REQUIREMENTS
+Requires Spotify metadata via go-playerctl or playerctl and
+a working browser; the search itself requires network access.
+.SH OPERATION
+An explicit browser argument takes precedence over BROWSER.
+Without either, the script searches Konqueror, Firefox, Chrome
+variants and xdg-open in that order. The browser alias chrome
+resolves to an installed Chrome/Chromium executable. The script
+URL-encodes artist and title with a lyrics, meaning, context
+and analysis query, and opens Perplexity in that browser.
+.SH EXAMPLES
+.nf
+songmean.sh
+songmean.sh firefox
+BROWSER=konqueror songmean.sh
+.fi
+.SH TROUBLESHOOTING
+Missing metadata may mean Spotify is stopped or the selected
+player helper cannot query the track. BROWSER must name a
+single executable, not a compound shell command. The tool
+opens an external search and does not analyse songs offline.
 .SH SEE ALSO
 go\-playerctl(1), playerctl(1)

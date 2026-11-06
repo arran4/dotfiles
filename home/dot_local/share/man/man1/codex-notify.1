@@ -9,3 +9,24 @@ codex\-notify \- send a Codex attention notification
 Show a short notification for Codex approval, question, completion or general attention events. This internal libexec hook uses notify\-send, kdialog or macOS osascript when available, falling back to a terminal bell.
 .SH NOTES
 Normally invoked by Codex hooks, not directly by the user.
+.SH REQUIREMENTS
+A notification utility is optional. The hook prefers notify-send,
+then kdialog, then macOS osascript, and finally a terminal bell.
+A graphical session is required for desktop popups.
+.SH INTEGRATION
+The configured ~/.codex/hooks.json maps PreToolUse request_user_input
+to question, PermissionRequest to approval and Stop to complete.
+These events invoke ~/.local/libexec/codex-notify. An unrecognised
+argument selects a generic attention message. Desktop notifications
+are launched asynchronously.
+.SH EXAMPLES
+.nf
+~/.local/libexec/codex-notify question
+~/.local/libexec/codex-notify approval
+~/.local/libexec/codex-notify complete
+.fi
+.SH TROUBLESHOOTING
+This is a best-effort notification, not a reliable delivery channel.
+Graphical notifier errors are suppressed, and without a working
+desktop notifier or writable terminal the hook may appear silent.
+Verify the hooks.json entry and notifier availability first.

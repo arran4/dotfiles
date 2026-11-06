@@ -15,5 +15,32 @@ Editor used to prepare the PR description (defaults to vim).
 IMPORTANT: This helper stages all files, not only selected changes. Confirm the working tree is appropriate before using it.
 .PP
 The optional merge/rebase is a local Git operation, not a GitHub PR merge. Use this helper only when that workflow is intended.
+.SH REQUIREMENTS
+Run from a writable Git checkout with git and gh installed, authenticated
+with permission to push branches and open pull requests. Configure the
+repository using \fBgh repo set-default\fR. A terminal and EDITOR (or vim)
+are required.
+.SH INTERACTIVE WORKFLOW
+The helper records the original branch, prompts for a branch name, commit
+message and PR title, then opens an editor for the description. Lines
+beginning with # are omitted. After confirmation it creates the new
+branch, stages all files with git add ., commits, pushes to origin and
+opens a PR. A failed push or PR creation does not roll back the earlier
+steps.
+.PP
+The optional final merge or rebase affects local branches, not the
+remote GitHub pull request.
+.SH EXAMPLES
+.nf
+gh auth status
+gh repo set-default
+git status --short
+gh-pr.sh
+.fi
+.SH TROUBLESHOOTING
+If the repository check fails, run gh repo set-default in the checkout.
+An EDITOR value must name a directly executable program. This helper is
+interactive and has no noninteractive arguments. Inspect git status
+before running: git add . may stage unrelated changes.
 .SH SEE ALSO
 gh(1), git(1)

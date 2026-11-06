@@ -9,3 +9,39 @@ open\-in\-firefox \- launch Firefox installed as a Flatpak
 Forward all arguments to flatpak run org.mozilla.firefox. The chezmoi template creates this executable only when Linux, flatpak and the Firefox Flatpak are detected during template rendering.
 .SH NOTES
 This wrapper is conditional and might not exist on hosts without the Firefox Flatpak.
+.SH REQUIREMENTS
+Requires Linux with flatpak installed and the
+org.mozilla.firefox Flatpak present at chezmoi template-rendering
+time. The wrapper is conditional and might not be generated
+on a host that lacks either prerequisite.
+.SH OPERATION
+The wrapper simply runs flatpak run org.mozilla.firefox, forwarding
+every argument verbatim. It does not select native Firefox,
+install the Flatpak, or handle an absent runtime dynamically.
+.SH EXAMPLES
+.nf
+flatpak info org.mozilla.firefox
+open-in-firefox https://example.org
+open-in-firefox --private-window https://example.org
+.fi
+.SH TROUBLESHOOTING
+If this command is missing after installing Firefox Flatpak,
+regenerate or reapply the chezmoi configuration so the template
+can detect the newly available application.
+.SH REQUIREMENTS
+Requires Linux, Flatpak, and the org.mozilla.firefox Flatpak
+installed when the chezmoi template is rendered. This executable
+is conditional and may not exist on every system.
+.SH OPERATION
+The wrapper forwards all arguments verbatim to
+flatpak run org.mozilla.firefox. It does not install Firefox,
+select a native Firefox binary, or dynamically recreate itself.
+.SH EXAMPLES
+.nf
+flatpak info org.mozilla.firefox
+open-in-firefox https://example.org
+open-in-firefox --private-window https://example.org
+.fi
+.SH TROUBLESHOOTING
+If the wrapper is missing after installing the Firefox Flatpak,
+rerun chezmoi init --apply so the template detects the application.
