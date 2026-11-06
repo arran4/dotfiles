@@ -700,12 +700,36 @@
         {{- writeToStdout "Can't find nm-applet \n" -}}
 {{- end -}}
 
+{{- $flatpakApps := list
+  "app.authpass.AuthPass"
+  "com.bitwarden.desktop"
+  "com.dropbox.Client"
+  "com.google.Chrome"
+  "com.rustdesk.RustDesk"
+  "com.spotify.Client"
+  "com.valvesoftware.Steam"
+  "im.fluffychat.Fluffychat"
+  "im.nheko.Nheko"
+  "im.riot.Riot"
+  "io.anytype.anytype"
+  "io.ente.auth"
+  "io.github.martinrotter.rssguard"
+  "io.github.picocrypt.Picocrypt"
+  "net.mkiol.SpeechNote"
+  "net.werwolv.ImHex"
+  "org.kde.drawy"
+  "org.kde.marknote"
+  "org.libreoffice.LibreOffice"
+  "org.localsend.localsend_app"
+  "org.mozilla.firefox"
+  "org.mozilla.thunderbird"
+  "org.signal.Signal"
+-}}
 {{- $flatpakLocation := lookPath "flatpak" -}}
 {{- if eq $flatpakLocation "" -}}
-        {{- writeToStdout "Can't find flatpak. Missing flatpak apps, run: flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal\n" -}}
+        {{- writeToStdout (printf "Can't find flatpak. Missing flatpak apps, run: flatpak install -y flathub %s\n" (join " " $flatpakApps)) -}}
 {{- else -}}
         {{- $installedFlatpaks := output $flatpakLocation "list" "--app" "--columns=application" | splitList "\n" -}}
-        {{- $flatpakApps := list "app.authpass.AuthPass" "com.beeper.Beeper" "com.bitwarden.desktop" "com.dropbox.Client" "com.google.Chrome" "com.rustdesk.RustDesk" "com.spotify.Client" "com.valvesoftware.Steam" "im.fluffychat.Fluffychat" "im.nheko.Nheko" "im.riot.Riot" "io.anytype.anytype" "io.ente.auth" "io.github.martinrotter.rssguard" "io.github.picocrypt.Picocrypt" "net.werwolv.ImHex" "org.kde.drawy" "org.kde.marknote" "org.libreoffice.LibreOffice" "org.localsend.localsend_app" "org.mozilla.firefox" "org.mozilla.thunderbird" "org.signal.Signal" -}}
         {{- $missingApps := list -}}
         {{- range $app := $flatpakApps -}}
                 {{- if not (has $app $installedFlatpaks) -}}
@@ -714,6 +738,14 @@
         {{- end -}}
         {{- if gt (len $missingApps) 0 -}}
                 {{- writeToStdout (printf "Missing flatpak apps, run: flatpak install -y flathub %s\n" (join " " $missingApps)) -}}
+        {{- end -}}
+{{- end -}}
+{{- if eq $flatpakLocation "" -}}
+        {{- writeToStdout "Beeper needs the per-user FlatPark remote (one-time): flatpak --user remote-add --if-not-exists --no-enumerate --no-use-for-deps flatpark https://dl.flatpark.org/flatpark.flatpakrepo; then: flatpak --user install flatpark com.automattic.Beeper\n" -}}
+{{- else -}}
+        {{- $beeperInstalled := trim (output "sh" "-c" "flatpak --user info com.automattic.Beeper >/dev/null 2>&1 && printf installed || true") -}}
+        {{- if ne $beeperInstalled "installed" -}}
+                {{- writeToStdout "Beeper is missing (per-user FlatPark com.automattic.Beeper). Add FlatPark once: flatpak --user remote-add --if-not-exists --no-enumerate --no-use-for-deps flatpark https://dl.flatpark.org/flatpark.flatpakrepo; then install: flatpak --user install flatpark com.automattic.Beeper\n" -}}
         {{- end -}}
 {{- end -}}
 

@@ -29,10 +29,33 @@ For Hyprland, the Lua configuration loads `local.lua` if present, then checks ho
 My Flatpak selections are an install reference, not an exhaustive inventory of what is active today. The existing Flathub command is system-scoped; the separate FlatPark commands below are intentionally per-user. I have not normalised those scopes.
 
 ```sh
-flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
+flatpak install -y flathub \
+  app.authpass.AuthPass \
+  com.bitwarden.desktop \
+  com.dropbox.Client \
+  com.google.Chrome \
+  com.rustdesk.RustDesk \
+  com.spotify.Client \
+  com.valvesoftware.Steam \
+  im.fluffychat.Fluffychat \
+  im.nheko.Nheko \
+  im.riot.Riot \
+  io.anytype.anytype \
+  io.ente.auth \
+  io.github.martinrotter.rssguard \
+  io.github.picocrypt.Picocrypt \
+  net.mkiol.SpeechNote \
+  net.werwolv.ImHex \
+  org.kde.drawy \
+  org.kde.marknote \
+  org.libreoffice.LibreOffice \
+  org.localsend.localsend_app \
+  org.mozilla.firefox \
+  org.mozilla.thunderbird \
+  org.signal.Signal
 ```
 
-FlatPark, added for an explicitly selected Beeper build (not for general dependency resolution):
+FlatPark is used here **only to install Beeper**, separately from the system-wide Flathub applications above. Register the per-user FlatPark remote **once** (subsequent runs with `--if-not-exists` are safe):
 
 ```sh
 flatpak --user remote-add \
@@ -41,10 +64,15 @@ flatpak --user remote-add \
   --no-use-for-deps \
   flatpark \
   https://dl.flatpark.org/flatpark.flatpakrepo
+```
+
+Install Beeper from that remote:
+
+```sh
 flatpak --user install flatpark com.automattic.Beeper
 ```
 
-A per-user Flathub remote may also be needed for FlatPark's runtimes; a system Flathub remote does not automatically serve user-scoped installations. The Flathub `com.beeper.Beeper` and FlatPark `com.automattic.Beeper` recipes are intentionally both recorded pending a choice of preferred package.
+FlatPark's Beeper application ID is `com.automattic.Beeper` (case-sensitive; **Automattic** with two `t`s). Its Freedesktop runtime is supplied through Flathub, which may also need to be configured **per user** even if system-wide Flathub is already installed. The `--no-enumerate` and `--no-use-for-deps` flags prevent general application discovery and automatic dependency resolution through FlatPark. The other listed applications remain system-wide Flathub installs.
 
 ### Development tools
 
