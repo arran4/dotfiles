@@ -30,5 +30,24 @@ If no menu appears, check that the generated menu executable is
 installed and can start within the same Wayland session. If
 bindings are missing, inspect hyprctl binds -j before changing
 the static manual: the active compositor configuration wins.
+.SH REQUIREMENTS
+Requires a running Hyprland session, hyprctl, Python 3, sort, and
+a menu utility (rofi, wofi or dmenu). The chezmoi template resolves
+a menu at configuration-rendering time.
+.SH OPERATION
+The command reads hyprctl binds -j, translates modifier masks,
+sorts the shortcuts, and shows dispatcher and argument values in
+the menu. The selected row is discarded; this does not execute
+the corresponding action.
+.SH EXAMPLES
+.nf
+hyprctl binds -j
+hypr-cheatsheet
+man hyprland-keys
+.fi
+.SH TROUBLESHOOTING
+If no menu appears, inspect the configured menu executable and
+Wayland session. If a binding is missing, compare the active
+hyprctl binds output with the static hyprland-keys manual.
 .SH SEE ALSO
 hyprland\-keys(7), hyprctl(1)
