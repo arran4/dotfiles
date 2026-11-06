@@ -16,5 +16,21 @@ Optional workspace\-specific wallpaper.
 Fallback wallpaper.
 .SH NOTES
 This script starts another swaybg process rather than managing the lifetime of earlier wallpaper processes.
+.SH REQUIREMENTS
+Requires Hyprland, hyprctl, swaybg, awk, cut and tr, plus
+wallpaper JPG files in ~/Pictures/wallpapers.
+.SH OPERATION
+The current workspace ID selects ID.jpg; if it is not present,
+default.jpg is used. swaybg is started in fill mode in the
+background without stopping earlier swaybg instances.
+.SH EXAMPLES
+.nf
+mkdir -p "$HOME/Pictures/wallpapers"
+cp /path/to/image.jpg "$HOME/Pictures/wallpapers/default.jpg"
+set-wallpaper
+.fi
+.SH TROUBLESHOOTING
+Check active workspace ID and image paths if no wallpaper appears.
+Repeated invocations can accumulate swaybg processes.
 .SH SEE ALSO
 hyprland\-keys(7)
