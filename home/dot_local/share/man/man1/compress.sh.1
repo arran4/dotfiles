@@ -12,5 +12,25 @@ Choose tar, zip or rar based on ARCHIVE suffix and archive the remaining FILE ar
 compress.sh backup.tar.gz Documents/Projects
 compress.sh files.zip file1 file2
 .fi
+.SH REQUIREMENTS
+Requires tar for tar archives, zip for zip files and rar for rar
+files. Source paths must be readable. The helper does not add
+recursive options for zip or rar: directories may require explicit
+handling by their native utilities.
+.SH ARCHIVE SELECTION
+The first argument names the output archive. Its filename suffix
+determines the archive program and compression mode. Subsequent
+arguments are source files or directories, resolved relative to
+the current directory unless given as absolute paths.
+.SH ADDITIONAL EXAMPLES
+.nf
+compress.sh sources.tar.xz src README.md
+compress.sh snapshot.tgz Documents/Projects
+.fi
+.SH LIMITATIONS
+Unknown suffixes produce no error message and no archive. Existing
+archive files may be overwritten or modified, depending on the
+underlying program. This script does not verify the output archive;
+do so before deleting input files.
 .SH SEE ALSO
 extract.sh(1)
