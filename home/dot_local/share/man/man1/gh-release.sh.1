@@ -11,5 +11,34 @@ Use git\-tag\-inc to calculate the next version and create its tag, then push th
 The helper retries a failed git push once. If both attempts fail it removes the locally created tag.
 .PP
 Release modes, force rebuilds, and publish\-tag recovery are handled by .github/workflows/ci.yml; this script is only the tagging path.
+.SH REQUIREMENTS
+Requires a Git checkout, git-tag-inc on PATH, push access to origin
+and appropriate release-tag permissions. Inspect existing tags and
+the checked-out commit before running. GitHub Actions needs its own
+workflow permissions to publish the resulting release; see
+dotfiles-ci(7).
+.SH RELEASE SEQUENCE
+The helper obtains the next tag via git-tag-inc -print-version-only,
+creates the tag and pushes it. If the commit is unchanged since the
+previous release, it recognises the diagnostic and exits without a
+new tag. It retries a failed push once, then deletes the local tag
+if the retry fails. It does not delete any remote tag.
+.PP
+The GitHub Actions workflow, not gh-release.sh, creates release assets,
+release notes and container images. Manual release modes in ci.yml are
+alternatives to this local tagging helper.
+.SH EXAMPLES
+.nf
+git status --short
+git tag --list 'v*'
+gh-release.sh
+gh workflow run ci.yml --repo arran4/dotfiles --ref main \
+  -f mode=release-patch
+.fi
+.SH TROUBLESHOOTING
+Use git-tag-inc -dry to investigate version selection. Check origin
+access and tag protection rules for failed pushes. Do not overwrite
+a published release tag to rebuild an image; use the publish-tag
+recovery mode described in dotfiles-ci(7).
 .SH SEE ALSO
 git\-tag\-inc(1), git(1)
