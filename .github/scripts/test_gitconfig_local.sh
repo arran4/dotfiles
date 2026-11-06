@@ -4,15 +4,15 @@ set -eu
 # The CI workflow applies chezmoi before running this regression test.
 template="home/dot_gitconfig.tmpl"
 rendered="${HOME}/.gitconfig"
-include_line='  path = ~/.config/git/config.local'
-
-for file in "$template" "$rendered"; do
+for include_line in '  path = ~/.config/git/hosts.defaults' '  path = ~/.config/git/config.local'; do
+  for file in "$template" "$rendered"; do
   [ -f "$file" ] || { echo "Missing $file" >&2; exit 1; }
   count="$(grep -Fxc "$include_line" "$file" || true)"
   [ "$count" -eq 1 ] || {
     echo "$file: expected one unconditional local Git include, found $count" >&2
     exit 1
-  }
+    }
+  done
 done
 
 # Only known public providers belong in the shared template's URL and
