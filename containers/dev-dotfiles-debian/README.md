@@ -145,7 +145,7 @@ opencode --auto
 
 ### Image-managed agent skills and browser
 
-`agent-skills/<name>/SKILL.md` is the source for managed Codex and Antigravity skills. Codex receives image-owned skills under `/etc/codex/skills`; Antigravity syncs them to `~/.gemini/antigravity-cli/skills` without overwriting modified or unrelated user skills. Removed image skills are not automatically deleted from persistent homes. Updating Codex's image-owned skills requires a new image; inspect `/skills` inside a running agent, not just the filesystem.
+Use `man agent-skills` for a searchable index of the bundled skills and their purposes; follow each `agent-skills/<name>/SKILL.md` for complete instructions. `agent-skills/<name>/SKILL.md` is the source for managed Codex and Antigravity skills. Codex receives image-owned skills under `/etc/codex/skills`; Antigravity syncs them to `~/.gemini/antigravity-cli/skills` without overwriting modified or unrelated user skills. Removed image skills are not automatically deleted from persistent homes. Updating Codex's image-owned skills requires a new image; inspect `/skills` inside a running agent, not just the filesystem.
 
 The image also ships `playwright-cli` with a shared headless Chromium shell, intended for automation. Headed operation needs additional GUI support. The smoke test verifies a local fixture without requiring a public website.
 

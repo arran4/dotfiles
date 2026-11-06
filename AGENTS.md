@@ -10,6 +10,8 @@ This repository stores dotfiles applied with [chezmoi](https://www.chezmoi.io/).
 - The existing `containers/dev-dotfiles-debian/README.md` remains the canonical operational guide for the image and launchers; its usage, persistence, security, authentication and migration instructions must reflect real code. The root README gives short commands and points to it or to `man run-dev-podman.sh` and `man run-dev-docker.sh`.
 - Coding-agent implementation rules belong here. Avoid creating topical Markdown files for individual issues, experiments or PRs. Preserve truly necessary recovery and safety details while consolidating; do not copy whole command manuals into the root README.
 
+- Maintain `home/dot_local/share/man/man7/agent-skills.7` as the index for the catalog at `containers/dev-dotfiles-debian/agent-skills/`; keep the list synchronized with each skill's `SKILL.md`. The skill files remain the source of truth for prompts, procedures and examples.
+
 ## Man-page and pipeline documentation maintenance
 
 - Keep every maintained helper's section-1 manual synchronized with its implementation. Describe prerequisites, supported invocation and arguments, behaviour, examples, failure modes, and safety or persistence implications. Do not reduce manuals to a one-line command synopsis.
