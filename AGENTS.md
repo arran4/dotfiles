@@ -10,6 +10,12 @@ This repository stores dotfiles applied with [chezmoi](https://www.chezmoi.io/).
 - The existing `containers/dev-dotfiles-debian/README.md` remains the canonical operational guide for the image and launchers; its usage, persistence, security, authentication and migration instructions must reflect real code. The root README gives short commands and points to it or to `man run-dev-podman.sh` and `man run-dev-docker.sh`.
 - Coding-agent implementation rules belong here. Avoid creating topical Markdown files for individual issues, experiments or PRs. Preserve truly necessary recovery and safety details while consolidating; do not copy whole command manuals into the root README.
 
+## Man-page and pipeline documentation maintenance
+
+- Keep every maintained helper's section-1 manual synchronized with its implementation. Describe prerequisites, supported invocation and arguments, behaviour, examples, failure modes, and safety or persistence implications. Do not reduce manuals to a one-line command synopsis.
+- Document repository-specific CI operations and non-secret credential requirements in `home/dot_local/share/man/man7/dotfiles-ci.7`. When workflows add or change an external token, signing key, deploy key, GitHub Actions permission or registry auth requirement, update the manual with the credential **name, purpose, scope, provisioning and rotation guidance**, never its secret value.
+- Confirm examples against current scripts, and format-check roff where a formatter is available. Distinguish tests actually run from checks deferred to CI.
+
 ## Style
 
 - Use **two spaces** for indentation and spaces over tabs.
