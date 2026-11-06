@@ -1,0 +1,11 @@
+.TH "WHATSMYIP.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+whatsmyip.sh \- report the publicly observed IPv4 and IPv6 addresses
+.SH SYNOPSIS
+.nf
+\fBwhatsmyip.sh\fR
+.fi
+.SH DESCRIPTION
+Query ipv4.icanhazip.com and ipv6.icanhazip.com using curl, wget or dig fallbacks. Print IPv4 and IPv6 results separately, displaying Unavailable if either request fails.
+.SH NOTES
+Addresses are obtained through external network services and may reflect a VPN, proxy, or NAT egress address rather than a local interface.

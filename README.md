@@ -1,133 +1,105 @@
 # arran4 dotfiles
 
-These are my [chezmoi](https://www.chezmoi.io/)-managed dotfiles, built up from configurations I have used since roughly 2004. They include personal and historical choices that may not suit another machine; copy or adapt the pieces you want rather than applying the entire repository without inspecting it.
+My personal [chezmoi](https://www.chezmoi.io/)-managed dotfiles and machine-bootstrap notes. I have been configuring Linux and related systems since roughly **2004**; the public Git repository begins later because I intentionally started a fresh history rather than publish older commits containing private keys or other secrets. The visible Git history is therefore not a complete history of the configuration.
 
-## Contents
+This is primarily a reference for future me, with working examples and some interesting configuration choices for anyone browsing. Some files are old, some are machine-specific, and not every tracked application is part of my current setup.
 
-- [Using the dotfiles](#using-the-dotfiles)
-- [Containerised development environment](#containerised-development-environment)
-- [Development tools](#development-tools)
-- [Flatpak applications](#flatpak-applications)
-- [Git configuration](#git-configuration)
-- [Desktop and shell notes](#desktop-and-shell-notes)
+## Bootstrap
 
-## Using the dotfiles
+I normally install the programs I want *before* applying the dotfiles: chezmoi templates detect which executables and features are available, so the installed toolchain affects the generated configuration. Use the platform package manager for the initial tools, then:
 
-Clone the repository and run `./install`, or use chezmoi directly. When chezmoi reports `warning: config file template has changed`, rerun `chezmoi init --apply arran4` to regenerate the configuration from `home/.chezmoi.toml.tmpl`.
+```sh
+chezmoi init arran4
+chezmoi diff
+chezmoi apply
+```
 
-The repository uses `.chezmoiroot` pointing to `home/`. The setup includes shared Bash/Zsh prompts and aliases (`home/.chezmoitemplates/`), OS-aware templates (`home/.chezmoi.toml.tmpl`), a Git configuration selecting available editors and credential helpers, tmux and Vim/Neovim settings, Hyprland/Quickshell configurations, and one-time initialization scripts in `home/.chezmoiscripts/`. `home/.chezmoiignore` can skip optional executables when their dependencies are missing.
+For an unattended install, `chezmoi init --apply arran4` combines the final steps. The source root is `home/` (see `.chezmoiroot`); `home/.chezmoi.toml.tmpl` handles OS-aware prompts and executable discovery, `home/.chezmoitemplates/` shares shell configuration, and `home/.chezmoiscripts/` contains first-run and update hooks. When the configuration template changes, rerun `chezmoi init --apply arran4`.
 
-After applying, open a new terminal to check your prompt, aliases, and Git settings. `tmux` demonstrates the multiplexer configuration; inspect `home/.chezmoitemplates/` to understand the shared templates. Version checks during setup use a PATH derived from `home/.chezmoi.toml.tmpl` and warn when a configured tool is older than the minimum version or comparison fails.
+The [release ZIP](https://github.com/arran4/dotfiles/releases) is a CI-rendered chezmoi archive, **not** a portable replacement for a per-machine init: it may contain configuration values generated on the CI runner. Use the source and chezmoi for a new machine.
 
-## Containerised development environment
+### Machine-local configuration
 
-**Start here:** [`containers/dev-dotfiles-debian/README.md`](containers/dev-dotfiles-debian/README.md) is the *single operational guide* for the Debian coding-agent container. It contains the Docker and Podman commands, local image build, Linux launch scripts, volumes and upgrades, GitHub authentication, Docker-in-Docker, host Ollama, and tests. Container-specific operating instructions are intentionally **not duplicated** in this root README.
+Sensitive and machine-only settings normally stay outside the shared repository unless I intentionally commit them. Chezmoi can generate `~/.gitconfig.local` with the configured user identity; the main Git template also conditionally includes local Git overrides under `~/.config/git/config.local`, `~/.local/share/git/config.local` and `~/.gitconfig.d/config.local`. Keep credentials and individual host details local.
 
-The canonical published development image is `ghcr.io/arran4/dev-dotfiles-debian:latest`, incorporating the seeded persistent home architecture (labeled `io.github.arran4.dev-dotfiles.home-seed=1`). On container creation, the Linux launch scripts (`run-dev-podman.sh` and `run-dev-docker.sh`) automatically detect image capabilities and initialize the persistent project-home volume. For manual container commands, local image builds, launcher settings, and migration instructions, see [`containers/dev-dotfiles-debian/README.md`](containers/dev-dotfiles-debian/README.md). Avoid mounting your host home, credentials, or container-engine socket into an unrestricted agent sandbox.
+For Hyprland, the Lua configuration loads `local.lua` if present, then checks hostname-derived modules such as `local_desktop2.lua` and `local_x1linux.lua`. Those committed examples contain display configuration; a private local override should not accidentally mask one. SSH identities and other private host configuration are deliberately handled differently. Review template and ignore rules before adding new machine-specific data.
 
-## Development tools
+## Applications I reinstall
 
-| Platform | Tool | Installation |
-| --- | --- | --- |
-| Cross-platform | golangci-lint | `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` |
-| Cross-platform | Git Credential Manager | See [Git Credential Manager](https://github.com/git-ecosystem/git-credential-manager). |
-| Cross-platform | CLIProxyAPI | `go install github.com/router-for-me/CLIProxyAPI/v6/cmd/server@latest && mv "$HOME/go/bin/server" "$HOME/.local/bin/CLIProxyAPI"` |
-| Debian/Ubuntu | GitHub CLI | See the [GitHub CLI Debian installation guide](https://github.com/cli/cli/blob/trunk/docs/install_linux.md). |
-| Debian/Ubuntu | GitLab CLI | `sudo apt update && sudo apt install glab` |
-| Gentoo | GitHub/GitLab CLI | `sudo emerge dev-vcs/gh dev-vcs/glab` |
-| Arch | GitHub/GitLab CLI | `sudo pacman -S github-cli glab` |
-| macOS | GitHub/GitLab CLI | `brew install gh glab` |
-| Windows | GitHub/GitLab CLI | `winget install --id GitHub.cli` / `winget install --id GitLab.glab` |
-
-The development container includes its own toolchain; see its [installed tools](containers/dev-dotfiles-debian/README.md#installed-tools-and-verification) rather than treating these host installation examples as container setup instructions.
-
-## Flatpak applications
-
-Apps used in this environment include AuthPass (`app.authpass.AuthPass`), Bitwarden (`com.bitwarden.desktop`), Beeper (`com.beeper.Beeper`), Dropbox (`com.dropbox.Client`), Chrome (`com.google.Chrome`), RustDesk (`com.rustdesk.RustDesk`), Spotify (`com.spotify.Client`), Steam (`com.valvesoftware.Steam`), FluffyChat (`im.fluffychat.Fluffychat`), nheko (`im.nheko.Nheko`), Element (`im.riot.Riot`), Anytype (`io.anytype.anytype`), Ente Auth (`io.ente.auth`), RSS Guard (`io.github.martinrotter.rssguard`), Picocrypt (`io.github.picocrypt.Picocrypt`), Speech Note (`net.mkiol.SpeechNote`), ImHex (`net.werwolv.ImHex`), Drawy (`org.kde.drawy`), Marknote (`org.kde.marknote`), LibreOffice (`org.libreoffice.LibreOffice`), LocalSend (`org.localsend.localsend_app`), Firefox (`org.mozilla.firefox`), Thunderbird (`org.mozilla.thunderbird`), and Signal (`org.signal.Signal`).
-
-To install them from Flathub:
+My Flatpak selections are an install reference, not an exhaustive inventory of what is active today. The existing Flathub command is system-scoped; the separate FlatPark commands below are intentionally per-user. I have not normalised those scopes.
 
 ```sh
 flatpak install -y flathub app.authpass.AuthPass com.beeper.Beeper com.bitwarden.desktop com.dropbox.Client com.google.Chrome com.rustdesk.RustDesk com.spotify.Client com.valvesoftware.Steam im.fluffychat.Fluffychat im.nheko.Nheko im.riot.Riot io.anytype.anytype io.ente.auth io.github.martinrotter.rssguard io.github.picocrypt.Picocrypt net.mkiol.SpeechNote net.werwolv.ImHex org.kde.drawy org.kde.marknote org.libreoffice.LibreOffice org.localsend.localsend_app org.mozilla.firefox org.mozilla.thunderbird org.signal.Signal
 ```
 
-## Git configuration
-
-### Git templates and editor
-
-Chezmoi copies `home/dot_config/git/template` to `~/.config/git/template`; Git uses it to initialize new repositories. Edit the stub `README.md` and `.gitignore` in that *template directory* to customize newly initialized repositories. These are functional templates, not extra documentation guides to consolidate.
-
-`home/dot_gitconfig.tmpl` selects an available default editor. On Windows it searches the `ProgramFiles`, `ProgramFiles(x86)`, and `SystemRoot` directories and prefers Notepad++, gVim, VS Code, IntelliJ, then Notepad. Other systems use Neovim or Vim when available. To override the default after applying the dotfiles:
+FlatPark, added for an explicitly selected Beeper build (not for general dependency resolution):
 
 ```sh
-git config --global core.editor <command>
+flatpak --user remote-add \
+  --if-not-exists \
+  --no-enumerate \
+  --no-use-for-deps \
+  flatpark \
+  https://dl.flatpark.org/flatpark.flatpakrepo
+flatpak --user install flatpark com.automattic.Beeper
 ```
 
-### SSH configuration
+A per-user Flathub remote may also be needed for FlatPark's runtimes; a system Flathub remote does not automatically serve user-scoped installations. The Flathub `com.beeper.Beeper` and FlatPark `com.automattic.Beeper` recipes are intentionally both recorded pending a choice of preferred package.
 
-The default SSH configuration adds keys to the agent and uses platform-appropriate keychain options and configured identities. On macOS, a host entry may use:
+### Development tools
 
-```sshconfig
-Host *
-  UseKeychain yes
-  AddKeysToAgent yes
-  IdentitiesOnly yes
-```
+I prefer **Zsh** for interactive shells, **tmux** for terminal sessions, Git and Go tooling, with Vim/Neovim configuration retained. Bash and Fish are also configured but are not equivalent personal preferences. A few useful package-manager commands for bootstrapping:
 
-For an exception, add a more specific `Host` block with the options that the target needs, for example:
+| System | GitHub and GitLab CLIs |
+| --- | --- |
+| Gentoo | `sudo emerge dev-vcs/gh dev-vcs/glab` |
+| Debian/Ubuntu | Install `gh` via [GitHub CLI's packaging instructions](https://github.com/cli/cli/blob/trunk/docs/install_linux.md); `sudo apt install glab` |
+| Arch | `sudo pacman -S github-cli glab` |
+| macOS | `brew install gh glab` |
 
-```sshconfig
-Host legacy.example.com
-  UseKeychain no
-  AddKeysToAgent no
-  IdentitiesOnly no
-```
+Other occasional installs: `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest` and [Git Credential Manager](https://github.com/git-ecosystem/git-credential-manager). The development image bundles its own tools.
 
-## Desktop and shell notes
+## My development containers
 
-### Caelestia shell ownership and legacy checkout recovery
-
-Caelestia Shell is installed by the system package manager, not by the
-old chezmoi-managed Git checkout under `~/.config/quickshell`. Personal
-Caelestia configuration remains under `~/.config/caelestia`.
-
-The temporary automatic cleanup for old Caelestia Git checkouts has been
-retired. An account that never ran that migration may still have the old
-`~/.config/quickshell` checkout. This does not require resetting your
-dotfiles; inspect it and move it aside only if it is the legacy checkout:
+The `run-dev-podman.sh` and `run-dev-docker.sh` launchers use `ghcr.io/arran4/dev-dotfiles-debian:latest`, normally pulling the latest published image and preparing a project-specific home and workspace. Run either launcher from a project directory:
 
 ```sh
-git -C ~/.config/quickshell remote -v
-git -C ~/.config/quickshell status --short
+cd ~/Documents/Projects/example
+run-dev-podman.sh
+# or: run-dev-docker.sh
 ```
 
-If that directory really is the old `caelestia-dots/shell` checkout,
-preserve any local changes and back up the entire directory first:
+The outer container is ephemeral by default; named home/workspace volumes can persist between runs. **Docker-in-Docker is enabled by default and causes a privileged outer container.** To omit nested Docker when it is unnecessary, set `DEV_DIND=0`; review the remaining nested-Podman security mode as well. Do not treat this as an isolation boundary for untrusted agents without examining the settings.
+
+See `man run-dev-podman.sh` and `man run-dev-docker.sh` for options and environment variables. The [development container guide](containers/dev-dotfiles-debian/README.md) covers image building, upgrades, auth, persistent volumes and further operating details.
+
+## Useful commands and configurations
+
+Many custom helpers are installed in `~/.local/bin`, with local manuals in `~/.local/share/man/man1`. The command name is the man-page name:
+
+| Command | Purpose |
+| --- | --- |
+| `gh-pr.sh` | Interactive branch, commit, push and PR flow |
+| `gh-release.sh` | Compute and push a release tag; GitHub Actions does the publishing |
+| `extract.sh`, `compress.sh` | File archive helpers |
+| `copy-song-url.sh`, `songmean.sh` | Playback metadata and sharing/search helpers |
+| `whatsmyip.sh` | External IPv4/IPv6 addresses |
+| `hypr-cheatsheet`, `hypr-cycle-layout`, `set-wallpaper` | Hyprland desktop helpers |
+| `cliphist-daemon.sh`, `codex-notify` | Clipboard and coding-agent hooks |
+
+For detailed usage, e.g.:
 
 ```sh
-backup="$HOME/.config/quickshell.legacy.$(date +%Y%m%d-%H%M%S)"
-test -d "$HOME/.config/quickshell" && test ! -e "$backup" && mv -- "$HOME/.config/quickshell" "$backup"
+man gh-pr.sh
+man gh-release.sh
+man run-dev-podman.sh
+man hyprland-keys
 ```
 
-Do **not** move a different Quickshell configuration or delete the backup
-until you have verified the package-owned Caelestia shell launches with
-`caelestia shell -d` and that your own configurations still work. Repeat
-the inspection separately under any other affected user account; do not
-assume all accounts shared the same checkout. The permanent
-`.github/workflows/caelestia-ownership.yml` regression guard remains.
+The last command opens the full Hyprland keyboard reference. Quick reminders: `Super+Return` opens a terminal; `Super+G` enters group-management mode; `Super+/` opens the runtime cheatsheet; and `Super+Shift+S` is a conditional Caelestia screenshot binding. The full manual includes fallback and conditional shortcuts. The active bindings are best checked with `hypr-cheatsheet` or `hyprctl binds -j`.
 
-### Hyprland shortcuts
+## Notes and history
 
-See the [Hyprland keyboard shortcut reference](HYPRLAND_KEYBOARD_SHORTCUTS.md) when you need the full bindings table. This is a separate on-demand *reference sheet*, not a competing setup guide; the binding configuration remains the source of truth. Coding-agent maintenance instructions for it are in [`AGENTS.md`](AGENTS.md).
+Caelestia Shell is installed by the system package manager, not an old chezmoi-managed Git checkout under `~/.config/quickshell`; personal settings remain under `~/.config/caelestia`. Inspect Git history if recovering an older checkout. The repository retains examples of earlier tools and OS configurations even where they are no longer current.
 
-### KDE setup
-
-Chezmoi includes a run-once script that sets KDE's superuser command to `sudo` if `kwriteconfig6` is present. If you install KDE after applying these dotfiles, run `chezmoi apply` again to trigger the script.
-
-### Foot terminal
-
-The dotfiles include a [foot](https://codeberg.org/dnkl/foot) Wayland terminal template. Install foot using your package manager, then apply with `chezmoi apply`. On systems using `update-alternatives`, set it as the terminal with:
-
-```sh
-sudo update-alternatives --set x-terminal-emulator /usr/bin/foot
-```
+The public history does not cover my earlier Linux configuration period: it was restarted to avoid publishing sensitive historical commits. A more detailed chronology can be reconstructed from separate personal historical notes without importing those records into this repository.

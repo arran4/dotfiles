@@ -1,0 +1,20 @@
+.TH "SET-WALLPAPER" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+set\-wallpaper \- show a Hyprland workspace\-specific wallpaper using swaybg
+.SH SYNOPSIS
+.nf
+\fBset\-wallpaper\fR
+.fi
+.SH DESCRIPTION
+Get the active Hyprland workspace ID. Select ~/Pictures/wallpapers/ID.jpg when present; otherwise use ~/Pictures/wallpapers/default.jpg. Start swaybg in the background using fill mode.
+.SH FILES
+.TP
+\fB~/Pictures/wallpapers/ID.jpg\fR
+Optional workspace\-specific wallpaper.
+.TP
+\fB~/Pictures/wallpapers/default.jpg\fR
+Fallback wallpaper.
+.SH NOTES
+This script starts another swaybg process rather than managing the lifetime of earlier wallpaper processes.
+.SH SEE ALSO
+hyprland\-keys(7)

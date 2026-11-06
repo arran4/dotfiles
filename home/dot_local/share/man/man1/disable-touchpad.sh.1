@@ -1,0 +1,11 @@
+.TH "DISABLE-TOUCHPAD.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+disable\-touchpad.sh \- disable a touchpad with xinput
+.SH SYNOPSIS
+.nf
+\fBdisable\-touchpad.sh\fR
+.fi
+.SH DESCRIPTION
+Find an XInput device whose name contains TouchPad and set its Device Enabled property to 0. This is an X11/XInput helper, not a Wayland touchpad configuration method.
+.SH NOTES
+The device match is name\-based. Review xinput list before using on an unfamiliar X11 machine.

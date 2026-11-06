@@ -1,0 +1,13 @@
+.TH "HYPR-CHEATSHEET" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+hypr\-cheatsheet \- show the current Hyprland bindings in a menu
+.SH SYNOPSIS
+.nf
+\fBhypr\-cheatsheet\fR
+.fi
+.SH DESCRIPTION
+Read the active bindings from hyprctl binds \-j and display a sorted summary using a detected rofi, wofi or dmenu interface. This is a read\-only runtime view; selecting an entry does not execute the binding.
+.SH NOTES
+Unlike the static hyprland\-keys(7) reference, the runtime view reflects only shortcuts registered by the currently running Hyprland instance.
+.SH SEE ALSO
+hyprland\-keys(7), hyprctl(1)

@@ -1,0 +1,17 @@
+.TH "SONGMEAN.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+songmean.sh \- search for an explanation of the current Spotify song
+.SH SYNOPSIS
+.nf
+\fBsongmean.sh [BROWSER]\fR
+.fi
+.SH DESCRIPTION
+Read the current Spotify track artist and title through go\-playerctl (or playerctl as fallback), build a Perplexity search for lyrics, meaning, context and analysis, and open it in a browser. An explicit browser argument takes priority over BROWSER; otherwise select a detected browser.
+.SH ENVIRONMENT
+.TP
+\fBBROWSER\fR
+Browser command used if no browser argument is supplied.
+.SH NOTES
+When the browser argument is chrome, the helper resolves an available Chrome/Chromium executable. A browser must be installed.
+.SH SEE ALSO
+go\-playerctl(1), playerctl(1)

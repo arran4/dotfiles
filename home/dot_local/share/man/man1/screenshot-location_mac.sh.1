@@ -1,0 +1,11 @@
+.TH "SCREENSHOT-LOCATION_MAC.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+screenshot\-location_mac.sh \- configure a macOS screenshot destination
+.SH SYNOPSIS
+.nf
+\fBscreenshot\-location_mac.sh\fR
+.fi
+.SH DESCRIPTION
+Create a Screenshots/mac screenshots directory in the home directory and set the com.apple.screencapture location preference to it using defaults.
+.SH NOTES
+This macOS\-only helper uses mkdir without \-p: it can fail if the directory already exists or its parent is absent.

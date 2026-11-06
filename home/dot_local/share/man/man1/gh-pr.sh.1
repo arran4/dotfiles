@@ -1,0 +1,19 @@
+.TH "GH-PR.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+gh\-pr.sh \- interactive GitHub pull request creation helper
+.SH SYNOPSIS
+.nf
+\fBgh\-pr.sh\fR
+.fi
+.SH DESCRIPTION
+Prompt for a branch name, commit message, PR title and PR body; open the configured editor for the body; then, after confirmation, create a branch, stage all files with git add ., commit, push and open a PR using gh. It can optionally switch back to the original branch and merge or rebase locally.
+.SH ENVIRONMENT
+.TP
+\fBEDITOR\fR
+Editor used to prepare the PR description (defaults to vim).
+.SH NOTES
+IMPORTANT: This helper stages all files, not only selected changes. Confirm the working tree is appropriate before using it.
+.PP
+The optional merge/rebase is a local Git operation, not a GitHub PR merge. Use this helper only when that workflow is intended.
+.SH SEE ALSO
+gh(1), git(1)

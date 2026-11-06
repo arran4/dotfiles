@@ -1,0 +1,13 @@
+.TH "COPY-SONG-URL.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+copy\-song\-url.sh \- copy the currently playing media URL to the clipboard
+.SH SYNOPSIS
+.nf
+\fBcopy\-song\-url.sh\fR
+.fi
+.SH DESCRIPTION
+Read xesam:url from go\-playerctl metadata, require an HTTP(S) URL, and copy it using wl\-copy, xclip or xsel (in that order). Print the URL on success.
+.SH NOTES
+Requires go\-playerctl and a supported clipboard program. Exits with an error if there is no shareable media URL.
+.SH SEE ALSO
+go\-playerctl(1)
