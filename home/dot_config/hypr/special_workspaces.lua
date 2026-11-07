@@ -12,7 +12,6 @@ local workspaces = {
   { name = "terminal", key = "SUPER + grave" },
   { name = "scratchpad", key = "SUPER + D" },
   { name = "kmagmux", key = "SUPER + I" },
-  { name = "kjules", key = "SUPER + J" },
   { name = "which_browser", key = "SUPER + SHIFT + code:20" },
 }
 
@@ -32,11 +31,6 @@ local classRoutes = {
   kmagmux = {
     ["kmagmux"] = true,
     ["org.kde.kmagmux"] = true,
-  },
-  kjules = {
-    ["kjules"] = true,
-    ["org.kde.kjules"] = true,
-    ["io.github.arran4.kjules"] = true,
   },
   which_browser = {
     ["which_browser"] = true,
@@ -393,13 +387,6 @@ function M.setup(options)
       return
     end
 
-    if name == "kjules" then
-      -- kJules is single-instance via KDBusService::Unique. Re-running it
-      -- activates the existing instance, while a missing instance starts here.
-      hl.exec_cmd("kjules", { workspace = "special:kjules silent" })
-      return
-    end
-
     if name == "which_browser" then
       -- Use Which Browser's explicit single-instance activation contract so a
       -- tray-only process reliably maps and focuses its main window.
@@ -429,7 +416,7 @@ function M.setup(options)
     local action = hl.dsp.workspace.toggle_special(workspace.name)
     if smartManagedWorkspaces
       and (workspace.name == "music" or workspace.name == "beeper" or workspace.name == "terminal"
-        or workspace.name == "kmagmux" or workspace.name == "kjules" or workspace.name == "which_browser") then
+        or workspace.name == "kmagmux" or workspace.name == "which_browser") then
       action = function()
         toggleManagedWorkspace(workspace.name)
       end
@@ -451,13 +438,6 @@ function M.setup(options)
   else
     hl.bind("SUPER + T", hl.dsp.workspace.toggle_special("terminal"))
   end
-
-  -- kJules registers Meta+Shift+J with KGlobalAccel on KDE. Hyprland owns
-  -- global shortcuts itself, so invoke the compositor-friendly CLI equivalent.
-  -- KDBusService forwards this to an existing kJules instance or starts one.
-  hl.bind("SUPER + SHIFT + J", function()
-    hl.exec_cmd("kjules --new-session")
-  end)
 
   -- Static rules cover normal app window-open paths. On modern Hyprland the
   -- terminal is intentionally excluded: only the terminal explicitly launched
@@ -482,10 +462,6 @@ function M.setup(options)
   hl.window_rule({
     match = { class = "^(KMagMux|kmagmux|org\\.kde\\.kmagmux)$" },
     workspace = "special:kmagmux",
-  })
-  hl.window_rule({
-    match = { class = "^(kJules|kjules|org.kde.kjules|io.github.arran4.kjules)$" },
-    workspace = "special:kjules",
   })
   hl.window_rule({
     match = { class = "^(which_browser|com\\.arran4\\.whichbrowser\\.which_browser)$" },
@@ -540,8 +516,7 @@ function M.setup(options)
   end
 
   -- Start session services and applications that are intentionally long-lived
-  -- special-workspace residents. kJules is now safe to activate repeatedly:
-  -- KDBusService forwards a second launch to the existing instance.
+  -- special-workspace residents.
   hl.on("hyprland.start", function()
     -- pam_kwallet_init forwards PAM-provided unlock data when it exists; it
     -- does not itself start the wallet daemon. Run the handoff first and then
@@ -558,11 +533,6 @@ function M.setup(options)
     end
     hl.exec_cmd("flatpak run com.spotify.Client", { workspace = "special:music silent" })
     hl.exec_cmd("beeper-launch", { workspace = "special:beeper silent" })
-    if smartManagedWorkspaces then
-      launchManagedApplication("kjules")
-    else
-      hl.exec_cmd("kjules")
-    end
   end)
 end
 
