@@ -219,6 +219,8 @@ jobs:
           bash .github/scripts/test_manual_release.sh
       - run: |
           yes "" | sh -c "$(curl -fsLS get.chezmoi.io)" -- init --no-tty --debug --source=$PWD --apply
+      - name: Verify local manual index hook
+        run: sh ./.github/scripts/test_man_db_hook.sh
       - name: Verify recurring chezmoi drift guards
         run: sh ./.github/scripts/test_chezmoi_drift.sh
       - name: Verify shell configuration parses
