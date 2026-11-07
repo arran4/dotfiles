@@ -144,7 +144,10 @@ jobs:
           ! grep -Fq '{{ template "hypr/special_workspaces.lua" . }}' "$hypr_tmpl"
           ! grep -Fq 'special:anytype' "$hypr_tmpl"
           ! grep -Fq 'special:anytype' "$special_src"
-          grep -Fq 'special:kjules' "$special_src"
+          if rg --hidden --ignore-case --line-number --glob '!.git/**' 'k[j]ules' .; then
+            echo 'Obsolete application integration remains in dotfiles' >&2
+            exit 1
+          fi
 
       - name: Test Beeper launcher priority and fallback
         run: sh .github/scripts/test_beeper_launch.sh
@@ -162,7 +165,6 @@ jobs:
             { class = "BeeperTexts", title = "Beeper" },
             { class = "org.kde.konsole", title = "shell" },
             { class = "Spotify", title = "Spotify" },
-            { class = "org.kde.kjules", title = "kJules" },
           }
 
           _G.hl = {
@@ -212,22 +214,20 @@ jobs:
           assert(type(special.workspace_for_window) == "function")
           special.setup({ terminal = { path = "/usr/bin/xterm", classes = { "xterm", "org.kde.konsole", "footclient" } } })
 
-          assert(#rules == 6, "music, Beeper, terminal, KMagMux, kJules and which_browser static rules should be registered")
+          assert(#rules == 5, "music, Beeper, terminal, KMagMux and which_browser static rules should be registered")
           assert(rules[1].workspace == "special:music")
           assert(rules[2].workspace == "special:beeper")
           assert(rules[3].workspace == "special:terminal")
           assert(rules[4].workspace == "special:kmagmux")
-          assert(rules[5].workspace == "special:kjules")
-          assert(rules[6].workspace == "special:which_browser")
+          assert(rules[5].workspace == "special:which_browser")
           assert(rules[2].match.class:find("BeeperTexts", 1, true))
           assert(rules[2].match.class:find([=[com\.automattic\.Beeper]=], 1, true))
           assert(rules[3].match.class:find([=[org\.kde\.konsole]=], 1, true))
           assert(rules[3].match.class:find("footclient", 1, true))
           assert(rules[4].match.class:find([=[org\.kde\.kmagmux]=], 1, true))
-          assert(rules[5].match.class:find("org.kde.kjules", 1, true))
-          assert(rules[6].match.class:find("com\\.arran4\\.whichbrowser\\.which_browser", 1, true))
+          assert(rules[5].match.class:find("com\\.arran4\\.whichbrowser\\.which_browser", 1, true))
 
-          assert(#workspace_rules == 7, "all seven named special workspaces should be persistent")
+          assert(#workspace_rules == 6, "all six named special workspaces should be persistent")
           local persistent = {}
           for _, rule in ipairs(workspace_rules) do
             persistent[rule.workspace] = true
@@ -237,7 +237,6 @@ jobs:
           assert(persistent["special:terminal"])
           assert(persistent["special:scratchpad"])
           assert(persistent["special:kmagmux"])
-          assert(persistent["special:kjules"])
           assert(persistent["special:which_browser"])
           assert(not persistent["special:anytype"])
 
@@ -247,13 +246,8 @@ jobs:
           assert(binds["SUPER + T"].special == "terminal")
           assert(binds["SUPER + D"].special == "scratchpad")
           assert(binds["SUPER + I"].special == "kmagmux")
-          assert(binds["SUPER + J"].special == "kjules")
-
-          assert(type(binds["SUPER + SHIFT + J"]) == "function")
-          local pre_execs = #execs
-          binds["SUPER + SHIFT + J"]()
-          assert(#execs == pre_execs + 1)
-          assert(execs[#execs][1] == "kjules --new-session")
+          assert(binds["SUPER + J"] == nil)
+          assert(binds["SUPER + SHIFT + J"] == nil)
 
           assert(special.workspace_for_window({ class = "Beeper" }) == "beeper")
           assert(special.workspace_for_window({ class = "com.automattic.Beeper" }) == "beeper")
@@ -261,15 +255,13 @@ jobs:
           assert(special.workspace_for_window({ class = "Spotify" }) == "music")
           assert(special.workspace_for_window({ class = "kmagmux" }) == "kmagmux")
           assert(special.workspace_for_window({ class = "org.kde.kmagmux" }) == "kmagmux")
-          assert(special.workspace_for_window({ class = "org.kde.kjules" }) == "kjules")
           assert(special.workspace_for_window({ class = "Anytype" }) == nil)
           assert(special.workspace_for_window({ class = "firefox", title = "Beeper - search" }) == nil)
 
-          assert(#routes == 4, "existing routed windows should be reconciled on setup")
+          assert(#routes == 3, "existing routed windows should be reconciled on setup")
           assert(routes[1].workspace == "special:beeper")
           assert(routes[2].workspace == "special:terminal")
           assert(routes[3].workspace == "special:music")
-          assert(routes[4].workspace == "special:kjules")
           assert(routes[1].follow == false)
           assert(routes[1].window == existing[1])
 
@@ -285,9 +277,6 @@ jobs:
 
           handlers["window.open"]({ class = "kmagmux", title = "KMagMux" })
           assert(routes[#routes].workspace == "special:kmagmux")
-
-          handlers["window.open"]({ class = "kjules", title = "kJules" })
-          assert(routes[#routes].workspace == "special:kjules")
 
           handlers["window.open"]({ class = "com.arran4.whichbrowser.which_browser", title = "Which Browser?" })
           assert(routes[#routes].workspace == "special:which_browser")
