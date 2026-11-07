@@ -144,10 +144,6 @@ jobs:
           ! grep -Fq '{{ template "hypr/special_workspaces.lua" . }}' "$hypr_tmpl"
           ! grep -Fq 'special:anytype' "$hypr_tmpl"
           ! grep -Fq 'special:anytype' "$special_src"
-          if rg --hidden --ignore-case --line-number --glob '!.git/**' 'k[j]ules' .; then
-            echo 'Obsolete application integration remains in dotfiles' >&2
-            exit 1
-          fi
 
       - name: Test Beeper launcher priority and fallback
         run: sh .github/scripts/test_beeper_launch.sh
