@@ -11,7 +11,10 @@ on:
       - 'containers/dev-dotfiles-debian/test-home-volume.sh'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
       - 'containers/dev-dotfiles-debian/agent-skills/**'
+      - 'containers/dev-dotfiles-debian/agent-plugins/**'
       - 'containers/dev-dotfiles-debian/sync-agent-skills.sh'
+      - 'containers/dev-dotfiles-debian/sync-agent-plugins.sh'
+      - 'containers/dev-dotfiles-debian/test-agent-plugins.sh'
       - 'containers/dev-dotfiles-debian/test-agent-skills.sh'
       - 'containers/dev-dotfiles-debian/README.md'
       - '.github/workflows/dev-container-launchers.yml'
@@ -26,7 +29,10 @@ on:
       - 'containers/dev-dotfiles-debian/test-home-volume.sh'
       - 'containers/dev-dotfiles-debian/test-launchers.sh'
       - 'containers/dev-dotfiles-debian/agent-skills/**'
+      - 'containers/dev-dotfiles-debian/agent-plugins/**'
       - 'containers/dev-dotfiles-debian/sync-agent-skills.sh'
+      - 'containers/dev-dotfiles-debian/sync-agent-plugins.sh'
+      - 'containers/dev-dotfiles-debian/test-agent-plugins.sh'
       - 'containers/dev-dotfiles-debian/test-agent-skills.sh'
       - 'containers/dev-dotfiles-debian/README.md'
       - '.github/workflows/dev-container-launchers.yml'
@@ -46,9 +52,11 @@ jobs:
           sh -n containers/dev-dotfiles-debian/entrypoint.sh
           sh -n containers/dev-dotfiles-debian/home-volume-seed.sh
           sh containers/dev-dotfiles-debian/test-home-volume.sh
-      - name: Check managed Codex and agy skills
+      - name: Check managed Codex skills and native Antigravity plugins
         run: |
           sh -n containers/dev-dotfiles-debian/sync-agent-skills.sh
+          sh -n containers/dev-dotfiles-debian/sync-agent-plugins.sh
           sh containers/dev-dotfiles-debian/test-agent-skills.sh
+          sh containers/dev-dotfiles-debian/test-agent-plugins.sh
           grep -F 'ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]' containers/dev-dotfiles-debian/Dockerfile
           ! grep -Fq 'home-volume-entrypoint' containers/dev-dotfiles-debian/Dockerfile
