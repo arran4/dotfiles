@@ -189,8 +189,10 @@ fi
 # The skeleton lives outside the seeded home to protect customized settings.
 (umask 077; rsync -r --ignore-existing /usr/local/share/dev-dotfiles-debian/skel/ "$HOME/")
 
-# Sync image-managed Antigravity CLI skills without overwriting personal edits.
+# Sync image-managed Antigravity skills and native plugins. Existing user
+# overrides are preserved, including modified legacy copies of migrated skills.
 /usr/local/bin/dev-dotfiles-sync-agent-skills
+/usr/local/bin/dev-dotfiles-sync-agent-plugins
 
 # Keep the host-Ollama default container-specific. Do not manage this through
 # the normal chezmoi source, because the same dotfiles are also applied directly
