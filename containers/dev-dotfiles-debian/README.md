@@ -1,6 +1,8 @@
 # Development container (Docker and Podman)
 
-The [Dockerfile](Dockerfile) builds a Debian-based development image with chezmoi-managed dotfiles, CLI tools, coding agents and optional nested container engines. Docker and Podman use the **same image**: `ghcr.io/arran4/dev-dotfiles-debian:latest`. This page documents image-specific operation and recovery; start with the [root README](../../README.md) for the personal machine bootstrap.
+The [Dockerfile](Dockerfile) builds a Debian-based development image with chezmoi-managed dotfiles, CLI tools, coding agents and optional nested container engines.
+
+The image includes the pinned upstream `ast-grep` CLI for amd64 and arm64 (`ast-grep --version`). The deprecated `sg` alias is intentionally omitted because it conflicts with the system utility. Docker and Podman use the **same image**: `ghcr.io/arran4/dev-dotfiles-debian:latest`. This page documents image-specific operation and recovery; start with the [root README](../../README.md) for the personal machine bootstrap.
 
 ## Start a project
 
