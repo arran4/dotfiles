@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "arran4-gosubc",
+  "version": "0.1.0",
+  "description": "Use the gosubc CLI to generate, validate, and maintain Go command trees, including man pages and agent skills.",
+  "author": {
+    "name": "arran4"
+  },
+  "repository": "https://github.com/arran4/dotfiles",
+  "keywords": [
+    "go",
+    "cli",
+    "gosubc",
+    "code-generation"
+  ]
+}
