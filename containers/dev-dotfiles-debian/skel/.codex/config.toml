@@ -16,3 +16,7 @@ raw_output_mode = true
 
 [tui.model_availability_nux]
 gpt-6-astra = 1
+
+[tui.keymap.chat]
+edit_queued_message = "alt-up"
+prompt_stack_back = "alt-down"
