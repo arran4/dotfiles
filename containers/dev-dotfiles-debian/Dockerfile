@@ -258,6 +258,10 @@ COPY --chmod=0755 containers/dev-dotfiles-debian/home-volume-seed.sh /usr/local/
 COPY containers/dev-dotfiles-debian/agent-skills/ /etc/codex/skills/
 COPY containers/dev-dotfiles-debian/agent-skills/ /usr/local/share/dev-dotfiles-debian/agent-skills/
 COPY --chmod=0755 containers/dev-dotfiles-debian/sync-agent-skills.sh /usr/local/bin/dev-dotfiles-sync-agent-skills
+# Native Antigravity plugins and their separate Codex skill projection.
+COPY containers/dev-dotfiles-debian/agent-plugins/ /usr/local/share/dev-dotfiles-debian/agent-plugins/
+COPY containers/dev-dotfiles-debian/agent-plugins/arran4-gosubc/skills/gosubc/ /etc/codex/skills/gosubc/
+COPY --chmod=0755 containers/dev-dotfiles-debian/sync-agent-plugins.sh /usr/local/bin/dev-dotfiles-sync-agent-plugins
 
 # Prepare the home as the non-root user, then archive and clear it as root in
 # the SAME layer. This avoids a temporary full home in an intermediate image
