@@ -9,6 +9,7 @@ ARG USER_NAME=user
 ARG USER_UID=1000
 ARG USER_GID=1000
 ARG CODEX_RELEASE=latest
+ARG AST_GREP_VERSION=0.45.3
 ARG FLUTTER_CHANNEL=stable
 ARG DOTFILES_RELEASE=unknown
 ARG DOTFILES_COMMIT=unknown
@@ -181,6 +182,22 @@ RUN set -euxo pipefail \
   && curl -fsLS https://raw.githubusercontent.com/twpayne/chezmoi/master/assets/scripts/install.sh | sh -s -- -b /usr/local/bin \
   && git clone --depth 1 --branch "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git /opt/flutter \
   && chown -R "${USER_UID}:${USER_GID}" /opt/flutter
+
+# ast-grep is not in the base Debian apt repositories. Install the pinned
+# upstream CLI release; avoid the deprecated 'sg' alias (util-linux collision).
+RUN set -eu; \
+  case "$(dpkg --print-architecture)" in \
+    amd64) ast_grep_target=x86_64-unknown-linux-gnu ;; \
+    arm64) ast_grep_target=aarch64-unknown-linux-gnu ;; \
+    *) echo 'ast-grep: unsupported architecture' >&2; exit 1 ;; \
+  esac; \
+  archive="$(mktemp)"; \
+  trap 'rm -f "$archive"' EXIT; \
+  curl -fsSL --retry 3 --output "$archive" \
+    "https://github.com/ast-grep/ast-grep/releases/download/${AST_GREP_VERSION}/app-${ast_grep_target}.zip"; \
+  unzip -p "$archive" ast-grep > /usr/local/bin/ast-grep; \
+  chmod 0755 /usr/local/bin/ast-grep; \
+  ast-grep --version | grep -F "${AST_GREP_VERSION}"
 
 # Install all development CLIs together using Go's module installer.
 # txtar uses 'module txtar', so it must be built inside a local checkout
