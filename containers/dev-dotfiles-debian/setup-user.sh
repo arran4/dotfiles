@@ -29,6 +29,12 @@ install_shell_script_url() {
 
 install_shell_script_url https://antigravity.google/cli/install.sh
 agy --version
+# Validate the real client-facing plugin package during image builds, not just
+# its manifest shape in offline CI. This does not install or enable a plugin.
+for plugin_dir in /usr/local/share/dev-dotfiles-debian/agent-plugins/*; do
+  [ -f "$plugin_dir/plugin.json" ] || continue
+  agy plugin validate --strict "$plugin_dir"
+done
 
 # The endless yes process may exit with SIGPIPE once chezmoi finishes reading.
 # Preserve chezmoi's exit status without treating yes's SIGPIPE as a failure.
