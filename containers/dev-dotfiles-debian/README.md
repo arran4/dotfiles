@@ -145,9 +145,15 @@ curl -fsS http://host.docker.internal:11434/v1/models | jq .
 opencode --auto
 ```
 
-### Image-managed agent skills and browser
+### Image-managed agent skills, plugins and browser
 
-`agent-skills/<name>/SKILL.md` is the source for managed Codex and Antigravity skills. Codex receives image-owned skills under `/etc/codex/skills`; Antigravity syncs them to `~/.gemini/antigravity-cli/skills` without overwriting modified or unrelated user skills. Removed image skills are not automatically deleted from persistent homes. Updating Codex's image-owned skills requires a new image; inspect `/skills` inside a running agent, not just the filesystem.
+`agent-skills/<name>/SKILL.md` remains the source for standalone Codex and Antigravity skills. Codex receives image-owned skills under `/etc/codex/skills`; Antigravity syncs them to `~/.gemini/antigravity-cli/skills` without overwriting modified or unrelated user skills. Removed ordinary image skills are not automatically deleted from persistent homes. Updating Codex's image-owned skills requires a new image; inspect `/skills` inside a running agent, not just the filesystem.
+
+`agent-plugins/arran4-gosubc/` is the first portable Agent Plugins v1 package, with `plugin.json` and `skills/gosubc/SKILL.md`. Antigravity App, CLI and IDE support native plugins: the entrypoint synchronizes image-owned packages to `~/.gemini/config/plugins/` while preserving manually installed or edited plugins. Codex still receives the identical `gosubc` skill in `/etc/codex/skills/gosubc`. No separate MCP service or privilege is introduced by this skill-only plugin.
+
+On the first updated image launch, the sync removes the former `~/.gemini/antigravity-cli/skills/gosubc` only when its contents still match the hash of an image-managed copy **and** the new native plugin has been installed unchanged. Edited, symlinked or user-owned legacy skills are preserved; inspect them manually if `gosubc` appears twice. Other skills remain on their existing paths.
+
+Validate the plugin with `agy plugin validate --strict containers/dev-dotfiles-debian/agent-plugins/arran4-gosubc` from a checkout with `agy` installed; inspect installation using `agy plugin list --json`. On a host without the managed image, `agy plugin install /path/to/arran4-gosubc` is also supported. The CI shell tests do not claim to execute the Antigravity CLI itself. See the [Antigravity plugin documentation](https://antigravity.google/docs/build-plugins) and [Agent Plugins v1 specification](https://agent-plugins.org/specification).
 
 The image also ships `playwright-cli` with a shared headless Chromium shell, intended for automation. Headed operation needs additional GUI support. The smoke test verifies a local fixture without requiring a public website.
 
@@ -165,6 +171,7 @@ From the repository root:
 sh containers/dev-dotfiles-debian/test-home-volume.sh
 sh containers/dev-dotfiles-debian/test-launchers.sh
 sh containers/dev-dotfiles-debian/test-agent-skills.sh
+sh containers/dev-dotfiles-debian/test-agent-plugins.sh
 sh containers/dev-dotfiles-debian/test-release-clis.sh
 sh containers/dev-dotfiles-debian/test-txtar.sh
 sh containers/dev-dotfiles-debian/test-playwright.sh
