@@ -91,10 +91,10 @@ while IFS= read -r repo; do
     fi
   done <<< "$artifacts"
 
-  ((all_bytes+=bytes_sum))
-  ((old_bytes+=old_sum))
-  ((all_count+=count))
-  ((old_count+=old))
+  all_bytes=$((all_bytes + bytes_sum))
+  old_bytes=$((old_bytes + old_sum))
+  all_count=$((all_count + count))
+  old_count=$((old_count + old))
   if ((count>0)) || [[ "$retention" != 1 ]]; then
     printf '%s: retention=%s days; artifacts=%d, bytes=%d; over 24h=%d, old bytes=%d\n' "$repo" "$retention" "$count" "$bytes_sum" "$old" "$old_sum"
   fi
