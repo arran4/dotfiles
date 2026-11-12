@@ -212,6 +212,8 @@ jobs:
       - run: |
           shopt -s globstar
           shellcheck **/*.sh
+          shellcheck home/dot_local/bin/executable_gh-actions-storage
+          bash -n home/dot_local/bin/executable_gh-actions-storage
           shellcheck .github/scripts/release_aliases.sh .github/scripts/test_release_safety.sh .github/scripts/prepare_release_tag.sh .github/scripts/test_manual_release.sh
       - name: Release safety regression tests
         run: |
