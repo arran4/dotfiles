@@ -1,0 +1,52 @@
+.TH GH-ACTIONS-STORAGE 1 "November 2026" "arran4 dotfiles" "User Commands"
+.SH NAME
+gh-actions-storage \- audit retained GitHub Actions artifacts and repository retention
+.SH SYNOPSIS
+.B gh-actions-storage
+.RB [ --owner " " LOGIN ]
+.RB [ --include-public ]
+.RB [ --set-retention-1d ]
+.RB [ --delete-old-artifacts ]
+.SH DESCRIPTION
+Audits non-archived private repositories owned by arran4 by default.
+Shows current artifact sizes and repository-level workflow run, log, check,
+and artifact retention. Read-only unless an explicit write flag is provided.
+Current bytes are not the same as accrued monthly gigabyte-hours.
+.SH OPTIONS
+.TP
+.BI --owner " LOGIN"
+Select an account owner other than arran4.
+.TP
+.B --include-public
+Include public repositories.
+.TP
+.B --set-retention-1d
+Set retention for NEW workflow runs, checks, artifacts and logs to one day.
+Requires repository Administration write permission.
+It cannot retroactively shorten existing artifacts.
+.TP
+.B --delete-old-artifacts
+Permanently delete existing Actions artifacts created over 24 hours ago.
+Requires Actions write permission; may remove files needed for manual review
+or unfinished release workflows. Does not remove workflow logs, caches,
+GitHub Releases or Packages, or reverse already-accrued billing.
+.TP
+.BR -h ", " --help
+Print help.
+.SH EXAMPLES
+.nf
+gh-actions-storage
+gh-actions-storage --set-retention-1d
+gh-actions-storage --delete-old-artifacts
+.fi
+.SH PREREQUISITES
+Requires authenticated
+.BR gh (1),
+GNU
+.BR date (1),
+and
+.BR awk (1).
+No credentials are stored in dotfiles.
+.SH SAFETY
+Run the read-only audit and check release needs before deleting artifacts.
+Retention and deletion operations are always explicitly opted into.
