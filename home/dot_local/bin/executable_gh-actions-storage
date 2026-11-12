@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Audit Actions artifact storage; mutations must be explicitly requested.
+set -euo pipefail
+
+owner=arran4
+include_public=false
+apply=false
+delete_old=false
+
+usage() {
+  echo "Usage: gh-actions-storage [--owner LOGIN] [--include-public] [--set-retention-1d] [--delete-old-artifacts]"
+  echo "Read-only by default. Deletion is permanent and opt-in."
+}
+
+while (( $# )); do
+  case "$1" in
+    --owner) (( $# > 1 )) || { usage >&2; exit 2; }; owner=$2; shift 2 ;;
+    --include-public) include_public=true; shift ;;
+    --set-retention-1d) apply=true; shift ;;
+    --delete-old-artifacts) delete_old=true; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) usage >&2; exit 2 ;;
+  esac
+done
+
+[[ "$owner" =~ ^[A-Za-z0-9-]+$ ]] || { echo "Invalid owner" >&2; exit 2; }
+for cmd in gh date awk; do command -v "$cmd" >/dev/null || { echo "Missing $cmd" >&2; exit 2; }; done
+gh auth status -h github.com >/dev/null 2>&1 || { echo "Run gh auth login first" >&2; exit 1; }
+
+header='X-GitHub-Api-Version: 2026-03-10'
+cutoff=$(date -u -d '24 hours ago' '+%Y-%m-%dT%H:%M:%SZ')
+filter='.[] | select(.isArchived == false and .isPrivate == true) | .nameWithOwner'
+if [[ "$include_public" == true ]]; then
+  filter='.[] | select(.isArchived == false) | .nameWithOwner'
+fi
+
+repos=$(gh repo list "$owner" --limit 1000 --json nameWithOwner,isPrivate,isArchived --jq "$filter")
+[[ -n "$repos" ]] || { echo "No matching repositories"; exit 0; }
+
+checked=0
+failures=0
+all_bytes=0
+old_bytes=0
+all_count=0
+old_count=0
+
+while IFS= read -r repo; do
+  [[ -n "$repo" ]] || continue
+  ((checked+=1))
+  if ! retention=$(gh api -H "$header" "repos/$repo/actions/permissions/artifact-and-log-retention" --jq '.days'); then
+    echo "WARNING: retention unavailable for $repo" >&2
+    ((failures+=1))
+    continue
+  fi
+
+  if [[ "$apply" == true && "$retention" != 1 ]]; then
+    if gh api -H "$header" -X PUT -F days=1 "repos/$repo/actions/permissions/artifact-and-log-retention" >/dev/null; then
+      echo "UPDATED retention: $repo (now 1 day; new runs only)"
+      retention=1
+    else
+      echo "WARNING: retention update failed for $repo" >&2
+      ((failures+=1))
+    fi
+  fi
+
+  if ! artifacts=$(gh api --paginate "repos/$repo/actions/artifacts?per_page=100" --jq '.artifacts[] | [.id,.size_in_bytes,.created_at,.name] | @tsv'); then
+    echo "WARNING: artifacts unavailable for $repo" >&2
+    ((failures+=1))
+    continue
+  fi
+
+  count=0
+  bytes_sum=0
+  old=0
+  old_sum=0
+  while IFS=$'\t' read -r id size created name; do
+    [[ -n "$id" ]] || continue
+    ((count+=1))
+    ((bytes_sum+=size))
+    if [[ "$created" < "$cutoff" ]]; then
+      ((old+=1))
+      ((old_sum+=size))
+      if [[ "$delete_old" == true ]]; then
+        if gh api -X DELETE "repos/$repo/actions/artifacts/$id" >/dev/null; then
+          echo "DELETED: $repo artifact $id ($name)"
+        else
+          echo "WARNING: deletion failed: $repo artifact $id" >&2
+          ((failures+=1))
+        fi
+      fi
+    fi
+  done <<< "$artifacts"
+
+  ((all_bytes+=bytes_sum))
+  ((old_bytes+=old_sum))
+  ((all_count+=count))
+  ((old_count+=old))
+  if ((count>0)) || [[ "$retention" != 1 ]]; then
+    printf '%s: retention=%s days; artifacts=%d, bytes=%d; over 24h=%d, old bytes=%d\n' "$repo" "$retention" "$count" "$bytes_sum" "$old" "$old_sum"
+  fi
+done <<< "$repos"
+
+printf '\nChecked %d repos, %d current artifacts (%.2f MiB); %d older than 24h (%.2f MiB).\n' "$checked" "$all_count" "$(awk -v b="$all_bytes" 'BEGIN {print b/1048576}')" "$old_count" "$(awk -v b="$old_bytes" 'BEGIN {print b/1048576}')"
+echo "Current bytes are not billing-cycle GB-hours; new retention does not affect old artifacts."
+((failures==0)) || { echo "$failures operations failed" >&2; exit 1; }
