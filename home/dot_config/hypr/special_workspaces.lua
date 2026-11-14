@@ -531,7 +531,7 @@ function M.setup(options)
         hl.exec_cmd(terminal.path, { workspace = "special:terminal silent" })
       end
     end
-    hl.exec_cmd("flatpak run com.spotify.Client", { workspace = "special:music silent" })
+    -- Spotify is launched on demand by Super+M.
     hl.exec_cmd("beeper-launch", { workspace = "special:beeper silent" })
   end)
 end

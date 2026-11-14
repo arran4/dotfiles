@@ -299,8 +299,29 @@ jobs:
               if cmd[1] == "beeper-launch" and cmd[2].workspace == "special:beeper silent" then has_beeper = true end
             end
           end
-          assert(autostart_count == 3, "only terminal, Spotify and Beeper should autostart from special workspace config")
-          assert(has_term and has_spotify and has_beeper, "missing expected autostart application")
+          assert(autostart_count == 2, "only terminal and Beeper should autostart from special workspace config")
+          assert(has_term and has_beeper, "missing expected autostart application")
+          assert(not has_spotify, "Spotify must only launch on demand")
+
+          -- Exercise the on-demand binding with the modern workspace APIs.
+          existing = {}
+          handlers = {}
+          execs = {}
+          hl.get_active_special_workspace = function() return nil end
+          hl.get_workspace_windows = function() return {} end
+          special.setup({ terminal = { path = "/usr/bin/xterm", classes = { "xterm" } } })
+          handlers["hyprland.start"]()
+          for _, cmd in ipairs(execs) do
+            assert(cmd[1] ~= "flatpak run com.spotify.Client", "modern startup must not launch Spotify")
+          end
+          local before_music = #execs
+          binds["SUPER + M"]()
+          assert(#execs == before_music + 1, "Super+M must launch Spotify when no window exists")
+          assert(execs[#execs][1] == "flatpak run com.spotify.Client")
+          assert(execs[#execs][2].workspace == "special:music silent")
+          existing = { { class = "Spotify", title = "Spotify" } }
+          binds["SUPER + M"]()
+          assert(#execs == before_music + 1, "Super+M must reuse an existing Spotify window")
 
           print("Hyprland special workspace module tests passed")
           LUA
