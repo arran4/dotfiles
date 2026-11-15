@@ -116,6 +116,12 @@ HOME="$tmp/migrate-linked" sh "$migration"
 test -f "$tmp/migrate-linked/.codex/antigravity-cli/settings.json"
 test "$(cat "$tmp/outside/settings.json")" = 'external settings'
 
+# Verify that the default planner/executor model and container workspace
+# trust are explicitly set in the Agy seed.
+agy_settings="$here/skel/.gemini/antigravity-cli/settings.json"
+jq -e '.model == "Orchestrator (Argon)" and
+  .trustedWorkspaces == ["/workspace"]' "$agy_settings" >/dev/null
+
 # New project homes get a valid consumer-onboarding default from the
 # production skeleton; existing onboarding files must not be overwritten.
 onboarding_source="$here/skel/.gemini/antigravity-cli/cache/onboarding.json"
