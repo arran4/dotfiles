@@ -55,7 +55,6 @@ if [ -f "$marker" ]; then
     --exclude='./.codex/history.jsonl' \
     --exclude='./.codex/sessions' \
     --exclude='./.gemini/oauth_creds.json' \
-    --exclude='./.gemini/antigravity-cli/settings.json' \
     -xf "$archive"
 else
   tar -C "$HOME" --no-same-owner --no-overwrite-dir -xf "$archive"
