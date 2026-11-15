@@ -1,4 +1,5 @@
 {
+  "model": "Gemini 4 Hydrogen (High)",
   "trustedWorkspaces": [
     "/workspace"
   ]
