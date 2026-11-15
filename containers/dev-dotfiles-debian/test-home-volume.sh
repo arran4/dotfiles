@@ -52,6 +52,9 @@ printf 'image config v2\n' > "$tmp/seed/.config/example"
 printf 'new image history\n' > "$tmp/seed/.zsh_history"
 mkdir -p "$tmp/seed/.config/gh"
 printf 'build-time auth placeholder\n' > "$tmp/seed/.config/gh/hosts.yml"
+mkdir -p "$tmp/seed/.gemini/antigravity-cli" "$tmp/home/.gemini/antigravity-cli"
+printf '{"model":"Gemini 4 Hydrogen (High)"}\n' > "$tmp/seed/.gemini/antigravity-cli/settings.json"
+printf '{"model":"Gemini 4 Argon (Medium)"}\n' > "$tmp/home/.gemini/antigravity-cli/settings.json"
 tar -C "$tmp/seed" -cf "$tmp/seed.tar" .
 printf 'image-v2:sha256-v2\n' > "$tmp/version"
 seed_home
@@ -61,6 +64,8 @@ test "$(cat "$tmp/home/.config/gh/hosts.yml")" = 'runtime token'
 test "$(cat "$tmp/home/.zsh_history")" = 'user history'
 test "$(cat "$tmp/workspace/README")" = 'existing checkout'
 test "$(cat "$tmp/home/.dev-dotfiles-seed-version")" = 'image-v2:sha256-v2'
+# A new image model default must not replace an existing Agy model selection.
+jq -e '.model == "Gemini 4 Argon (Medium)"' "$tmp/home/.gemini/antigravity-cli/settings.json" >/dev/null
 
 # A missing archive must not advance the version. Restoring it retries the
 # pending upgrade rather than considering a failed upgrade complete.
@@ -137,5 +142,36 @@ mkdir -p "$tmp/onboarding-custom/.gemini/antigravity-cli/cache"
 printf '{"onboardingComplete":false}\n' > "$tmp/onboarding-custom/$onboarding_path"
 (umask 077; rsync -r --ignore-existing "$here/skel/" "$tmp/onboarding-custom/")
 test "$(cat "$tmp/onboarding-custom/$onboarding_path")" = '{"onboardingComplete":false}'
+
+# Existing settings without an explicitly chosen model adopt the new default.
+default_script="$here/set-agy-default-model.sh"
+settings="$tmp/agy-settings/settings.json"
+mkdir -p "$(dirname "$settings")"
+printf '{"trustedWorkspaces":["/workspace"]}\n' > "$settings"
+DEV_AGY_SETTINGS_PATH="$settings" sh "$default_script"
+jq -e '.model == "Gemini 4 Hydrogen (High)" and
+  .trustedWorkspaces == ["/workspace"]' "$settings" >/dev/null
+test "$(stat -c %a "$settings")" = 600
+
+# Explicitly chosen models must survive repeated starts and upgrades.
+printf '{"model":"Gemini 4 Argon (Medium)","trustedWorkspaces":["/workspace"]}\n' > "$settings"
+DEV_AGY_SETTINGS_PATH="$settings" sh "$default_script"
+jq -e '.model == "Gemini 4 Argon (Medium)"' "$settings" >/dev/null
+printf '{"model":"Gemini 3.8 Flash (High)"}\n' > "$settings"
+DEV_AGY_SETTINGS_PATH="$settings" sh "$default_script"
+jq -e '.model == "Gemini 3.8 Flash (High)"' "$settings" >/dev/null
+
+# Do not rewrite corrupt or symlinked settings, and do not create absent files.
+printf 'invalid JSON\n' > "$settings"
+DEV_AGY_SETTINGS_PATH="$settings" sh "$default_script"
+test "$(cat "$settings")" = 'invalid JSON'
+printf 'outside\n' > "$tmp/outside-agy-settings"
+rm "$settings"
+ln -s "$tmp/outside-agy-settings" "$settings"
+DEV_AGY_SETTINGS_PATH="$settings" sh "$default_script"
+test "$(cat "$tmp/outside-agy-settings")" = 'outside'
+rm "$settings"
+DEV_AGY_SETTINGS_PATH="$settings" sh "$default_script"
+test ! -e "$settings"
 
 echo 'Home volume seed and Antigravity migration tests passed.'
