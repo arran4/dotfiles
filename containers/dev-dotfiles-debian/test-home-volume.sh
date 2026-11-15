@@ -116,6 +116,11 @@ HOME="$tmp/migrate-linked" sh "$migration"
 test -f "$tmp/migrate-linked/.codex/antigravity-cli/settings.json"
 test "$(cat "$tmp/outside/settings.json")" = 'external settings'
 
+# The container's Agy default is explicit and preserves its trusted workspace.
+settings_source="$here/skel/.gemini/antigravity-cli/settings.json"
+jq -e '.model == "Gemini 4 Hydrogen (High)" and
+  .trustedWorkspaces == ["/workspace"]' "$settings_source" >/dev/null
+
 # New project homes get a valid consumer-onboarding default from the
 # production skeleton; existing onboarding files must not be overwritten.
 onboarding_source="$here/skel/.gemini/antigravity-cli/cache/onboarding.json"
