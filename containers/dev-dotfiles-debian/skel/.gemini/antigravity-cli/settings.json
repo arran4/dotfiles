@@ -1,4 +1,5 @@
 {
+  "model": "Orchestrator (Argon)",
   "trustedWorkspaces": [
     "/workspace"
   ]
