@@ -189,9 +189,6 @@ fi
 # The skeleton lives outside the seeded home to protect customized settings.
 (umask 077; rsync -r --ignore-existing /usr/local/share/dev-dotfiles-debian/skel/ "$HOME/")
 
-# Apply the container default only to homes without an explicitly chosen model.
-/usr/local/bin/dev-dotfiles-set-agy-default-model
-
 # Sync image-managed Antigravity CLI skills without overwriting personal edits.
 /usr/local/bin/dev-dotfiles-sync-agent-skills
 
