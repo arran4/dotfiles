@@ -11,6 +11,7 @@ podman_security=${DEV_PODMAN_SECURITY:-nested}
 container_persist=${DEV_CONTAINER_PERSIST:-0}
 workspace_mode=${DEV_WORKSPACE_MODE:-bind}
 home_mode=${DEV_HOME_MODE:-volume}
+cache_mode=${DEV_CACHE_MODE:-auto}
 
 usage() {
   echo 'Usage: run-dev-podman.sh [--podman-security=nested|unconfined|privileged|off] [--persist-container|--ephemeral-container] [--no-home-volume] [--no-workspace-mount]' >&2
@@ -35,6 +36,12 @@ esac
 case "$container_persist" in
   0|1) ;;
   *) echo 'DEV_CONTAINER_PERSIST must be 0 or 1.' >&2; exit 2 ;;
+esac
+case "$cache_mode" in
+  auto)
+    if [ "$container_persist" = 1 ]; then cache_mode=persistent; else cache_mode=ephemeral; fi ;;
+  ephemeral|persistent) ;;
+  *) echo 'DEV_CACHE_MODE must be auto, ephemeral or persistent.' >&2; exit 2 ;;
 esac
 command -v podman >/dev/null 2>&1 || { echo 'podman is required.' >&2; exit 1; }
 
@@ -166,10 +173,21 @@ set -- "$@" \
   --env DEV_OUTER_ENGINE=podman \
   --env DEV_CONTAINER_NAME="$container" \
   --env DEV_CONTAINER_PERSIST="$container_persist" \
+  --env DEV_CACHE_MODE="$cache_mode" \
   --env TZ="$container_tz" \
   --env DEV_PODMAN_SECURITY="$podman_security" \
   --env DEV_DIND="$dind" \
   --env DEV_DIND_PERSIST="$dind_persist"
+
+# Keep disposable build caches on disk in the outer writable layer, not in
+# the persistent per-project home or memory-backed tmpfs.
+if [ "$cache_mode" = ephemeral ]; then
+  set -- "$@" \
+    --env GOCACHE=/var/tmp/dev-agent-cache/go-build \
+    --env npm_config_cache=/var/tmp/dev-agent-cache/npm \
+    --env PIP_CACHE_DIR=/var/tmp/dev-agent-cache/pip \
+    --env UV_CACHE_DIR=/var/tmp/dev-agent-cache/uv
+fi
 
 if [ "$layout" = home ]; then
   set -- "$@" --env DEV_HOME_VOLUME_INIT=1

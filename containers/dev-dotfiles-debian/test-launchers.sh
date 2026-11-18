@@ -82,6 +82,11 @@ for engine in podman docker; do
   assert_line 'DEV_DIND=1'
   assert_line 'DEV_DIND_PERSIST=0'
   assert_line 'DEV_CONTAINER_PERSIST=0'
+  assert_line 'DEV_CACHE_MODE=ephemeral'
+  assert_line 'GOCACHE=/var/tmp/dev-agent-cache/go-build'
+  assert_line 'npm_config_cache=/var/tmp/dev-agent-cache/npm'
+  assert_line 'PIP_CACHE_DIR=/var/tmp/dev-agent-cache/pip'
+  assert_line 'UV_CACHE_DIR=/var/tmp/dev-agent-cache/uv'
   assert_line '--rm'
   assert_absent '--restart=no'
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
@@ -93,6 +98,8 @@ for engine in podman docker; do
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_line 'DEV_CONTAINER_PERSIST=1'
+  assert_line 'DEV_CACHE_MODE=persistent'
+  assert_absent 'GOCACHE=/var/tmp/dev-agent-cache/go-build'
   assert_line '--restart=no'
   assert_absent '--rm'
 
@@ -292,6 +299,23 @@ for engine in podman docker; do
     echo 'Expected invalid Podman security mode to be rejected' >&2; exit 1
   fi
   grep -F 'Podman security must be' "$tmp/error" >/dev/null
+  assert_no_call "$engine run "
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_CACHE_MODE=persistent SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  assert_line 'DEV_CACHE_MODE=persistent'
+  assert_absent 'GOCACHE=/var/tmp/dev-agent-cache/go-build'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_CONTAINER_PERSIST=1 DEV_CACHE_MODE=ephemeral SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  assert_line 'DEV_CACHE_MODE=ephemeral'
+  assert_line 'GOCACHE=/var/tmp/dev-agent-cache/go-build'
+
+  : > "$MOCK_LOG"
+  if MOCK_SEED_LABEL=1 DEV_CACHE_MODE=invalid SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+    echo 'Expected invalid cache mode to be rejected' >&2; exit 1
+  fi
+  grep -F 'DEV_CACHE_MODE must be auto, ephemeral or persistent' "$tmp/error" >/dev/null
   assert_no_call "$engine run "
 
 done

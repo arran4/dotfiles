@@ -34,6 +34,32 @@ run-dev-podman.sh --persist-container
 
 The current project directory is normally bind-mounted at `/workspace`; `DEV_WORKSPACE_MODE=volume` makes it an independent named volume, and `--no-workspace-mount` keeps it in the outer writable layer. For a disposable home use `--no-home-volume`, which requires a seeded image. Docker and Podman have **separate** container and volume stores.
 
+### Build-cache lifecycle
+
+Disposable outer containers default to **ephemeral build caches** with
+`DEV_CACHE_MODE=auto`. Go compilation (`GOCACHE`), npm, pip and uv caches
+are redirected to `/var/tmp/dev-agent-cache/` in the outer container's
+**disk-backed writable layer**, not tmpfs/RAM or the persistent project home.
+They disappear when the `--rm` outer container exits. Go module downloads
+(`GOMODCACHE` / `~/.go/pkg/mod`), credentials, projects, and nested-engine
+storage retain their current lifecycle.
+
+Retained outer containers (`--persist-container`) default to persistent
+caches because their writable layer survives restarts. Override explicitly:
+
+```sh
+DEV_CACHE_MODE=persistent run-dev-podman.sh
+DEV_CACHE_MODE=ephemeral run-dev-podman.sh
+```
+
+Both Podman and Docker support `auto`, `ephemeral` and `persistent`.
+An explicitly ephemeral cache in a *retained* container persists until that
+container is removed. Existing retained containers must be re-created to
+change their environment. Existing caches in named project-home volumes
+are **not** removed by this change; use the host-side cleanup helper for that.
+If a custom container configuration mounts `/var/tmp` on tmpfs, these caches
+will follow that mount, unlike the normal disk-backed writable layer.
+
 ### Build the current image locally
 
 The repository deliberately has one Dockerfile and no separate home-volume trial image:
