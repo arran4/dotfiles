@@ -47,6 +47,32 @@ DEV_IMAGE=dev-dotfiles-local:dev run-dev-podman.sh
 
 Use `docker build` and `run-dev-docker.sh` for Docker. A custom image must have the seeded-home label: `io.github.arran4.dev-dotfiles.home-seed=1`. A published image without that label uses a legacy compatibility layout; an unlabelled custom image is not accepted.
 
+### Clean persistent project-home caches
+
+To inspect existing regenerable Go build, npm, pip, uv and yarn caches
+in *rootless Podman* project homes without deleting anything:
+
+```sh
+clean-dev-agent-caches.sh --all
+clean-dev-agent-caches.sh --project gogenmux
+```
+
+Once all rootless Podman containers have stopped, opt in to cleanup:
+
+```sh
+clean-dev-agent-caches.sh --project gogenmux --apply
+# Or after reviewing every project:
+clean-dev-agent-caches.sh --all --apply
+```
+
+This helper checks actual mountpoints against rootless GraphRoot and
+uses `podman unshare` so mapped UIDs work. Only explicitly listed
+cache subdirectories are removed; symlinks are skipped. Workspaces,
+Go module downloads, named volumes, authentication, agent state,
+nested-engine data and Docker volumes remain untouched. This is
+independent of Btrfs balancing and does not guarantee metadata recovery.
+See `man clean-dev-agent-caches.sh`.
+
 ## Image release and update
 
 `:latest` follows the newest stable published image, not every commit merged to `main`. A release also publishes version-specific tags; prereleases do not replace `:latest`. A successful CI run or PR merge alone does not publish an image, and an image cached locally will not update without a pull.

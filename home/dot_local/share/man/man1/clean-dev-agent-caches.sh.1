@@ -1,0 +1,56 @@
+.TH "CLEAN-DEV-AGENT-CACHES.SH" "1" "November 2026" "arran4/dotfiles" "User Commands"
+.SH NAME
+clean\-dev\-agent\-caches.sh \- inspect and clear regenerable caches from Podman project homes
+.SH SYNOPSIS
+.nf
+\fBclean\-dev\-agent\-caches.sh --all [--apply]\fR
+\fBclean\-dev\-agent\-caches.sh --project NAME [--apply]\fR
+.fi
+.SH DESCRIPTION
+Inspect named rootless Podman volumes of the form
+dev-agent-<name>-project-home. Dry-run by default; --apply opts
+into removing cache directories only. Other volumes and Docker
+storage are out of scope.
+.SH OPTIONS
+.TP
+\fB--all\fR
+Inspect all matching project homes.
+.TP
+\fB--project NAME\fR
+Inspect just one normalized lowercase project slug.
+.TP
+\fB--apply\fR
+Delete allowlisted caches. Refuses to run if any rootless Podman
+container is running. Never remove named volumes.
+.TP
+\fB--help\fR
+Show usage.
+.SH CACHE ALLOWLIST
+.nf
+.cache/go-build
+.cache/pip
+.cache/uv
+.cache/yarn
+.npm/_cacache
+.fi
+.PP
+No complete .cache, .npm, .go, .config, agent-credential or
+workspace directories are deleted. Paths with symlinked parents
+or targets are skipped. Podman volume mountpoints are validated
+against its GraphRoot and commands run through podman unshare.
+.SH EXAMPLES
+.nf
+clean-dev-agent-caches.sh --all
+clean-dev-agent-caches.sh --project gogenmux
+clean-dev-agent-caches.sh --project gogenmux --apply
+clean-dev-agent-caches.sh --all --apply
+sudo btrfs filesystem usage /home
+.fi
+.SH SAFETY
+Run as the ordinary rootless Podman user, not sudo. Stop all
+containers before applying. No automatic deletions are performed
+at container launch. Interrupted cleanup can leave partly cleared
+but regenerable caches. This command does not run Btrfs balance
+or remove any Go module downloads.
+.SH SEE ALSO
+run\-dev\-podman.sh(1), run\-dev\-docker.sh(1)
