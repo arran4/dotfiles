@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+# Validate and initialize only the requested anonymous cache mount before
+# applying home seeds, which may contain cache files.
+if [ "${DEV_CACHE_VOLUME_INIT:-0}" = 1 ]; then
+  /usr/local/bin/dev-dotfiles-cache-volume-init
+fi
+
 # Published seeded images carry their prepared home outside /home/user. Seed
 # before creating runtime configuration so a new named home volume is populated
 # on first start and receives updated defaults after an image upgrade. During
@@ -121,6 +127,7 @@ fi
 printf '  DEV_PODMAN_SECURITY=%s\n' "${DEV_PODMAN_SECURITY:-not supplied}"
 printf '  DEV_DIND=%s\n' "${DEV_DIND:-not supplied}"
 printf '  DEV_DIND_PERSIST=%s\n' "${DEV_DIND_PERSIST:-not supplied}"
+printf '  DEV_CACHE_MODE=%s\n' "${DEV_CACHE_MODE:-not supplied}"
 
 case "${DEV_PODMAN_SECURITY:-unknown}" in
   nested)
