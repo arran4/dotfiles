@@ -82,6 +82,22 @@ for engine in podman docker; do
   assert_line 'DEV_DIND=1'
   assert_line 'DEV_DIND_PERSIST=0'
   assert_line 'DEV_CONTAINER_PERSIST=0'
+  assert_line 'DEV_CACHE_MODE=ephemeral'
+  assert_line 'DEV_CACHE_VOLUME_INIT=1'
+  assert_line 'XDG_CACHE_HOME=/home/user/.cache'
+  assert_line 'GOCACHE=/home/user/.cache/go-build'
+  assert_line 'GOMODCACHE=/home/user/.cache/go-mod'
+  assert_line 'npm_config_cache=/home/user/.cache/npm'
+  assert_line 'PIP_CACHE_DIR=/home/user/.cache/pip'
+  assert_line 'UV_CACHE_DIR=/home/user/.cache/uv'
+  assert_line 'YARN_CACHE_FOLDER=/home/user/.cache/yarn'
+  assert_line 'PUB_CACHE=/home/user/.cache/pub'
+  assert_line 'COREPACK_HOME=/home/user/.cache/corepack'
+  if [ "$engine" = podman ]; then
+    assert_line '/home/user/.cache:nocopy'
+  else
+    assert_line 'type=volume,dst=/home/user/.cache,volume-nocopy'
+  fi
   assert_line '--rm'
   assert_absent '--restart=no'
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
@@ -93,6 +109,11 @@ for engine in podman docker; do
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_line 'DEV_CONTAINER_PERSIST=1'
+  assert_line 'DEV_CACHE_MODE=persistent'
+  assert_absent 'DEV_CACHE_VOLUME_INIT=1'
+  assert_absent 'GOCACHE=/home/user/.cache/go-build'
+  assert_absent '/home/user/.cache:nocopy'
+  assert_absent 'type=volume,dst=/home/user/.cache,volume-nocopy'
   assert_line '--restart=no'
   assert_absent '--rm'
 
@@ -277,6 +298,8 @@ for engine in podman docker; do
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" --ephemeral-container > "$tmp/output"
   assert_line 'DEV_CONTAINER_PERSIST=0'
+  assert_line 'DEV_CACHE_MODE=ephemeral'
+  assert_line 'DEV_CACHE_VOLUME_INIT=1'
   assert_line '--rm'
   assert_absent '--restart=no'
 
@@ -292,6 +315,27 @@ for engine in podman docker; do
     echo 'Expected invalid Podman security mode to be rejected' >&2; exit 1
   fi
   grep -F 'Podman security must be' "$tmp/error" >/dev/null
+  assert_no_call "$engine run "
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_CACHE_MODE=persistent SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  assert_line 'DEV_CACHE_MODE=persistent'
+  assert_absent 'DEV_CACHE_VOLUME_INIT=1'
+  assert_absent 'GOCACHE=/home/user/.cache/go-build'
+  assert_absent '/home/user/.cache:nocopy'
+  assert_absent 'type=volume,dst=/home/user/.cache,volume-nocopy'
+
+  : > "$MOCK_LOG"
+  MOCK_SEED_LABEL=1 DEV_CONTAINER_PERSIST=1 DEV_CACHE_MODE=ephemeral SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  assert_line 'DEV_CACHE_MODE=ephemeral'
+  assert_line 'GOCACHE=/home/user/.cache/go-build'
+  assert_line 'DEV_CACHE_VOLUME_INIT=1'
+
+  : > "$MOCK_LOG"
+  if MOCK_SEED_LABEL=1 DEV_CACHE_MODE=invalid SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+    echo 'Expected invalid cache mode to be rejected' >&2; exit 1
+  fi
+  grep -F 'DEV_CACHE_MODE must be auto, ephemeral or persistent' "$tmp/error" >/dev/null
   assert_no_call "$engine run "
 
 done

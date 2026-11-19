@@ -34,6 +34,57 @@ run-dev-podman.sh --persist-container
 
 The current project directory is normally bind-mounted at `/workspace`; `DEV_WORKSPACE_MODE=volume` makes it an independent named volume, and `--no-workspace-mount` keeps it in the outer writable layer. For a disposable home use `--no-home-volume`, which requires a seeded image. Docker and Podman have **separate** container and volume stores.
 
+### Build-cache lifecycle
+
+The project home remains a **persistent named volume**. The default
+`DEV_CACHE_MODE=auto` mounts an **anonymous disk-backed volume** at
+`/home/user/.cache` when the outer container uses `--rm`. This nested
+mount hides existing cache contents without deleting them. Both engines use
+a no-copy option. When the outer container is removed, only the anonymous
+cache volume is deleted; credentials, settings, sessions, and project data
+remain in the named home.
+
+Explicit environment settings direct regenerable caches into that volume:
+
+| Tool | Cache path |
+| --- | --- |
+| Go compilation | `GOCACHE=/home/user/.cache/go-build` |
+| Go module downloads and toolchains | `GOMODCACHE=/home/user/.cache/go-mod` |
+| XDG-compliant tools | `XDG_CACHE_HOME=/home/user/.cache` |
+| npm and Corepack | `npm_config_cache`, `COREPACK_HOME` |
+| pip, uv, Yarn | `PIP_CACHE_DIR`, `UV_CACHE_DIR`, `YARN_CACHE_FOLDER` |
+| Flutter/Dart Pub | `PUB_CACHE` |
+
+Old caches such as `~/.go/pkg/mod` and `~/.npm/_cacache` are **not
+deleted**. Maven's `~/.m2/repository`, Gradle's `~/.gradle/caches`,
+agent-private state/cache directories (including Antigravity onboarding),
+and project-local build products such as `node_modules` are not
+redirected automatically. Maven repositories can contain locally installed
+artifacts, and project-local files may reside on the bind-mounted checkout.
+
+```sh
+DEV_CACHE_MODE=auto run-dev-podman.sh        # default, ephemeral if --rm
+DEV_CACHE_MODE=ephemeral run-dev-podman.sh   # anonymous even if retained
+DEV_CACHE_MODE=persistent run-dev-podman.sh  # original persistent home cache
+```
+
+For `--persist-container`, auto uses the persistent home. An explicitly
+anonymous volume on a retained container remains until the container is
+removed, not until it is stopped. Updating a retained container's mounts
+requires recreation; do not remove named home volumes.
+
+The new image entrypoint checks that `~/.cache` is a separate mountpoint,
+then corrects **only its mount-root** ownership for the container UID/GID.
+This avoids recursive chown of the home or host checkout, and supports
+rootless Podman's keep-id mapping as well as Docker. An updated launcher
+alone does not install the guard into an old published image: build/release
+the new image and verify permissions with
+`touch ~/.cache/test && rm ~/.cache/test` before using it heavily.
+
+This anonymous volume is **disk-backed, not tmpfs**. It still consumes
+host container-engine storage while builds are running. Relocating Podman's
+graphroot to a separate filesystem remains a separate host-side improvement.
+
 ### Build the current image locally
 
 The repository deliberately has one Dockerfile and no separate home-volume trial image:
@@ -164,6 +215,7 @@ From the repository root:
 ```sh
 sh containers/dev-dotfiles-debian/test-home-volume.sh
 sh containers/dev-dotfiles-debian/test-launchers.sh
+sh containers/dev-dotfiles-debian/test-cache-volume-init.sh
 sh containers/dev-dotfiles-debian/test-agent-skills.sh
 sh containers/dev-dotfiles-debian/test-release-clis.sh
 sh containers/dev-dotfiles-debian/test-txtar.sh

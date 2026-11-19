@@ -11,6 +11,7 @@ podman_security=${DEV_PODMAN_SECURITY:-nested}
 container_persist=${DEV_CONTAINER_PERSIST:-0}
 workspace_mode=${DEV_WORKSPACE_MODE:-bind}
 home_mode=${DEV_HOME_MODE:-volume}
+cache_mode=${DEV_CACHE_MODE:-auto}
 
 usage() {
   echo 'Usage: run-dev-podman.sh [--podman-security=nested|unconfined|privileged|off] [--persist-container|--ephemeral-container] [--no-home-volume] [--no-workspace-mount]' >&2
@@ -35,6 +36,12 @@ esac
 case "$container_persist" in
   0|1) ;;
   *) echo 'DEV_CONTAINER_PERSIST must be 0 or 1.' >&2; exit 2 ;;
+esac
+case "$cache_mode" in
+  auto)
+    if [ "$container_persist" = 1 ]; then cache_mode=persistent; else cache_mode=ephemeral; fi ;;
+  ephemeral|persistent) ;;
+  *) echo 'DEV_CACHE_MODE must be auto, ephemeral or persistent.' >&2; exit 2 ;;
 esac
 command -v podman >/dev/null 2>&1 || { echo 'podman is required.' >&2; exit 1; }
 
@@ -166,6 +173,7 @@ set -- "$@" \
   --env DEV_OUTER_ENGINE=podman \
   --env DEV_CONTAINER_NAME="$container" \
   --env DEV_CONTAINER_PERSIST="$container_persist" \
+  --env DEV_CACHE_MODE="$cache_mode" \
   --env TZ="$container_tz" \
   --env DEV_PODMAN_SECURITY="$podman_security" \
   --env DEV_DIND="$dind" \
@@ -183,6 +191,24 @@ else
     --mount "type=volume,src=dev-agent-${name}-gh,dst=/home/user/.config/gh" \
     --mount "type=volume,src=dev-agent-${name}-glab,dst=/home/user/.config/glab-cli"
 fi
+# The project-home named volume stays persistent; its .cache is obscured by
+# a separate anonymous disk-backed volume. nocopy avoids copying old caches.
+# --rm removes the anonymous cache volume but never the named project home.
+if [ "$cache_mode" = ephemeral ]; then
+  set -- "$@" \
+    --volume /home/user/.cache:nocopy \
+    --env DEV_CACHE_VOLUME_INIT=1 \
+    --env XDG_CACHE_HOME=/home/user/.cache \
+    --env GOCACHE=/home/user/.cache/go-build \
+    --env GOMODCACHE=/home/user/.cache/go-mod \
+    --env npm_config_cache=/home/user/.cache/npm \
+    --env PIP_CACHE_DIR=/home/user/.cache/pip \
+    --env UV_CACHE_DIR=/home/user/.cache/uv \
+    --env YARN_CACHE_FOLDER=/home/user/.cache/yarn \
+    --env PUB_CACHE=/home/user/.cache/pub \
+    --env COREPACK_HOME=/home/user/.cache/corepack
+fi
+
 case "$workspace_mode" in
   bind) set -- "$@" --mount "type=bind,src=${workspace},dst=/workspace,rw" ;;
   volume) set -- "$@" --env DEV_VOLUME_INIT=1 --mount "type=volume,src=dev-agent-${name}-workspace,dst=/workspace" ;;
