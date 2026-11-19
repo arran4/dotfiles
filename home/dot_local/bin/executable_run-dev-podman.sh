@@ -191,12 +191,13 @@ else
     --mount "type=volume,src=dev-agent-${name}-gh,dst=/home/user/.config/gh" \
     --mount "type=volume,src=dev-agent-${name}-glab,dst=/home/user/.config/glab-cli"
 fi
-# The project-home named volume stays persistent; its .cache is obscured by
-# a separate anonymous disk-backed volume. nocopy avoids copying old caches.
-# --rm removes the anonymous cache volume but never the named project home.
+# The named project home remains persistent; an anonymous disk-backed volume
+# shadows its .cache. Podman's volume-opt=nocopy= suppresses copying the old
+# cache into the new volume; Docker uses a different volume-nocopy syntax.
+# --rm removes the anonymous cache volume, not the named project home.
 if [ "$cache_mode" = ephemeral ]; then
   set -- "$@" \
-    --volume /home/user/.cache:nocopy \
+    --mount type=volume,dst=/home/user/.cache,volume-opt=nocopy= \
     --env DEV_CACHE_VOLUME_INIT=1 \
     --env XDG_CACHE_HOME=/home/user/.cache \
     --env GOCACHE=/home/user/.cache/go-build \
