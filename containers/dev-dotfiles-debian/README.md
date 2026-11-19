@@ -36,29 +36,54 @@ The current project directory is normally bind-mounted at `/workspace`; `DEV_WOR
 
 ### Build-cache lifecycle
 
-Disposable outer containers default to **ephemeral build caches** with
-`DEV_CACHE_MODE=auto`. Go compilation (`GOCACHE`), npm, pip and uv caches
-are redirected to `/var/tmp/dev-agent-cache/` in the outer container's
-**disk-backed writable layer**, not tmpfs/RAM or the persistent project home.
-They disappear when the `--rm` outer container exits. Go module downloads
-(`GOMODCACHE` / `~/.go/pkg/mod`), credentials, projects, and nested-engine
-storage retain their current lifecycle.
+The project home remains a **persistent named volume**. The default
+`DEV_CACHE_MODE=auto` mounts an **anonymous disk-backed volume** at
+`/home/user/.cache` when the outer container uses `--rm`. This nested
+mount hides existing cache contents without deleting them. Both engines use
+a no-copy option. When the outer container is removed, only the anonymous
+cache volume is deleted; credentials, settings, sessions, and project data
+remain in the named home.
 
-Retained outer containers (`--persist-container`) default to persistent
-caches because their writable layer survives restarts. Override explicitly:
+Explicit environment settings direct regenerable caches into that volume:
+
+| Tool | Cache path |
+| --- | --- |
+| Go compilation | `GOCACHE=/home/user/.cache/go-build` |
+| Go module downloads and toolchains | `GOMODCACHE=/home/user/.cache/go-mod` |
+| XDG-compliant tools | `XDG_CACHE_HOME=/home/user/.cache` |
+| npm and Corepack | `npm_config_cache`, `COREPACK_HOME` |
+| pip, uv, Yarn | `PIP_CACHE_DIR`, `UV_CACHE_DIR`, `YARN_CACHE_FOLDER` |
+| Flutter/Dart Pub | `PUB_CACHE` |
+
+Old caches such as `~/.go/pkg/mod` and `~/.npm/_cacache` are **not
+deleted**. Maven's `~/.m2/repository`, Gradle's `~/.gradle/caches`,
+agent-private state/cache directories (including Antigravity onboarding),
+and project-local build products such as `node_modules` are not
+redirected automatically. Maven repositories can contain locally installed
+artifacts, and project-local files may reside on the bind-mounted checkout.
 
 ```sh
-DEV_CACHE_MODE=persistent run-dev-podman.sh
-DEV_CACHE_MODE=ephemeral run-dev-podman.sh
+DEV_CACHE_MODE=auto run-dev-podman.sh        # default, ephemeral if --rm
+DEV_CACHE_MODE=ephemeral run-dev-podman.sh   # anonymous even if retained
+DEV_CACHE_MODE=persistent run-dev-podman.sh  # original persistent home cache
 ```
 
-Both Podman and Docker support `auto`, `ephemeral` and `persistent`.
-An explicitly ephemeral cache in a *retained* container persists until that
-container is removed. Existing retained containers must be re-created to
-change their environment. Existing caches in named project-home volumes
-are **not** removed by this change; use the host-side cleanup helper for that.
-If a custom container configuration mounts `/var/tmp` on tmpfs, these caches
-will follow that mount, unlike the normal disk-backed writable layer.
+For `--persist-container`, auto uses the persistent home. An explicitly
+anonymous volume on a retained container remains until the container is
+removed, not until it is stopped. Updating a retained container's mounts
+requires recreation; do not remove named home volumes.
+
+The new image entrypoint checks that `~/.cache` is a separate mountpoint,
+then corrects **only its mount-root** ownership for the container UID/GID.
+This avoids recursive chown of the home or host checkout, and supports
+rootless Podman's keep-id mapping as well as Docker. An updated launcher
+alone does not install the guard into an old published image: build/release
+the new image and verify permissions with
+`touch ~/.cache/test && rm ~/.cache/test` before using it heavily.
+
+This anonymous volume is **disk-backed, not tmpfs**. It still consumes
+host container-engine storage while builds are running. Relocating Podman's
+graphroot to a separate filesystem remains a separate host-side improvement.
 
 ### Build the current image locally
 
@@ -190,6 +215,7 @@ From the repository root:
 ```sh
 sh containers/dev-dotfiles-debian/test-home-volume.sh
 sh containers/dev-dotfiles-debian/test-launchers.sh
+sh containers/dev-dotfiles-debian/test-cache-volume-init.sh
 sh containers/dev-dotfiles-debian/test-agent-skills.sh
 sh containers/dev-dotfiles-debian/test-release-clis.sh
 sh containers/dev-dotfiles-debian/test-txtar.sh

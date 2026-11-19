@@ -40,9 +40,11 @@ always, missing or never. Published images default to always; local images defau
 0 (default) or 1, equivalent to the outer container persistence flags.
 .TP
 \fBDEV_CACHE_MODE\fR
-auto (default), ephemeral or persistent. Auto uses the disposable outer
-container layer for Go build, npm, pip and uv caches; retained containers
-default to persistent caches.
+auto (default), ephemeral or persistent. Auto overlays a disk-backed
+anonymous volume on /home/user/.cache for disposable outer containers;
+retained containers default to persistent home caches. Ephemeral also
+sets XDG_CACHE_HOME, GOCACHE, GOMODCACHE, npm_config_cache, PIP_CACHE_DIR,
+UV_CACHE_DIR, YARN_CACHE_FOLDER, PUB_CACHE and COREPACK_HOME.
 .TP
 \fBDEV_WORKSPACE_MODE\fR
 bind (default), volume or container. A bind mount maps the current directory to /workspace.
@@ -77,17 +79,24 @@ run\-dev\-docker.sh
 DEV_DIND=0 run\-dev\-docker.sh \-\-podman\-security=off
 .fi
 .SH CACHE LIFECYCLE
-In ephemeral mode, regenerable build caches live under
-/var/tmp/dev-agent-cache in the outer disk-backed writable layer;
-no RAM-backed tmpfs is created. The --rm lifecycle deletes these caches
-with the outer container. Retained containers keep the cache until
-container removal. Go module downloads and persistent project homes,
-credentials, source trees and nested-engine stores are not affected.
-Old cache directories already present in home volumes are not removed.
+The named project home remains persistent. In ephemeral mode, an
+anonymous disk-backed, no-copy volume is mounted at /home/user/.cache;
+--rm removes this volume when the outer container exits, without
+removing the named project home. A retained container keeps its
+anonymous volume until it is explicitly removed.
 .PP
-Select DEV_CACHE_MODE=persistent to preserve build caches in project
-homes, or DEV_CACHE_MODE=ephemeral to use the writable layer explicitly.
-Restarting a retained container does not update its old environment.
+Go build and module caches, XDG caches, npm, Corepack, pip, uv, Yarn and
+Flutter Pub are redirected into this volume. Agent credentials and
+settings, Maven/Gradle repositories and project-local build output
+remain in their original locations. Existing persistent caches are
+hidden, not deleted.
+.PP
+The updated image entrypoint requires .cache to be an actual mountpoint
+before correcting ownership of only its mount root. This does not
+recursively change the parent home or a host workspace. An updated
+launcher alone cannot add the guard to an older published image.
+Use DEV_CACHE_MODE=persistent to keep ordinary persistent caches.
+Neither runtime uses tmpfs for this cache volume.
 .SH NOTES
 SECURITY: DEV_DIND=1 is the default and causes the launcher to use a privileged outer container. Do not describe this configuration as a strict sandbox for untrusted code. Review trust boundaries and consider DEV_DIND=0 when nested Docker is not needed.
 .PP

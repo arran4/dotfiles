@@ -180,16 +180,6 @@ set -- "$@" \
   --env DEV_DIND="$dind" \
   --env DEV_DIND_PERSIST="$dind_persist"
 
-# Keep disposable build caches on disk in the outer writable layer, not in
-# the persistent per-project home or memory-backed tmpfs.
-if [ "$cache_mode" = ephemeral ]; then
-  set -- "$@" \
-    --env GOCACHE=/var/tmp/dev-agent-cache/go-build \
-    --env npm_config_cache=/var/tmp/dev-agent-cache/npm \
-    --env PIP_CACHE_DIR=/var/tmp/dev-agent-cache/pip \
-    --env UV_CACHE_DIR=/var/tmp/dev-agent-cache/uv
-fi
-
 if [ "$layout" = home ]; then
   set -- "$@" --env DEV_HOME_VOLUME_INIT=1
   if [ "$home_mode" = volume ]; then
@@ -202,6 +192,24 @@ else
     --mount "type=volume,src=dev-agent-${name}-gh,dst=/home/user/.config/gh" \
     --mount "type=volume,src=dev-agent-${name}-glab,dst=/home/user/.config/glab-cli"
 fi
+# The project-home named volume stays persistent; its .cache is obscured by
+# a separate anonymous disk-backed volume. nocopy avoids copying old caches.
+# --rm removes the anonymous cache volume but never the named project home.
+if [ "$cache_mode" = ephemeral ]; then
+  set -- "$@" \
+    --mount type=volume,dst=/home/user/.cache,volume-nocopy \
+    --env DEV_CACHE_VOLUME_INIT=1 \
+    --env XDG_CACHE_HOME=/home/user/.cache \
+    --env GOCACHE=/home/user/.cache/go-build \
+    --env GOMODCACHE=/home/user/.cache/go-mod \
+    --env npm_config_cache=/home/user/.cache/npm \
+    --env PIP_CACHE_DIR=/home/user/.cache/pip \
+    --env UV_CACHE_DIR=/home/user/.cache/uv \
+    --env YARN_CACHE_FOLDER=/home/user/.cache/yarn \
+    --env PUB_CACHE=/home/user/.cache/pub \
+    --env COREPACK_HOME=/home/user/.cache/corepack
+fi
+
 case "$workspace_mode" in
   bind) set -- "$@" --mount "type=bind,src=${workspace},dst=/workspace,rw" ;;
   volume) set -- "$@" --env DEV_VOLUME_INIT=1 --mount "type=volume,src=dev-agent-${name}-workspace,dst=/workspace" ;;
