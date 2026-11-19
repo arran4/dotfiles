@@ -94,7 +94,11 @@ for engine in podman docker; do
   assert_line 'PUB_CACHE=/home/user/.cache/pub'
   assert_line 'COREPACK_HOME=/home/user/.cache/corepack'
   if [ "$engine" = podman ]; then
-    assert_line '/home/user/.cache:nocopy'
+    # Podman's --mount driver option, not Docker's --mount syntax or a
+    # malformed two-field -v mount that treats nocopy as the destination.
+    assert_line 'type=volume,dst=/home/user/.cache,volume-opt=nocopy='
+    assert_absent '/home/user/.cache:nocopy'
+    assert_absent 'type=volume,dst=/home/user/.cache,volume-nocopy'
   else
     assert_line 'type=volume,dst=/home/user/.cache,volume-nocopy'
   fi
@@ -113,6 +117,7 @@ for engine in podman docker; do
   assert_absent 'DEV_CACHE_VOLUME_INIT=1'
   assert_absent 'GOCACHE=/home/user/.cache/go-build'
   assert_absent '/home/user/.cache:nocopy'
+  assert_absent 'type=volume,dst=/home/user/.cache,volume-opt=nocopy='
   assert_absent 'type=volume,dst=/home/user/.cache,volume-nocopy'
   assert_line '--restart=no'
   assert_absent '--rm'
@@ -323,6 +328,7 @@ for engine in podman docker; do
   assert_absent 'DEV_CACHE_VOLUME_INIT=1'
   assert_absent 'GOCACHE=/home/user/.cache/go-build'
   assert_absent '/home/user/.cache:nocopy'
+  assert_absent 'type=volume,dst=/home/user/.cache,volume-opt=nocopy='
   assert_absent 'type=volume,dst=/home/user/.cache,volume-nocopy'
 
   : > "$MOCK_LOG"
