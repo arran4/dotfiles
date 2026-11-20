@@ -119,8 +119,43 @@ test "$(cat "$tmp/outside/settings.json")" = 'external settings'
 # Verify that the default planner/executor model and container workspace
 # trust are explicitly set in the Agy seed.
 agy_settings="$here/skel/.gemini/antigravity-cli/settings.json"
-jq -e '.model == "Orchestrator (Argon)" and
+jq -e '.model == "Orchestrator (Neon)" and
   .trustedWorkspaces == ["/workspace"]' "$agy_settings" >/dev/null
+
+# The startup policy must override a previous model while retaining custom
+# settings, and must not rewrite an already-correct persistent volume.
+model_home="$tmp/model-home"
+model_settings="$model_home/.gemini/antigravity-cli/settings.json"
+mkdir -p "$(dirname "$model_settings")"
+cp "$agy_settings" "$model_settings"
+HOME="$model_home" sh "$here/enforce-antigravity-model.sh"
+original_inode=$(stat -c %i "$model_settings")
+HOME="$model_home" sh "$here/enforce-antigravity-model.sh"
+test "$(stat -c %i "$model_settings")" = "$original_inode"
+
+printf '%s\n' '{"model":"Orchestrator (Argon)","trustedWorkspaces":["/custom"],"other":{"keep":true}}' > "$model_settings"
+HOME="$model_home" sh "$here/enforce-antigravity-model.sh"
+jq -e '.model == "Orchestrator (Neon)" and
+  .trustedWorkspaces == ["/custom"] and .other.keep == true' "$model_settings" >/dev/null
+test "$(stat -c %a "$model_settings")" = 600
+
+# Invalid files are preserved for recovery, rather than silently reset.
+printf '%s\n' '{invalid' > "$model_settings"
+if HOME="$model_home" sh "$here/enforce-antigravity-model.sh" >/dev/null 2>&1; then
+  echo 'Invalid Antigravity settings unexpectedly accepted' >&2
+  exit 1
+fi
+test "$(cat "$model_settings")" = '{invalid'
+
+# No model update may follow a symlink outside the container home.
+printf '%s\n' '{"model":"Orchestrator (Argon)"}' > "$tmp/outside-agy-settings.json"
+rm -- "$model_settings"
+ln -s "$tmp/outside-agy-settings.json" "$model_settings"
+if HOME="$model_home" sh "$here/enforce-antigravity-model.sh" >/dev/null 2>&1; then
+  echo 'Symlinked Antigravity settings unexpectedly accepted' >&2
+  exit 1
+fi
+test "$(cat "$tmp/outside-agy-settings.json")" = '{"model":"Orchestrator (Argon)"}'
 
 # New project homes get a valid consumer-onboarding default from the
 # production skeleton; existing onboarding files must not be overwritten.
