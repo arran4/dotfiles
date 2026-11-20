@@ -50,7 +50,7 @@ UV_CACHE_DIR, YARN_CACHE_FOLDER, PUB_CACHE and COREPACK_HOME.
 bind (default), volume or container. A bind mount maps the current directory to /workspace.
 .TP
 \fBDEV_HOME_MODE\fR
-volume (default) or container; the latter needs a seeded image.
+volume (default) or container; the latter keeps home in the outer writable layer.
 .TP
 \fBDEV_PODMAN_SECURITY\fR
 nested (default), unconfined, privileged or off.
@@ -129,6 +129,6 @@ resumed rather than recreated. Back up writable-layer-only files
 before explicitly removing that outer container; never remove named
 volumes during routine updates. The host gateway option is a
 creation-time setting. Consult containers/dev-dotfiles-debian/README.md
-for legacy storage migration and credentials.
+for persistent storage and credentials.
 .SH SEE ALSO
 run\-dev\-podman.sh(1)
