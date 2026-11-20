@@ -14,7 +14,8 @@ set -eu
 printf '%s %s\n' "${0##*/}" "$*" >> "$MOCK_LOG"
 case "$1:$2" in
   container:exists|container:inspect)
-    [ "${MOCK_EXISTING_CONTAINER:-0}" = 1 ] ;;
+    [ "${MOCK_EXISTING_CONTAINER:-0}" = 1 ]
+    exit $? ;;
   image:exists|image:inspect)
     if [ "${3:-}" = '--format' ]; then
       printf '%s\n' "${MOCK_SEED_LABEL:-<no value>}"
