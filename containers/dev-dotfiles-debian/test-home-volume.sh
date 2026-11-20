@@ -75,87 +75,10 @@ mv "$tmp/seed.backup.tar" "$tmp/seed.tar"
 seed_home
 test "$(cat "$tmp/home/.dev-dotfiles-seed-version")" = 'image-v3:sha256-v3'
 
-# Migrate known Antigravity files to the real ~/.gemini tree, including a
-# recoverable token, without overwriting user state or removing unknown files.
-migration="$here/migrate-antigravity-state.sh"
-legacy_home="$tmp/migrate-home"
-mkdir -p "$legacy_home/.codex/antigravity-cli/cache"
-printf 'old settings\n' > "$legacy_home/.codex/antigravity-cli/settings.json"
-printf 'old onboarding\n' > "$legacy_home/.codex/antigravity-cli/cache/onboarding.json"
-printf 'old token\n' > "$legacy_home/.codex/antigravity-cli/antigravity-oauth-token"
-HOME="$legacy_home" sh "$migration"
-test "$(cat "$legacy_home/.gemini/antigravity-cli/settings.json")" = 'old settings'
-test "$(cat "$legacy_home/.gemini/antigravity-cli/cache/onboarding.json")" = 'old onboarding'
-test "$(cat "$legacy_home/.gemini/antigravity-cli/antigravity-oauth-token")" = 'old token'
-test ! -e "$legacy_home/.codex/antigravity-cli"
-test "$(stat -c %a "$legacy_home/.gemini/antigravity-cli/antigravity-oauth-token")" = 600
-HOME="$legacy_home" sh "$migration"
-
-# Preserve differing existing destinations and unrelated legacy state; clean
-# an identical duplicate. Never follow a symlinked cache or token.
-mkdir -p "$legacy_home/.codex/antigravity-cli/cache"
-printf 'old settings\n' > "$legacy_home/.codex/antigravity-cli/settings.json"
-printf 'legacy token\n' > "$legacy_home/.codex/antigravity-cli/antigravity-oauth-token"
-printf 'old onboarding\n' > "$legacy_home/.codex/antigravity-cli/cache/onboarding.json"
-printf 'unrelated\n' > "$legacy_home/.codex/antigravity-cli/other-file"
-printf 'custom settings\n' > "$legacy_home/.gemini/antigravity-cli/settings.json"
-HOME="$legacy_home" sh "$migration"
-test "$(cat "$legacy_home/.gemini/antigravity-cli/settings.json")" = 'custom settings'
-test "$(cat "$legacy_home/.codex/antigravity-cli/settings.json")" = 'old settings'
-test "$(cat "$legacy_home/.gemini/antigravity-cli/antigravity-oauth-token")" = 'old token'
-test "$(cat "$legacy_home/.codex/antigravity-cli/antigravity-oauth-token")" = 'legacy token'
-test ! -e "$legacy_home/.codex/antigravity-cli/cache/onboarding.json"
-test -f "$legacy_home/.codex/antigravity-cli/other-file"
-
-# A symlinked source or destination subtree is never traversed.
-mkdir -p "$tmp/outside" "$tmp/migrate-linked/.codex/antigravity-cli"
-ln -s "$tmp/outside" "$tmp/migrate-linked/.gemini"
-printf 'external settings\n' > "$tmp/outside/settings.json"
-printf 'legacy settings\n' > "$tmp/migrate-linked/.codex/antigravity-cli/settings.json"
-HOME="$tmp/migrate-linked" sh "$migration"
-test -f "$tmp/migrate-linked/.codex/antigravity-cli/settings.json"
-test "$(cat "$tmp/outside/settings.json")" = 'external settings'
-
-# Verify that the default planner/executor model and container workspace
-# trust are explicitly set in the Agy seed.
+# Verify the bundled model; actual startup replacement is tested in dind.yml.
 agy_settings="$here/skel/.gemini/antigravity-cli/settings.json"
 jq -e '.model == "Orchestrator (Neon)" and
   .trustedWorkspaces == ["/workspace"]' "$agy_settings" >/dev/null
-
-# The startup policy must override a previous model while retaining custom
-# settings, and must not rewrite an already-correct persistent volume.
-model_home="$tmp/model-home"
-model_settings="$model_home/.gemini/antigravity-cli/settings.json"
-mkdir -p "$(dirname "$model_settings")"
-cp "$agy_settings" "$model_settings"
-HOME="$model_home" sh "$here/enforce-antigravity-model.sh"
-original_inode=$(stat -c %i "$model_settings")
-HOME="$model_home" sh "$here/enforce-antigravity-model.sh"
-test "$(stat -c %i "$model_settings")" = "$original_inode"
-
-printf '%s\n' '{"model":"Orchestrator (Argon)","trustedWorkspaces":["/custom"],"other":{"keep":true}}' > "$model_settings"
-HOME="$model_home" sh "$here/enforce-antigravity-model.sh"
-jq -e '.model == "Orchestrator (Neon)" and
-  .trustedWorkspaces == ["/custom"] and .other.keep == true' "$model_settings" >/dev/null
-test "$(stat -c %a "$model_settings")" = 600
-
-# Invalid files are preserved for recovery, rather than silently reset.
-printf '%s\n' '{invalid' > "$model_settings"
-if HOME="$model_home" sh "$here/enforce-antigravity-model.sh" >/dev/null 2>&1; then
-  echo 'Invalid Antigravity settings unexpectedly accepted' >&2
-  exit 1
-fi
-test "$(cat "$model_settings")" = '{invalid'
-
-# No model update may follow a symlink outside the container home.
-printf '%s\n' '{"model":"Orchestrator (Argon)"}' > "$tmp/outside-agy-settings.json"
-rm -- "$model_settings"
-ln -s "$tmp/outside-agy-settings.json" "$model_settings"
-if HOME="$model_home" sh "$here/enforce-antigravity-model.sh" >/dev/null 2>&1; then
-  echo 'Symlinked Antigravity settings unexpectedly accepted' >&2
-  exit 1
-fi
-test "$(cat "$tmp/outside-agy-settings.json")" = '{"model":"Orchestrator (Argon)"}'
 
 # New project homes get a valid consumer-onboarding default from the
 # production skeleton; existing onboarding files must not be overwritten.

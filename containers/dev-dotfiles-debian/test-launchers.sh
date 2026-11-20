@@ -14,11 +14,7 @@ set -eu
 printf '%s %s\n' "${0##*/}" "$*" >> "$MOCK_LOG"
 case "$1:$2" in
   container:exists|container:inspect)
-    case "${3:-}" in
-      *-home) [ "${MOCK_HOME_CONTAINER:-0}" = 1 ] ;;
-      *) [ "${MOCK_LEGACY_CONTAINER:-0}" = 1 ] ;;
-    esac
-    exit $? ;;
+    [ "${MOCK_EXISTING_CONTAINER:-0}" = 1 ] ;;
   image:exists|image:inspect)
     if [ "${3:-}" = '--format' ]; then
       printf '%s\n' "${MOCK_SEED_LABEL:-<no value>}"
@@ -105,7 +101,6 @@ for engine in podman docker; do
   assert_line '--rm'
   assert_absent '--restart=no'
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
-  assert_absent 'DEV_FORGE_VOLUME_INIT=1'
   assert_absent 'type=volume,src=dev-agent-check-gh,dst=/home/user/.config/gh'
   assert_line '--privileged'
   assert_absent '--device'
@@ -139,15 +134,14 @@ for engine in podman docker; do
   assert_no_call "$engine pull "
 
   : > "$MOCK_LOG"
-  SANDBOX_NAME=check "$launcher" > "$tmp/output"
-  assert_line 'dev-agent-check'
-  assert_line 'DEV_FORGE_VOLUME_INIT=1'
-  assert_line 'type=volume,src=dev-agent-check-gh,dst=/home/user/.config/gh'
-  assert_absent 'DEV_HOME_VOLUME_INIT=1'
-  assert_absent 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
+  if SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+    echo 'Expected unseeded published image rejection' >&2; exit 1
+  fi
+  grep -F 'has no versioned home seed' "$tmp/error" >/dev/null
+  assert_no_call "$engine run "
 
   : > "$MOCK_LOG"
-  if MOCK_LEGACY_CONTAINER=1 MOCK_SEED_LABEL=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
+  if MOCK_EXISTING_CONTAINER=1 MOCK_SEED_LABEL=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
     echo 'Expected disposable mode to refuse an existing stopped container' >&2; exit 1
   fi
   grep -F 'Stopped container dev-agent-check exists from a persistent session' "$tmp/error" >/dev/null
@@ -156,40 +150,8 @@ for engine in podman docker; do
   assert_no_call "$engine run "
 
   : > "$MOCK_LOG"
-  MOCK_LEGACY_CONTAINER=1 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
+  MOCK_EXISTING_CONTAINER=1 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
   assert_call "$engine start -ai"
-  assert_no_call "$engine pull "
-  assert_no_call "$engine run "
-
-  : > "$MOCK_LOG"
-  if MOCK_LEGACY_CONTAINER=1 MOCK_SEED_LABEL=1 DEV_NEW_HOME=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
-    echo 'Expected DEV_NEW_HOME to refuse a conflicting canonical container name' >&2; exit 1
-  fi
-  grep -F 'DEV_NEW_HOME=1 cannot bypass the existing dev-agent-check' "$tmp/error" >/dev/null
-  assert_no_call "$engine start "
-  assert_no_call "$engine pull "
-  assert_no_call "$engine run "
-
-  : > "$MOCK_LOG"
-  MOCK_SEED_LABEL=1 DEV_NEW_HOME=1 SANDBOX_NAME=check "$launcher" > "$tmp/output"
-  assert_line 'dev-agent-check'
-  assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
-  assert_absent 'type=volume,src=dev-agent-check-gh,dst=/home/user/.config/gh'
-
-  : > "$MOCK_LOG"
-  if DEV_NEW_HOME=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
-    echo 'Expected old image to reject DEV_NEW_HOME=1' >&2; exit 1
-  fi
-  grep -F 'does not support the versioned home layout' "$tmp/error" >/dev/null
-  assert_no_call "$engine run "
-
-  : > "$MOCK_LOG"
-  if MOCK_HOME_CONTAINER=1 MOCK_IMAGE_PRESENT=0 DEV_CONTAINER_PERSIST=1 SANDBOX_NAME=check "$launcher" > "$tmp/output" 2> "$tmp/error"; then
-    echo 'Expected an old -home container to require an explicit rename' >&2; exit 1
-  fi
-  grep -F 'Existing old-named container dev-agent-check-home detected' "$tmp/error" >/dev/null
-  grep -F "$engine rename dev-agent-check-home dev-agent-check" "$tmp/error" >/dev/null
-  assert_no_call "$engine start "
   assert_no_call "$engine pull "
   assert_no_call "$engine run "
 
@@ -200,7 +162,6 @@ for engine in podman docker; do
   assert_line 'dev-agent-check'
   assert_line 'DEV_HOME_VOLUME_INIT=1'
   assert_line 'type=volume,src=dev-agent-check-project-home,dst=/home/user'
-  assert_absent 'DEV_FORGE_VOLUME_INIT=1'
 
   : > "$MOCK_LOG"
   MOCK_SEED_LABEL=1 DEV_HOME_MODE=container SANDBOX_NAME=check "$launcher" > "$tmp/output"

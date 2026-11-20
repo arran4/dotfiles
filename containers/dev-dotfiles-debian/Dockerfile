@@ -203,7 +203,6 @@ RUN set -eu; \
 # txtar uses 'module txtar', so it must be built inside a local checkout
 # until that upstream module path is corrected. Avoid a separate install layer.
 COPY --chmod=0755 containers/dev-dotfiles-debian/test-release-clis.sh /usr/local/bin/dev-dotfiles-test-release-clis
-COPY --chmod=0755 containers/dev-dotfiles-debian/test-txtar.sh /usr/local/bin/dev-dotfiles-test-txtar
 RUN set -eu; \
   export GOBIN=/usr/local/bin GOTOOLCHAIN=auto; \
   go install github.com/arran4/go-subcommand/cmd/gosubc@latest; \
@@ -219,8 +218,7 @@ RUN set -eu; \
     command -v "$tool"; \
     go version -m "/usr/local/bin/$tool"; \
   done; \
-  /usr/local/bin/dev-dotfiles-test-release-clis; \
-  /usr/local/bin/dev-dotfiles-test-txtar
+  /usr/local/bin/dev-dotfiles-test-release-clis
 
 # Nested rootless Podman needs subordinate IDs that fit inside a typical
 # 65536-ID rootless outer namespace, not useradd's default host-sized range.
@@ -232,17 +230,6 @@ RUN set -eu; \
   printf '%s:10000:32768\n' "$USER_NAME" >> /etc/subgid; \
   install -d -m 0700 -o "$USER_UID" -g "$USER_GID" /var/lib/dev-podman
 
-# Jules CLI is intentionally disabled. Its npm installer can preserve high
-# UID/GID values from its downloaded payload, which makes the resulting image
-# impossible to unpack with a normal rootless Podman subordinate-ID range.
-# If Jules is re-enabled, normalize the installed payload ownership as part of
-# the same layer so those archive owners are not published in the image.
-# RUN set -euxo pipefail \
-#   && npm install -g @google/jules \
-#   && chown -h root:root /usr/local/bin/jules \
-#   && chown -R root:root "$(npm root -g)/@google/jules" \
-#   && jules version
-
 ENV PATH=/opt/flutter/bin:/home/${USER_NAME}/.local/bin:${PATH} \
   CONTAINERS_STORAGE_CONF=/etc/containers/dev-podman-storage.conf
 
@@ -250,8 +237,6 @@ COPY --chmod=0644 containers/dev-dotfiles-debian/podman-storage.conf /etc/contai
 COPY --chown=${USER_UID}:${USER_GID} --from=dotfiles . /tmp/dotfiles
 COPY --chmod=0755 containers/dev-dotfiles-debian/cache-volume-init.sh /usr/local/bin/dev-dotfiles-cache-volume-init
 COPY --chmod=0755 containers/dev-dotfiles-debian/entrypoint.sh /usr/local/bin/dev-dotfiles-entrypoint
-COPY --chmod=0755 containers/dev-dotfiles-debian/migrate-antigravity-state.sh /usr/local/bin/dev-dotfiles-migrate-antigravity-state
-COPY --chmod=0755 containers/dev-dotfiles-debian/enforce-antigravity-model.sh /usr/local/bin/dev-dotfiles-enforce-antigravity-model
 COPY containers/dev-dotfiles-debian/skel/ /usr/local/share/dev-dotfiles-debian/skel/
 COPY --chmod=0755 containers/dev-dotfiles-debian/setup-user.sh /usr/local/bin/dev-dotfiles-setup-user
 COPY --chmod=0755 containers/dev-dotfiles-debian/test-playwright.sh /usr/local/bin/dev-dotfiles-test-playwright
