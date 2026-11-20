@@ -188,13 +188,15 @@ if [ -n "${DEV_LAUNCHER_COMMAND:-}" ] && [ -n "${DEV_OUTER_ENGINE:-}" ] && [ -n 
   printf '%s\n' '  The rm command above does not remove named volumes.'
 fi
 
-# Recover legacy Antigravity files before seeding defaults so a customized
-# legacy settings.json can win when ~/.gemini has no settings yet.
+# Recover legacy Antigravity state before applying defaults and model policy.
 /usr/local/bin/dev-dotfiles-migrate-antigravity-state
 
-# Recursively add container-only defaults without replacing existing user files.
-# The skeleton lives outside the seeded home to protect customized settings.
+# Recursively add missing container defaults while preserving existing settings.
 (umask 077; rsync -r --ignore-existing /usr/local/share/dev-dotfiles-debian/skel/ "$HOME/")
+
+# Enforce the container's Neon model on every start, including existing homes.
+# Other preferences, onboarding state and credentials remain untouched.
+/usr/local/bin/dev-dotfiles-enforce-antigravity-model
 
 # Sync image-managed Antigravity CLI skills without overwriting personal edits.
 /usr/local/bin/dev-dotfiles-sync-agent-skills
