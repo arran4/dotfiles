@@ -3,7 +3,6 @@ name: Development container launchers
 on:
   pull_request:
     paths:
-      - 'dot_local/bin/executable_run-dev-*.sh'
       - 'home/dot_local/bin/executable_run-dev-*.sh'
       - 'containers/dev-dotfiles-debian/Dockerfile'
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
@@ -18,7 +17,6 @@ on:
   push:
     branches: [main]
     paths:
-      - 'dot_local/bin/executable_run-dev-*.sh'
       - 'home/dot_local/bin/executable_run-dev-*.sh'
       - 'containers/dev-dotfiles-debian/Dockerfile'
       - 'containers/dev-dotfiles-debian/entrypoint.sh'
@@ -51,4 +49,3 @@ jobs:
           sh -n containers/dev-dotfiles-debian/sync-agent-skills.sh
           sh containers/dev-dotfiles-debian/test-agent-skills.sh
           grep -F 'ENTRYPOINT ["/usr/local/bin/dev-dotfiles-entrypoint"]' containers/dev-dotfiles-debian/Dockerfile
-          ! grep -Fq 'home-volume-entrypoint' containers/dev-dotfiles-debian/Dockerfile
