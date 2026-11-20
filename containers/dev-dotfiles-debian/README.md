@@ -87,7 +87,7 @@ graphroot to a separate filesystem remains a separate host-side improvement.
 
 ### Build the current image locally
 
-The repository deliberately has one Dockerfile and no separate home-volume trial image:
+Build the development image from the canonical Dockerfile:
 
 ```sh
 podman build --build-context dotfiles=. \
