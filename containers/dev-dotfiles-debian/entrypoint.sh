@@ -44,23 +44,12 @@ if [ -f /etc/containers/dev-podman-storage.conf ]; then
   sudo install -d -m 0700 -o "$uid" -g "$gid" "$XDG_RUNTIME_DIR"
 fi
 
-# Fresh named volumes can be owned by root depending on the container engine.
-# Persistent-volume invocations opt into fixing only the mount-point roots.
-# This is deliberately not automatic so the normal bind-mounted workflow can
-# never chown a host checkout or host credential directory.
+# A workspace named volume may start root-owned. The launcher requests
+# ownership repair only for that mount root, never for the home or host checkout.
 if [ "${DEV_VOLUME_INIT:-0}" = "1" ]; then
-  for path in \
-    /workspace \
-    "$HOME/.codex" \
-    "$HOME/.gemini" \
-    "$HOME/.config/gh" \
-    "$HOME/.config/glab-cli"
-  do
-    if [ -e "$path" ]; then
-      sudo chown "$uid:$gid" "$path"
-    fi
-  done
-
+  if [ -e /workspace ]; then
+    sudo chown "$uid:$gid" /workspace
+  fi
   unset DEV_VOLUME_INIT
 fi
 
