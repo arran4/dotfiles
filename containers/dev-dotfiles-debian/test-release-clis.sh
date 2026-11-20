@@ -33,4 +33,25 @@ rntocase snake --dry-run "$tmp/Example File.txt" > "$tmp/rename-preview"
 test -f "$tmp/Example File.txt"
 test ! -e "$tmp/example_file.txt"
 
-echo 'Developer skill CLIs smoke test passed.'
+# Check the locally built txtar CLI without a separate test script.
+command -v txtar >/dev/null 2>&1 || { echo "txtar missing" >&2; exit 1; }
+mkdir -p "$tmp/source/nested" "$tmp/unpacked"
+printf "%s\n" "a fixture line" > "$tmp/source/nested/test.txt"
+(
+  cd "$tmp"
+  txtar create -r source > example.txtar
+  txtar list example.txtar > listing
+)
+grep -Eq "source/nested/test.txt$" "$tmp/listing"
+txtar cat -t "$tmp/example.txtar" source/nested/test.txt > "$tmp/cat.txt"
+cmp "$tmp/source/nested/test.txt" "$tmp/cat.txt"
+txtar extract -d "$tmp/unpacked" "$tmp/example.txtar"
+cmp "$tmp/source/nested/test.txt" "$tmp/unpacked/source/nested/test.txt"
+txtar comment --comment "fixture comment" "$tmp/example.txtar"
+txtar comment "$tmp/example.txtar" | grep -Fq "fixture comment"
+# Unsafe parent paths are currently skipped with warnings, not necessarily errors.
+printf "%s\n" "-- ../escaped.txt --" "escape attempt" > "$tmp/unsafe.txtar"
+txtar extract -d "$tmp/unpacked" "$tmp/unsafe.txtar" 2>"$tmp/warnings"
+grep -Fq "unsafe path" "$tmp/warnings"
+test ! -e "$tmp/escaped.txt"
+echo 'Development CLI smoke tests passed.'

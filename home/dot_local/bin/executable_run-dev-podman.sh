@@ -79,7 +79,6 @@ raw=${SANDBOX_NAME:-$(basename "$workspace")}
 name=$(printf '%s' "$raw" | LC_ALL=C tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9-]/-/g' -e 's/-\{2,\}/-/g' -e 's/^-//' -e 's/-$//')
 name=${name:-default-project}
 image=${DEV_IMAGE:-ghcr.io/arran4/dev-dotfiles-debian:latest}
-new_home=${DEV_NEW_HOME:-0}
 dind=${DEV_DIND:-1}
 dind_persist=${DEV_DIND_PERSIST:-0}
 podman_persist=${DEV_PODMAN_PERSIST:-0}
@@ -88,7 +87,6 @@ pull_mode=${DEV_PULL_MODE:-}
 case "$image" in ghcr.io/arran4/dev-dotfiles-debian:*) published=1 ;; *) published=0 ;; esac
 case "$workspace_mode" in bind|volume|container) ;; *) echo 'DEV_WORKSPACE_MODE must be bind, volume or container.' >&2; exit 2 ;; esac
 case "$home_mode" in volume|container) ;; *) echo 'DEV_HOME_MODE must be volume or container.' >&2; exit 2 ;; esac
-case "$new_home" in 0|1) ;; *) echo 'DEV_NEW_HOME must be 0 or 1.' >&2; exit 2 ;; esac
 case "$dind:$dind_persist" in 0:0|1:0|1:1) ;; *) echo 'DEV_DIND and DEV_DIND_PERSIST must be 0 or 1; persistence requires DEV_DIND=1.' >&2; exit 2 ;; esac
 case "$podman_persist" in 0|1) ;; *) echo 'DEV_PODMAN_PERSIST must be 0 or 1.' >&2; exit 2 ;; esac
 case "$pull_mode" in
@@ -115,19 +113,8 @@ handle_existing_container() {
     exit 1
   fi
 }
-# Both image layouts now use one predictable outer-container name. Historical
-# seeded containers used -home; they may contain writable-layer state, so do
-# not rename or replace them without an explicit user action.
+# Keep canonical container names stable; never replace an existing container.
 container="dev-agent-${name}"
-old_container="${container}-home"
-if podman container exists "$old_container"; then
-  echo "Existing old-named container $old_container detected. Resolve it explicitly before relaunching: ensure $container is unused, then run 'podman rename $old_container $container'. The named home volume is unaffected; no container was changed." >&2
-  exit 1
-fi
-if [ "$new_home" = 1 ] && podman container exists "$container"; then
-  echo "DEV_NEW_HOME=1 cannot bypass the existing $container under the unified naming scheme. Rename the old container explicitly or choose another SANDBOX_NAME. No container was changed." >&2
-  exit 1
-fi
 handle_existing_container "$container"
 
 if [ "$pull_mode" = always ] || { [ "$pull_mode" = missing ] && ! podman image exists "$image"; }; then
@@ -142,22 +129,9 @@ if ! podman image exists "$image"; then
 fi
 
 seed_label=$(podman image inspect --format '{{index .Config.Labels "io.github.arran4.dev-dotfiles.home-seed"}}' "$image")
-if [ "$seed_label" = 1 ]; then
-  layout=home
-else
-  if [ "$published" != 1 ]; then
-    echo "Image $image has no versioned home seed; select an image built from the canonical Dockerfile." >&2
-    exit 1
-  fi
-  if [ "$new_home" = 1 ]; then
-    echo "Image $image does not support the versioned home layout. Pull a released home-seed image before using DEV_NEW_HOME=1." >&2
-    exit 1
-  fi
-  layout=legacy
-  if [ "$home_mode" != volume ]; then
-    echo 'DEV_HOME_MODE=container requires a home-seed image; the cached published image uses legacy volumes.' >&2
-    exit 2
-  fi
+if [ "$seed_label" != 1 ]; then
+  echo "Development image $image has no versioned home seed; use a current image with the seeded-home label." >&2
+  exit 1
 fi
 
 set -- run -it --name "$container" --detach-keys=''
@@ -179,22 +153,12 @@ set -- "$@" \
   --env DEV_DIND="$dind" \
   --env DEV_DIND_PERSIST="$dind_persist"
 
-if [ "$layout" = home ]; then
-  set -- "$@" --env DEV_HOME_VOLUME_INIT=1
-  if [ "$home_mode" = volume ]; then
-    set -- "$@" --mount "type=volume,src=dev-agent-${name}-project-home,dst=/home/user"
-  fi
-else
-  set -- "$@" --env DEV_FORGE_VOLUME_INIT=1 \
-    --mount "type=volume,src=dev-agent-${name}-codex,dst=/home/user/.codex" \
-    --mount "type=volume,src=dev-agent-${name}-agy,dst=/home/user/.gemini" \
-    --mount "type=volume,src=dev-agent-${name}-gh,dst=/home/user/.config/gh" \
-    --mount "type=volume,src=dev-agent-${name}-glab,dst=/home/user/.config/glab-cli"
+set -- "$@" --env DEV_HOME_VOLUME_INIT=1
+if [ "$home_mode" = volume ]; then
+  set -- "$@" --mount "type=volume,src=dev-agent-${name}-project-home,dst=/home/user"
 fi
-# The named project home remains persistent; an anonymous disk-backed volume
-# shadows its .cache. Podman's volume-opt=nocopy= suppresses copying the old
-# cache into the new volume; Docker uses a different volume-nocopy syntax.
-# --rm removes the anonymous cache volume, not the named project home.
+
+# Ephemeral no-copy cache volumes shadow .cache without changing the named home.
 if [ "$cache_mode" = ephemeral ]; then
   set -- "$@" \
     --mount type=volume,dst=/home/user/.cache,volume-opt=nocopy= \

@@ -44,40 +44,13 @@ if [ -f /etc/containers/dev-podman-storage.conf ]; then
   sudo install -d -m 0700 -o "$uid" -g "$gid" "$XDG_RUNTIME_DIR"
 fi
 
-# Fresh named volumes can be owned by root depending on the container engine.
-# Persistent-volume invocations opt into fixing only the mount-point roots.
-# This is deliberately not automatic so the normal bind-mounted workflow can
-# never chown a host checkout or host credential directory.
+# A workspace named volume may start root-owned. The launcher requests
+# ownership repair only for that mount root, never for the home or host checkout.
 if [ "${DEV_VOLUME_INIT:-0}" = "1" ]; then
-  for path in \
-    /workspace \
-    "$HOME/.codex" \
-    "$HOME/.gemini" \
-    "$HOME/.config/gh" \
-    "$HOME/.config/glab-cli"
-  do
-    if [ -e "$path" ]; then
-      sudo chown "$uid:$gid" "$path"
-    fi
-  done
-
+  if [ -e /workspace ]; then
+    sudo chown "$uid:$gid" /workspace
+  fi
   unset DEV_VOLUME_INIT
-fi
-
-# The ordinary checkout workflow bind-mounts /workspace from the host but uses
-# named volumes for forge CLI state. Initialise only those credential/config
-# volumes so we never chown the bind-mounted repository.
-if [ "${DEV_FORGE_VOLUME_INIT:-0}" = "1" ]; then
-  for path in \
-    "$HOME/.config/gh" \
-    "$HOME/.config/glab-cli"
-  do
-    if [ -e "$path" ]; then
-      sudo chown "$uid:$gid" "$path"
-    fi
-  done
-
-  unset DEV_FORGE_VOLUME_INIT
 fi
 
 # Opt-in Docker-in-Docker mode runs a daemon that belongs to this container.
@@ -188,15 +161,31 @@ if [ -n "${DEV_LAUNCHER_COMMAND:-}" ] && [ -n "${DEV_OUTER_ENGINE:-}" ] && [ -n 
   printf '%s\n' '  The rm command above does not remove named volumes.'
 fi
 
-# Recover legacy Antigravity state before applying defaults and model policy.
-/usr/local/bin/dev-dotfiles-migrate-antigravity-state
-
-# Recursively add missing container defaults while preserving existing settings.
+# Add missing image defaults without overwriting user customizations.
 (umask 077; rsync -r --ignore-existing /usr/local/share/dev-dotfiles-debian/skel/ "$HOME/")
 
-# Enforce the container's Neon model on every start, including existing homes.
-# Other preferences, onboarding state and credentials remain untouched.
-/usr/local/bin/dev-dotfiles-enforce-antigravity-model
+# Enforce Neon at every startup, including persisted homes.
+# Modify only the model field, preserving authentication and custom settings.
+agy_dir="$HOME/.gemini/antigravity-cli"
+agy_settings="$agy_dir/settings.json"
+if [ -L "$HOME/.gemini" ] || [ -L "$agy_dir" ] || [ -L "$agy_settings" ]; then
+  echo 'Refusing to update Antigravity settings through a symlink' >&2
+  exit 1
+fi
+if [ ! -f "$agy_settings" ] || ! jq -e 'type == "object"' "$agy_settings" >/dev/null; then
+  echo "Antigravity settings must be an existing JSON object: $agy_settings" >&2
+  exit 1
+fi
+if ! jq -e '.model == "Orchestrator (Neon)"' "$agy_settings" >/dev/null; then
+  (
+    umask 077
+    temporary=$(mktemp "$agy_dir/.settings.json.XXXXXX")
+    trap 'rm -f -- "$temporary"' EXIT HUP INT TERM
+    jq '.model = "Orchestrator (Neon)"' "$agy_settings" > "$temporary"
+    mv -f -- "$temporary" "$agy_settings"
+    trap - EXIT HUP INT TERM
+  )
+fi
 
 # Sync image-managed Antigravity CLI skills without overwriting personal edits.
 /usr/local/bin/dev-dotfiles-sync-agent-skills

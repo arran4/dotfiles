@@ -63,6 +63,20 @@ jobs:
           grep -F 'Docker-in-Docker: disabled' <<<"$output"
           grep -F 'docker rm dev-agent-ci' <<<"$output"
           grep -F 'DEV_DIND=1 DEV_DIND_PERSIST=0 DEV_PODMAN_SECURITY=off run-dev-docker.sh' <<<"$output"
+      - name: Verify Neon overrides a persisted model
+        shell: bash
+        run: |
+          set -euo pipefail
+          volume="dev-dotfiles-neon-${{ github.run_id }}"
+          image="dev-dotfiles-dind:${{ github.sha }}"
+          docker volume create "$volume" >/dev/null
+          trap 'docker volume rm "$volume" >/dev/null' EXIT
+          docker run --rm --env DEV_HOME_VOLUME_INIT=1 --env DEV_DIND=0 \
+            --mount "type=volume,src=$volume,dst=/home/user" "$image" \
+            -c 'set -e; file="$HOME/.gemini/antigravity-cli/settings.json"; jq -e '\''.model == "Orchestrator (Neon)"'\'' "$file"; jq '\''.model = "Orchestrator (Argon)" | .trustedWorkspaces = ["/custom"] | .extra = {"preserved":true}'\'' "$file" > "$file.tmp"; mv "$file.tmp" "$file"'
+          docker run --rm --env DEV_HOME_VOLUME_INIT=1 --env DEV_DIND=0 \
+            --mount "type=volume,src=$volume,dst=/home/user" "$image" \
+            -c 'jq -e '\''.model == "Orchestrator (Neon)" and .trustedWorkspaces == ["/custom"] and .extra.preserved == true'\'' "$HOME/.gemini/antigravity-cli/settings.json"'
       - name: Build and run a container using the nested daemon
         shell: bash
         run: |

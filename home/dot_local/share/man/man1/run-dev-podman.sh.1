@@ -21,7 +21,7 @@ Keep the outer container after it stops and resume an existing stopped container
 Remove new outer containers on exit (default). Existing stopped containers are never removed automatically.
 .TP
 \fB\-\-no\-home\-volume\fR
-Do not mount the per\-project persistent /home/user volume; requires a home\-seed image.
+Do not mount the per\-project persistent /home/user volume.
 .TP
 \fB\-\-no\-workspace\-mount\fR
 Do not mount the current working directory into /workspace.
@@ -50,10 +50,7 @@ UV_CACHE_DIR, YARN_CACHE_FOLDER, PUB_CACHE and COREPACK_HOME.
 bind (default), volume or container. A bind mount maps the current directory to /workspace.
 .TP
 \fBDEV_HOME_MODE\fR
-volume (default) or container; the latter needs a seeded image.
-.TP
-\fBDEV_NEW_HOME\fR
-0 (default) or 1. Cannot bypass an existing container or force a legacy image into the seeded layout.
+volume (default) or container; the latter keeps home in the outer writable layer.
 .TP
 \fBDEV_PODMAN_SECURITY\fR
 nested (default), unconfined, privileged or off.
@@ -130,8 +127,8 @@ podman volume ls
 A retained container cannot change image, privileges or mounts on
 restart. Back up writable-layer data before explicitly removing an
 old outer container; never remove named volumes as a routine upgrade
-step. Check image labels and old authentication-volume layouts before
-migrating. Full instructions are in
+step. Verify the image has a versioned home seed. Full instructions
+are in
 containers/dev-dotfiles-debian/README.md.
 .SH SEE ALSO
 run\-dev\-docker.sh(1)

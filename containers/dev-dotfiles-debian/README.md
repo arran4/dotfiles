@@ -32,7 +32,7 @@ DEV_PULL_MODE=missing run-dev-podman.sh
 run-dev-podman.sh --persist-container
 ```
 
-The current project directory is normally bind-mounted at `/workspace`; `DEV_WORKSPACE_MODE=volume` makes it an independent named volume, and `--no-workspace-mount` keeps it in the outer writable layer. For a disposable home use `--no-home-volume`, which requires a seeded image. Docker and Podman have **separate** container and volume stores.
+The current project directory is normally bind-mounted at `/workspace`; `DEV_WORKSPACE_MODE=volume` makes it an independent named volume, and `--no-workspace-mount` keeps it in the outer writable layer. For a disposable home use `--no-home-volume`. Docker and Podman have **separate** container and volume stores.
 
 ### Build-cache lifecycle
 
@@ -87,7 +87,7 @@ graphroot to a separate filesystem remains a separate host-side improvement.
 
 ### Build the current image locally
 
-The repository deliberately has one Dockerfile and no separate home-volume trial image:
+Build the development image from the canonical Dockerfile:
 
 ```sh
 podman build --build-context dotfiles=. \
@@ -96,7 +96,7 @@ podman build --build-context dotfiles=. \
 DEV_IMAGE=dev-dotfiles-local:dev run-dev-podman.sh
 ```
 
-Use `docker build` and `run-dev-docker.sh` for Docker. A custom image must have the seeded-home label: `io.github.arran4.dev-dotfiles.home-seed=1`. A published image without that label uses a legacy compatibility layout; an unlabelled custom image is not accepted.
+Use `docker build` and `run-dev-docker.sh` for Docker. A custom image must have the seeded-home label: `io.github.arran4.dev-dotfiles.home-seed=1`. Unseeded images are rejected instead of falling back to old agent-specific volume mounts.
 
 ## Image release and update
 
@@ -113,7 +113,7 @@ This prepares a new version tag, then dispatches `publish-tag` to build and publ
 
 To upgrade a **disposable** seeded sandbox: back up important files in its home volume, exit, then rerun the launcher with the same project name to pull the current image. The named home volume remains. To upgrade a **persistent** outer container: first back up writable-layer-only data, stop and remove **only the outer container** (never use `--volumes`), then relaunch. Restarting a retained container cannot change its image, mounts, timezone or privileges. Validate the new home before removing backups.
 
-## Persistence and migration
+## Persistence
 
 | Path or resource | Default lifecycle |
 | --- | --- |
@@ -127,18 +127,9 @@ To upgrade a **disposable** seeded sandbox: back up important files in its home 
 
 The Dockerfile applies chezmoi when building and archives the prepared home separately. For a new seeded volume, `DEV_HOME_VOLUME_INIT=1` initializes it; later image versions overlay matching seeded files. An unchanged seed is a no-op, and absent files are not removed. Known Codex, Antigravity, GitHub/GitLab session files and shell history are excluded from seed upgrades, but **other locally edited dotfiles or secrets could be overwritten**. The marker only advances after successful extraction. The initializer cannot verify that `/home/user` is a safe named volume: **never mount the host home there**.
 
-### Older sandboxes
-
-Historical published images without a home seed use four separate agent/auth volumes (`-codex`, `-agy`, `-gh`, `-glab`) rather than a whole-home volume. The new layout **does not import them automatically**. Back up the old container writable layer and each volume, create a distinct seeded sandbox with a different `SANDBOX_NAME` when appropriate, and selectively transfer credentials and configurations with a separate migration container. Verify ownership and login before deleting any old storage. Do not overlay the old agent mounts on the new whole-home mount; this hides seeded files.
-
-Earlier outer containers named `dev-agent-<name>-home` need an explicit rename to `dev-agent-<name>` before reuse, provided that destination name is free:
-
-```sh
-podman rename dev-agent-my-project-home dev-agent-my-project
-# Or: docker rename dev-agent-my-project-home dev-agent-my-project
-```
-
-The current launchers intentionally refuse to rename, overwrite or delete old containers automatically; stopped named containers can contain the only copy of writable-layer state. The `-project-home` volume is unchanged by a rename. The old `-trial` containers and `-home` trial volumes are likewise not cleaned automatically. `DEV_NEW_HOME=1` does not override an existing container-name conflict. Never delete an old volume until the new environment is verified.
+Old volumes and credentials are never deleted or imported automatically.
+Recover any logins still held in old volumes into the new seeded home,
+then verify authentication before retiring the old storage.
 
 ## Security and nested engines
 
@@ -150,7 +141,7 @@ With DIND enabled, `DEV_DIND_PERSIST=1` retains its images in a separate named `
 
 ## Authentication
 
-Each seeded project home stores GitHub CLI configuration under `~/.config/gh`. Historical images use the separate `-gh` volume. Prefer one credential model for each sandbox:
+Each seeded project home stores GitHub CLI configuration under `~/.config/gh`. Prefer one credential model for each sandbox:
 
 ```sh
 # Interactive web/device login
@@ -179,7 +170,12 @@ The image includes Codex, Antigravity (`agy`), OpenCode, Claude Code, GitHub Cop
 
 **Codex:** A fresh image-seeded `~/.codex/config.toml` sets model `gpt-6.1-sol` at high reasoning effort with `approval_policy = "never"` and `sandbox_mode = "danger-full-access"`. That disables the inner approval/sandbox mechanisms: **the outer container's trust boundary and mount choices matter**. The TUI defaults to normal scrollback (`alternate_screen = "never"`) and raw transcript output; modify `~/.codex/config.toml` or use `/raw` if desired. Existing user config is preserved on initial skeleton creation; seed updates have the caveats above.
 
-**Antigravity:** The container stores settings under `~/.gemini/antigravity-cli/`, not the former `~/.codex/antigravity-cli/`. New homes default to `Orchestrator (Neon)`. On **every startup**, the entrypoint enforces that model in existing `settings.json` as well, including persisted and migrated homes; it preserves other JSON settings such as trusted workspaces. A model change made using `/model` will therefore be reset to Neon the next time the container starts. Invalid or symlinked settings fail safely rather than being replaced or followed. A guarded migration moves eligible legacy settings, onboarding and OAuth files when destinations are missing; it rejects symlinks and preserves conflicting state for manual inspection. New entrypoint behaviour requires recreating an existing outer container **with the updated image** (not simply restarting the old image); the named home volume is retained. Don't delete either agent home wholesale.
+**Antigravity:** Settings live under `~/.gemini/antigravity-cli/`. Each
+startup sets the `model` property to `Orchestrator (Neon)`, including for
+existing homes. Other JSON settings and credentials are left intact.
+Changing `/model` takes effect until the next start. Invalid or symlink-backed
+settings fail safely. New entrypoint code requires pulling a new image and
+recreating the outer container, retaining the named home volume.
 
 **Host Ollama:** OpenCode is seeded for `ollama/qwen2.5-coder:7b` at `http://host.docker.internal:11434/v1` when its config is missing. On the host:
 
@@ -218,7 +214,6 @@ sh containers/dev-dotfiles-debian/test-launchers.sh
 sh containers/dev-dotfiles-debian/test-cache-volume-init.sh
 sh containers/dev-dotfiles-debian/test-agent-skills.sh
 sh containers/dev-dotfiles-debian/test-release-clis.sh
-sh containers/dev-dotfiles-debian/test-txtar.sh
 sh containers/dev-dotfiles-debian/test-playwright.sh
 sh -n home/dot_local/bin/executable_run-dev-podman.sh
 sh -n home/dot_local/bin/executable_run-dev-docker.sh
