@@ -45,7 +45,11 @@
   enabled = 1
 
 [credential]
-{{ if ne (index . "gitCredentialOAuthLocation") "" }}
+{{ if eq .chezmoi.username "root" }}
+  # Root runs without a desktop credential service or interactive OAuth.
+  helper =
+  interactive = false
+{{ else if ne (index . "gitCredentialOAuthLocation") "" }}
   {{ if ne (index . "gitCredentialLibSecretLocation") "" }}
   helper = {{ index . "gitCredentialLibSecretLocation" }}
   {{ else }}
@@ -198,6 +202,12 @@
   path = ~/.gitconfig.local # Allow for local overrides
 {{- end }}
 
+{{ if eq .chezmoi.username "root" }}
+# Machine-specific non-secret settings, deployed by chezmoi from the private overlay.
+[include]
+  path = /etc/gitconfig.d/{{ .chezmoi.hostname }}.conf
+{{ end }}
+
 [grep]
   lineNumber = true
   patternType = extended
@@ -211,8 +221,8 @@
 [interactive "delta"]
   diffFilter = delta --color-only
 
-# Keep GitHub, Gist and GitLab remotes on HTTPS. Shorthand, git:// and SSH
-# spellings are normalized to HTTPS so HTTP credential helpers stay authoritative.
+# Prefer HTTPS for interactive Git hosts. Root keeps self-hosted GitLab SSH
+# URLs so its dedicated, unattended etckeeper identity can be used.
 [url "https://github.com/"]
   insteadOf = "github:"
   insteadOf = "git://github.com/"
@@ -237,12 +247,14 @@
   insteadOf = "git+ssh://git@gitlab.com/"
   insteadOf = "ssh+git://git@gitlab.com/"
 
+{{ if ne .chezmoi.username "root" }}
 [url "https://gitlab.arran.net.au/"]
   insteadOf = "git://gitlab.arran.net.au/"
   insteadOf = "git@gitlab.arran.net.au:"
   insteadOf = "ssh://git@gitlab.arran.net.au/"
   insteadOf = "git+ssh://git@gitlab.arran.net.au/"
   insteadOf = "ssh+git://git@gitlab.arran.net.au/"
+{{ end }}
 
 [http]
   cookiefile = ~/.cache/git/cookies
