@@ -78,7 +78,7 @@ the key. Once independently verified, run the explicit first-connection
 SSH bootstrap (a one-time trust prompt writes root's known_hosts):
 .PP
 .nf
-sudo -H ssh -o StrictHostKeyChecking=ask -T gitlab-arran-etckeeper
+sudo -H ssh -o BatchMode=no -o StrictHostKeyChecking=ask -T gitlab-arran-etckeeper
 .fi
 .PP
 Accept the prompt only if the presented fingerprint matches the trusted
