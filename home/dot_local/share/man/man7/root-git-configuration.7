@@ -74,9 +74,17 @@ or bypassed during bootstrap.
 StrictHostKeyChecking remains enabled. Obtain the GitLab server's SSH
 host-key fingerprint from a trusted administrator or an out-of-band
 source. Compare it with the key returned by ssh-keyscan before authorising
-the key. Record the verified known_hosts entry through a separate protected
-bootstrap mechanism or carefully reviewed root provisioning command.
-Do not disable host checking or silently trust an unauthenticated scan.
+the key. Once independently verified, run the explicit first-connection
+SSH bootstrap (a one-time trust prompt writes root's known_hosts):
+.PP
+.nf
+sudo -H ssh -o StrictHostKeyChecking=ask -T gitlab-arran-etckeeper
+.fi
+.PP
+Accept the prompt only if the presented fingerprint matches the trusted
+fingerprint. A permission-denied response can still mean the host key was
+recorded; ensure the deploy key is authorised separately. Do not silently
+trust an unauthenticated scan or disable strict checking for normal pushes.
 .SS 5. Verify effective configuration
 .PP
 .nf

@@ -27,8 +27,9 @@ ssh_src="$source_root/ssh/$host.conf"
 validate_file() {
   file=$1
   kind=$2
-  [ ! -e "$file" ] || { [ -f "$file" ] && [ ! -L "$file" ]; } ||
-    fail "nonregular or symlinked source: $file"
+  [ ! -L "$file" ] || fail "symlinked source: $file"
+  [ ! -e "$file" ] || [ -f "$file" ] ||
+    fail "nonregular source: $file"
   [ -f "$file" ] || return 0
   case "$kind" in
     git) git config --file "$file" --list >/dev/null 2>&1 ||
