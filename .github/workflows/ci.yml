@@ -223,6 +223,8 @@ jobs:
         run: sh ./.github/scripts/test_man_db_hook.sh
       - name: Verify recurring chezmoi drift guards
         run: sh ./.github/scripts/test_chezmoi_drift.sh
+      - name: Verify headless root Git configuration contract
+        run: bash ./.github/scripts/test_root_git_configuration.sh
       - name: Verify shell configuration parses
         run: |
           for f in ~/.bashrc ~/.bash_profile ~/.bash_login ~/.bash_logout ~/.profile; do

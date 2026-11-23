@@ -1,0 +1,120 @@
+.TH ROOT-GIT-CONFIGURATION 7 "November 2026" "arran4/dotfiles" "System Administration"
+.SH NAME
+root-git-configuration \- headless root Git, private machine settings and etckeeper backup
+.SH DESCRIPTION
+The public dotfiles repository renders /root/.gitconfig with noninteractive
+credential defaults and a hostname-specific include at
+/etc/gitconfig.d/<hostname>.conf. The include may initially be absent.
+No desktop Secret Service, graphical OAuth, or personal user credentials are
+needed for etckeeper. Ordinary users retain their existing Git configuration.
+.PP
+The private arrans-private-overlay checkout is the source for non-secret,
+machine-specific Git and SSH configuration. It is not itself an authentication
+secret store. Root's chezmoi run_after_deploy-private-root-git.sh script
+copies matching files into their installed locations, but does not rewrite
+/etc/.git/config or replace the stock etckeeper hooks.
+.SH FILE OWNERSHIP
+.TP
+Public Git (version controlled, continuously managed)
+home/dot_gitconfig.tmpl renders /root/.gitconfig.
+home/private_dot_ssh/private_config.tmpl renders /root/.ssh/config.
+.TP
+Public Git (version controlled, create-only)
+home/create_dot_gitconfig.local.tmpl initially creates
+/root/.gitconfig.local, preserving any subsequent changes.
+.TP
+Private Git (version controlled, continuously installed)
+config/git/<hostname>.conf becomes /etc/gitconfig.d/<hostname>.conf.
+config/git/<hostname>.etckeeper.conf becomes
+/etc/gitconfig.d/<hostname>.etckeeper.conf.
+config/ssh/<hostname>.conf becomes /root/.ssh/config.d/<hostname>.conf.
+A new root chezmoi application is required after private-overlay updates.
+.TP
+Machine-local (optionally generated, not version controlled)
+The private SSH identity /root/.ssh/etckeeper_gitlab and its public key
+are generated only when an SSH host snippet is present and neither file
+already exists. Existing or incomplete pairs are never overwritten.
+.TP
+Existing local Git metadata
+/etc/.git/config remains owned by etckeeper/Git. Git's includeIf rule
+supplies a push URL only for the /etc repository, without changing the
+remote's stored fetch URL.
+.SH SETUP
+.SS 1. Apply public dotfiles to root
+Ensure chezmoi is installed for root, and apply your existing arran4/dotfiles
+source with root's HOME set to /root. Do not copy the desktop user's
+chezmoi state into root. Example after root has been initialised:
+.PP
+.nf
+sudo -H chezmoi apply
+.fi
+.SS 2. Sync private overlay
+.PP
+.nf
+sudo emaint sync -r arrans-private-overlay
+sudo -H chezmoi apply
+.fi
+.PP
+The second apply installs /etc/gitconfig.d/<hostname>.conf, any
+etckeeper-specific include, and the root SSH host snippet. It may create
+/root/.ssh/etckeeper_gitlab if absent. It never recreates an existing key.
+Only hosts with a matching source file are changed.
+.SS 3. Authorise the machine's public key
+.PP
+.nf
+sudo cat /root/.ssh/etckeeper_gitlab.pub
+.fi
+.PP
+Add the PUBLIC key to the corresponding private GitLab etckeeper project's
+Settings > Repository > Deploy keys and grant write access. Use one key
+per machine. No plaintext key material goes in either Git repository.
+GitLab authorisation is an external security boundary and is not faked
+or bypassed during bootstrap.
+.SS 4. Verify the SSH server host key
+StrictHostKeyChecking remains enabled. Obtain the GitLab server's SSH
+host-key fingerprint from a trusted administrator or an out-of-band
+source. Compare it with the key returned by ssh-keyscan before authorising
+the key. Record the verified known_hosts entry through a separate protected
+bootstrap mechanism or carefully reviewed root provisioning command.
+Do not disable host checking or silently trust an unauthenticated scan.
+.SS 5. Verify effective configuration
+.PP
+.nf
+sudo -H git config --global --show-origin --get-all credential.helper
+sudo -H git config --global --get credential.interactive
+sudo -H git -C /etc config --show-origin --get-regexp '^remote\..*\.pushurl$'
+sudo -H git -C /etc remote get-url --push origin
+sudo -H git -C /etc status --short
+sudo -H env GIT_TERMINAL_PROMPT=0 git -C /etc push origin
+.fi
+.PP
+The push URL should use the dedicated GitLab SSH host alias. Check the
+actual remote name and branch before issuing a push on machines with
+different etckeeper settings. The push remains immediate and synchronous.
+.SS 6. Keep etckeeper pushing
+.PP
+The stock Portage etckeeper hooks continue to commit and, if enabled by
+PUSH_REMOTE, push changes at their normal trigger points. Confirm
+/etc/etckeeper/etckeeper.conf retains an appropriate PUSH_REMOTE setting.
+This integration does not install a service, timer or replacement hook.
+.SH SECURITY
+/etc is version-tracked by etckeeper and may be pushed to a backup server.
+Therefore /etc/gitconfig.d must contain only non-secret configuration.
+Public dotfiles and private-overlay Git history must never contain
+plaintext tokens, passwords or SSH private keys. Chezmoi-managed
+configuration may be overwritten during subsequent applies; create-only
+and generated local credentials are intentionally not.
+.PP
+The private overlay checkout is a deployment dependency, not a runtime
+dependency. Missing source files do not remove already-installed settings.
+Invalid source files stop installation before replacement. A required
+credential or verified SSH host key that has not yet been provisioned
+causes the normal push to fail noninteractively.
+.SH TROUBLESHOOTING
+Use ssh -G gitlab-arran-etckeeper to inspect root's effective SSH
+configuration without connecting; check that identity and host-key
+verification are correct. Use git config --show-origin to identify
+unexpected credential helpers and rewrite rules. Never paste private
+keys or tokens into issue reports.
+.SH SEE ALSO
+chezmoi(1), git-config(1), ssh_config(5), etckeeper(8), dispatch-conf(1)

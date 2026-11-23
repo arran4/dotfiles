@@ -24,6 +24,13 @@ Sensitive and machine-only settings normally stay outside the shared repository 
 
 For Hyprland, the Lua configuration loads `local.lua` if present, then checks hostname-derived modules such as `local_desktop2.lua` and `local_x1linux.lua`. Those committed examples contain display configuration; a private local override should not accidentally mask one. SSH identities and other private host configuration are deliberately handled differently. Review template and ignore rules before adding new machine-specific data.
 
+
+### Headless root Git and etckeeper
+
+Root uses a noninteractive Git credential policy; it does not use desktop Secret Service or OAuth. An optional Git include references `/etc/gitconfig.d/<hostname>.conf`. On a root chezmoi apply, a post-apply script installs the matching non-secret Git/SSH configuration from the already-synced private overlay and, when opted in by a host SSH snippet, creates a dedicated local etckeeper SSH key **once**. It never registers keys automatically or stores credentials in `/etc`.
+
+Follow `man root-git-configuration` (source: `home/dot_local/share/man/man7/root-git-configuration.7`) for the setup, security boundaries, GitLab deploy-key authorisation, known-host verification, and diagnostics. The private source config is in `arran4/arrans-private-overlay/config/`. No timer, new package, or etckeeper hook replacement is used.
+
 ## Applications I reinstall
 
 My Flatpak selections are an install reference, not an exhaustive inventory of what is active today. The existing Flathub command is system-scoped; the separate FlatPark commands below are intentionally per-user. I have not normalised those scopes.

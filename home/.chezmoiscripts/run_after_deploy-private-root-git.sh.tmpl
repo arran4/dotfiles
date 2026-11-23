@@ -1,0 +1,95 @@
+#!/bin/sh
+set -eu
+
+# Run after root's chezmoi apply, never as an ordinary desktop user.
+[ "$(id -u)" -eq 0 ] || exit 0
+
+# These paths are deliberately fixed: no caller-supplied credential locations.
+host='{{ .chezmoi.hostname }}'
+source_root=/var/db/repos/arrans-private-overlay/config
+git_dir=/etc/gitconfig.d
+ssh_dir=/root/.ssh/config.d
+identity=/root/.ssh/etckeeper_gitlab
+
+fail() { printf 'root-private-git: %s\n' "$*" >&2; exit 1; }
+
+case "$host" in
+  ''|.*|*..*|*[!a-zA-Z0-9._-]*) fail "invalid chezmoi hostname" ;;
+esac
+
+git_src="$source_root/git/$host.conf"
+etc_src="$source_root/git/$host.etckeeper.conf"
+ssh_src="$source_root/ssh/$host.conf"
+
+# It is valid to apply public dotfiles before the private overlay is synced.
+[ -e "$git_src" ] || [ -e "$etc_src" ] || [ -e "$ssh_src" ] || exit 0
+
+validate_file() {
+  file=$1
+  kind=$2
+  [ ! -e "$file" ] || { [ -f "$file" ] && [ ! -L "$file" ]; } ||
+    fail "nonregular or symlinked source: $file"
+  [ -f "$file" ] || return 0
+  case "$kind" in
+    git) git config --file "$file" --list >/dev/null 2>&1 ||
+        fail "invalid Git configuration: $file" ;;
+    ssh) ssh -G -F "$file" gitlab-arran-etckeeper >/dev/null 2>&1 ||
+        fail "invalid SSH configuration: $file" ;;
+  esac
+}
+
+# Validate every available source before making any destination changes.
+validate_file "$git_src" git
+validate_file "$etc_src" git
+validate_file "$ssh_src" ssh
+
+install_if_changed() {
+  source_file=$1
+  destination=$2
+  mode=$3
+  [ -f "$source_file" ] || return 0
+  [ ! -L "$destination" ] || fail "symlinked destination: $destination"
+  [ ! -e "$destination" ] || [ -f "$destination" ] ||
+    fail "nonregular destination: $destination"
+  if [ -f "$destination" ] && cmp -s "$source_file" "$destination" &&
+     [ "$(stat -c '%a:%u:%g' "$destination")" = "$mode:0:0" ]; then
+    return 0
+  fi
+  temporary=$(mktemp "$destination.tmp.XXXXXXXX") ||
+    fail "cannot prepare destination: $destination"
+  if ! install -o root -g root -m "$mode" "$source_file" "$temporary"; then
+    rm -f "$temporary"
+    fail "cannot install: $destination"
+  fi
+  if ! mv -f "$temporary" "$destination"; then
+    rm -f "$temporary"
+    fail "cannot replace: $destination"
+  fi
+  printf 'root-private-git: installed %s\n' "$destination"
+}
+
+if [ -f "$git_src" ] || [ -f "$etc_src" ]; then
+  [ ! -L "$git_dir" ] || fail "symlinked Git config directory"
+  install -d -o root -g root -m 0755 "$git_dir"
+  install_if_changed "$git_src" "$git_dir/$host.conf" 644
+  install_if_changed "$etc_src" "$git_dir/$host.etckeeper.conf" 644
+fi
+
+if [ -f "$ssh_src" ]; then
+  [ ! -L /root/.ssh ] || fail "symlinked root SSH directory"
+  [ ! -L "$ssh_dir" ] || fail "symlinked SSH config directory"
+  install -d -o root -g root -m 0700 /root/.ssh "$ssh_dir"
+  install_if_changed "$ssh_src" "$ssh_dir/$host.conf" 600
+
+  # Presence of a host SSH file opts this machine into local key creation.
+  # A partial pair is not repaired automatically; never rotate an existing key.
+  if [ ! -e "$identity" ] && [ ! -L "$identity" ] &&
+     [ ! -e "$identity.pub" ] && [ ! -L "$identity.pub" ]; then
+    umask 077
+    ssh-keygen -q -t ed25519 -N '' -f "$identity" -C "etckeeper-$host" ||
+      fail "SSH identity generation failed"
+    printf 'root-private-git: generated local key; register %s.pub with GitLab\n' "$identity"
+  elif [ ! -f "$identity" ] || [ ! -f "$identity.pub" ]; then
+    printf 'root-private-git: existing SSH identity pair is incomplete; leaving it unchanged\n' >&2
+  fi
+fi
